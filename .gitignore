@@ -1,0 +1,58 @@
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+credentials.json
+
+# R/RStudio
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+.Rproj.user/
+
+# DuckDB local database files
+*.duckdb
+*.duckdb.wal
+data/local.duckdb
+
+# Package/dependency caches
+packrat/
+renv/
+renv.lock
+
+# Session Data
+.httr-oauth
+
+# Shiny apps
+rsconnect/
+
+# Output files
+*.log
+*.out
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# Test outputs
+tests/testthat/_snaps/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

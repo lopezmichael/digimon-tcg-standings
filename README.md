@@ -1,2 +1,0 @@
-# digimon-tcg-standings
- 
