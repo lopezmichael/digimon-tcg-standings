@@ -126,6 +126,39 @@
 }
 
 /* =============================================================================
+   BUSY INDICATOR
+   ============================================================================= */
+
+/* Style the busy indicator pulse */
+.bslib-page-fill .shiny-busy-panel {
+  background-color: rgba(15, 76, 129, 0.9) !important;
+}
+
+/* Busy indicator spinner color */
+.shiny-busy .spinner-border {
+  color: #F7941D !important;
+}
+
+/* Pulse animation for busy state */
+.bslib-page-fill.shiny-busy::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0F4C81, #F7941D, #0F4C81);
+  background-size: 200% 100%;
+  animation: loading-pulse 1.5s ease-in-out infinite;
+  z-index: 9999;
+}
+
+@keyframes loading-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =============================================================================
    DARK MODE
    ============================================================================= */
 
@@ -357,18 +390,47 @@ a:hover, .nav-link:hover {
 
 .deck-badge {
   display: inline-block;
-  padding: 0.2em 0.5em;
+  padding: 0.25em 0.6em;
   border-radius: 4px;
-  font-size: 0.85em;
-  font-weight: 500;
+  font-size: 0.8em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.deck-badge-red { background-color: rgba(220, 38, 38, 0.15); color: #DC2626; }
-.deck-badge-blue { background-color: rgba(37, 99, 235, 0.15); color: #2563EB; }
-.deck-badge-yellow { background-color: rgba(234, 179, 8, 0.15); color: #A16207; }
-.deck-badge-green { background-color: rgba(22, 163, 74, 0.15); color: #16A34A; }
-.deck-badge-black { background-color: rgba(31, 41, 55, 0.15); color: #1F2937; }
-.deck-badge-purple { background-color: rgba(124, 58, 237, 0.15); color: #7C3AED; }
+/* Vibrant Digimon TCG colors - solid backgrounds with white text */
+.deck-badge-red { background-color: #E5383B; color: #FFFFFF; }
+.deck-badge-blue { background-color: #2D7DD2; color: #FFFFFF; }
+.deck-badge-yellow { background-color: #F5B700; color: #1A1A1A; }
+.deck-badge-green { background-color: #38A169; color: #FFFFFF; }
+.deck-badge-black { background-color: #2D3748; color: #FFFFFF; }
+.deck-badge-purple { background-color: #805AD5; color: #FFFFFF; }
+.deck-badge-white { background-color: #E2E8F0; color: #1A1A1A; border: 1px solid #CBD5E0; }
+
+/* Multi-color badge container */
+.deck-badge-multi {
+  display: inline-flex;
+  gap: 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.deck-badge-multi .deck-badge {
+  border-radius: 0;
+  padding: 0.25em 0.5em;
+}
+
+.deck-badge-multi .deck-badge:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.deck-badge-multi .deck-badge:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+/* Dark mode - colors stay vibrant, minor adjustments */
+[data-bs-theme="dark"] .deck-badge-white { background-color: #A0AEC0; color: #1A202C; border-color: #718096; }
+[data-bs-theme="dark"] .deck-badge-yellow { background-color: #D69E2E; }
 
 /* =============================================================================
    RESPONSIVE ADJUSTMENTS
@@ -383,4 +445,199 @@ a:hover, .nav-link:hover {
     font-size: 0.875rem !important;
     padding: 0.5rem 0.75rem !important;
   }
+}
+
+/* =============================================================================
+   MAPGL STYLING
+   ============================================================================= */
+
+/* Style the map container */
+.mapboxgl-map, .maplibregl-map {
+  border-radius: 0 0 8px 8px;
+}
+
+/* Style all map control buttons including draw controls */
+.mapboxgl-ctrl-group,
+.maplibregl-ctrl-group {
+  background: #0F4C81 !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.mapboxgl-ctrl-group button,
+.maplibregl-ctrl-group button {
+  background-color: #0F4C81 !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.mapboxgl-ctrl-group button:last-child,
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+
+.mapboxgl-ctrl-group button:hover,
+.maplibregl-ctrl-group button:hover {
+  background-color: #F7941D !important;
+}
+
+.mapboxgl-ctrl-group button.active,
+.maplibregl-ctrl-group button.active {
+  background-color: #F7941D !important;
+}
+
+/* Mapbox GL Draw - style the draw control buttons */
+.mapboxgl-ctrl-group button.mapbox-gl-draw_ctrl-draw-btn,
+.mapboxgl-ctrl-group button.mapbox-gl-draw_polygon,
+.mapboxgl-ctrl-group button.mapbox-gl-draw_trash,
+.mapboxgl-ctrl-group button.mapbox-gl-draw_line,
+.mapboxgl-ctrl-group button.mapbox-gl-draw_point,
+.mapboxgl-ctrl-group button.mapbox-gl-draw_combine,
+.mapboxgl-ctrl-group button.mapbox-gl-draw_uncombine {
+  background-color: #0F4C81 !important;
+}
+
+/* Make ALL button background images (icons) white by inverting */
+.mapboxgl-ctrl-group button {
+  filter: none !important;
+}
+
+/* Target the actual SVG/image icons inside buttons */
+.mapboxgl-ctrl button.mapboxgl-ctrl-icon,
+.maplibregl-ctrl button.maplibregl-ctrl-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* Mapbox GL Draw uses background-image for icons - invert them */
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon,
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash,
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_line,
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_point,
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_combine,
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_uncombine,
+button.mapbox-gl-draw_polygon,
+button.mapbox-gl-draw_trash,
+button.mapbox-gl-draw_line,
+button.mapbox-gl-draw_point {
+  filter: invert(1) !important;
+  background-color: transparent !important;
+}
+
+/* Override to keep background but invert icon */
+.mapboxgl-ctrl-group button.mapbox-gl-draw_ctrl-draw-btn {
+  position: relative;
+}
+
+/* Alternative: Use CSS to style the buttons with custom colors */
+.mapboxgl-ctrl-group button::before {
+  filter: brightness(0) invert(1);
+}
+
+/* Ensure the draw control group has proper styling */
+.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group {
+  background: #0F4C81 !important;
+}
+
+/* =============================================================================
+   MAPBOX GL DRAW CONTROLS - Light Mode
+   ============================================================================= */
+
+/* Control group container */
+.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group,
+.mapboxgl-ctrl-group {
+  background-color: #FFFFFF !important;
+  border: 2px solid #0F4C81 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+/* All buttons in control groups */
+.mapboxgl-ctrl-group > button,
+.mapboxgl-ctrl button {
+  background-color: #FFFFFF !important;
+  border: none !important;
+  border-bottom: 1px solid #E5E7EB !important;
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.mapboxgl-ctrl-group > button:last-child {
+  border-bottom: none !important;
+}
+
+/* Hover state */
+.mapboxgl-ctrl-group > button:hover,
+.mapboxgl-ctrl button:hover {
+  background-color: #FEF3E2 !important;
+}
+
+/* Active/selected state - orange */
+.mapboxgl-ctrl-group > button.active,
+.mapboxgl-ctrl button.active {
+  background-color: #F7941D !important;
+}
+
+/* Active + hover */
+.mapboxgl-ctrl-group > button.active:hover,
+.mapboxgl-ctrl button.active:hover {
+  background-color: #E8842C !important;
+}
+
+/* =============================================================================
+   MAPBOX GL DRAW CONTROLS - Dark Mode
+   ============================================================================= */
+
+[data-bs-theme="dark"] .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group,
+[data-bs-theme="dark"] .mapboxgl-ctrl-group {
+  background-color: #2D3748 !important;
+  border-color: #4A5568 !important;
+}
+
+[data-bs-theme="dark"] .mapboxgl-ctrl-group > button,
+[data-bs-theme="dark"] .mapboxgl-ctrl button {
+  background-color: #2D3748 !important;
+  border-bottom-color: #4A5568 !important;
+  /* Invert icons to white for dark mode */
+  filter: invert(1) !important;
+}
+
+[data-bs-theme="dark"] .mapboxgl-ctrl-group > button:hover,
+[data-bs-theme="dark"] .mapboxgl-ctrl button:hover {
+  background-color: #4A5568 !important;
+}
+
+[data-bs-theme="dark"] .mapboxgl-ctrl-group > button.active,
+[data-bs-theme="dark"] .mapboxgl-ctrl button.active {
+  background-color: #F7941D !important;
+  filter: none !important;
+}
+
+/* Drawn polygon styling on map */
+.mapboxgl-canvas {
+  outline: none;
+}
+
+/* Dark mode map controls */
+[data-bs-theme="dark"] .mapboxgl-ctrl-group,
+[data-bs-theme="dark"] .maplibregl-ctrl-group {
+  background: #2D3748 !important;
+}
+
+[data-bs-theme="dark"] .mapboxgl-ctrl-group button,
+[data-bs-theme="dark"] .maplibregl-ctrl-group button {
+  background-color: #2D3748 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .mapboxgl-ctrl-group button:hover,
+[data-bs-theme="dark"] .maplibregl-ctrl-group button:hover {
+  background-color: #F7941D !important;
+}
+
+[data-bs-theme="dark"] .mapboxgl-ctrl-group button[class*="mapbox-gl-draw"] {
+  filter: invert(0.8) hue-rotate(180deg) !important;
+  background-color: #2D3748 !important;
 }

@@ -8,6 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Interactive store map with MapGL integration
+  - Atom-branded basemap via `atom_mapgl()` from atomtemplates
+  - Uses "minimal" theme for consistent appearance in both light/dark app modes
+  - Store markers with orange circles (#F7941D) and white stroke
+  - Rich popups showing store details (name, city, address, schedule)
+  - Light-themed popups for consistent readability
+- Draw-to-filter region selection
+  - Freehand polygon drawing for geographic filtering
+  - Store list filters based on drawn region
+  - Dashboard data (tournaments, players, meta) filters by selected stores
+  - Visual filter indicator banner when region is active
+  - "Clear Region" buttons on Stores and Dashboard pages
+- Decklist URL field in tournament results entry form
+- Auto-geocoding for stores using tidygeocoder
+  - Addresses automatically geocoded when stores are added
+  - Uses OpenStreetMap Nominatim API
+
+### Changed
+- Enhanced database views with additional metrics
+  - `player_standings`: added favorite_deck, avg_placement
+  - `archetype_meta`: added secondary_color, conversion_rate, top4_rate
+  - `store_activity`: added latitude, longitude, unique_players
+- Store management form no longer requires manual lat/lng entry
+
+### Dependencies Added
+- `mapgl` - Mapbox GL JS for interactive maps
+- `sf` - Simple Features for spatial operations
+- `tidygeocoder` - Address geocoding
+
+---
+
+## [0.3.0] - 2026-01-26 - UI Refresh
+
+### Added
 - Views folder structure for modular UI organization
   - `views/dashboard-ui.R` - Dashboard with value boxes
   - `views/stores-ui.R` - Store directory

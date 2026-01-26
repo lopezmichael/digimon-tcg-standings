@@ -11,9 +11,13 @@ library(duckdb)
 library(httr)
 library(jsonlite)
 library(reactable)
+library(htmltools)
+library(tidygeocoder)
 library(atomtemplates)
 library(sysfonts)
 library(showtext)
+library(mapgl)
+library(sf)
 
 # Load modules
 source("R/db_connection.R")
@@ -24,8 +28,113 @@ if (file.exists(".env")) {
   readRenviron(".env")
 }
 
+# Set MAPBOX_PUBLIC_TOKEN from MAPBOX_ACCESS_TOKEN if needed
+# (atomtemplates uses MAPBOX_PUBLIC_TOKEN, but we have MAPBOX_ACCESS_TOKEN in .env)
+if (Sys.getenv("MAPBOX_PUBLIC_TOKEN") == "" && Sys.getenv("MAPBOX_ACCESS_TOKEN") != "") {
+  Sys.setenv(MAPBOX_PUBLIC_TOKEN = Sys.getenv("MAPBOX_ACCESS_TOKEN"))
+}
+
 # Setup Atom Google Fonts
 setup_atom_google_fonts()
+
+# =============================================================================
+# Helper: Parse Schedule Info JSON
+# =============================================================================
+
+parse_schedule_info <- function(schedule_json) {
+
+  if (is.null(schedule_json) || is.na(schedule_json) || schedule_json == "") {
+    return(NULL)
+  }
+
+  tryCatch({
+    info <- jsonlite::fromJSON(schedule_json)
+    parts <- c()
+
+    # Format days
+    if (!is.null(info$digimon_days)) {
+      days <- paste(info$digimon_days, collapse = ", ")
+      parts <- c(parts, days)
+    }
+
+    # Add time if available
+    if (!is.null(info$friday_time)) {
+      parts <- c(parts, paste("Fri:", info$friday_time))
+    }
+    if (!is.null(info$saturday_time)) {
+      parts <- c(parts, paste("Sat:", info$saturday_time))
+    }
+    if (!is.null(info$time)) {
+      parts <- c(parts, info$time)
+    }
+
+    # Add entry fee if available
+    if (!is.null(info$entry_fee)) {
+      parts <- c(parts, paste("Entry:", info$entry_fee))
+    }
+
+    # Add notes if available
+    if (!is.null(info$notes)) {
+      parts <- c(parts, info$notes)
+    }
+
+    if (length(parts) > 0) {
+      return(paste(parts, collapse = " | "))
+    }
+    NULL
+  }, error = function(e) {
+    NULL
+  })
+}
+
+# =============================================================================
+# Helper: Deck Color Badge Renderer
+# =============================================================================
+
+# Get badge class for a single color
+get_color_class <- function(color) {
+  color_lower <- tolower(trimws(color))
+  switch(color_lower,
+    "red" = "deck-badge deck-badge-red",
+    "blue" = "deck-badge deck-badge-blue",
+    "yellow" = "deck-badge deck-badge-yellow",
+    "green" = "deck-badge deck-badge-green",
+    "black" = "deck-badge deck-badge-black",
+    "purple" = "deck-badge deck-badge-purple",
+    "white" = "deck-badge deck-badge-white",
+    "deck-badge"
+  )
+}
+
+# Render single color badge (shows full color name)
+deck_color_badge <- function(color) {
+  if (is.null(color) || is.na(color) || color == "") {
+    return(htmltools::span(class = "deck-badge", "-"))
+  }
+  # Capitalize first letter
+  display_name <- paste0(toupper(substr(color, 1, 1)), tolower(substr(color, 2, nchar(color))))
+  htmltools::span(class = get_color_class(color), display_name)
+}
+
+# Render dual color badge (for decks with primary + secondary color)
+deck_color_badge_dual <- function(primary, secondary = NULL) {
+  if (is.null(primary) || is.na(primary) || primary == "") {
+    return(htmltools::span(class = "deck-badge", "-"))
+  }
+
+  if (is.null(secondary) || is.na(secondary) || secondary == "") {
+    # Single color - show full name
+    display_name <- paste0(toupper(substr(primary, 1, 1)), tolower(substr(primary, 2, nchar(primary))))
+    return(htmltools::span(class = get_color_class(primary), display_name))
+  }
+
+  # Dual color - show as split badge with initials
+  htmltools::div(
+    class = "deck-badge-multi",
+    htmltools::span(class = get_color_class(primary), toupper(substr(primary, 1, 1))),
+    htmltools::span(class = get_color_class(secondary), toupper(substr(secondary, 1, 1)))
+  )
+}
 
 # =============================================================================
 # Configuration
@@ -64,6 +173,9 @@ source("views/admin-stores-ui.R", local = TRUE)
 
 ui <- page_fillable(
   theme = atom_dashboard_theme(),
+
+  # Enable busy indicators (shows spinner when app is processing)
+  useBusyIndicators(),
 
   # Custom CSS and JavaScript
   tags$head(
@@ -177,7 +289,8 @@ server <- function(input, output, session) {
     db_con = NULL,
     active_tournament_id = NULL,
     current_results = data.frame(),
-    current_nav = "dashboard"
+    current_nav = "dashboard",
+    selected_store_ids = NULL  # For map-based filtering
   )
 
   # ---------------------------------------------------------------------------
@@ -189,9 +302,11 @@ server <- function(input, output, session) {
   })
 
   onStop(function() {
-    if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-      disconnect(rv$db_con)
-    }
+    isolate({
+      if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+        disconnect(rv$db_con)
+      }
+    })
   })
 
   # ---------------------------------------------------------------------------
@@ -368,69 +483,441 @@ server <- function(input, output, session) {
     count
   })
 
-  # Recent tournaments
+  # Recent tournaments (filters by selected stores if region drawn)
   output$recent_tournaments <- renderReactable({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
-    data <- dbGetQuery(rv$db_con, "
+
+    # Build query with optional store filter
+    store_filter <- ""
+    if (!is.null(rv$selected_store_ids) && length(rv$selected_store_ids) > 0) {
+      store_ids <- paste(rv$selected_store_ids, collapse = ", ")
+      store_filter <- sprintf("WHERE t.store_id IN (%s)", store_ids)
+    }
+
+    query <- sprintf("
       SELECT s.name as Store, t.event_date as Date, t.event_type as Type, t.player_count as Players
       FROM tournaments t
       JOIN stores s ON t.store_id = s.store_id
+      %s
       ORDER BY t.event_date DESC
       LIMIT 10
-    ")
+    ", store_filter)
+
+    data <- dbGetQuery(rv$db_con, query)
     if (nrow(data) == 0) {
       data <- data.frame(Message = "No tournaments yet")
     }
     reactable(data, compact = TRUE, striped = TRUE)
   })
 
-  # Top players
+  # Top players (filters by selected stores if region drawn)
   output$top_players <- renderReactable({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
-    result <- dbGetQuery(rv$db_con, "
-      SELECT display_name as Player, tournaments_played as Events,
-             total_wins as Wins, total_losses as Losses, win_rate as 'Win %'
-      FROM player_standings
-      WHERE tournaments_played > 0
-      ORDER BY win_rate DESC, tournaments_played DESC
-      LIMIT 10
-    ")
+
+    # If stores are selected, calculate stats only for those tournaments
+    if (!is.null(rv$selected_store_ids) && length(rv$selected_store_ids) > 0) {
+      store_ids <- paste(rv$selected_store_ids, collapse = ", ")
+      result <- dbGetQuery(rv$db_con, sprintf("
+        SELECT p.display_name as Player,
+               COUNT(DISTINCT r.tournament_id) as Events,
+               SUM(r.wins) as Wins,
+               SUM(r.losses) as Losses,
+               ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
+        FROM players p
+        JOIN results r ON p.player_id = r.player_id
+        JOIN tournaments t ON r.tournament_id = t.tournament_id
+        WHERE t.store_id IN (%s)
+        GROUP BY p.player_id, p.display_name
+        HAVING COUNT(DISTINCT r.tournament_id) > 0
+        ORDER BY \"Win %%\" DESC, Events DESC
+        LIMIT 10
+      ", store_ids))
+    } else {
+      result <- dbGetQuery(rv$db_con, "
+        SELECT display_name as Player, tournaments_played as Events,
+               total_wins as Wins, total_losses as Losses, win_rate as 'Win %'
+        FROM player_standings
+        WHERE tournaments_played > 0
+        ORDER BY win_rate DESC, tournaments_played DESC
+        LIMIT 10
+      ")
+    }
+
     if (nrow(result) == 0) {
       result <- data.frame(Message = "No player data yet")
     }
     reactable(result, compact = TRUE, striped = TRUE)
   })
 
-  # Meta summary
+  # Meta summary (filters by selected stores if region drawn)
   output$meta_summary <- renderReactable({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
-    result <- dbGetQuery(rv$db_con, "
-      SELECT archetype_name as Deck, primary_color as Color,
-             times_played as 'Times Played', tournament_wins as Wins, win_rate as 'Win %'
-      FROM archetype_meta
-      WHERE times_played > 0
-      ORDER BY times_played DESC
-      LIMIT 15
-    ")
-    if (nrow(result) == 0) {
-      result <- data.frame(Message = "No tournament data yet")
+
+    # If stores are selected, calculate stats only for those tournaments
+    if (!is.null(rv$selected_store_ids) && length(rv$selected_store_ids) > 0) {
+      store_ids <- paste(rv$selected_store_ids, collapse = ", ")
+      result <- dbGetQuery(rv$db_con, sprintf("
+        SELECT da.archetype_name as Deck, da.primary_color as Color,
+               COUNT(r.result_id) as 'Times Played',
+               COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins,
+               ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
+        FROM deck_archetypes da
+        JOIN results r ON da.archetype_id = r.archetype_id
+        JOIN tournaments t ON r.tournament_id = t.tournament_id
+        WHERE t.store_id IN (%s)
+        GROUP BY da.archetype_id, da.archetype_name, da.primary_color
+        HAVING COUNT(r.result_id) > 0
+        ORDER BY \"Times Played\" DESC
+        LIMIT 15
+      ", store_ids))
+    } else {
+      result <- dbGetQuery(rv$db_con, "
+        SELECT archetype_name as Deck, primary_color as Color,
+               times_played as 'Times Played', tournament_wins as Wins, win_rate as 'Win %'
+        FROM archetype_meta
+        WHERE times_played > 0
+        ORDER BY times_played DESC
+        LIMIT 15
+      ")
     }
-    reactable(result, compact = TRUE, striped = TRUE)
+
+    if (nrow(result) == 0) {
+      return(reactable(data.frame(Message = "No tournament data yet"), compact = TRUE))
+    }
+    reactable(result, compact = TRUE, striped = TRUE,
+      columns = list(
+        Color = colDef(cell = function(value) deck_color_badge(value))
+      )
+    )
   })
 
-  # Store list
+  # Store list (uses filtered stores from map selection)
   output$store_list <- renderReactable({
+    stores <- filtered_stores()
+
+    if (is.null(stores) || nrow(stores) == 0) {
+      return(reactable(data.frame(Message = "No stores yet"), compact = TRUE))
+    }
+
+    # Format for display
+    data <- stores[order(stores$city, stores$name), c("name", "city", "address")]
+    names(data) <- c("Store", "City", "Address")
+
+    reactable(data, compact = TRUE, striped = TRUE)
+  })
+
+  # Reactive: All stores data (for filtering)
+  stores_data <- reactive({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
-    data <- dbGetQuery(rv$db_con, "
-      SELECT name as Store, city as City, address as Address
+
+    stores <- dbGetQuery(rv$db_con, "
+      SELECT store_id, name, address, city, latitude, longitude,
+             website, schedule_info
       FROM stores
       WHERE is_active = TRUE
-      ORDER BY city, name
     ")
-    if (nrow(data) == 0) {
-      data <- data.frame(Message = "No stores yet")
+    stores
+  })
+
+  # Reactive: Filtered stores based on drawn region
+  filtered_stores <- reactive({
+    stores <- stores_data()
+    if (is.null(stores) || nrow(stores) == 0) {
+      return(stores)
     }
-    reactable(data, compact = TRUE, striped = TRUE)
+
+    # If no stores are selected, return all
+    if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
+      return(stores)
+    }
+
+    # Return only selected stores
+    stores[stores$store_id %in% rv$selected_store_ids, ]
+  })
+
+  # Apply region filter button handler
+  observeEvent(input$apply_region_filter, {
+    stores <- stores_data()
+    if (is.null(stores) || nrow(stores) == 0) {
+      showNotification("No stores to filter", type = "warning")
+      return()
+    }
+
+    # Filter stores with valid coordinates
+    stores_with_coords <- stores[!is.na(stores$latitude) & !is.na(stores$longitude), ]
+    if (nrow(stores_with_coords) == 0) {
+      showNotification("No stores have coordinates", type = "warning")
+      return()
+    }
+
+    # Convert stores to sf
+    stores_sf <- st_as_sf(stores_with_coords, coords = c("longitude", "latitude"), crs = 4326)
+
+    # Get drawn features as sf
+    tryCatch({
+      proxy <- mapboxgl_proxy("stores_map")
+      drawn_sf <- get_drawn_features(proxy)
+      if (is.null(drawn_sf) || nrow(drawn_sf) == 0) {
+        showNotification("Draw a region on the map first", type = "warning")
+        return()
+      }
+
+      # Filter to polygons only
+      drawn_polygons <- drawn_sf[st_geometry_type(drawn_sf) %in% c("POLYGON", "MULTIPOLYGON"), ]
+      if (nrow(drawn_polygons) == 0) {
+        showNotification("Draw a polygon region on the map", type = "warning")
+        return()
+      }
+
+      # Union all polygons
+      region <- st_union(drawn_polygons)
+      # Filter stores within the region
+      within_region <- st_filter(stores_sf, region)
+
+      if (nrow(within_region) == 0) {
+        showNotification("No stores found in drawn region", type = "warning")
+        return()
+      }
+
+      # Update selected store IDs
+      rv$selected_store_ids <- within_region$store_id
+
+      # Update map to highlight selected stores
+      # Use a match expression to color selected stores differently
+      selected_ids <- within_region$store_id
+      mapboxgl_proxy("stores_map") |>
+        set_paint_property(
+          layer_id = "stores-layer",
+          name = "circle-color",
+          value = list(
+            "case",
+            list("in", list("get", "store_id"), list("literal", selected_ids)),
+            "#16A34A",  # Green for selected
+            "#999999"   # Gray for non-selected
+          )
+        ) |>
+        set_paint_property(
+          layer_id = "stores-layer",
+          name = "circle-opacity",
+          value = list(
+            "case",
+            list("in", list("get", "store_id"), list("literal", selected_ids)),
+            1.0,  # Full opacity for selected
+            0.4   # Faded for non-selected
+          )
+        )
+
+      showNotification(sprintf("Filtered to %d stores", nrow(within_region)), type = "message")
+
+    }, error = function(e) {
+      showNotification(paste("Error applying filter:", e$message), type = "error")
+    })
+  })
+
+  # Clear region button handler
+  observeEvent(input$clear_region, {
+    mapboxgl_proxy("stores_map") |>
+      clear_drawn_features() |>
+      set_paint_property(
+        layer_id = "stores-layer",
+        name = "circle-color",
+        value = "#F7941D"  # Reset to orange
+      ) |>
+      set_paint_property(
+        layer_id = "stores-layer",
+        name = "circle-opacity",
+        value = 1  # Reset to original opacity
+      )
+    rv$selected_store_ids <- NULL
+    showNotification("Region filter cleared", type = "message")
+  })
+
+  # Filter active banner for Stores tab
+  output$stores_filter_active_banner <- renderUI({
+    if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
+      return(NULL)
+    }
+
+    n_stores <- length(rv$selected_store_ids)
+
+    div(
+      class = "alert alert-success d-flex align-items-center mb-3",
+      style = "background-color: rgba(22, 163, 74, 0.1); border-color: #16A34A; color: #166534;",
+      bsicons::bs_icon("check-circle-fill"),
+      span(
+        class = "ms-2",
+        sprintf(" Region filter active: %d store%s selected. ",
+                n_stores, if (n_stores == 1) "" else "s"),
+        tags$strong("Dashboard, Players, and Meta tabs are now filtered to these stores.")
+      )
+    )
+  })
+
+  # Filter badge showing how many stores are filtered
+  output$stores_filter_badge <- renderUI({
+    all_stores <- stores_data()
+    filtered <- filtered_stores()
+
+    if (is.null(all_stores) || is.null(filtered)) return(NULL)
+
+    total <- nrow(all_stores)
+    showing <- nrow(filtered)
+
+    if (showing < total) {
+      span(
+        class = "badge bg-warning text-dark",
+        sprintf("Showing %d of %d stores", showing, total)
+      )
+    } else {
+      span(class = "badge bg-secondary", sprintf("%d stores", total))
+    }
+  })
+
+  # Region filter indicator for dashboard
+  output$region_filter_indicator <- renderUI({
+    if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
+      return(NULL)
+    }
+
+    # Get names of selected stores
+    stores <- stores_data()
+    if (is.null(stores)) return(NULL)
+
+    selected_names <- stores$name[stores$store_id %in% rv$selected_store_ids]
+    store_list <- if (length(selected_names) <= 3) {
+      paste(selected_names, collapse = ", ")
+    } else {
+      paste(c(selected_names[1:3], sprintf("and %d more", length(selected_names) - 3)), collapse = ", ")
+    }
+
+    div(
+      class = "alert alert-info d-flex justify-content-between align-items-center mb-3",
+      style = "background-color: rgba(15, 76, 129, 0.1); border-color: #0F4C81; color: #0F4C81;",
+      div(
+        bsicons::bs_icon("funnel-fill"),
+        sprintf(" Filtered by region: %s", store_list)
+      ),
+      actionButton("clear_region_from_dashboard", "Clear Filter",
+                   class = "btn btn-sm btn-outline-primary")
+    )
+  })
+
+  # Clear region from dashboard button
+  observeEvent(input$clear_region_from_dashboard, {
+    mapboxgl_proxy("stores_map") |>
+      clear_drawn_features() |>
+      set_paint_property(
+        layer_id = "stores-layer",
+        name = "circle-color",
+        value = "#F7941D"  # Reset to orange
+      ) |>
+      set_paint_property(
+        layer_id = "stores-layer",
+        name = "circle-opacity",
+        value = 1  # Reset to original opacity
+      )
+    rv$selected_store_ids <- NULL
+    showNotification("Region filter cleared", type = "message")
+  })
+
+  # Stores Map
+  output$stores_map <- renderMapboxgl({
+    stores <- stores_data()
+
+    # Use minimal theme for map (works in both light/dark app modes)
+    # Popup always uses light theme for readability
+
+    # Default DFW center if no stores or no valid coordinates
+    if (is.null(stores) || nrow(stores) == 0) {
+      return(
+        atom_mapgl(theme = "minimal") |>
+          mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
+          add_atom_popup_style(theme = "light") |>
+          mapgl::add_draw_control(
+            position = "top-left",
+            freehand = TRUE,
+            point = FALSE,
+            line_string = FALSE,
+            polygon = TRUE,
+            trash = TRUE
+          )
+      )
+    }
+
+    # Filter to stores with coordinates
+    stores_with_coords <- stores[!is.na(stores$latitude) & !is.na(stores$longitude), ]
+
+    if (nrow(stores_with_coords) == 0) {
+      return(
+        atom_mapgl(theme = "minimal") |>
+          mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
+          add_atom_popup_style(theme = "light") |>
+          mapgl::add_draw_control(
+            position = "top-left",
+            freehand = TRUE,
+            point = FALSE,
+            line_string = FALSE,
+            polygon = TRUE,
+            trash = TRUE
+          )
+      )
+    }
+
+    # Convert to sf object
+    stores_sf <- st_as_sf(stores_with_coords, coords = c("longitude", "latitude"), crs = 4326)
+
+    # Create popup content
+    stores_sf$popup <- sapply(1:nrow(stores_sf), function(i) {
+      store <- stores_with_coords[i, ]
+      metrics <- c()
+      if (!is.null(store$city) && !is.na(store$city)) {
+        metrics <- c(metrics, "City" = store$city)
+      }
+
+      body_parts <- c()
+      if (!is.null(store$address) && !is.na(store$address) && store$address != "") {
+        body_parts <- c(body_parts, store$address)
+      }
+      schedule_text <- parse_schedule_info(store$schedule_info)
+      if (!is.null(schedule_text)) {
+        body_parts <- c(body_parts, paste("<br><em>", schedule_text, "</em>"))
+      }
+      body_text <- if (length(body_parts) > 0) paste(body_parts, collapse = "") else NULL
+
+      atom_popup_html_metrics(
+        title = store$name,
+        subtitle = "Game Store",
+        metrics = if (length(metrics) > 0) metrics else NULL,
+        body = body_text,
+        theme = "light"
+      )
+    })
+
+    # Create the map with draw controls
+    # Using minimal theme for basemap, light theme for popups
+    map <- atom_mapgl(theme = "minimal") |>
+      add_atom_popup_style(theme = "light") |>
+      mapgl::add_circle_layer(
+        id = "stores-layer",
+        source = stores_sf,
+        circle_color = "#F7941D",
+        circle_radius = 10,
+        circle_stroke_color = "#FFFFFF",
+        circle_stroke_width = 2,
+        circle_opacity = 1,
+        popup = "popup"
+      ) |>
+      mapgl::add_draw_control(
+        position = "top-left",
+        freehand = TRUE,
+        point = FALSE,
+        line_string = FALSE,
+        polygon = TRUE,
+        trash = TRUE
+      ) |>
+      mapgl::fit_bounds(stores_sf, padding = 50)
+
+    map
   })
 
   # Player standings
@@ -461,9 +948,13 @@ server <- function(input, output, session) {
       ORDER BY times_played DESC, tournament_wins DESC
     ")
     if (nrow(result) == 0) {
-      result <- data.frame(Message = "No tournament data yet. Add tournament results to see meta analysis.")
+      return(reactable(data.frame(Message = "No tournament data yet. Add tournament results to see meta analysis."), compact = TRUE))
     }
-    reactable(result, compact = TRUE, striped = TRUE)
+    reactable(result, compact = TRUE, striped = TRUE,
+      columns = list(
+        Color = colDef(cell = function(value) deck_color_badge(value))
+      )
+    )
   })
 
   # Tournament history
@@ -552,6 +1043,7 @@ server <- function(input, output, session) {
     wins <- input$result_wins
     losses <- input$result_losses
     ties <- input$result_ties
+    decklist_url <- if (nchar(input$result_decklist_url) > 0) input$result_decklist_url else NULL
 
     tryCatch({
       # Check if player exists or create new
@@ -579,9 +1071,9 @@ server <- function(input, output, session) {
 
       # Insert result
       dbExecute(rv$db_con, "
-        INSERT INTO results (result_id, tournament_id, player_id, archetype_id, placement, wins, losses, ties)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ", params = list(result_id, rv$active_tournament_id, player_id, archetype_id, placement, wins, losses, ties))
+        INSERT INTO results (result_id, tournament_id, player_id, archetype_id, placement, wins, losses, ties, decklist_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ", params = list(result_id, rv$active_tournament_id, player_id, archetype_id, placement, wins, losses, ties, decklist_url))
 
       showNotification("Result added!", type = "message")
 
@@ -590,6 +1082,7 @@ server <- function(input, output, session) {
       updateNumericInput(session, "result_wins", value = 0)
       updateNumericInput(session, "result_losses", value = 0)
       updateNumericInput(session, "result_ties", value = 0)
+      updateTextInput(session, "result_decklist_url", value = "")
       updateSelectizeInput(session, "result_player", selected = "")
 
     }, error = function(e) {
@@ -727,15 +1220,26 @@ server <- function(input, output, session) {
     input$add_archetype
 
     data <- dbGetQuery(rv$db_con, "
-      SELECT archetype_name as Deck, primary_color as Color, display_card_id as 'Card ID'
+      SELECT archetype_name as Deck, primary_color, secondary_color, display_card_id as 'Card ID'
       FROM deck_archetypes
       WHERE is_active = TRUE
       ORDER BY archetype_name
     ")
     if (nrow(data) == 0) {
-      data <- data.frame(Message = "No archetypes yet")
+      return(reactable(data.frame(Message = "No archetypes yet"), compact = TRUE))
     }
-    reactable(data, compact = TRUE, striped = TRUE)
+    reactable(data, compact = TRUE, striped = TRUE,
+      columns = list(
+        primary_color = colDef(
+          name = "Color",
+          cell = function(value, index) {
+            secondary <- data$secondary_color[index]
+            deck_color_badge_dual(value, secondary)
+          }
+        ),
+        secondary_color = colDef(show = FALSE)
+      )
+    )
   })
 
   # ---------------------------------------------------------------------------
@@ -748,17 +1252,44 @@ server <- function(input, output, session) {
     req(input$store_name, input$store_city)
 
     tryCatch({
+      # Build full address for geocoding
+      address_parts <- c(input$store_address, input$store_city)
+      if (exists("input$store_state") && nchar(input$store_state) > 0) {
+        address_parts <- c(address_parts, input$store_state)
+      } else {
+        address_parts <- c(address_parts, "TX")
+      }
+      if (exists("input$store_zip") && nchar(input$store_zip) > 0) {
+        address_parts <- c(address_parts, input$store_zip)
+      }
+      full_address <- paste(address_parts, collapse = ", ")
+
+      # Geocode the address
+      showNotification("Geocoding address...", type = "message", duration = 2)
+      geo_result <- tidygeocoder::geo(full_address, method = "osm", quiet = TRUE)
+
+      lat <- geo_result$lat
+      lng <- geo_result$long
+
+      if (is.na(lat) || is.na(lng)) {
+        showNotification("Could not geocode address. Store added without coordinates.", type = "warning")
+        lat <- NULL
+        lng <- NULL
+      }
+
       max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(store_id), 0) as max_id FROM stores")$max_id
       new_id <- max_id + 1
 
-      schedule_json <- if (nchar(input$store_schedule) > 0) input$store_schedule else NULL
+      schedule_info <- if (nchar(input$store_schedule) > 0) input$store_schedule else NULL
       website <- if (nchar(input$store_website) > 0) input$store_website else NULL
+      zip_code <- if (exists("input$store_zip") && nchar(input$store_zip) > 0) input$store_zip else NULL
+      state <- if (exists("input$store_state")) input$store_state else "TX"
 
       dbExecute(rv$db_con, "
-        INSERT INTO stores (store_id, name, address, city, latitude, longitude, website, schedule_info)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO stores (store_id, name, address, city, state, zip_code, latitude, longitude, website, schedule_info)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ", params = list(new_id, input$store_name, input$store_address, input$store_city,
-                       input$store_lat, input$store_lng, website, schedule_json))
+                       state, zip_code, lat, lng, website, schedule_info))
 
       showNotification(paste("Added store:", input$store_name), type = "message")
 
@@ -766,6 +1297,7 @@ server <- function(input, output, session) {
       updateTextInput(session, "store_name", value = "")
       updateTextInput(session, "store_address", value = "")
       updateTextInput(session, "store_city", value = "")
+      updateTextInput(session, "store_zip", value = "")
       updateTextInput(session, "store_website", value = "")
       updateTextAreaInput(session, "store_schedule", value = "")
 

@@ -381,6 +381,99 @@ Added all 7 deck colors for future meta analysis visualizations:
 
 ---
 
+## 2026-01-26: MapGL Integration with Draw-to-Filter
+
+### Completed
+- [x] Added `mapgl` and `sf` packages for interactive mapping
+- [x] Integrated atomtemplates `atom_mapgl()` for Atom-branded basemaps
+- [x] Created interactive store map on Stores page
+- [x] Added freehand polygon draw controls for region selection
+- [x] Implemented draw-to-filter: stores list filters based on drawn region
+- [x] Connected region filter to dashboard - Recent Tournaments, Top Players, and Meta Breakdown all filter by selected stores
+- [x] Added visual filter indicator on dashboard when region is active
+- [x] Added "Clear Region" buttons on both Stores and Dashboard pages
+- [x] Styled draw controls and popups with Digimon theme colors
+- [x] Added Mapbox token handling (MAPBOX_ACCESS_TOKEN from .env)
+
+### Technical Decisions
+
+**MapGL with atomtemplates Integration**
+- Using `atom_mapgl(theme = "light"|"dark")` for branded basemap styles
+- Using `add_atom_popup_style()` for consistent popup theming
+- Using `atom_popup_html_metrics()` for rich store popup content
+- Token automatically loaded from .env file and aliased to MAPBOX_PUBLIC_TOKEN
+
+**Draw-to-Filter Architecture**
+- `add_draw_control()` with freehand polygon drawing enabled
+- `get_drawn_features()` returns drawn polygons as sf object
+- `st_filter()` used to find stores within drawn region
+- `rv$selected_store_ids` reactive value propagates filter to all views
+- Dashboard queries dynamically include store filter when active
+
+**Map Features**
+- Store markers: Orange circles (#F7941D) with white stroke
+- Popups: Show store name, city, address, and schedule info
+- Auto-fits bounds to show all stores
+- Respects dark mode toggle for map theme
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Added mapgl/sf libraries, store map rendering, draw-to-filter logic, dashboard filtering |
+| `views/stores-ui.R` | Added map card with draw controls, filter badge |
+| `views/dashboard-ui.R` | Added region filter indicator |
+| `www/custom.css` | Added mapgl draw control styling |
+
+### Dependencies Added
+- `mapgl` - Mapbox GL JS for R
+- `sf` - Simple Features for spatial operations
+
+### Next Steps
+- [ ] Enhanced dashboard visualizations (charts for meta share, trends)
+- [ ] Player profile views
+- [ ] Deck profile views
+- [ ] Date range filtering
+
+---
+
+## 2026-01-26: MapGL Theme and Marker Refinements
+
+### Completed
+- [x] Switched to "minimal" basemap theme for consistent appearance in both light/dark app modes
+- [x] Fixed popup theme to always use "light" for readability
+- [x] Reverted from symbol markers to circle markers for better cross-theme visibility
+- [x] Fixed all `set_paint_property` calls to use `circle-color`/`circle-opacity` instead of `icon-*`
+- [x] Styled draw control buttons (white with blue border, orange active state)
+
+### Technical Decisions
+
+**Basemap Theme: "minimal" for All Modes**
+- Previously tried switching between "light" and "dark" themes based on app dark mode
+- Symbol markers with `icon_emissive_strength` only visible in dark mode
+- Circle markers lack `emissive_strength` support in mapgl
+- Solution: Use "minimal" theme which provides neutral appearance in both modes
+- Popups always use "light" theme for consistent readability
+
+**Circle vs Symbol Markers**
+- Attempted symbol markers (`add_symbol_layer`) for emissive strength support
+- Symbols only rendered in dark mode, invisible in light mode
+- Reverted to `add_circle_layer` with orange circles (#F7941D) and white stroke
+- Circles visible in both modes, acceptable tradeoff vs 3D lighting effects
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Updated all `atom_mapgl()` to use `theme = "minimal"`, popups use `theme = "light"`, reverted to circle layer, fixed paint property names |
+| `www/custom.css` | Draw control button styling (white bg, blue border, orange active) |
+
+### Next Steps
+- [ ] Enhanced dashboard visualizations (charts for meta share, trends)
+- [ ] Player profile views
+- [ ] Deck profile views
+- [ ] Date range filtering
+
+---
+
 *Template for future entries:*
 
 ```

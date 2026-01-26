@@ -44,6 +44,8 @@ admin_results_ui <- tagList(
                            choices = NULL,
                            options = list(create = TRUE, placeholder = "Type to search or add new...")),
             selectInput("result_deck", "Deck Archetype", choices = NULL),
+            textInput("result_decklist_url", "Decklist URL (optional)",
+                      placeholder = "e.g., digimonmeta.com/deck/..."),
             numericInput("result_placement", "Placement", value = 1, min = 1),
             layout_columns(
               col_widths = c(4, 4, 4),

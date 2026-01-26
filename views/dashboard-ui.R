@@ -2,6 +2,9 @@
 # Dashboard tab UI
 
 dashboard_ui <- tagList(
+  # Region filter indicator (shown when stores are filtered from map)
+  uiOutput("region_filter_indicator"),
+
   layout_columns(
     col_widths = c(3, 3, 3, 3),
     value_box(
