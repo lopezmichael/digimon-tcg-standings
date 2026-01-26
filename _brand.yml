@@ -1,0 +1,132 @@
+# _brand.yml - Digimon TCG DFW Brand Configuration
+# Classic Digimon logo colors: Deep blue primary with orange accents
+
+meta:
+  name: DFW Digimon TCG
+  link: https://world.digimoncard.com
+
+color:
+  palette:
+    # === Core Brand Colors (Digimon Logo inspired) ===
+    digimon_blue: "#0F4C81"      # Primary - deep Digimon blue
+    digimon_navy: "#0A3055"      # Darker blue for headers
+    digimon_orange: "#F7941D"    # Accent - Digimon orange
+    digimon_amber: "#E8842C"     # Deeper orange variant
+    slate: "#4A5568"             # Neutral gray-blue
+    dark: "#1A202C"              # Dark background
+
+    # === TCG Deck Colors (for data viz) ===
+    tcg_red: "#DC2626"           # Red decks (Agumon)
+    tcg_blue: "#2563EB"          # Blue decks (Gabumon)
+    tcg_yellow: "#EAB308"        # Yellow decks (Patamon)
+    tcg_green: "#16A34A"         # Green decks (Palmon)
+    tcg_black: "#1F2937"         # Black decks (Virus)
+    tcg_purple: "#7C3AED"        # Purple decks (Impmon)
+    tcg_white: "#E5E7EB"         # White/colorless
+
+    # === Categorical Palette (8 colors for data viz) ===
+    cat_1: "#0F4C81"             # Digimon Blue
+    cat_2: "#F7941D"             # Digimon Orange
+    cat_3: "#16A34A"             # Green
+    cat_4: "#7C3AED"             # Purple
+    cat_5: "#DC2626"             # Red
+    cat_6: "#2563EB"             # Blue
+    cat_7: "#EAB308"             # Yellow
+    cat_8: "#EC4899"             # Pink
+
+    # === Neutral Colors ===
+    white: "#FFFFFF"
+    light_bg: "#F8FAFC"
+    gray_100: "#F1F5F9"
+    gray_200: "#E2E8F0"
+    gray_300: "#CBD5E1"
+    gray_500: "#64748B"
+    black: "#0F172A"
+
+    # === Sequential Palette - Blue (light to dark) ===
+    blue_1: "#E0F2FE"
+    blue_2: "#BAE6FD"
+    blue_3: "#7DD3FC"
+    blue_4: "#38BDF8"
+    blue_5: "#0EA5E9"
+    blue_6: "#0284C7"
+    blue_7: "#0F4C81"
+    blue_8: "#0A3055"
+    blue_9: "#082340"
+
+    # === Sequential Palette - Orange (light to dark) ===
+    orange_1: "#FFF7ED"
+    orange_2: "#FFEDD5"
+    orange_3: "#FED7AA"
+    orange_4: "#FDBA74"
+    orange_5: "#FB923C"
+    orange_6: "#F7941D"
+    orange_7: "#E8842C"
+    orange_8: "#C2410C"
+    orange_9: "#9A3412"
+
+    # === Diverging Palette - Blue to Orange ===
+    div_blue_strong: "#0A3055"
+    div_blue_mod: "#0F4C81"
+    div_blue_slight: "#3B82F6"
+    div_neutral: "#E2E8F0"
+    div_orange_slight: "#FDBA74"
+    div_orange_mod: "#F7941D"
+    div_orange_strong: "#C2410C"
+
+    # === Status Colors ===
+    success: "#16A34A"
+    warning: "#EAB308"
+    error: "#DC2626"
+    info: "#0EA5E9"
+    muted: "#64748B"
+
+  # Semantic color assignments
+  foreground: dark
+  background: white
+  primary: digimon_blue
+  secondary: digimon_orange
+  success: success
+  info: info
+  warning: warning
+  danger: error
+
+typography:
+  # 1. Define the fonts and their sources
+  fonts:
+    - family: "Poppins"
+      source: google
+    - family: "Inter"
+      source: google
+    - family: "Fira Code"
+      source: google
+
+  # 2. Apply the fonts to the default HTML elements
+  base:
+    family: Inter
+  headings:
+    family: Poppins
+  monospace:
+    family: Fira Code
+
+defaults:
+  bootstrap:
+    defaults:
+      "enable-rounded": true
+      "enable-shadows": true
+      "enable-transitions": true
+      "link-decoration": none
+      "border-radius": "8px"
+      "btn-border-radius": "8px"
+      "input-border-radius": "6px"
+      "card-border-radius": "12px"
+      # bslib requires actual hex values here, not color references
+      "input-border-color": "#0F4C81"
+      "progress-bar-bg": "#0F4C81"
+      "progress-bg": "#E2E8F0"
+      "card-cap-padding-y": "0.75rem"
+      "alert-padding-y": "0.75rem"
+      "tooltip-bg": "#1A202C"
+      "tooltip-color": "#FFFFFF"
+      "bg-light": "#F8FAFC"
+      "bg-dark": "#1A202C"

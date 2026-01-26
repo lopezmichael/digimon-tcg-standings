@@ -1,0 +1,386 @@
+/* custom.css - Style overrides for DFW Digimon TCG Tracker */
+/* Theme: Digimon Logo (Deep Blue #0F4C81 / Orange #F7941D) */
+/* Layout: Sidebar + Header */
+
+/* =============================================================================
+   APP HEADER
+   ============================================================================= */
+
+.app-header {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(135deg, #0A3055 0%, #0F4C81 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin: -1rem;
+  margin-bottom: 1rem;
+  width: calc(100% + 2rem);
+  min-height: 48px;
+  max-height: 56px;
+}
+
+/* Header icon styling */
+.header-icon {
+  font-size: 1.25rem !important;
+  color: #FFFFFF !important;
+}
+
+.header-title {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-title-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: #FFFFFF !important;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-action-btn {
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  text-decoration: none !important;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.header-action-btn:hover {
+  background-color: #F7941D !important;
+  color: #FFFFFF !important;
+}
+
+/* =============================================================================
+   SIDEBAR NAVIGATION
+   ============================================================================= */
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-section-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 1rem 0.5rem 0.5rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.nav-section-label:first-child {
+  margin-top: 0;
+  padding-top: 0.5rem;
+}
+
+.nav-link-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  color: rgba(255, 255, 255, 0.85) !important;
+  text-decoration: none !important;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+
+.nav-link-sidebar:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF !important;
+}
+
+.nav-link-sidebar.active {
+  background-color: #F7941D;
+  color: #FFFFFF !important;
+  font-weight: 500;
+}
+
+/* Sidebar title styling */
+.bslib-sidebar-layout > .sidebar > .sidebar-title {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.5rem;
+}
+
+/* =============================================================================
+   DARK MODE
+   ============================================================================= */
+
+/* Dark mode header - use darker shade */
+[data-bs-theme="dark"] .app-header {
+  background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+}
+
+/* Dark mode sidebar - use darker shade that matches */
+[data-bs-theme="dark"] .bslib-sidebar-layout > .sidebar {
+  background-color: #1A202C !important;
+}
+
+[data-bs-theme="dark"] .bslib-sidebar-layout > .sidebar > .sidebar-title {
+  color: rgba(255, 255, 255, 0.5) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .nav-link-sidebar {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+[data-bs-theme="dark"] .nav-link-sidebar:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .nav-link-sidebar.active {
+  background-color: #F7941D;
+  color: #FFFFFF !important;
+}
+
+[data-bs-theme="dark"] .nav-section-label {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* =============================================================================
+   MAIN CONTENT
+   ============================================================================= */
+
+.main-content {
+  padding: 0;
+}
+
+/* Responsive header */
+@media (max-width: 576px) {
+  .app-header {
+    padding: 0.5rem 1rem;
+  }
+
+  .header-title-text {
+    font-size: 1rem;
+  }
+
+  .header-action-btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* =============================================================================
+   VALUE BOXES
+   ============================================================================= */
+
+/* Disable bslib's container queries that trigger "compact mode" at 300px */
+.bslib-value-box {
+  container-type: normal !important;
+}
+
+/* Responsive font sizes - scales smoothly across all screen widths */
+.bslib-value-box .value-box-title {
+  font-size: clamp(0.75rem, 2vw, 1rem) !important;
+  line-height: 1.2;
+}
+
+.bslib-value-box .value-box-value {
+  font-size: clamp(1.25rem, 4vw, 2.25rem) !important;
+  line-height: 1.1;
+}
+
+.bslib-value-box .value-box-showcase {
+  font-size: clamp(1.25rem, 4vw, 2.5rem) !important;
+  opacity: 0.9;
+}
+
+.bslib-value-box p {
+  font-size: clamp(0.65rem, 1.5vw, 0.85rem) !important;
+  line-height: 1.2;
+  margin-bottom: 0 !important;
+}
+
+/* At very small screens, hide the icon to give more room for text */
+@media (max-width: 480px) {
+  .bslib-value-box .value-box-showcase {
+    display: none !important;
+  }
+}
+
+/* =============================================================================
+   CARDS
+   ============================================================================= */
+
+.card {
+  border-radius: 10px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+.card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] .card {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-bs-theme="dark"] .card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .card-header {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* =============================================================================
+   ADMIN PANELS
+   ============================================================================= */
+
+.admin-panel {
+  background-color: rgba(15, 76, 129, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 76, 129, 0.1);
+}
+
+[data-bs-theme="dark"] .admin-panel {
+  background-color: rgba(15, 76, 129, 0.15);
+  border-color: rgba(15, 76, 129, 0.25);
+}
+
+/* =============================================================================
+   TABLES
+   ============================================================================= */
+
+.reactable {
+  font-size: 0.9rem;
+}
+
+.rt-th {
+  font-weight: 600 !important;
+}
+
+/* =============================================================================
+   CARD IMAGE
+   ============================================================================= */
+
+.card-image {
+  max-width: 150px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* =============================================================================
+   CONTROLS CARD
+   ============================================================================= */
+
+/* Compact styling for the controls card */
+.controls-compact .card-body {
+  padding: 0.5rem !important;
+}
+
+.controls-compact .bootstrap-select > .dropdown-toggle {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* =============================================================================
+   DROPDOWNS
+   ============================================================================= */
+
+.bootstrap-select .dropdown-menu {
+  z-index: 1060 !important;
+  max-height: 50vh !important;
+}
+
+/* =============================================================================
+   DIGIMON THEME ACCENTS
+   ============================================================================= */
+
+/* Orange accent on interactive elements */
+a:hover, .nav-link:hover {
+  color: #F7941D !important;
+}
+
+/* Primary button with orange hover */
+.btn-primary:hover {
+  background-color: #F7941D !important;
+  border-color: #E8842C !important;
+}
+
+/* Orange focus ring */
+.form-control:focus, .form-select:focus {
+  border-color: #0F4C81 !important;
+  box-shadow: 0 0 0 0.2rem rgba(247, 148, 29, 0.25) !important;
+}
+
+/* =============================================================================
+   DECK COLOR UTILITIES (for future reactable styling)
+   ============================================================================= */
+
+.deck-red { color: #DC2626; }
+.deck-blue { color: #2563EB; }
+.deck-yellow { color: #EAB308; }
+.deck-green { color: #16A34A; }
+.deck-black { color: #1F2937; }
+.deck-purple { color: #7C3AED; }
+
+.deck-badge {
+  display: inline-block;
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.deck-badge-red { background-color: rgba(220, 38, 38, 0.15); color: #DC2626; }
+.deck-badge-blue { background-color: rgba(37, 99, 235, 0.15); color: #2563EB; }
+.deck-badge-yellow { background-color: rgba(234, 179, 8, 0.15); color: #A16207; }
+.deck-badge-green { background-color: rgba(22, 163, 74, 0.15); color: #16A34A; }
+.deck-badge-black { background-color: rgba(31, 41, 55, 0.15); color: #1F2937; }
+.deck-badge-purple { background-color: rgba(124, 58, 237, 0.15); color: #7C3AED; }
+
+/* =============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .admin-panel {
+    padding: 0.75rem;
+  }
+
+  .card-header {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+}

@@ -7,7 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-*No unreleased changes*
+### Added
+- Views folder structure for modular UI organization
+  - `views/dashboard-ui.R` - Dashboard with value boxes
+  - `views/stores-ui.R` - Store directory
+  - `views/players-ui.R` - Player standings
+  - `views/meta-ui.R` - Meta analysis
+  - `views/tournaments-ui.R` - Tournament history
+  - `views/admin-results-ui.R` - Tournament entry form
+  - `views/admin-decks-ui.R` - Deck archetype management
+  - `views/admin-stores-ui.R` - Store management
+- Digimon-themed brand configuration (`_brand.yml`)
+  - Primary: Deep Digimon Blue (#0F4C81)
+  - Secondary: Digimon Orange (#F7941D)
+  - TCG deck colors for data visualization
+  - Sequential/diverging palettes for charts
+  - Typography (Poppins, Inter, Fira Code via Google Fonts)
+- Custom CSS styling (`www/custom.css`)
+  - Header bar with gradient and full-bleed design
+  - Sidebar navigation with active state management
+  - Responsive value boxes with fluid typography
+  - Card styling with hover effects
+  - Dark mode support with cohesive color scheme
+  - Deck color badge utilities
+- Sidebar + Header layout (modern dashboard pattern)
+  - Full-bleed header with branding and actions
+  - Collapsible sidebar navigation
+  - Dark mode toggle in header
+  - Admin login button in header
+
+### Changed
+- Refactored UI from shinydashboard to bslib + atomtemplates
+  - `dashboardPage()` → `page_fillable()` with `layout_sidebar()`
+  - Applied `atom_dashboard_theme()` for consistent theming
+- Replaced all `tableOutput()` with `reactableOutput()` for better tables
+- Migrated to `bslib` layout components (`layout_columns`, `card`, `value_box`)
+- Value boxes use all-blue gradient theme for visual cohesion
+- Added Bootstrap icons via `bsicons` package
+
+### Dependencies Added
+- `bslib` - Bootstrap theming framework
+- `bsicons` - Bootstrap icons
+- `reactable` - Interactive tables
+- `atomtemplates` - Atom design system
+- `sysfonts` - Google Fonts loading
+- `showtext` - Font rendering
 
 ## [0.2.0] - 2026-01-25
 
