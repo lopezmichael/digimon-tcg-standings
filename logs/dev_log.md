@@ -242,9 +242,9 @@ views/
 
 ### Next Steps
 - [x] Customize Atom styling for Digimon theme (colors, branding)
-- [ ] Add loading spinners/overlays
+- [x] Add loading spinners/overlays
 - [ ] Enhance reactable tables with color-coded columns
-- [ ] Add store map visualization
+- [x] Add store map visualization
 
 ---
 
@@ -288,9 +288,9 @@ Added all 7 deck colors for future meta analysis visualizations:
 | `www/custom.css` | Digimon accents, deck color utilities |
 
 ### Next Steps
-- [ ] Add loading spinners/overlays
-- [ ] Enhance reactable tables with deck color badges
-- [ ] Add store map visualization
+- [x] Add loading spinners/overlays
+- [x] Enhance reactable tables with deck color badges
+- [x] Add store map visualization
 
 ---
 
@@ -333,9 +333,9 @@ Added all 7 deck colors for future meta analysis visualizations:
 | `www/custom.css` | Added header bar, sidebar nav, and responsive styles |
 
 ### Next Steps
-- [ ] Add loading spinners/overlays
-- [ ] Enhance reactable tables with deck color badges
-- [ ] Add store map visualization
+- [x] Add loading spinners/overlays
+- [x] Enhance reactable tables with deck color badges
+- [x] Add store map visualization
 
 ---
 
@@ -375,9 +375,9 @@ Added all 7 deck colors for future meta analysis visualizations:
 | `www/custom.css` | Header full-bleed, icon class, dark mode styles |
 
 ### Next Steps
-- [ ] Add loading spinners/overlays
-- [ ] Enhance reactable tables with deck color badges
-- [ ] Add store map visualization
+- [x] Add loading spinners/overlays
+- [x] Enhance reactable tables with deck color badges
+- [x] Add store map visualization
 
 ---
 
@@ -429,7 +429,7 @@ Added all 7 deck colors for future meta analysis visualizations:
 - `sf` - Simple Features for spatial operations
 
 ### Next Steps
-- [ ] Enhanced dashboard visualizations (charts for meta share, trends)
+- [x] Enhanced dashboard visualizations (charts for meta share, trends)
 - [ ] Player profile views
 - [ ] Deck profile views
 - [ ] Date range filtering
@@ -467,10 +467,722 @@ Added all 7 deck colors for future meta analysis visualizations:
 | `www/custom.css` | Draw control button styling (white bg, blue border, orange active) |
 
 ### Next Steps
-- [ ] Enhanced dashboard visualizations (charts for meta share, trends)
+- [x] Enhanced dashboard visualizations (charts for meta share, trends)
 - [ ] Player profile views
 - [ ] Deck profile views
 - [ ] Date range filtering
+
+---
+
+## 2026-01-26: Dashboard Visualizations with Highcharter (UNTESTED)
+
+### Completed
+- [x] Added `highcharter` library to app.R
+- [x] Created Meta Share donut chart showing top deck archetypes
+- [x] Created Color Distribution bar chart showing deck color popularity
+- [x] Created Tournament Activity spline chart (dual-axis: tournaments + players over time)
+- [x] Updated dashboard UI with new chart row (3 columns)
+- [x] All charts respect store region filter from map
+- [x] All charts support light/dark mode via `hc_theme_atom_switch()`
+
+### Technical Decisions
+
+**Highcharter with atomtemplates Integration**
+- Using `hc_theme_atom_switch(mode)` to apply Atom-styled themes
+- Charts respond to `input$dark_mode` for theme switching
+- Digimon TCG deck colors used for chart colors (Red, Blue, Yellow, Green, Black, Purple, White)
+
+**Chart Types**
+- Meta Share: Pie chart with 50% inner radius (donut), color-coded by deck color
+- Color Distribution: Horizontal bar chart with deck-color-coded bars
+- Tournament Activity: Dual-axis spline with tournaments (left) and players (right)
+
+### Status: UNTESTED
+- Charts have been implemented but not tested due to lack of tournament data
+- Mock data scripts created for testing
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Added highcharter library, 3 renderHighchart outputs with deck color mapping |
+| `views/dashboard-ui.R` | Added chart row with 3 highchartOutput cards (280px height) |
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `R/seed_mock_data.R` | Seeds 20 players, 12 tournaments, ~120 results for testing |
+| `R/delete_mock_data.R` | Deletes all mock data when ready for real data collection |
+
+### Dependencies Added
+- `highcharter` - Highcharts for R
+
+### Testing Instructions
+1. Run `source('R/seed_mock_data.R')` to create test data
+2. Run `shiny::runApp()` to view charts
+3. When ready for real data: `source('R/delete_mock_data.R')`
+
+### Next Steps
+- [ ] Test all three charts with mock data
+- [ ] Player profile views
+- [ ] Deck profile views
+- [ ] Date range filtering
+
+---
+
+## 2026-01-26: Priority 1 Dashboard Improvements
+
+### Completed
+- [x] Meta share donut: Added "Other" slice for decks outside top 10
+- [x] Color distribution: Now counts both primary AND secondary colors (UNION query)
+- [x] Tournament activity chart: Changed from daily to weekly aggregation
+- [x] New "Top Decks" section with card images from DigimonCard.io
+- [x] Database migrations for decklist_url and format columns
+- [x] Fixed store add NULL parameter error (NULL → NA_character_/NA_real_)
+- [x] Added format/set tracking to tournaments (BT19, EX08, etc.)
+
+### Technical Decisions
+
+**Meta Share Donut with "Other" Slice**
+- Queries ALL decks, then takes top 10 for display
+- Calculates "Other" as total minus top 10
+- Shows gray (#9CA3AF) slice for "Other" category
+- Subtitle shows total entry count
+
+**Dual-Color Support in Color Distribution**
+- Uses UNION ALL to combine primary_color and secondary_color counts
+- Secondary color only counted when not NULL
+- Final grouping sums both contributions
+- Updated subtitle to clarify "Primary + secondary deck colors"
+
+**Weekly Tournament Activity Aggregation**
+- Changed from daily to weekly using `date_trunc('week', event_date)`
+- Better trend visualization for sparse data
+- Reduces noise in charts
+
+**Top Decks with Card Images**
+- New UI element showing top 8 decks with card thumbnails
+- Images from DigimonCard.io: `https://images.digimoncard.io/images/cards/{card_id}.jpg`
+- Horizontal progress bars color-coded by deck color
+- Responsive grid layout (2 columns on desktop, 1 on mobile)
+- Custom CSS in `www/custom.css` with dark mode support
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Meta share "Other" slice, dual-color UNION queries, weekly aggregation, top decks UI |
+| `views/dashboard-ui.R` | Added "Top Decks" card with `uiOutput("top_decks_with_images")` |
+| `www/custom.css` | Top decks grid styling (`.deck-item`, `.deck-bar`, dark mode support) |
+| `R/migrate_db.R` | Created migration script for decklist_url and format columns |
+
+---
+
+## 2026-01-26: Dashboard Filters Enhancement
+
+### Completed
+- [x] Added Event Type filter dropdown (Locals, Evo Cup, Store Championship, etc.)
+- [x] Added Date Range picker for filtering by date
+- [x] Added Reset Filters button to clear all filters
+- [x] Added "Multi" color (pink #EC4899) for dual-color decks
+- [x] Updated Color Distribution chart to show "Multi" for decks with secondary color
+- [x] Recreated mock data with proper format values and more variety
+- [x] All dashboard elements now filter by: Format, Event Type, Date Range, Store Region
+
+### Technical Decisions
+
+**Dashboard Filter Architecture**
+- Created `build_dashboard_filters()` helper function for consistent filter generation
+- Returns list with: format, event_type, store, date, any_active
+- All dashboard outputs use this helper for consistent filtering
+- Filters combine with AND logic
+
+**Multi-Color Deck Handling**
+- Decks with `secondary_color IS NOT NULL` show as "Multi" in Color Distribution chart
+- Added pink color (#EC4899) to `digimon_deck_colors` named vector
+- Added `deck-badge-multi-color` CSS class for badges
+- Single-color decks show their actual color, dual-color show "Multi"
+
+**Mock Data Improvements**
+- 25 players (up from 20)
+- 20 tournaments over 4 months (up from 12 over 3 months)
+- ~240 results (up from ~120)
+- Proper format values: BT19, EX08, BT18, BT17, EX07, older
+- Recent tournaments use BT19, older ones use older formats
+- Varied event types: locals, evo_cup, store_championship
+- Tiered deck distribution favoring meta decks in top placements
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Added `build_dashboard_filters()`, event_type filter, Multi color support, reset observer |
+| `views/dashboard-ui.R` | Added Event Type dropdown, Date Range picker, Reset button |
+| `www/custom.css` | Added `.deck-badge-multi-color`, `.dashboard-filters` styles |
+| `R/seed_mock_data.R` | Completely rewritten with formats, more variety, better distribution |
+
+### Filter Implementation Details
+All these outputs now respect all 4 filters:
+- `top_decks_with_images`
+- `conversion_rate_chart`
+- `color_dist_chart`
+- `tournaments_trend_chart`
+- `recent_tournaments`
+- `top_players`
+- `meta_summary`
+
+---
+
+## 2026-01-26: Dashboard Layout Refinements
+
+### Completed
+- [x] Replaced Meta Share donut with Top 4 Conversion Rate bar chart
+- [x] Moved Top Decks section above charts row (more visually prominent)
+- [x] Added Format filter dropdown to dashboard
+- [x] All dashboard elements now respect format filter
+
+### Technical Decisions
+
+**Top 4 Conversion Rate Chart**
+- Shows top 3 decks by their top 4 conversion rate (minimum 2 entries)
+- More insightful than meta share - shows performance, not just popularity
+- Complements Top Decks section (which shows popularity)
+
+**Dashboard Layout Order**
+1. Value boxes (summary stats)
+2. Format filter dropdown
+3. Top Decks with card images (primary visual)
+4. Charts row: Conversion Rate, Color Distribution, Tournament Activity
+5. Tables: Recent Tournaments, Top Players
+6. Meta Breakdown table
+
+**Format Filter Implementation**
+- Dropdown with all FORMAT_CHOICES + "All Formats" option
+- Filters applied via `WHERE 1=1 AND t.format = 'X'` pattern
+- All dashboard outputs updated: top_decks, conversion_rate, color_dist, tournaments_trend, recent_tournaments, top_players, meta_summary
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Replaced meta_share_chart with conversion_rate_chart, added format filtering to all dashboard queries |
+| `views/dashboard-ui.R` | Reordered sections, changed chart output ID, added format filter dropdown |
+| `www/custom.css` | Added .dashboard-filters styling |
+
+### Next Steps
+- [ ] Priority 2: Stores improvements (bubble sizing, quality metrics)
+- [ ] Priority 3: Players/Meta profiles (individual player/deck pages)
+- [ ] Priority 4: Tournaments (full results view, filters)
+- [ ] Priority 5: Admin improvements (bulk entry, card search)
+
+---
+
+## 2026-01-26: Dashboard Redesign - Value Boxes, Charts, and Tables
+
+### Completed
+- [x] Replaced Stores value box with Most Popular Deck (with card image)
+- [x] Set filter defaults to first format (BT19) and Locals
+- [x] Changed Top Decks to show win rate % instead of entry count
+- [x] Removed inline titles from all 3 Highcharts (titles now in card headers)
+- [x] Changed Top 4 to Top 3 Conversion Rate chart
+- [x] Changed Tournament Activity chart to show avg players with 4-week rolling avg
+- [x] Added Winner column to Recent Tournaments table
+- [x] Formatted event types nicely (e.g., "Evo Cup" instead of "evo_cup")
+- [x] Added weighted rating to Top Players table with tooltip explanation
+- [x] Replaced Meta Breakdown table with Meta Share Over Time stacked area chart
+
+### Technical Decisions
+
+**Most Popular Deck Value Box**
+- Uses `showcase_left_center()` layout with card thumbnail
+- Image from DigimonCard.io API
+- Respects all dashboard filters (format, event type, date range, store region)
+- Falls back to icon if no card image available
+
+**Filter Defaults: Future-Proofed**
+- Format defaults to `FORMAT_CHOICES[1]` (always first/most recent format)
+- Event type defaults to "locals" (most common event type)
+- Reset button restores these defaults, not empty values
+
+**Top Decks: Win Rate %**
+- Now sorted by win rate descending (minimum 2 entries)
+- Bar width based on win rate relative to max
+- Shows both entry count and win rate in stats line
+
+**Top 3 Conversion Rate**
+- Changed from top 4 to top 3 finishes
+- Shows top 5 decks (was 3) for better visibility
+- Minimum 2 entries required
+
+**Tournament Activity: Avg Players**
+- Changed from showing tournaments + total players to avg players per event
+- Added 4-week rolling average trend line (dashed orange)
+- Better visualization of attendance trends
+
+**Weighted Player Rating**
+- Formula: (Win% × 0.5) + (Top 3 Rate × 30) + (Events Bonus up to 20)
+- Rewards: consistent performance, top finishes, and attendance
+- Rating column has hover tooltip explaining calculation
+- Players sorted by weighted rating descending
+
+**Meta Share Over Time Chart**
+- Stacked area chart showing deck popularity by week
+- Decks with <5% overall share grouped as "Other Decks"
+- Ensures at least 3 decks shown, max 8 individual decks
+- Color-coded by deck primary color
+- Gray (#9CA3AF) for "Other Decks" category
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Most popular deck value box, win rate Top Decks, conversion rate changes, tournament activity rolling avg, recent tournaments Winner column, weighted rating for players, meta share timeline chart |
+| `views/dashboard-ui.R` | Value box replacement, filter defaults, meta_share_timeline output |
+| `CHANGELOG.md` | Documented all changes |
+
+### Next Steps
+- [ ] Priority 2: Stores improvements (bubble sizing, quality metrics)
+- [ ] Priority 3: Players/Meta profiles (individual player/deck pages)
+- [ ] Priority 4: Tournaments (full results view, filters)
+- [ ] Priority 5: Admin improvements (bulk entry, card search)
+
+---
+
+## 2026-01-26: Dashboard Polish - Filters, Charts, and UX Refinements
+
+### Completed
+- [x] Added "All Formats" and "All Events" as selectable dropdown options (grouped optgroups)
+- [x] Fixed Top Decks math: win rate = 1st place finishes / total tournaments in filter
+- [x] Moved tournament count from Top Decks stats to dynamic card header
+- [x] Renamed chart titles for clarity (Top 3 Conversion Rate, Color Distribution of Decks Played, Tournament Player Counts Over Time)
+- [x] Removed Format column from Recent Tournaments table
+- [x] Moved Top Players rating tooltip to (i) icon in card header
+- [x] Removed date range filter entirely (simplified UX)
+- [x] Made mock data reproducible with `set.seed(42)`
+
+### Meta Share Chart Improvements
+- [x] Changed from stacked area to areaspline (curved lines with fill)
+- [x] Added custom JS tooltip formatter that filters 0% values
+- [x] Tooltip now sorts entries by value descending
+- [x] Moved legend to right side with vertical layout and scroll navigation
+- [x] Initially added Top 5 / All toggle, then removed for simplicity
+- [x] Always shows all decks - legend scroll + tooltip filtering handles complexity
+
+### Technical Decisions
+
+**Grouped Filter Dropdowns**
+- Changed from simple named vectors to list structure for optgroups:
+  ```r
+  choices = list(
+    "All Formats" = "",
+    "Recent Formats" = FORMAT_CHOICES
+  )
+  ```
+- Empty string value triggers "no filter" in `build_dashboard_filters()`
+
+**Top Decks Win Rate Calculation**
+- Win rate = (1st place finishes for deck) / (total tournaments in current filter) × 100
+- More meaningful than match win rate for measuring deck success
+- Bar width now shows actual percentage (not relative to max)
+
+**Meta Share Chart Design**
+- Uses `hc_chart(type = "areaspline")` with `stacking = "normal"`
+- Custom JS tooltip formatter:
+  - Filters points where `p.y > 0`
+  - Sorts remaining points by `b.y - a.y` (descending)
+  - Shows deck name with color dot and percentage
+- Right-side legend with `maxHeight: 280` and scroll navigation
+- Handles many decks gracefully without cluttering the chart
+
+**Info Icon Tooltip Pattern**
+- Rating explanation moved from column tooltip to (i) icon in card header
+- Uses native `title` attribute for hover tooltip
+- CSS styled with `.rating-info-icon` class
+- More discoverable and consistent across the app
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Grouped filter choices, Top Decks math fix, meta share areaspline with JS formatter, removed date filter |
+| `views/dashboard-ui.R` | Dynamic Top Decks header, (i) icon for rating, simplified meta share card |
+| `www/custom.css` | Rating info icon styles, responsive filter grid, removed unused toggle CSS |
+| `R/seed_mock_data.R` | Added `set.seed(42)` for reproducibility |
+
+### Next Steps
+- [x] Priority 2: Stores improvements (bubble sizing, quality metrics)
+- [ ] Priority 3: Players/Meta profiles (individual player/deck pages)
+- [ ] Priority 4: Tournaments (full results view, filters)
+- [ ] Priority 5: Admin improvements (bulk entry, card search)
+
+---
+
+## 2026-01-26: Priority 2 - Stores Improvements
+
+### Completed
+- [x] Dynamic bubble sizing on map based on tournament activity
+- [x] Store metrics in list table (Events, Avg Players, Last Event)
+- [x] Store detail modal with click-to-view
+- [x] Map legend explaining bubble sizes
+
+### Technical Decisions
+
+**Dynamic Bubble Sizing**
+- Query joins stores with tournaments to get activity metrics
+- Bubble radius scales from 8px (no events) to 20px (most active)
+- Formula: `8 + (tournament_count / max_tournaments) * 12`
+- Visual indicator helps users identify active stores at a glance
+
+**Store Activity Metrics**
+- Added to `stores_data` reactive: `tournament_count`, `avg_players`, `last_event`
+- Uses LEFT JOIN to include stores with zero tournaments
+- `last_event` displayed as relative time ("2 days ago", "3 weeks ago")
+
+**Store Detail Modal**
+- Click any row in store list table to open modal
+- Uses reactable's `selection = "single"` and `onClick = "select"`
+- Modal shows:
+  - Store info (city, address, website)
+  - Activity stats (Events, Avg Players, Last Event)
+  - Recent tournaments table (last 5)
+  - Top players at store (by wins)
+- Uses `showModal()` / `modalDialog()` from Shiny
+
+**Enhanced Popups**
+- Map popups now show activity metrics (Events, Avg Players)
+- Shows "Last event: X days ago" for active stores
+- Subtitle changes to "Active Game Store" for stores with events
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Updated `stores_data` query with metrics, dynamic bubble sizing, store detail modal with recent tournaments and top players |
+| `views/stores-ui.R` | Added modal output, click hint, map legend note |
+
+### Next Steps
+- [x] Priority 3: Players/Meta profiles (individual player/deck pages)
+- [ ] Priority 4: Tournaments (full results view, filters)
+- [ ] Priority 5: Admin improvements (bulk entry, card search)
+
+---
+
+## 2026-01-26: Priority 3 - Player & Deck Profiles
+
+### Completed
+- [x] Player profile modal with stats, favorite decks, tournament history
+- [x] Deck archetype profile modal with card image, top pilots, recent results
+- [x] Filters on Players page (format, minimum events)
+- [x] Filters on Meta page (format, minimum entries)
+- [x] Click-to-view on all profile tables
+- [x] Decklist links throughout all profile modals
+
+### Technical Decisions
+
+**Player Profile Modal**
+- Click any row in Player Standings to open profile
+- Shows: overall stats (events, record, win rate, 1st places, top 3s)
+- Favorite decks section with color badges and win counts
+- Recent results table with store, deck, placement, record, decklist link
+- Home store displayed when available
+
+**Deck Archetype Profile Modal**
+- Click any row in Archetype Performance to open profile
+- Shows card image from DigimonCard.io alongside stats
+- Stats: entries, pilots, 1st places, top 3s, win rate, avg placement
+- Top pilots table showing who plays the deck best
+- Recent results showing all players' performances with this deck
+
+**Ordinal Helper Function**
+- Added `ordinal(n)` function for displaying placements (1st, 2nd, 3rd, etc.)
+- Handles special cases (11th, 12th, 13th)
+
+**Consistent Profile Pattern**
+- Both player and deck profiles follow same UX pattern as store detail modal
+- Row selection via reactable's `selection = "single"` and `onClick = "select"`
+- Cursor pointer styling for clickable rows
+- "Click a row for profile" hint in card headers
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Added `ordinal()` helper, player profile modal, deck profile modal, filters for both pages, reactive values for selection |
+| `views/players-ui.R` | Added filters (format, min events), click hint, modal output |
+| `views/meta-ui.R` | Added filters (format, min entries), click hint, modal output |
+
+### Next Steps
+- [x] Priority 4: Tournaments (full results view, filters)
+- [ ] Priority 5: Admin improvements (bulk entry, card search)
+
+---
+
+## 2026-01-27: Priority 3 Refinements - Search & Layout
+
+### Completed
+- [x] Added search filter to Players page (search by player name)
+- [x] Added search filter to Meta page (search by deck name)
+- [x] Consistent two-row filter layout on both pages
+- [x] Stats layout in profile modals now evenly distributed (justify-content-evenly)
+- [x] Store detail modal includes winning deck name and decklist link
+- [x] All three profile modals (store, player, deck) have consistent stats styling
+
+### Technical Decisions
+
+**Two-Row Filter Layout**
+- Row 1: Search input (max-width 300px)
+- Row 2: Dropdowns + Reset button using flexbox with gap-3
+- Avoids overlap issues with layout_columns
+- Cleaner visual hierarchy
+
+**Search Filter Implementation**
+- Case-insensitive partial match using `LOWER(column) LIKE LOWER('%search%')`
+- Applied to both main query and row selection query for consistency
+- Reset button clears search along with other filters
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Search filters for players and meta, evenly distributed stats in all modals, deck name in store modal |
+| `views/players-ui.R` | Two-row filter layout with search |
+| `views/meta-ui.R` | Two-row filter layout with search |
+
+### Next Steps
+- [x] Priority 4: Tournaments (full results view, filters)
+- [ ] Priority 5: Admin improvements (bulk entry, card search)
+
+---
+
+## 2026-01-27: Priority 4 - Tournaments Page
+
+### Completed
+- [x] Added filters to Tournaments page (search store, format, event type)
+- [x] Tournament table now shows Winner and Winning Deck columns
+- [x] Click any tournament row to view full results modal
+- [x] Tournament detail modal shows all placements with deck badges
+- [x] Decklist links in tournament results
+- [x] Consistent two-row filter layout matching other pages
+
+### Technical Decisions
+
+**Tournament Detail Modal**
+- Shows tournament metadata: Event Type, Format, Players, Rounds
+- Full standings table with all placements
+- Deck badges color-coded by primary color
+- Ordinal placements (1st, 2nd, 3rd) with color highlighting
+- Decklist icon links when available
+
+**Enhanced Tournament List**
+- Added Winner and Winning Deck columns to main table
+- JOIN with results (placement=1), players, and deck_archetypes
+- Formatted event types (e.g., "Store Champ" instead of "store_championship")
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Tournament filters, enhanced query with winner/deck, detail modal with full standings |
+| `views/tournaments-ui.R` | Two-row filters, click hint, modal output |
+
+### Next Steps
+- [x] Priority 5: Admin improvements (bulk entry, card search)
+
+---
+
+## 2026-01-27: Priority 5 - Admin Improvements
+
+### Completed
+- [x] Bulk tournament entry (paste multiple results at once)
+- [x] Card search for deck assignment in results entry
+- [x] Enhanced data validation and error handling across admin forms
+
+### Technical Decisions
+
+**Bulk Results Entry**
+- Added toggle between "Single Entry" and "Bulk Paste" modes
+- Format: `Place, Player Name, Deck Name, W-L-T, [Decklist URL]`
+- Parser validates each line and shows errors/warnings
+- Deck name matching: exact match first, then partial match
+- Preview table shows parsed results before submission
+- Highlights unmatched decks in red
+- Creates new players automatically if not found (case-insensitive matching)
+
+**Card Search for Deck Assignment**
+- Expandable section under deck dropdown: "Find deck by card..."
+- Uses existing `search_by_name()` API function
+- Searches deck_archetypes by display_card_id
+- Click-to-select deck from search results
+- Shows card thumbnails for matching decks
+
+**Data Validation Enhancements**
+
+Tournament Creation:
+- Required field validation (store, date, player count, rounds)
+- Duplicate tournament warning (same store, date, event type)
+
+Result Entry:
+- Required player name and deck validation
+- Duplicate placement warning
+- Duplicate player in same tournament warning
+- URL format validation for decklist URLs
+- Case-insensitive player matching (finds existing player first)
+
+Archetype Creation:
+- Required name validation (min 2 characters)
+- Duplicate archetype name check (case-insensitive)
+- Card ID format validation (e.g., BT17-042)
+
+Store Creation:
+- Required name and city validation
+- Duplicate store check (same name in same city)
+- Website URL format validation
+
+**UI Updates**
+- Deck dropdown now uses selectizeInput for searchable selection
+- All updateSelectInput calls for deck changed to updateSelectizeInput
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Bulk entry parsing/submission, deck card search, validation for all admin forms |
+| `views/admin-results-ui.R` | Entry mode toggle, bulk paste textarea, preview table, card search expander |
+
+### Next Steps
+- [ ] Data import/export functionality
+- [ ] Player deduplication tools
+- [ ] Archetype merging/aliasing
+- [ ] Historical data backfill
+
+---
+
+## 2026-01-27: Admin UI Polish & Edit Functionality
+
+### Completed
+- [x] All admin inputs now single-row layout (no side-by-side fields)
+- [x] Fixed card search in Manage Decks (working images, clickable buttons)
+- [x] Added quick-add deck feature in results entry
+- [x] Added edit functionality for stores and decks (click row to edit)
+- [x] Added shinyjs library for show/hide button functionality
+
+### Technical Decisions
+
+**Single-Row Admin Layouts**
+- Removed all `layout_columns()` wrappers in admin forms
+- Each input field now has its own row for clearer UI
+- Better mobile responsiveness
+
+**Card Search Fix (Manage Decks)**
+- Changed from inline `onclick` handlers to proper `actionButton` per card
+- Switched to .jpg image format instead of .webp for better browser support
+- Store card search results in `rv$card_search_results` reactive
+- Used `lapply(1:8, ...)` pattern for observeEvent handlers
+
+**Quick-Add Deck in Results Entry**
+- Removed confusing "Find deck by card" section
+- Added expandable "Quick add new deck" section
+- Creates deck with minimal info (name + primary color only)
+- Notification reminds user to complete details in Manage Decks later
+- Auto-selects newly created deck in dropdown
+
+**Edit Functionality Pattern**
+- Click any row in admin tables to populate form for editing
+- Hidden `editing_*_id` input tracks edit mode
+- Add button hidden, Update button shown during edit
+- Cancel Edit button clears form and returns to add mode
+- Uses `shinyjs::show()` / `shinyjs::hide()` for button visibility
+- Archetype updates refresh both list and results dropdown
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Added shinyjs, quick-add deck, edit observers for stores/decks, fixed card search |
+| `views/admin-stores-ui.R` | Single-row layout, edit mode UI, cancel button |
+| `views/admin-decks-ui.R` | Single-row layout, edit mode UI, cancel button |
+| `views/admin-results-ui.R` | Single-row layout, quick-add deck section |
+| `www/custom.css` | Card search button styles, edit mode styles |
+
+### Dependencies Added
+- `shinyjs` - Show/hide UI elements programmatically
+
+---
+
+## 2026-01-27: Admin UI Fixes - Card Search, Pagination, Alignment
+
+### Completed
+- [x] Fixed card search images in Manage Decks (now displaying correctly)
+- [x] Added pagination to admin tables (default 20 rows, options: 10/20/50/100)
+- [x] Fixed search box and button alignment in Manage Decks
+- [x] Added helper text for Selected Card ID field
+
+### Technical Decisions
+
+**Card Search Image Fix**
+- DigimonCard.io API returns card number in `id` field, not `cardnumber`
+- Previous code was using `card_data$cardnumber` which was undefined
+- Fixed to use `card_data$id` for card number
+- Image URLs use `.webp` format: `https://images.digimoncard.io/images/cards/{id}.webp`
+- Server returns WebP format regardless of file extension in URL
+
+**Debug Logging Added (Temporary)**
+- Console logging shows API response structure
+- UI debug panel shows column names and image URLs
+- Helped identify the `id` vs `cardnumber` field issue
+- Can be removed once card search is confirmed stable
+
+**Admin Table Pagination**
+- Both Manage Stores and Manage Decks tables now have pagination
+- `defaultPageSize = 20` for reasonable default
+- `showPageSizeOptions = TRUE` with options `c(10, 20, 50, 100)`
+- Improves usability when many entries exist
+
+**Search Box Alignment**
+- Changed from flexbox to Bootstrap row/col layout
+- Uses `align-items-end` to align button with input field
+- Added spacer label (`&nbsp;`) above button for proper vertical alignment
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Fixed card search to use `id` field, `.webp` image format, added pagination to admin tables, debug logging |
+| `views/admin-decks-ui.R` | Fixed search box/button alignment with Bootstrap grid |
+
+### API Response Structure (DigimonCard.io)
+Key fields returned by `/api-public/search`:
+- `id` - Card number (e.g., "BT10-082")
+- `name` - Card name
+- `color` - Primary color
+- `color2` - Secondary color (if any)
+- `type` - Card type (Digimon, Tamer, Option)
+- `level`, `dp`, `play_cost`, `evolution_cost`
+- `digi_type`, `digi_type2`, etc.
+- `pretty_url` - URL-friendly name
+- NO `image_url` field - must construct URL manually
+
+---
+
+## 2026-01-27: Deployment Preparation
+
+### Completed
+- [x] Removed debug logging from card search
+- [x] Updated README with current features and tech stack
+- [x] Updated CHANGELOG with version 0.4.0
+- [x] Added MAPBOX_ACCESS_TOKEN to .env.example
+- [x] Fixed package list in README to match actual dependencies
+- [x] Added `nul` to .gitignore (Windows artifact)
+- [x] Verified .env loading is conditional (won't fail if file missing)
+
+### Deployment Checklist
+
+**For Posit Connect Cloud:**
+1. Set environment variables in Posit Connect settings:
+   - `MOTHERDUCK_TOKEN` - For cloud database
+   - `MAPBOX_ACCESS_TOKEN` - For map features
+   - `ADMIN_PASSWORD` - (Optional) Override default admin password
+2. Deploy via `rsconnect::deployApp()`
+3. MotherDuck will be used automatically on Linux (Posit Connect)
+
+**For Local Development:**
+1. Copy `.env.example` to `.env`
+2. Add your tokens
+3. Run `source("R/init_database.R")` to create local database
+4. Run seed scripts for initial data
+5. `shiny::runApp()`
+
+### Files Ready for Commit
+- Modified: app.R, README.md, CHANGELOG.md, .env.example, .gitignore, dev_log.md
+- Modified: All view files (admin-*.R, dashboard-ui.R, etc.)
+- Untracked (should add): R/seed_mock_data.R, R/delete_mock_data.R, R/migrate_db.R
 
 ---
 

@@ -40,6 +40,7 @@ rsconnect/
 .Trashes
 ehthumbs.db
 Thumbs.db
+nul
 
 # IDE
 .vscode/

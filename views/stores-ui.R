@@ -11,10 +11,12 @@ stores_ui <- tagList(
     col_widths = c(12),
     card(
       card_header(
-        class = "d-flex justify-content-between align-items-center",
-        span(
+        class = "d-flex justify-content-between align-items-center flex-wrap gap-2",
+        div(
+          class = "d-flex align-items-center gap-2",
           bsicons::bs_icon("geo-alt-fill"),
-          " Store Map"
+          span("Store Map"),
+          span(class = "small text-muted", "(larger bubbles = more events)")
         ),
         div(
           class = "d-flex align-items-center gap-2",
@@ -24,7 +26,7 @@ stores_ui <- tagList(
           actionButton("clear_region",
                        tagList(bsicons::bs_icon("x-circle"), " Clear"),
                        class = "btn-sm btn-outline-secondary"),
-          span(class = "small text-muted", "Draw a region, then click Apply")
+          span(class = "small text-muted d-none d-md-inline", "Draw a region, then click Apply")
         )
       ),
       card_body(
@@ -37,10 +39,17 @@ stores_ui <- tagList(
     card_header(
       class = "d-flex justify-content-between align-items-center",
       span("Store List"),
-      uiOutput("stores_filter_badge")
+      div(
+        class = "d-flex align-items-center gap-2",
+        span(class = "small text-muted", "Click a row for details"),
+        uiOutput("stores_filter_badge")
+      )
     ),
     card_body(
       reactableOutput("store_list")
     )
-  )
+  ),
+
+  # Store detail modal (rendered dynamically)
+  uiOutput("store_detail_modal")
 )

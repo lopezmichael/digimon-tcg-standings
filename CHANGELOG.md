@@ -7,7 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+*No unreleased changes*
+
+---
+
+## [0.4.0] - 2026-01-27 - Admin Improvements & Deployment Prep
+
 ### Added
+- Bulk tournament entry mode (paste multiple results at once)
+- Quick-add deck feature in results entry (for missing archetypes)
+- Edit functionality for stores and decks (click row to edit)
+- Admin table pagination (default 20 rows, options: 10/20/50/100)
+- Card search in Manage Decks with clickable image results
+- shinyjs integration for dynamic UI updates
+
+### Changed
+- All admin inputs now use single-row layout (no side-by-side fields)
+- Card search uses DigimonCard.io API `id` field (not `cardnumber`)
+- Card images use `.webp` format for better browser support
+- Search box and button alignment fixed with Bootstrap grid
+
+### Fixed
+- Card search images now display correctly (was broken due to wrong API field)
+- Selected Card ID auto-fills when clicking search results
+
+### Documentation
+- Updated README with current features, tech stack, and deployment instructions
+- Added MAPBOX_ACCESS_TOKEN to .env.example
+- Updated package installation list to match actual dependencies
+
+---
+
+## [0.3.1] - 2026-01-27 - Profiles & Filters
+
+### Added
+- Player profile modal (stats, favorite decks, tournament history)
+- Deck archetype profile modal (card image, top pilots, recent results)
+- Tournament detail modal (full standings with deck badges)
+- Search filters on Players page (by player name)
+- Search filters on Meta page (by deck name)
+- Filters on Tournaments page (store search, format, event type)
+- Winner and Winning Deck columns in Tournaments table
+- Store detail modal with recent tournaments and top players
+
+### Changed
+- Consistent two-row filter layout across all pages
+- Stats in profile modals use evenly distributed flexbox
+- Store modal includes winning deck name and decklist link
+- Dynamic bubble sizing on store map based on tournament activity
+
+---
+
+## [0.3.0] - 2026-01-26 - Dashboard & Visualizations
+
+### Added
+- Most Popular Deck value box with card image
+  - Replaces Stores value box
+  - Shows deck thumbnail from DigimonCard.io
+  - Respects all dashboard filters
+- Weighted Player Rating system
+  - Formula: (Win% x 0.5) + (Top 3 Rate x 30) + (Events Bonus up to 20)
+  - Tooltip explains rating calculation
+  - Rewards consistent performance, top finishes, and attendance
+- Meta Share Over Time stacked area chart
+  - Replaces Meta Breakdown table
+  - Shows deck popularity trends by week
+  - Decks with <5% share grouped as "Other Decks"
+  - Color-coded by deck color
+- Winner column in Recent Tournaments table
+- 4-week rolling average line in Tournament Activity chart
 - Interactive store map with MapGL integration
   - Atom-branded basemap via `atom_mapgl()` from atomtemplates
   - Uses "minimal" theme for consistent appearance in both light/dark app modes
@@ -24,8 +92,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-geocoding for stores using tidygeocoder
   - Addresses automatically geocoded when stores are added
   - Uses OpenStreetMap Nominatim API
+- Dashboard visualizations with Highcharter
+  - Top 4 Conversion Rate chart showing best performing decks (min. 2 entries)
+  - Color Distribution bar chart counting both primary and secondary deck colors
+  - Tournament Activity spline chart with weekly aggregation (dual-axis)
+  - All charts respect store region filter, format filter, and dark mode
+  - Uses atomtemplates `hc_theme_atom_switch()` for theming
+- Comprehensive dashboard filtering system
+  - Format filter: Filter by card set (BT19, EX08, BT18, etc.)
+  - Event Type filter: Filter by tournament type (Locals, Evo Cup, Store Championship, etc.)
+  - Date Range picker: Filter by custom date range
+  - Reset Filters button: Clear all filters at once
+  - All filters work together with store region filter from map
+- Multi-color deck support
+  - Dual-color decks (with secondary_color) shown as "Multi" in pink (#EC4899)
+  - Color Distribution chart groups dual-color decks together
+  - Added deck-badge-multi-color CSS class
+- Top Decks display with card images
+  - Shows top 8 deck archetypes with card thumbnails from DigimonCard.io
+  - Horizontal progress bars color-coded by deck color
+  - Responsive grid layout with dark mode support
+- Format/set tracking for tournaments
+  - Dropdown for selecting game format (BT19, EX08, etc.)
+  - Stored in tournaments table
+- Mock data seed scripts for testing
+  - `R/seed_mock_data.R` - Creates 25 players, 20 tournaments, ~240 results
+  - Proper format values (BT19, EX08, BT18, BT17, EX07, older)
+  - Varied event types (locals, evo_cup, store_championship)
+  - 4 months of date range with realistic distribution
+  - `R/delete_mock_data.R` - Removes all mock data for real data collection
+- Database migration script (`R/migrate_db.R`)
+  - Adds decklist_url column to results table
+  - Adds format column to tournaments table
 
 ### Changed
+- Dashboard filter defaults now set to first format (BT19) and Locals
+  - Future-proofed: always uses first item in FORMAT_CHOICES
+- Top Decks section now shows win rate % instead of entry count
+  - Minimum 2 entries required to appear
+  - Sorted by win rate descending
+- Top 3 Conversion Rate chart (changed from Top 4)
+  - Shows top 5 decks for better visibility
+- Tournament Activity chart now shows average players per event
+  - Added 4-week rolling average trend line
+  - Removed tournament count (redundant with value box)
+- All Highcharts removed inline titles (titles now in card headers only)
+- Recent Tournaments table improvements
+  - Added Winner column (player with placement = 1)
+  - Event type formatted nicely (e.g., "Evo Cup" instead of "evo_cup")
+- Top Players table now sorted by weighted rating
+  - Shows 1st place finishes column
+  - Rating column with hover tooltip explaining formula
 - Enhanced database views with additional metrics
   - `player_standings`: added favorite_deck, avg_placement
   - `archetype_meta`: added secondary_color, conversion_rate, top4_rate
@@ -36,6 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mapgl` - Mapbox GL JS for interactive maps
 - `sf` - Simple Features for spatial operations
 - `tidygeocoder` - Address geocoding
+- `highcharter` - Highcharts for R (interactive charts)
 
 ---
 
