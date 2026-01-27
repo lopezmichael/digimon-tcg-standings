@@ -19,8 +19,15 @@ data/local.duckdb
 
 # Package/dependency caches
 packrat/
-renv/
-renv.lock
+
+# renv - ignore library but track lockfile and activation script
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
 
 # Session Data
 .httr-oauth
