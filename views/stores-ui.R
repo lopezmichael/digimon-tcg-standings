@@ -51,5 +51,8 @@ stores_ui <- tagList(
   ),
 
   # Store detail modal (rendered dynamically)
-  uiOutput("store_detail_modal")
+  uiOutput("store_detail_modal"),
+
+  # Online Tournament Organizers section
+  uiOutput("online_stores_section")
 )

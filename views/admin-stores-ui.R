@@ -57,7 +57,8 @@ admin_stores_ui <- tagList(
           div(
             class = "d-flex gap-2",
             actionButton("add_store", "Add Store", class = "btn-primary"),
-            actionButton("update_store", "Update Store", class = "btn-success", style = "display: none;")
+            actionButton("update_store", "Update Store", class = "btn-success", style = "display: none;"),
+            actionButton("delete_store", "Delete Store", class = "btn-danger", style = "display: none;")
           )
         )
       ),
@@ -69,6 +70,33 @@ admin_stores_ui <- tagList(
         ),
         card_body(
           reactableOutput("admin_store_list")
+        )
+      )
+    )
+  ),
+
+  # Delete confirmation modal
+  tags$div(
+    id = "delete_store_modal",
+    class = "modal fade",
+    tabindex = "-1",
+    tags$div(
+      class = "modal-dialog",
+      tags$div(
+        class = "modal-content",
+        tags$div(
+          class = "modal-header",
+          tags$h5(class = "modal-title", "Confirm Delete"),
+          tags$button(type = "button", class = "btn-close", `data-bs-dismiss` = "modal")
+        ),
+        tags$div(
+          class = "modal-body",
+          uiOutput("delete_store_message")
+        ),
+        tags$div(
+          class = "modal-footer",
+          tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel"),
+          actionButton("confirm_delete_store", "Delete", class = "btn-danger")
         )
       )
     )

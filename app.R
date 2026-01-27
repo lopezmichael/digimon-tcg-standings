@@ -2847,6 +2847,103 @@ server <- function(input, output, session) {
     sprintf("Results Entered (%d/%d)", result_count, player_count)
   })
 
+  # ---------------------------------------------------------------------------
+  # Quick Add Player Handlers
+  # ---------------------------------------------------------------------------
+
+  # Show quick add player form
+  observeEvent(input$show_quick_add_player, {
+    shinyjs::show("quick_add_player_form")
+  })
+
+  # Cancel quick add player
+  observeEvent(input$quick_add_player_cancel, {
+    shinyjs::hide("quick_add_player_form")
+    updateTextInput(session, "quick_player_name", value = "")
+  })
+
+  # Submit quick add player
+  observeEvent(input$quick_add_player_submit, {
+    req(rv$db_con)
+    name <- trimws(input$quick_player_name)
+
+    if (nchar(name) == 0) {
+      showNotification("Please enter a player name", type = "error")
+      return()
+    }
+
+    tryCatch({
+      max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
+      player_id <- max_id + 1
+
+      dbExecute(rv$db_con, "INSERT INTO players (player_id, display_name) VALUES (?, ?)",
+                params = list(player_id, name))
+
+      showNotification(sprintf("Added player: %s", name), type = "message")
+
+      # Update dropdown and select new player
+      choices <- get_player_choices(rv$db_con)
+      updateSelectizeInput(session, "result_player", choices = choices, selected = player_id)
+
+      # Hide form and clear
+      shinyjs::hide("quick_add_player_form")
+      updateTextInput(session, "quick_player_name", value = "")
+
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
+  })
+
+  # ---------------------------------------------------------------------------
+  # Quick Add Deck Handlers
+  # ---------------------------------------------------------------------------
+
+  # Show quick add deck form
+  observeEvent(input$show_quick_add_deck, {
+    shinyjs::show("quick_add_deck_form")
+  })
+
+  # Cancel quick add deck
+  observeEvent(input$quick_add_deck_cancel, {
+    shinyjs::hide("quick_add_deck_form")
+    updateTextInput(session, "quick_deck_name", value = "")
+  })
+
+  # Submit quick add deck
+  observeEvent(input$quick_add_deck_submit, {
+    req(rv$db_con)
+    name <- trimws(input$quick_deck_name)
+    color <- input$quick_deck_color
+
+    if (nchar(name) == 0) {
+      showNotification("Please enter a deck name", type = "error")
+      return()
+    }
+
+    tryCatch({
+      max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(archetype_id), 0) as max_id FROM deck_archetypes")$max_id
+      archetype_id <- max_id + 1
+
+      dbExecute(rv$db_con, "
+        INSERT INTO deck_archetypes (archetype_id, archetype_name, primary_color)
+        VALUES (?, ?, ?)
+      ", params = list(archetype_id, name, color))
+
+      showNotification(sprintf("Added deck: %s", name), type = "message")
+
+      # Update dropdown and select new deck
+      choices <- get_archetype_choices(rv$db_con)
+      updateSelectizeInput(session, "result_deck", choices = choices, selected = archetype_id)
+
+      # Hide form and clear
+      shinyjs::hide("quick_add_deck_form")
+      updateTextInput(session, "quick_deck_name", value = "")
+
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
+  })
+
   # Add result
   add_result_logic <- function() {
     req(rv$is_admin, rv$db_con, rv$active_tournament_id)
@@ -3052,285 +3149,23 @@ server <- function(input, output, session) {
 
   # Finish tournament
   observeEvent(input$finish_tournament, {
+    req(rv$active_tournament_id)
+
+    showNotification("Tournament completed!", type = "message")
+
+    # Reset wizard
     rv$active_tournament_id <- NULL
-    rv$current_results <- data.frame()
-    showNotification("Tournament complete! Results saved.", type = "message")
     rv$wizard_step <- 1
-  })
-
-  # ---------------------------------------------------------------------------
-  # Admin - Bulk Results Entry
-  # ---------------------------------------------------------------------------
-
-  # Reactive value for parsed bulk results
-  rv$bulk_parsed <- NULL
-
-  # Parse bulk results
-  observeEvent(input$parse_bulk, {
-    req(rv$is_admin, rv$db_con, rv$active_tournament_id)
-    req(input$bulk_results)
-
-    # Get archetype list for matching
-    archetypes <- dbGetQuery(rv$db_con, "
-      SELECT archetype_id, archetype_name FROM deck_archetypes WHERE is_active = TRUE
-    ")
-
-    lines <- strsplit(input$bulk_results, "\n")[[1]]
-    lines <- trimws(lines)
-    lines <- lines[nchar(lines) > 0]  # Remove empty lines
-
-    if (length(lines) == 0) {
-      output$bulk_preview_errors <- renderUI({
-        div(class = "alert alert-warning", "No results to parse. Enter at least one line.")
-      })
-      rv$bulk_parsed <- NULL
-      return()
-    }
-
-    parsed <- data.frame(
-      row = integer(),
-      placement = integer(),
-      player_name = character(),
-      deck_name = character(),
-      deck_matched = character(),
-      archetype_id = integer(),
-      wins = integer(),
-      losses = integer(),
-      ties = integer(),
-      decklist_url = character(),
-      error = character(),
-      stringsAsFactors = FALSE
-    )
-
-    errors <- character()
-
-    for (i in seq_along(lines)) {
-      line <- lines[i]
-      # Parse CSV-like format: Place, Player, Deck, W-L-T, [URL]
-      parts <- strsplit(line, ",")[[1]]
-      parts <- trimws(parts)
-
-      if (length(parts) < 4) {
-        errors <- c(errors, sprintf("Line %d: Not enough fields (need at least 4)", i))
-        next
-      }
-
-      place <- suppressWarnings(as.integer(parts[1]))
-      if (is.na(place) || place < 1) {
-        errors <- c(errors, sprintf("Line %d: Invalid placement '%s'", i, parts[1]))
-        next
-      }
-
-      player_name <- parts[2]
-      if (nchar(player_name) < 1) {
-        errors <- c(errors, sprintf("Line %d: Player name is empty", i))
-        next
-      }
-
-      deck_name <- parts[3]
-      record <- parts[4]
-
-      # Parse W-L-T record
-      record_parts <- strsplit(record, "-")[[1]]
-      if (length(record_parts) < 2) {
-        errors <- c(errors, sprintf("Line %d: Invalid record format '%s' (use W-L or W-L-T)", i, record))
-        next
-      }
-
-      wins <- suppressWarnings(as.integer(record_parts[1]))
-      losses <- suppressWarnings(as.integer(record_parts[2]))
-      ties <- if (length(record_parts) >= 3) suppressWarnings(as.integer(record_parts[3])) else 0L
-
-      if (is.na(wins) || is.na(losses)) {
-        errors <- c(errors, sprintf("Line %d: Could not parse record '%s'", i, record))
-        next
-      }
-      if (is.na(ties)) ties <- 0L
-
-      # Optional decklist URL
-      decklist_url <- if (length(parts) >= 5 && nchar(parts[5]) > 0) parts[5] else NA_character_
-
-      # Try to match deck name to archetype (case-insensitive)
-      deck_lower <- tolower(deck_name)
-      match_idx <- which(tolower(archetypes$archetype_name) == deck_lower)
-
-      if (length(match_idx) == 0) {
-        # Try partial match
-        match_idx <- which(grepl(deck_lower, tolower(archetypes$archetype_name), fixed = TRUE))
-      }
-
-      if (length(match_idx) > 0) {
-        matched_archetype <- archetypes[match_idx[1], ]
-        deck_matched <- matched_archetype$archetype_name
-        archetype_id <- matched_archetype$archetype_id
-      } else {
-        deck_matched <- paste0("NOT FOUND: ", deck_name)
-        archetype_id <- NA_integer_
-        errors <- c(errors, sprintf("Line %d: Deck '%s' not found in archetypes", i, deck_name))
-      }
-
-      parsed <- rbind(parsed, data.frame(
-        row = i,
-        placement = place,
-        player_name = player_name,
-        deck_name = deck_name,
-        deck_matched = deck_matched,
-        archetype_id = archetype_id,
-        wins = wins,
-        losses = losses,
-        ties = ties,
-        decklist_url = decklist_url,
-        error = "",
-        stringsAsFactors = FALSE
-      ))
-    }
-
-    rv$bulk_parsed <- parsed
-
-    # Show errors
-    if (length(errors) > 0) {
-      output$bulk_preview_errors <- renderUI({
-        div(
-          class = "alert alert-warning",
-          tags$strong("Parsing warnings:"),
-          tags$ul(lapply(errors, tags$li))
-        )
-      })
-    } else {
-      output$bulk_preview_errors <- renderUI({
-        div(class = "alert alert-success", bsicons::bs_icon("check-circle"), " All lines parsed successfully!")
-      })
-    }
-  })
-
-  # Preview table for bulk results
-  output$bulk_preview_table <- renderReactable({
-    req(rv$bulk_parsed)
-    if (nrow(rv$bulk_parsed) == 0) return(NULL)
-
-    preview_data <- rv$bulk_parsed[, c("placement", "player_name", "deck_matched", "wins", "losses", "ties")]
-    names(preview_data) <- c("Place", "Player", "Deck", "W", "L", "T")
-
-    reactable(preview_data, compact = TRUE, striped = TRUE,
-      columns = list(
-        Deck = colDef(
-          style = function(value) {
-            if (grepl("NOT FOUND", value)) {
-              list(color = "#dc3545", fontWeight = "bold")
-            }
-          }
-        )
-      )
-    )
-  })
-
-  # Submit bulk results
-  observeEvent(input$submit_bulk, {
-    req(rv$is_admin, rv$db_con, rv$active_tournament_id)
-    req(rv$bulk_parsed)
-
-    if (nrow(rv$bulk_parsed) == 0) {
-      showNotification("No results to submit. Click 'Preview Results' first.", type = "warning")
-      return()
-    }
-
-    # Check for unmatched decks
-    unmatched <- sum(is.na(rv$bulk_parsed$archetype_id))
-    if (unmatched > 0) {
-      showNotification(
-        sprintf("Warning: %d result(s) have unmatched decks. Add missing archetypes or fix deck names.", unmatched),
-        type = "warning",
-        duration = 5
-      )
-      return()
-    }
-
-    success_count <- 0
-    error_count <- 0
-
-    for (i in 1:nrow(rv$bulk_parsed)) {
-      row <- rv$bulk_parsed[i, ]
-
-      tryCatch({
-        # Check if player exists or create new
-        existing_player <- dbGetQuery(rv$db_con, "
-          SELECT player_id FROM players WHERE LOWER(display_name) = LOWER(?)
-        ", params = list(row$player_name))
-
-        if (nrow(existing_player) > 0) {
-          player_id <- existing_player$player_id[1]
-        } else {
-          # Create new player
-          max_player_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
-          player_id <- max_player_id + 1
-          dbExecute(rv$db_con, "
-            INSERT INTO players (player_id, display_name) VALUES (?, ?)
-          ", params = list(player_id, row$player_name))
-        }
-
-        # Get next result ID
-        max_result_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(result_id), 0) as max_id FROM results")$max_id
-        result_id <- max_result_id + 1
-
-        # Insert result
-        decklist_url <- if (is.na(row$decklist_url)) NULL else row$decklist_url
-        dbExecute(rv$db_con, "
-          INSERT INTO results (result_id, tournament_id, player_id, archetype_id, placement, wins, losses, ties, decklist_url)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ", params = list(result_id, rv$active_tournament_id, player_id, row$archetype_id,
-                         row$placement, row$wins, row$losses, row$ties, decklist_url))
-
-        success_count <- success_count + 1
-
-      }, error = function(e) {
-        error_count <<- error_count + 1
-      })
-    }
-
-    if (error_count > 0) {
-      showNotification(sprintf("Added %d results (%d errors)", success_count, error_count), type = "warning")
-    } else {
-      showNotification(sprintf("Successfully added %d results!", success_count), type = "message")
-    }
-
-    # Clear bulk entry
-    rv$bulk_parsed <- NULL
-    updateTextAreaInput(session, "bulk_results", value = "")
-    output$bulk_preview_errors <- renderUI({ NULL })
-
-    # Refresh player choices
-    updateSelectizeInput(session, "result_player",
-                         choices = get_player_choices(rv$db_con),
-                         server = TRUE)
-  })
-
-  # Display current results in bulk mode
-  output$current_results_bulk <- renderReactable({
-    req(rv$db_con, rv$active_tournament_id)
-
-    results <- dbGetQuery(rv$db_con, "
-      SELECT p.display_name as Player, da.archetype_name as Deck,
-             r.placement as Place, r.wins as W, r.losses as L, r.ties as T
-      FROM results r
-      JOIN players p ON r.player_id = p.player_id
-      LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE r.tournament_id = ?
-      ORDER BY r.placement
-    ", params = list(rv$active_tournament_id))
-
-    if (nrow(results) == 0) {
-      results <- data.frame(Message = "No results entered yet")
-    }
-    reactable(results, compact = TRUE, striped = TRUE)
-  })
-
-  # Finish tournament from bulk mode
-  observeEvent(input$finish_tournament_bulk, {
-    rv$active_tournament_id <- NULL
     rv$current_results <- data.frame()
-    rv$bulk_parsed <- NULL
-    showNotification("Tournament complete! Results saved.", type = "message")
-    rv$wizard_step <- 1
+
+    # Clear result entry forms
+    updateSelectizeInput(session, "result_player", selected = "")
+    updateSelectizeInput(session, "result_deck", selected = "")
+    updateNumericInput(session, "result_placement", value = 1)
+    updateNumericInput(session, "result_wins", value = 0)
+    updateNumericInput(session, "result_losses", value = 0)
+    updateNumericInput(session, "result_ties", value = 0)
+    updateTextInput(session, "result_decklist_url", value = "")
   })
 
   # ---------------------------------------------------------------------------

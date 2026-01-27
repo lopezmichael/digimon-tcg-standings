@@ -947,3 +947,45 @@ button.mapbox-gl-draw_point {
 [data-bs-theme="dark"] .editing-mode .card-header {
   background: linear-gradient(135deg, #4A3C2A 0%, #2D3748 100%);
 }
+
+/* =============================================================================
+   WIZARD STEPS
+   ============================================================================= */
+
+.wizard-steps {
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 1rem;
+}
+
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+}
+
+.wizard-step.active {
+  color: #0F4C81;
+  font-weight: bold;
+}
+
+.wizard-step .step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #dee2e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.wizard-step.active .step-number {
+  background: #0F4C81;
+  color: white;
+}
+
+.wizard-step.completed .step-number {
+  background: #198754;
+  color: white;
+}
