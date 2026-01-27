@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS stores (
     website VARCHAR,
     phone VARCHAR,
     is_active BOOLEAN DEFAULT TRUE,
+    is_online BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS deck_archetypes (
     secondary_color VARCHAR,
     playstyle_tags TEXT,  -- JSON array stored as text
     is_active BOOLEAN DEFAULT TRUE,
+    is_multi_color BOOLEAN DEFAULT FALSE,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -211,6 +213,7 @@ SELECT
     s.latitude,
     s.longitude,
     s.address,
+    s.is_online,
     COUNT(DISTINCT t.tournament_id) AS total_tournaments,
     COUNT(DISTINCT r.player_id) AS unique_players,
     SUM(t.player_count) AS total_attendance,
@@ -220,4 +223,5 @@ SELECT
 FROM stores s
 LEFT JOIN tournaments t ON s.store_id = t.store_id
 LEFT JOIN results r ON t.tournament_id = r.tournament_id
-GROUP BY s.store_id, s.name, s.city, s.latitude, s.longitude, s.address;
+WHERE s.is_active = TRUE
+GROUP BY s.store_id, s.name, s.city, s.latitude, s.longitude, s.address, s.is_online;
