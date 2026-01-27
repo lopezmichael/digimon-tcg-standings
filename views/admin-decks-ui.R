@@ -28,12 +28,10 @@ admin_decks_ui <- tagList(
           hr(),
           h5("Display Card"),
           div(
-            class = "row g-2 align-items-end mb-2",
-            div(class = "col",
+            class = "d-flex gap-2 align-items-end mb-3",
+            div(class = "flex-grow-1",
                 textInput("card_search", "Search Card", placeholder = "Type card name...")),
-            div(class = "col-auto",
-                tags$label(class = "form-label", HTML("&nbsp;")),  # Spacer for alignment
-                actionButton("search_card_btn", "Search", class = "btn-info"))
+            actionButton("search_card_btn", "Search", class = "btn-info mb-3")
           ),
           uiOutput("card_search_results"),
           textInput("selected_card_id", "Selected Card ID", placeholder = "e.g., BT17-042"),
