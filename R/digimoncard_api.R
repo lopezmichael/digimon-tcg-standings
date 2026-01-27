@@ -160,10 +160,11 @@ get_card <- function(card_number) {
 #'
 #' @param name Card name (partial match supported)
 #' @param color Optional color filter
-#' @return Data frame of matching cards
+#' @return Data frame of matching cards, sorted by newest set first
 #' @export
 search_by_name <- function(name, color = NULL) {
-  search_cards(name = name, color = color)
+  # Sort by card number descending so newer sets (BT24, EX10) appear first
+  search_cards(name = name, color = color, sort = "cardnumber", sort_direction = "desc")
 }
 
 #' Get all cards of a specific color

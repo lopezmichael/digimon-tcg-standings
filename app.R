@@ -321,7 +321,9 @@ server <- function(input, output, session) {
     editing_store = NULL,  # For edit mode
     editing_archetype = NULL,  # For edit mode
     wizard_step = 1,  # Wizard navigation: 1 = Details, 2 = Results
-    duplicate_tournament = NULL  # Store duplicate tournament info for modal
+    duplicate_tournament = NULL,  # Store duplicate tournament info for modal
+    results_refresh = 0,  # Trigger to refresh results table
+    card_search_page = 1  # Current page for card search pagination
   )
 
   # Helper function for ordinal numbers (1st, 2nd, 3rd, etc.)
@@ -3060,6 +3062,9 @@ server <- function(input, output, session) {
 
       showNotification("Result added!", type = "message")
 
+      # Trigger table refresh
+      rv$results_refresh <- rv$results_refresh + 1
+
       # Reset form for next entry
       updateNumericInput(session, "result_placement", value = placement + 1)
       updateNumericInput(session, "result_wins", value = 0)
@@ -3130,6 +3135,8 @@ server <- function(input, output, session) {
   # Display current results
   output$current_results <- renderReactable({
     req(rv$db_con, rv$active_tournament_id)
+    # Refresh trigger - re-run query when results are added
+    rv$results_refresh
 
     results <- dbGetQuery(rv$db_con, "
       SELECT p.display_name as Player, da.archetype_name as Deck,
@@ -3176,6 +3183,9 @@ server <- function(input, output, session) {
   observeEvent(input$search_card_btn, {
     req(input$card_search)
 
+    # Reset pagination
+    rv$card_search_page <- 1
+
     # Show searching indicator
     output$card_search_results <- renderUI({
       div(class = "text-muted", bsicons::bs_icon("hourglass-split"), " Searching...")
@@ -3192,22 +3202,78 @@ server <- function(input, output, session) {
       output$card_search_results <- renderUI({
         div(class = "alert alert-warning", "No cards found for '", input$card_search, "'")
       })
+      rv$card_search_results <- NULL
       return()
     }
 
-    # Limit to first 8 results
-    cards <- head(cards, 8)
+    # Deduplicate by card name (keep first occurrence = newest due to desc sort)
+    cards <- cards[!duplicated(cards$name), ]
 
-    # Store cards in reactive for click handling
+    # Store ALL cards in reactive for pagination
     rv$card_search_results <- cards
+
+    # Render first page
+    render_card_search_page()
+  })
+
+  # Pagination handlers
+  observeEvent(input$card_search_prev, {
+    if (rv$card_search_page > 1) {
+      rv$card_search_page <- rv$card_search_page - 1
+      render_card_search_page()
+    }
+  })
+
+  observeEvent(input$card_search_next, {
+    req(rv$card_search_results)
+    total_pages <- ceiling(nrow(rv$card_search_results) / 8)
+    if (rv$card_search_page < total_pages) {
+      rv$card_search_page <- rv$card_search_page + 1
+      render_card_search_page()
+    }
+  })
+
+  # Helper function to render card search page
+  render_card_search_page <- function() {
+    req(rv$card_search_results)
+    cards <- rv$card_search_results
+    page <- rv$card_search_page
+    per_page <- 8
+
+    total_cards <- nrow(cards)
+    total_pages <- ceiling(total_cards / per_page)
+    start_idx <- (page - 1) * per_page + 1
+    end_idx <- min(page * per_page, total_cards)
+
+    # Get cards for current page
+    page_cards <- cards[start_idx:end_idx, ]
 
     output$card_search_results <- renderUI({
       div(
-        p(class = "text-muted small", sprintf("Found %d cards. Click to select:", nrow(cards))),
+        # Header with count and pagination
+        div(
+          class = "d-flex justify-content-between align-items-center mb-2",
+          p(class = "text-muted small mb-0", sprintf("Found %d cards (showing %d-%d):", total_cards, start_idx, end_idx)),
+          if (total_pages > 1) {
+            div(
+              class = "d-flex align-items-center gap-1",
+              actionButton("card_search_prev", bsicons::bs_icon("chevron-left"),
+                           class = paste("btn-sm btn-outline-secondary", if (page == 1) "disabled" else ""),
+                           style = "padding: 2px 6px;"),
+              span(class = "small mx-1", sprintf("%d/%d", page, total_pages)),
+              actionButton("card_search_next", bsicons::bs_icon("chevron-right"),
+                           class = paste("btn-sm btn-outline-secondary", if (page == total_pages) "disabled" else ""),
+                           style = "padding: 2px 6px;")
+            )
+          }
+        ),
+        # Card grid
         div(
           style = "display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px;",
-          lapply(1:nrow(cards), function(i) {
-            card_data <- cards[i, ]
+          lapply(1:nrow(page_cards), function(i) {
+            card_data <- page_cards[i, ]
+            # Calculate absolute index for button ID
+            abs_idx <- start_idx + i - 1
             # API returns card number in 'id' field, not 'cardnumber'
             card_num <- if ("id" %in% names(card_data)) card_data$id else card_data$cardnumber
             card_name <- if ("name" %in% names(card_data)) card_data$name else "Unknown"
@@ -3217,7 +3283,7 @@ server <- function(input, output, session) {
             img_url <- paste0("https://images.digimoncard.io/images/cards/", card_num, ".webp")
 
             actionButton(
-              inputId = paste0("card_select_", i),
+              inputId = paste0("card_select_", abs_idx),
               label = tagList(
                 tags$img(src = img_url,
                          style = "width: 100%; max-width: 80px; height: auto; border-radius: 4px; display: block; margin: 0 auto;",
@@ -3235,10 +3301,10 @@ server <- function(input, output, session) {
         )
       )
     })
-  })
+  }
 
-  # Handle card selection buttons (1-8)
-  lapply(1:8, function(i) {
+  # Handle card selection buttons (1-100 to support pagination)
+  lapply(1:100, function(i) {
     observeEvent(input[[paste0("card_select_", i)]], {
       req(rv$card_search_results)
       if (i <= nrow(rv$card_search_results)) {
