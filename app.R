@@ -2688,7 +2688,7 @@ server <- function(input, output, session) {
     wins <- input$result_wins
     losses <- input$result_losses
     ties <- input$result_ties
-    decklist_url <- if (nchar(input$result_decklist_url) > 0) input$result_decklist_url else NULL
+    decklist_url <- if (nchar(input$result_decklist_url) > 0) input$result_decklist_url else NA_character_
 
     # Validation
     if (is.null(player_input) || nchar(trimws(player_input)) == 0) {
