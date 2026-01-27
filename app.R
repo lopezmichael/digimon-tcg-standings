@@ -2954,7 +2954,7 @@ server <- function(input, output, session) {
     wins <- input$result_wins
     losses <- input$result_losses
     ties <- input$result_ties
-    decklist_url <- if (nchar(input$result_decklist_url) > 0) input$result_decklist_url else NA_character_
+    decklist_url <- if (!is.null(input$result_decklist_url) && nchar(input$result_decklist_url) > 0) input$result_decklist_url else NA_character_
 
     # Validation
     if (is.null(player_input) || nchar(trimws(player_input)) == 0) {
@@ -2983,7 +2983,7 @@ server <- function(input, output, session) {
     if (is.na(ties) || ties < 0) ties <- 0
 
     # Validate decklist URL format if provided
-    if (!is.null(decklist_url) && nchar(decklist_url) > 0) {
+    if (!is.null(decklist_url) && !is.na(decklist_url) && nchar(decklist_url) > 0) {
       if (!grepl("^https?://", decklist_url)) {
         showNotification("Decklist URL should start with http:// or https://", type = "warning")
       }
@@ -3211,7 +3211,7 @@ server <- function(input, output, session) {
             # API returns card number in 'id' field, not 'cardnumber'
             card_num <- if ("id" %in% names(card_data)) card_data$id else card_data$cardnumber
             card_name <- if ("name" %in% names(card_data)) card_data$name else "Unknown"
-            card_color <- if ("color" %in% names(card_data)) card_data$color else ""
+            card_color <- if ("color" %in% names(card_data) && !is.na(card_data$color)) card_data$color else ""
 
             # Use .webp format - server returns WebP regardless of extension
             img_url <- paste0("https://images.digimoncard.io/images/cards/", card_num, ".webp")
@@ -3278,10 +3278,10 @@ server <- function(input, output, session) {
     name <- trimws(input$deck_name)
     primary_color <- input$deck_primary_color
     secondary_color <- if (input$deck_secondary_color == "") NULL else input$deck_secondary_color
-    card_id <- if (nchar(input$selected_card_id) > 0) input$selected_card_id else NULL
+    card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NULL
 
     # Validation
-    if (nchar(name) == 0) {
+    if (is.null(name) || nchar(name) == 0) {
       showNotification("Please enter an archetype name", type = "error")
       return()
     }
@@ -3435,9 +3435,9 @@ server <- function(input, output, session) {
     name <- trimws(input$deck_name)
     primary_color <- input$deck_primary_color
     secondary_color <- if (input$deck_secondary_color == "") NULL else input$deck_secondary_color
-    card_id <- if (nchar(input$selected_card_id) > 0) input$selected_card_id else NULL
+    card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NULL
 
-    if (nchar(name) == 0) {
+    if (is.null(name) || nchar(name) == 0) {
       showNotification("Please enter an archetype name", type = "error")
       return()
     }
