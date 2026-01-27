@@ -20,6 +20,7 @@ library(showtext)
 library(mapgl)
 library(sf)
 library(highcharter)
+library(brand.yml)
 
 # Load modules
 source("R/db_connection.R")
