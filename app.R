@@ -3206,8 +3206,9 @@ server <- function(input, output, session) {
       return()
     }
 
-    # Deduplicate by card name (keep first occurrence = newest due to desc sort)
-    cards <- cards[!duplicated(cards$name), ]
+    # Deduplicate by card ID (removes duplicate listings of same card)
+    # Keep all different cards even if they share the same name (alternate arts)
+    cards <- cards[!duplicated(cards$id), ]
 
     # Store ALL cards in reactive for pagination
     rv$card_search_results <- cards
