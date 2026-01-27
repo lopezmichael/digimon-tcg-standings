@@ -319,7 +319,9 @@ server <- function(input, output, session) {
     selected_tournament_id = NULL,  # For tournament detail modal
     card_search_results = NULL,  # For card search in deck management
     editing_store = NULL,  # For edit mode
-    editing_archetype = NULL  # For edit mode
+    editing_archetype = NULL,  # For edit mode
+    wizard_step = 1,  # Wizard navigation: 1 = Details, 2 = Results
+    duplicate_tournament = NULL  # Store duplicate tournament info for modal
   )
 
   # Helper function for ordinal numbers (1st, 2nd, 3rd, etc.)
@@ -1432,6 +1434,52 @@ server <- function(input, output, session) {
     ))
   })
 
+  # Online Tournament Organizers section
+  output$online_stores_section <- renderUI({
+    req(rv$db_con)
+
+    online_stores <- dbGetQuery(rv$db_con, "
+      SELECT name, city as region, website, schedule_info
+      FROM stores
+      WHERE is_online = TRUE AND is_active = TRUE
+      ORDER BY name
+    ")
+
+    if (nrow(online_stores) == 0) {
+      return(NULL)  # Don't show section if no online stores
+    }
+
+    card(
+      card_header(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("globe"),
+        span("Online Tournament Organizers")
+      ),
+      card_body(
+        div(
+          class = "row g-3",
+          lapply(1:nrow(online_stores), function(i) {
+            store <- online_stores[i, ]
+            div(
+              class = "col-md-4",
+              div(
+                class = "border rounded p-3 h-100",
+                h6(class = "mb-1", store$name),
+                if (!is.na(store$region) && nchar(store$region) > 0)
+                  p(class = "text-muted small mb-1", bsicons::bs_icon("geo"), " ", store$region),
+                if (!is.na(store$schedule_info) && nchar(store$schedule_info) > 0)
+                  p(class = "small mb-1", bsicons::bs_icon("calendar"), " ", store$schedule_info),
+                if (!is.na(store$website) && nchar(store$website) > 0)
+                  a(href = store$website, target = "_blank", class = "small",
+                    bsicons::bs_icon("link-45deg"), " Website")
+              )
+            )
+          })
+        )
+      )
+    )
+  })
+
   # Reactive: All stores data with activity metrics (for filtering and map)
   stores_data <- reactive({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
@@ -1444,7 +1492,7 @@ server <- function(input, output, session) {
              MAX(t.event_date) as last_event
       FROM stores s
       LEFT JOIN tournaments t ON s.store_id = t.store_id
-      WHERE s.is_active = TRUE
+      WHERE s.is_active = TRUE AND (s.is_online = FALSE OR s.is_online IS NULL)
       GROUP BY s.store_id, s.name, s.address, s.city, s.latitude, s.longitude,
                s.website, s.schedule_info
     ")
@@ -2463,25 +2511,25 @@ server <- function(input, output, session) {
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
     # Get tournament info
-    tournament <- dbGetQuery(rv$db_con, sprintf("
+    tournament <- dbGetQuery(rv$db_con, "
       SELECT t.event_date, t.event_type, t.format, t.player_count, t.rounds, s.name as store_name
       FROM tournaments t
       JOIN stores s ON t.store_id = s.store_id
-      WHERE t.tournament_id = %d
-    ", tournament_id))
+      WHERE t.tournament_id = ?
+    ", params = list(tournament_id))
 
     if (nrow(tournament) == 0) return(NULL)
 
     # Get all results for this tournament
-    results <- dbGetQuery(rv$db_con, sprintf("
+    results <- dbGetQuery(rv$db_con, "
       SELECT r.placement as Place, p.display_name as Player, da.archetype_name as Deck,
              da.primary_color as color, r.wins as W, r.losses as L, r.ties as T, r.decklist_url
       FROM results r
       JOIN players p ON r.player_id = p.player_id
       JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE r.tournament_id = %d
+      WHERE r.tournament_id = ?
       ORDER BY r.placement ASC
-    ", tournament_id))
+    ", params = list(tournament_id))
 
     # Format event type
     event_type_display <- switch(tournament$event_type,
@@ -2579,6 +2627,19 @@ server <- function(input, output, session) {
   # Admin - Tournament Entry
   # ---------------------------------------------------------------------------
 
+  # Wizard step management
+  observe({
+    if (rv$wizard_step == 1) {
+      shinyjs::show("wizard_step1")
+      shinyjs::hide("wizard_step2")
+      shinyjs::runjs("$('#step1_indicator').addClass('active').removeClass('completed'); $('#step2_indicator').removeClass('active');")
+    } else {
+      shinyjs::hide("wizard_step1")
+      shinyjs::show("wizard_step2")
+      shinyjs::runjs("$('#step2_indicator').addClass('active'); $('#step1_indicator').removeClass('active').addClass('completed');")
+    }
+  })
+
   output$active_tournament_info <- renderText({
     if (is.null(rv$active_tournament_id)) {
       return("No active tournament. Create one to start entering results.")
@@ -2586,12 +2647,12 @@ server <- function(input, output, session) {
 
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return("Database not connected")
 
-    info <- dbGetQuery(rv$db_con, sprintf("
+    info <- dbGetQuery(rv$db_con, "
       SELECT t.tournament_id, s.name as store_name, t.event_date, t.event_type, t.format, t.player_count
       FROM tournaments t
       JOIN stores s ON t.store_id = s.store_id
-      WHERE t.tournament_id = %d
-    ", rv$active_tournament_id))
+      WHERE t.tournament_id = ?
+    ", params = list(rv$active_tournament_id))
 
     if (nrow(info) == 0) return("Tournament not found")
 
@@ -2638,18 +2699,36 @@ server <- function(input, output, session) {
       return()
     }
 
-    # Check for duplicate tournament (same store, date, and event type)
+    # Check for duplicate tournament (same store and date)
     existing <- dbGetQuery(rv$db_con, "
-      SELECT tournament_id FROM tournaments
-      WHERE store_id = ? AND event_date = ? AND event_type = ?
-    ", params = list(store_id, event_date, event_type))
+      SELECT t.tournament_id, t.player_count, t.event_type,
+             (SELECT COUNT(*) FROM results WHERE tournament_id = t.tournament_id) as result_count,
+             s.name as store_name
+      FROM tournaments t
+      JOIN stores s ON t.store_id = s.store_id
+      WHERE t.store_id = ? AND t.event_date = ?
+    ", params = list(store_id, event_date))
 
     if (nrow(existing) > 0) {
-      showNotification(
-        sprintf("Warning: A %s tournament already exists for this store on %s", event_type, event_date),
-        type = "warning",
-        duration = 5
-      )
+      # Store for modal handlers
+      rv$duplicate_tournament <- existing[1, ]
+
+      output$duplicate_tournament_message <- renderUI({
+        div(
+          p(sprintf("A tournament at %s on %s already exists:",
+                    existing$store_name[1], format(as.Date(event_date), "%B %d, %Y"))),
+          tags$ul(
+            tags$li(sprintf("%d players expected", existing$player_count[1])),
+            tags$li(sprintf("%d results entered", existing$result_count[1])),
+            tags$li(sprintf("Event type: %s", existing$event_type[1]))
+          ),
+          p("What would you like to do?")
+        )
+      })
+
+      # Show modal and return (don't create)
+      shinyjs::runjs("$('#duplicate_tournament_modal').modal('show');")
+      return()
     }
 
     tryCatch({
@@ -2666,6 +2745,7 @@ server <- function(input, output, session) {
       rv$current_results <- data.frame()
 
       showNotification("Tournament created!", type = "message")
+      rv$wizard_step <- 2
 
     }, error = function(e) {
       showNotification(paste("Error:", e$message), type = "error")
@@ -2676,6 +2756,95 @@ server <- function(input, output, session) {
   observeEvent(input$clear_tournament, {
     rv$active_tournament_id <- NULL
     rv$current_results <- data.frame()
+    rv$wizard_step <- 1
+  })
+
+  # Wizard back button
+  observeEvent(input$wizard_back, {
+    rv$wizard_step <- 1
+  })
+
+  # Handle "View/Edit Existing" button from duplicate modal
+  observeEvent(input$edit_existing_tournament, {
+    req(rv$duplicate_tournament)
+    shinyjs::runjs("$('#duplicate_tournament_modal').modal('hide');")
+
+    rv$active_tournament_id <- rv$duplicate_tournament$tournament_id
+    rv$wizard_step <- 2
+  })
+
+  # Handle "Create Anyway" button from duplicate modal
+  observeEvent(input$create_anyway, {
+    shinyjs::runjs("$('#duplicate_tournament_modal').modal('hide');")
+
+    # Get form values again
+    store_id <- as.integer(input$tournament_store)
+    event_date <- as.character(input$tournament_date)
+    event_type <- input$tournament_type
+    format <- input$tournament_format
+    player_count <- input$tournament_players
+    rounds <- input$tournament_rounds
+
+    tryCatch({
+      max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(tournament_id), 0) as max_id FROM tournaments")$max_id
+      new_id <- max_id + 1
+
+      dbExecute(rv$db_con, "
+        INSERT INTO tournaments (tournament_id, store_id, event_date, event_type, format, player_count, rounds)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      ", params = list(new_id, store_id, event_date, event_type, format, player_count, rounds))
+
+      rv$active_tournament_id <- new_id
+      rv$current_results <- data.frame()
+      rv$duplicate_tournament <- NULL
+
+      showNotification("Tournament created!", type = "message")
+      rv$wizard_step <- 2
+
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
+  })
+
+  # Tournament summary bar for wizard step 2
+  output$tournament_summary_bar <- renderUI({
+    req(rv$active_tournament_id, rv$db_con)
+
+    info <- dbGetQuery(rv$db_con, "
+      SELECT s.name as store_name, t.event_date, t.event_type, t.player_count
+      FROM tournaments t
+      JOIN stores s ON t.store_id = s.store_id
+      WHERE t.tournament_id = ?
+    ", params = list(rv$active_tournament_id))
+
+    if (nrow(info) == 0) return(NULL)
+
+    div(
+      class = "alert alert-info d-flex align-items-center gap-3 mb-3",
+      bsicons::bs_icon("geo-alt-fill"),
+      span(info$store_name),
+      span("|"),
+      span(format(as.Date(info$event_date), "%b %d, %Y")),
+      span("|"),
+      span(info$event_type),
+      span("|"),
+      span(sprintf("%d players", info$player_count))
+    )
+  })
+
+  # Results count header
+  output$results_count_header <- renderUI({
+    req(rv$active_tournament_id, rv$db_con)
+
+    result_count <- dbGetQuery(rv$db_con, "
+      SELECT COUNT(*) as cnt FROM results WHERE tournament_id = ?
+    ", params = list(rv$active_tournament_id))$cnt
+
+    player_count <- dbGetQuery(rv$db_con, "
+      SELECT player_count FROM tournaments WHERE tournament_id = ?
+    ", params = list(rv$active_tournament_id))$player_count
+
+    sprintf("Results Entered (%d/%d)", result_count, player_count)
   })
 
   # Add result
@@ -2865,15 +3034,15 @@ server <- function(input, output, session) {
   output$current_results <- renderReactable({
     req(rv$db_con, rv$active_tournament_id)
 
-    results <- dbGetQuery(rv$db_con, sprintf("
+    results <- dbGetQuery(rv$db_con, "
       SELECT p.display_name as Player, da.archetype_name as Deck,
              r.placement as Place, r.wins as W, r.losses as L, r.ties as T
       FROM results r
       JOIN players p ON r.player_id = p.player_id
       LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE r.tournament_id = %d
+      WHERE r.tournament_id = ?
       ORDER BY r.placement
-    ", rv$active_tournament_id))
+    ", params = list(rv$active_tournament_id))
 
     if (nrow(results) == 0) {
       results <- data.frame(Message = "No results entered yet")
@@ -2886,6 +3055,7 @@ server <- function(input, output, session) {
     rv$active_tournament_id <- NULL
     rv$current_results <- data.frame()
     showNotification("Tournament complete! Results saved.", type = "message")
+    rv$wizard_step <- 1
   })
 
   # ---------------------------------------------------------------------------
@@ -3138,15 +3308,15 @@ server <- function(input, output, session) {
   output$current_results_bulk <- renderReactable({
     req(rv$db_con, rv$active_tournament_id)
 
-    results <- dbGetQuery(rv$db_con, sprintf("
+    results <- dbGetQuery(rv$db_con, "
       SELECT p.display_name as Player, da.archetype_name as Deck,
              r.placement as Place, r.wins as W, r.losses as L, r.ties as T
       FROM results r
       JOIN players p ON r.player_id = p.player_id
       LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE r.tournament_id = %d
+      WHERE r.tournament_id = ?
       ORDER BY r.placement
-    ", rv$active_tournament_id))
+    ", params = list(rv$active_tournament_id))
 
     if (nrow(results) == 0) {
       results <- data.frame(Message = "No results entered yet")
@@ -3160,6 +3330,7 @@ server <- function(input, output, session) {
     rv$current_results <- data.frame()
     rv$bulk_parsed <- NULL
     showNotification("Tournament complete! Results saved.", type = "message")
+    rv$wizard_step <- 1
   })
 
   # ---------------------------------------------------------------------------
@@ -3314,16 +3485,19 @@ server <- function(input, output, session) {
       new_id <- max_id + 1
 
       dbExecute(rv$db_con, "
-        INSERT INTO deck_archetypes (archetype_id, archetype_name, display_card_id, primary_color, secondary_color)
-        VALUES (?, ?, ?, ?, ?)
-      ", params = list(new_id, name, card_id, primary_color, secondary_color))
+        INSERT INTO deck_archetypes (archetype_id, archetype_name, display_card_id, primary_color, secondary_color, is_multi_color)
+        VALUES (?, ?, ?, ?, ?, ?)
+      ", params = list(new_id, name, card_id, primary_color, secondary_color, isTRUE(input$deck_multi_color)))
 
       showNotification(paste("Added archetype:", name), type = "message")
 
       # Clear form
       updateTextInput(session, "deck_name", value = "")
+      updateSelectInput(session, "deck_primary_color", selected = "Red")
+      updateSelectInput(session, "deck_secondary_color", selected = "")
       updateTextInput(session, "selected_card_id", value = "")
       updateTextInput(session, "card_search", value = "")
+      updateCheckboxInput(session, "deck_multi_color", value = FALSE)
       output$card_search_results <- renderUI({ NULL })
 
       # Update archetype dropdown
@@ -3338,12 +3512,13 @@ server <- function(input, output, session) {
   output$archetype_list <- renderReactable({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-    # Trigger refresh when archetype added/updated
+    # Trigger refresh when archetype added/updated/deleted
     input$add_archetype
     input$update_archetype
+    input$confirm_delete_archetype
 
     data <- dbGetQuery(rv$db_con, "
-      SELECT archetype_id, archetype_name as Deck, primary_color, secondary_color, display_card_id as 'Card ID'
+      SELECT archetype_id, archetype_name as Deck, primary_color, secondary_color, is_multi_color, display_card_id as 'Card ID'
       FROM deck_archetypes
       WHERE is_active = TRUE
       ORDER BY archetype_name
@@ -3363,11 +3538,16 @@ server <- function(input, output, session) {
         primary_color = colDef(
           name = "Color",
           cell = function(value, index) {
-            secondary <- data$secondary_color[index]
-            deck_color_badge_dual(value, secondary)
+            if (isTRUE(data$is_multi_color[index])) {
+              span(class = "badge", style = "background-color: #E91E8C; color: white;", "Multi")
+            } else {
+              secondary <- data$secondary_color[index]
+              deck_color_badge_dual(value, secondary)
+            }
           }
         ),
-        secondary_color = colDef(show = FALSE)
+        secondary_color = colDef(show = FALSE),
+        is_multi_color = colDef(show = FALSE)
       )
     )
   })
@@ -3383,7 +3563,7 @@ server <- function(input, output, session) {
 
     # Get archetype data
     data <- dbGetQuery(rv$db_con, "
-      SELECT archetype_id, archetype_name, primary_color, secondary_color, display_card_id
+      SELECT archetype_id, archetype_name, primary_color, secondary_color, display_card_id, is_multi_color
       FROM deck_archetypes
       WHERE is_active = TRUE
       ORDER BY archetype_name
@@ -3401,10 +3581,12 @@ server <- function(input, output, session) {
                       selected = if (is.na(arch$secondary_color)) "" else arch$secondary_color)
     updateTextInput(session, "selected_card_id",
                     value = if (is.na(arch$display_card_id)) "" else arch$display_card_id)
+    updateCheckboxInput(session, "deck_multi_color", value = isTRUE(arch$is_multi_color))
 
     # Show/hide buttons
     shinyjs::hide("add_archetype")
     shinyjs::show("update_archetype")
+    shinyjs::show("delete_archetype")
 
     showNotification(sprintf("Editing: %s", arch$archetype_name), type = "message", duration = 2)
   })
@@ -3428,21 +3610,25 @@ server <- function(input, output, session) {
     tryCatch({
       dbExecute(rv$db_con, "
         UPDATE deck_archetypes
-        SET archetype_name = ?, primary_color = ?, secondary_color = ?, display_card_id = ?, updated_at = CURRENT_TIMESTAMP
+        SET archetype_name = ?, primary_color = ?, secondary_color = ?, display_card_id = ?, is_multi_color = ?, updated_at = CURRENT_TIMESTAMP
         WHERE archetype_id = ?
-      ", params = list(name, primary_color, secondary_color, card_id, archetype_id))
+      ", params = list(name, primary_color, secondary_color, card_id, isTRUE(input$deck_multi_color), archetype_id))
 
       showNotification(sprintf("Updated archetype: %s", name), type = "message")
 
       # Clear form and reset to add mode
       updateTextInput(session, "editing_archetype_id", value = "")
       updateTextInput(session, "deck_name", value = "")
+      updateSelectInput(session, "deck_primary_color", selected = "Red")
+      updateSelectInput(session, "deck_secondary_color", selected = "")
       updateTextInput(session, "selected_card_id", value = "")
       updateTextInput(session, "card_search", value = "")
+      updateCheckboxInput(session, "deck_multi_color", value = FALSE)
       output$card_search_results <- renderUI({ NULL })
 
       shinyjs::show("add_archetype")
       shinyjs::hide("update_archetype")
+      shinyjs::hide("delete_archetype")
 
       # Update dropdown
       updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
@@ -3456,12 +3642,88 @@ server <- function(input, output, session) {
   observeEvent(input$cancel_edit_archetype, {
     updateTextInput(session, "editing_archetype_id", value = "")
     updateTextInput(session, "deck_name", value = "")
+    updateSelectInput(session, "deck_primary_color", selected = "Red")
+    updateSelectInput(session, "deck_secondary_color", selected = "")
     updateTextInput(session, "selected_card_id", value = "")
     updateTextInput(session, "card_search", value = "")
+    updateCheckboxInput(session, "deck_multi_color", value = FALSE)
     output$card_search_results <- renderUI({ NULL })
 
     shinyjs::show("add_archetype")
     shinyjs::hide("update_archetype")
+    shinyjs::hide("delete_archetype")
+  })
+
+  # Check if archetype can be deleted (no related results)
+  observe({
+    req(input$editing_archetype_id, rv$db_con)
+    archetype_id <- as.integer(input$editing_archetype_id)
+
+    count <- dbGetQuery(rv$db_con, "
+      SELECT COUNT(*) as cnt FROM results WHERE archetype_id = ?
+    ", params = list(archetype_id))$cnt
+
+    rv$archetype_result_count <- count
+    rv$can_delete_archetype <- count == 0
+  })
+
+  # Delete button click - show modal
+  observeEvent(input$delete_archetype, {
+    req(rv$is_admin, input$editing_archetype_id)
+
+    archetype_id <- as.integer(input$editing_archetype_id)
+    arch <- dbGetQuery(rv$db_con, "SELECT archetype_name FROM deck_archetypes WHERE archetype_id = ?",
+                       params = list(archetype_id))
+
+    if (rv$can_delete_archetype) {
+      output$delete_archetype_message <- renderUI({
+        div(
+          p(sprintf("Are you sure you want to delete '%s'?", arch$archetype_name)),
+          p(class = "text-danger", "This action cannot be undone.")
+        )
+      })
+      shinyjs::runjs("$('#delete_archetype_modal').modal('show');")
+    } else {
+      showNotification(
+        sprintf("Cannot delete: used in %d result(s)", rv$archetype_result_count),
+        type = "error"
+      )
+    }
+  })
+
+  # Confirm delete
+  observeEvent(input$confirm_delete_archetype, {
+    req(rv$is_admin, rv$db_con, input$editing_archetype_id)
+    archetype_id <- as.integer(input$editing_archetype_id)
+
+    tryCatch({
+      dbExecute(rv$db_con, "DELETE FROM deck_archetypes WHERE archetype_id = ?",
+                params = list(archetype_id))
+      showNotification("Archetype deleted", type = "message")
+
+      # Hide modal and reset form
+      shinyjs::runjs("$('#delete_archetype_modal').modal('hide');")
+
+      # Clear form
+      updateTextInput(session, "editing_archetype_id", value = "")
+      updateTextInput(session, "deck_name", value = "")
+      updateSelectInput(session, "deck_primary_color", selected = "Red")
+      updateSelectInput(session, "deck_secondary_color", selected = "")
+      updateTextInput(session, "selected_card_id", value = "")
+      updateTextInput(session, "card_search", value = "")
+      updateCheckboxInput(session, "deck_multi_color", value = FALSE)
+      output$card_search_results <- renderUI({ NULL })
+
+      shinyjs::show("add_archetype")
+      shinyjs::hide("update_archetype")
+      shinyjs::hide("delete_archetype")
+
+      # Update archetype dropdown
+      updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
+
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
   })
 
   # ---------------------------------------------------------------------------
@@ -3472,8 +3734,22 @@ server <- function(input, output, session) {
   observeEvent(input$add_store, {
     req(rv$is_admin, rv$db_con)
 
-    store_name <- trimws(input$store_name)
-    store_city <- trimws(input$store_city)
+    # Check if this is an online store
+    is_online <- isTRUE(input$store_is_online)
+
+    # Get name from appropriate input based on is_online
+    store_name <- if (is_online) {
+      trimws(input$store_name_online)
+    } else {
+      trimws(input$store_name)
+    }
+
+    # Use region as "city" for online stores
+    store_city <- if (is_online) {
+      trimws(input$store_region)
+    } else {
+      trimws(input$store_city)
+    }
 
     # Validation
     if (nchar(store_name) == 0) {
@@ -3481,22 +3757,38 @@ server <- function(input, output, session) {
       return()
     }
 
-    if (nchar(store_city) == 0) {
+    # City is required for physical stores, optional for online stores
+    if (!is_online && nchar(store_city) == 0) {
       showNotification("Please enter a city", type = "error")
       return()
     }
 
-    # Check for duplicate store name in same city
-    existing <- dbGetQuery(rv$db_con, "
-      SELECT store_id FROM stores
-      WHERE LOWER(name) = LOWER(?) AND LOWER(city) = LOWER(?)
-    ", params = list(store_name, store_city))
+    # Check for duplicate store name in same city/region
+    # For online stores with no region, check for duplicate name among online stores
+    if (is_online && nchar(store_city) == 0) {
+      existing <- dbGetQuery(rv$db_con, "
+        SELECT store_id FROM stores
+        WHERE LOWER(name) = LOWER(?) AND is_online = TRUE AND (city IS NULL OR city = '')
+      ", params = list(store_name))
+    } else {
+      existing <- dbGetQuery(rv$db_con, "
+        SELECT store_id FROM stores
+        WHERE LOWER(name) = LOWER(?) AND LOWER(city) = LOWER(?)
+      ", params = list(store_name, store_city))
+    }
 
     if (nrow(existing) > 0) {
-      showNotification(
-        sprintf("Store '%s' in %s already exists", store_name, store_city),
-        type = "error"
-      )
+      if (is_online && nchar(store_city) == 0) {
+        showNotification(
+          sprintf("Online store '%s' already exists", store_name),
+          type = "error"
+        )
+      } else {
+        showNotification(
+          sprintf("Store '%s' in %s already exists", store_name, store_city),
+          type = "error"
+        )
+      }
       return()
     }
 
@@ -3506,56 +3798,70 @@ server <- function(input, output, session) {
     }
 
     tryCatch({
-      # Build full address for geocoding
-      address_parts <- c(input$store_address, store_city)
-      if (exists("input$store_state") && nchar(input$store_state) > 0) {
-        address_parts <- c(address_parts, input$store_state)
-      } else {
-        address_parts <- c(address_parts, "TX")
-      }
-      if (exists("input$store_zip") && nchar(input$store_zip) > 0) {
-        address_parts <- c(address_parts, input$store_zip)
-      }
-      full_address <- paste(address_parts, collapse = ", ")
-
-      # Geocode the address
-      showNotification("Geocoding address...", type = "message", duration = 2)
-      geo_result <- tidygeocoder::geo(full_address, method = "osm", quiet = TRUE)
-
-      lat <- geo_result$lat
-      lng <- geo_result$long
-
-      if (is.na(lat) || is.na(lng)) {
-        showNotification("Could not geocode address. Store added without coordinates.", type = "warning")
+      # Online stores don't need geocoding
+      if (is_online) {
         lat <- NA_real_
         lng <- NA_real_
+        address <- NA_character_
+        state <- NA_character_
+        zip_code <- NA_character_
+      } else {
+        # Build full address for geocoding (physical stores only)
+        address_parts <- c(input$store_address, store_city)
+        address_parts <- c(address_parts, if (nchar(input$store_state) > 0) input$store_state else "TX")
+        if (nchar(input$store_zip) > 0) {
+          address_parts <- c(address_parts, input$store_zip)
+        }
+        full_address <- paste(address_parts, collapse = ", ")
+
+        # Geocode the address
+        showNotification("Geocoding address...", type = "message", duration = 2)
+        geo_result <- tidygeocoder::geo(full_address, method = "osm", quiet = TRUE)
+
+        lat <- geo_result$lat
+        lng <- geo_result$long
+
+        if (is.na(lat) || is.na(lng)) {
+          showNotification("Could not geocode address. Store added without coordinates.", type = "warning")
+          lat <- NA_real_
+          lng <- NA_real_
+        }
+
+        # Use NA instead of NULL for DuckDB parameterized queries
+        zip_code <- if (nchar(input$store_zip) > 0) input$store_zip else NA_character_
+        address <- if (nchar(input$store_address) > 0) input$store_address else NA_character_
+        state <- if (nchar(input$store_state) > 0) input$store_state else "TX"
       }
 
       max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(store_id), 0) as max_id FROM stores")$max_id
       new_id <- max_id + 1
 
-      # Use NA instead of NULL for DuckDB parameterized queries
+      # Common fields for both online and physical stores
       schedule_info <- if (nchar(input$store_schedule) > 0) input$store_schedule else NA_character_
       website <- if (nchar(input$store_website) > 0) input$store_website else NA_character_
-      zip_code <- if (nchar(input$store_zip) > 0) input$store_zip else NA_character_
-      address <- if (nchar(input$store_address) > 0) input$store_address else NA_character_
-      state <- if (nchar(input$store_state) > 0) input$store_state else "TX"
+
+      # Use NA for empty city/region
+      store_city_db <- if (nchar(store_city) > 0) store_city else NA_character_
 
       dbExecute(rv$db_con, "
-        INSERT INTO stores (store_id, name, address, city, state, zip_code, latitude, longitude, website, schedule_info)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ", params = list(new_id, store_name, address, store_city,
-                       state, zip_code, lat, lng, website, schedule_info))
+        INSERT INTO stores (store_id, name, address, city, state, zip_code, latitude, longitude, website, schedule_info, is_online)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ", params = list(new_id, store_name, address, store_city_db,
+                       state, zip_code, lat, lng, website, schedule_info, is_online))
 
       showNotification(paste("Added store:", store_name), type = "message")
 
-      # Clear form
+      # Clear form - both physical and online store fields
       updateTextInput(session, "store_name", value = "")
+      updateTextInput(session, "store_name_online", value = "")
+      updateTextInput(session, "store_region", value = "")
       updateTextInput(session, "store_address", value = "")
       updateTextInput(session, "store_city", value = "")
+      updateSelectInput(session, "store_state", selected = "TX")
       updateTextInput(session, "store_zip", value = "")
       updateTextInput(session, "store_website", value = "")
       updateTextAreaInput(session, "store_schedule", value = "")
+      updateCheckboxInput(session, "store_is_online", value = FALSE)
 
       # Update store dropdown
       updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con))
@@ -3572,9 +3878,10 @@ server <- function(input, output, session) {
     # Trigger refresh
     input$add_store
     input$update_store
+    input$confirm_delete_store
 
     data <- dbGetQuery(rv$db_con, "
-      SELECT store_id, name as Store, city as City, state as State
+      SELECT store_id, name as Store, city as City, state as State, is_online
       FROM stores
       WHERE is_active = TRUE
       ORDER BY name
@@ -3591,7 +3898,11 @@ server <- function(input, output, session) {
       showPageSizeOptions = TRUE,
       pageSizeOptions = c(10, 20, 50, 100),
       columns = list(
-        store_id = colDef(show = FALSE)
+        store_id = colDef(show = FALSE),
+        is_online = colDef(
+          name = "Type",
+          cell = function(value) if (isTRUE(value)) "Online" else "Physical"
+        )
       )
     )
   })
@@ -3607,7 +3918,7 @@ server <- function(input, output, session) {
 
     # Get store data
     data <- dbGetQuery(rv$db_con, "
-      SELECT store_id, name, address, city, state, zip_code, website, schedule_info
+      SELECT store_id, name, address, city, state, zip_code, website, schedule_info, is_online
       FROM stores
       WHERE is_active = TRUE
       ORDER BY name
@@ -3619,9 +3930,23 @@ server <- function(input, output, session) {
 
     # Populate form for editing
     updateTextInput(session, "editing_store_id", value = as.character(store$store_id))
-    updateTextInput(session, "store_name", value = store$name)
+
+    # Handle online store fields
+    is_online <- isTRUE(store$is_online)
+    updateCheckboxInput(session, "store_is_online", value = is_online)
+
+    if (is_online) {
+      updateTextInput(session, "store_name_online", value = store$name)
+      updateTextInput(session, "store_region", value = if (is.na(store$city)) "" else store$city)
+      updateTextInput(session, "store_name", value = "")  # Clear physical store name
+    } else {
+      updateTextInput(session, "store_name", value = store$name)
+      updateTextInput(session, "store_name_online", value = "")  # Clear online store name
+      updateTextInput(session, "store_region", value = "")
+    }
+
     updateTextInput(session, "store_address", value = if (is.na(store$address)) "" else store$address)
-    updateTextInput(session, "store_city", value = store$city)
+    updateTextInput(session, "store_city", value = if (is.na(store$city)) "" else store$city)
     updateSelectInput(session, "store_state", selected = if (is.na(store$state)) "TX" else store$state)
     updateTextInput(session, "store_zip", value = if (is.na(store$zip_code)) "" else store$zip_code)
     updateTextInput(session, "store_website", value = if (is.na(store$website)) "" else store$website)
@@ -3630,6 +3955,7 @@ server <- function(input, output, session) {
     # Show/hide buttons
     shinyjs::hide("add_store")
     shinyjs::show("update_store")
+    shinyjs::show("delete_store")
 
     showNotification(sprintf("Editing: %s", store$name), type = "message", duration = 2)
   })
@@ -3640,65 +3966,104 @@ server <- function(input, output, session) {
     req(input$editing_store_id)
 
     store_id <- as.integer(input$editing_store_id)
-    store_name <- trimws(input$store_name)
-    store_city <- trimws(input$store_city)
+    is_online <- isTRUE(input$store_is_online)
 
-    if (nchar(store_name) == 0 || nchar(store_city) == 0) {
-      showNotification("Store name and city are required", type = "error")
+    store_name <- if (is_online) {
+      trimws(input$store_name_online)
+    } else {
+      trimws(input$store_name)
+    }
+
+    store_city <- if (is_online) {
+      trimws(input$store_region)
+    } else {
+      trimws(input$store_city)
+    }
+
+    if (nchar(store_name) == 0) {
+      showNotification("Store name is required", type = "error")
       return()
     }
 
+    # City only required for physical stores
+    if (!is_online && nchar(store_city) == 0) {
+      showNotification("Please enter a city", type = "error")
+      return()
+    }
+
+    # Validate website URL format if provided
+    if (nchar(input$store_website) > 0 && !grepl("^https?://", input$store_website)) {
+      showNotification("Website should start with http:// or https://", type = "warning")
+    }
+
     tryCatch({
-      # Build full address for geocoding
-      address_parts <- c(input$store_address, store_city)
-      address_parts <- c(address_parts, if (nchar(input$store_state) > 0) input$store_state else "TX")
-      if (nchar(input$store_zip) > 0) {
-        address_parts <- c(address_parts, input$store_zip)
-      }
-      full_address <- paste(address_parts, collapse = ", ")
+      # Online stores don't need geocoding
+      if (is_online) {
+        lat <- NA_real_
+        lng <- NA_real_
+        address <- NA_character_
+        state <- NA_character_
+        zip_code <- NA_character_
+        store_city_db <- if (nchar(store_city) > 0) store_city else NA_character_
+      } else {
+        # Build full address for geocoding
+        address_parts <- c(input$store_address, store_city)
+        address_parts <- c(address_parts, if (nchar(input$store_state) > 0) input$store_state else "TX")
+        if (nchar(input$store_zip) > 0) {
+          address_parts <- c(address_parts, input$store_zip)
+        }
+        full_address <- paste(address_parts, collapse = ", ")
 
-      # Geocode the address
-      showNotification("Geocoding address...", type = "message", duration = 2)
-      geo_result <- tidygeocoder::geo(full_address, method = "osm", quiet = TRUE)
+        # Geocode the address
+        showNotification("Geocoding address...", type = "message", duration = 2)
+        geo_result <- tidygeocoder::geo(full_address, method = "osm", quiet = TRUE)
 
-      lat <- geo_result$lat
-      lng <- geo_result$long
+        lat <- geo_result$lat
+        lng <- geo_result$long
 
-      if (is.na(lat) || is.na(lng)) {
-        showNotification("Could not geocode address. Keeping existing coordinates.", type = "warning")
-        # Keep existing coordinates
-        existing <- dbGetQuery(rv$db_con, "SELECT latitude, longitude FROM stores WHERE store_id = ?",
-                               params = list(store_id))
-        lat <- existing$latitude
-        lng <- existing$longitude
+        if (is.na(lat) || is.na(lng)) {
+          showNotification("Could not geocode address. Keeping existing coordinates.", type = "warning")
+          # Keep existing coordinates
+          existing <- dbGetQuery(rv$db_con, "SELECT latitude, longitude FROM stores WHERE store_id = ?",
+                                 params = list(store_id))
+          lat <- existing$latitude
+          lng <- existing$longitude
+        }
+
+        zip_code <- if (nchar(input$store_zip) > 0) input$store_zip else NA_character_
+        address <- if (nchar(input$store_address) > 0) input$store_address else NA_character_
+        state <- if (nchar(input$store_state) > 0) input$store_state else "TX"
+        store_city_db <- store_city
       }
 
       schedule_info <- if (nchar(input$store_schedule) > 0) input$store_schedule else NA_character_
       website <- if (nchar(input$store_website) > 0) input$store_website else NA_character_
-      zip_code <- if (nchar(input$store_zip) > 0) input$store_zip else NA_character_
-      address <- if (nchar(input$store_address) > 0) input$store_address else NA_character_
-      state <- if (nchar(input$store_state) > 0) input$store_state else "TX"
 
       dbExecute(rv$db_con, "
         UPDATE stores
         SET name = ?, address = ?, city = ?, state = ?, zip_code = ?,
-            latitude = ?, longitude = ?, website = ?, schedule_info = ?, updated_at = CURRENT_TIMESTAMP
+            latitude = ?, longitude = ?, website = ?, schedule_info = ?, is_online = ?, updated_at = CURRENT_TIMESTAMP
         WHERE store_id = ?
-      ", params = list(store_name, address, store_city, state, zip_code, lat, lng, website, schedule_info, store_id))
+      ", params = list(store_name, address, store_city_db, state, zip_code, lat, lng, website, schedule_info, is_online, store_id))
 
       showNotification(sprintf("Updated store: %s", store_name), type = "message")
 
       # Clear form and reset to add mode
       updateTextInput(session, "editing_store_id", value = "")
       updateTextInput(session, "store_name", value = "")
+      updateTextInput(session, "store_name_online", value = "")
+      updateTextInput(session, "store_region", value = "")
       updateTextInput(session, "store_address", value = "")
       updateTextInput(session, "store_city", value = "")
       updateTextInput(session, "store_zip", value = "")
       updateTextInput(session, "store_website", value = "")
       updateTextAreaInput(session, "store_schedule", value = "")
+      updateCheckboxInput(session, "store_is_online", value = FALSE)
+      updateSelectInput(session, "store_state", selected = "TX")
 
       shinyjs::show("add_store")
       shinyjs::hide("update_store")
+      shinyjs::hide("delete_store")
 
       # Update dropdown
       updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con))
@@ -3712,14 +4077,94 @@ server <- function(input, output, session) {
   observeEvent(input$cancel_edit_store, {
     updateTextInput(session, "editing_store_id", value = "")
     updateTextInput(session, "store_name", value = "")
+    updateTextInput(session, "store_name_online", value = "")
+    updateTextInput(session, "store_region", value = "")
     updateTextInput(session, "store_address", value = "")
     updateTextInput(session, "store_city", value = "")
     updateTextInput(session, "store_zip", value = "")
     updateTextInput(session, "store_website", value = "")
     updateTextAreaInput(session, "store_schedule", value = "")
+    updateCheckboxInput(session, "store_is_online", value = FALSE)
+    updateSelectInput(session, "store_state", selected = "TX")
 
     shinyjs::show("add_store")
     shinyjs::hide("update_store")
+    shinyjs::hide("delete_store")
+  })
+
+  # Check if store can be deleted (no related tournaments)
+  observe({
+    req(input$editing_store_id)
+    store_id <- as.integer(input$editing_store_id)
+
+    count <- dbGetQuery(rv$db_con, "
+      SELECT COUNT(*) as cnt FROM tournaments WHERE store_id = ?
+    ", params = list(store_id))$cnt
+
+    rv$store_tournament_count <- count
+    rv$can_delete_store <- count == 0
+  })
+
+  # Delete button click - show modal
+  observeEvent(input$delete_store, {
+    req(rv$is_admin, input$editing_store_id)
+
+    store_id <- as.integer(input$editing_store_id)
+    store <- dbGetQuery(rv$db_con, "SELECT name FROM stores WHERE store_id = ?",
+                        params = list(store_id))
+
+    if (rv$can_delete_store) {
+      output$delete_store_message <- renderUI({
+        div(
+          p(sprintf("Are you sure you want to delete '%s'?", store$name)),
+          p(class = "text-danger", "This action cannot be undone.")
+        )
+      })
+      shinyjs::runjs("$('#delete_store_modal').modal('show');")
+    } else {
+      showNotification(
+        sprintf("Cannot delete: %d tournament(s) reference this store", rv$store_tournament_count),
+        type = "error"
+      )
+    }
+  })
+
+  # Confirm delete
+  observeEvent(input$confirm_delete_store, {
+    req(rv$is_admin, rv$db_con, input$editing_store_id)
+    store_id <- as.integer(input$editing_store_id)
+
+    tryCatch({
+      dbExecute(rv$db_con, "DELETE FROM stores WHERE store_id = ?",
+                params = list(store_id))
+      showNotification("Store deleted", type = "message")
+
+      # Hide modal and reset form
+      shinyjs::runjs("$('#delete_store_modal').modal('hide');")
+
+      # Clear form
+      updateTextInput(session, "editing_store_id", value = "")
+      updateTextInput(session, "store_name", value = "")
+      updateTextInput(session, "store_name_online", value = "")
+      updateTextInput(session, "store_region", value = "")
+      updateTextInput(session, "store_address", value = "")
+      updateTextInput(session, "store_city", value = "")
+      updateSelectInput(session, "store_state", selected = "TX")
+      updateTextInput(session, "store_zip", value = "")
+      updateTextInput(session, "store_website", value = "")
+      updateTextAreaInput(session, "store_schedule", value = "")
+      updateCheckboxInput(session, "store_is_online", value = FALSE)
+
+      shinyjs::show("add_store")
+      shinyjs::hide("update_store")
+      shinyjs::hide("delete_store")
+
+      # Update dropdown
+      updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con))
+
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
   })
 }
 
