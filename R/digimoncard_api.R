@@ -65,6 +65,7 @@ rate_limit_wait <- function() {
 #' @param digi_type Digimon type (e.g., "Dragon", "Wizard")
 #' @param sort Sort field (name, cardnumber, color, etc.)
 #' @param sort_direction Sort direction ("asc" or "desc")
+#' @param limit Maximum number of results to return (default 100)
 #' @return Data frame of matching cards, or NULL if error/no results
 #' @export
 search_cards <- function(card_number = NULL,
@@ -75,7 +76,8 @@ search_cards <- function(card_number = NULL,
                          pack = NULL,
                          digi_type = NULL,
                          sort = NULL,
-                         sort_direction = NULL) {
+                         sort_direction = NULL,
+                         limit = 100) {
 
   # Build query parameters
   params <- list()
@@ -88,6 +90,7 @@ search_cards <- function(card_number = NULL,
   if (!is.null(digi_type)) params$digitype <- digi_type
   if (!is.null(sort)) params$sort <- sort
   if (!is.null(sort_direction)) params$sortdirection <- sort_direction
+  if (!is.null(limit)) params$limit <- limit
 
   if (length(params) == 0) {
     warning("At least one search parameter is required")
@@ -160,11 +163,12 @@ get_card <- function(card_number) {
 #'
 #' @param name Card name (partial match supported)
 #' @param color Optional color filter
+#' @param limit Maximum results to return (default 100)
 #' @return Data frame of matching cards, sorted by newest set first
 #' @export
-search_by_name <- function(name, color = NULL) {
+search_by_name <- function(name, color = NULL, limit = 100) {
   # Sort by card number descending so newer sets (BT24, EX10) appear first
-  search_cards(name = name, color = color, sort = "cardnumber", sort_direction = "desc")
+  search_cards(name = name, color = color, sort = "cardnumber", sort_direction = "desc", limit = limit)
 }
 
 #' Get all cards of a specific color
