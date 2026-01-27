@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "locale": "en_US",
+  "platform": "4.3.0",
+  "metadata": {
+    "appmode": "shiny",
+    "primary_rmd": null,
+    "primary_html": null,
+    "content_category": null,
+    "has_parameters": false
+  },
+  "packages": {
+    "shiny": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "shinyjs": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "bslib": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "bsicons": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "DBI": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "duckdb": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "httr": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "jsonlite": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "reactable": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "htmltools": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "tidygeocoder": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "atomtemplates": {
+      "Source": "GitHub",
+      "Repository": "https://github.com/lopezmichael/atomtemplates"
+    },
+    "sysfonts": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "showtext": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "mapgl": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "sf": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    },
+    "highcharter": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com"
+    }
+  },
+  "files": {
+    "app.R": {
+      "checksum": ""
+    },
+    "_brand.yml": {
+      "checksum": ""
+    },
+    "R/db_connection.R": {
+      "checksum": ""
+    },
+    "R/digimoncard_api.R": {
+      "checksum": ""
+    },
+    "db/schema.sql": {
+      "checksum": ""
+    },
+    "views/dashboard-ui.R": {
+      "checksum": ""
+    },
+    "views/stores-ui.R": {
+      "checksum": ""
+    },
+    "views/players-ui.R": {
+      "checksum": ""
+    },
+    "views/meta-ui.R": {
+      "checksum": ""
+    },
+    "views/tournaments-ui.R": {
+      "checksum": ""
+    },
+    "views/admin-results-ui.R": {
+      "checksum": ""
+    },
+    "views/admin-decks-ui.R": {
+      "checksum": ""
+    },
+    "views/admin-stores-ui.R": {
+      "checksum": ""
+    },
+    "www/custom.css": {
+      "checksum": ""
+    }
+  }
+}
