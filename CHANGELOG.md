@@ -11,6 +11,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-01-27 - Admin Pages Enhancement
+
+### Added
+- **Online Store Support**: Flag-based system for online tournament organizers
+  - "Online store" checkbox in Manage Stores form
+  - Conditional fields: physical stores show address, online stores show region
+  - Online Tournament Organizers section on Stores page
+- **Wizard-based Results Entry**: Replaced bulk paste mode with 2-step wizard
+  - Step 1: Tournament Details (store, date, type, format, players, rounds)
+  - Step 2: Add Results with real-time results table
+  - Tournament summary bar showing current tournament info
+  - Results count header (X/Y players entered)
+- **Duplicate Tournament Detection**: Modal warning when creating tournament for same store/date
+  - Options: View/Edit Existing, Create Anyway, or Cancel
+- **Quick Add Forms**: Add new players and decks inline during result entry
+  - "+ New Player" link opens inline form
+  - "+ New Deck" link opens inline form with color selection
+- **Delete Functionality**: Hard delete for stores and deck archetypes
+  - Referential integrity checks (blocks delete if related records exist)
+  - Modal confirmation dialogs
+- **Multi-color Deck Support**: Checkbox for decks with 3+ colors
+  - Pink "Multi" badge display in tables
+- **Database Migration Script**: `R/migrate_v0.5.0.R` for schema updates
+
+### Changed
+- Manage Decks form reorganized: card preview on left, search on right
+- Results entry now uses wizard flow instead of single-page form
+- Removed bulk paste mode entirely (replaced by wizard)
+
+### Fixed
+- Bind parameter error: NULL values now use NA_character_ for DuckDB compatibility
+- Search button alignment in card search using flexbox
+- NULL/NA handling in nchar() checks throughout admin forms
+
+### Database
+- Added `is_online` column to stores table (BOOLEAN DEFAULT FALSE)
+- Added `is_multi_color` column to deck_archetypes table (BOOLEAN DEFAULT FALSE)
+- Updated `store_activity` view to include `is_online` column
+
+### Migration Required
+Run `source("R/migrate_v0.5.0.R")` then `migrate_v0.5.0(con)` to add new columns to existing database.
+
+---
+
 ## [0.4.0] - 2026-01-27 - Admin Improvements & Deployment Prep
 
 ### Added

@@ -1186,6 +1186,70 @@ Key fields returned by `/api-public/search`:
 
 ---
 
+## 2026-01-27: v0.5.0 - Admin Pages Enhancement
+
+### Completed
+- [x] Bug fixes: bind parameter error (NULL → NA_character_), search button alignment
+- [x] Schema updates: is_online for stores, is_multi_color for deck_archetypes
+- [x] Online store support with conditional UI and separate display section
+- [x] Deck management: reorganized form, multi-color support, delete functionality
+- [x] Store management: online store handling, delete functionality
+- [x] Results wizard: 2-step flow replacing bulk paste mode
+- [x] Duplicate tournament detection with modal options
+- [x] Quick add forms for players and decks during result entry
+- [x] Migration script for existing databases
+
+### Technical Decisions
+
+**Online Store Support: Flag-based Approach**
+- Added `is_online` boolean column instead of separate table
+- Conditional UI using `conditionalPanel()` based on checkbox state
+- Physical stores: address, city, state, zip (geocoded)
+- Online stores: name, region (no geocoding)
+- Display: separate "Online Tournament Organizers" card on Stores page
+
+**Results Entry: Wizard over Bulk Paste**
+- Removed bulk paste mode entirely (confusing UX, error-prone parsing)
+- 2-step wizard: Tournament Details → Add Results
+- Step navigation via `rv$wizard_step` reactive value
+- Tournament summary bar persists context in step 2
+- Quick-add forms reduce friction for new players/decks
+
+**Delete Functionality: Hard Delete with Referential Integrity**
+- Hard DELETE instead of soft delete (is_active = FALSE)
+- Pre-delete check counts related records
+- Block delete if records exist, show count in error message
+- Modal confirmation with specific warning message
+
+**NULL/NA Handling for DuckDB**
+- DuckDB bind parameters require NA values, not NULL
+- Pattern: `if (nchar(x) > 0) x else NA_character_`
+- Fixed throughout: decklist_url, address, zip, state, schedule, website
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Wizard logic, online store handling, delete handlers, quick add forms, NULL fixes |
+| `views/admin-stores-ui.R` | Online checkbox, conditional panels, delete button/modal |
+| `views/admin-decks-ui.R` | Reorganized layout, multi-color checkbox, delete button/modal |
+| `views/admin-results-ui.R` | Complete rewrite for wizard flow |
+| `views/stores-ui.R` | Online stores section |
+| `db/schema.sql` | New columns, updated view |
+| `R/migrate_v0.5.0.R` | New migration script |
+| `www/custom.css` | Wizard step styles |
+
+### Migration Instructions
+```r
+library(DBI)
+library(duckdb)
+source("R/migrate_v0.5.0.R")
+con <- dbConnect(duckdb::duckdb(), dbdir = "data/local.duckdb")
+migrate_v0.5.0(con)
+dbDisconnect(con)
+```
+
+---
+
 *Template for future entries:*
 
 ```
