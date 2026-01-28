@@ -3752,6 +3752,17 @@ server <- function(input, output, session) {
     req(rv$is_admin, rv$db_con, input$editing_archetype_id)
     archetype_id <- as.integer(input$editing_archetype_id)
 
+    # Re-check for referential integrity before delete
+    count <- dbGetQuery(rv$db_con, "
+      SELECT COUNT(*) as cnt FROM results WHERE archetype_id = ?
+    ", params = list(archetype_id))$cnt
+
+    if (count > 0) {
+      shinyjs::runjs("$('#delete_archetype_modal').modal('hide');")
+      showNotification(sprintf("Cannot delete: used in %d result(s)", count), type = "error")
+      return()
+    }
+
     tryCatch({
       dbExecute(rv$db_con, "DELETE FROM deck_archetypes WHERE archetype_id = ?",
                 params = list(archetype_id))
