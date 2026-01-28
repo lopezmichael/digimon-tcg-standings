@@ -4166,9 +4166,9 @@ server <- function(input, output, session) {
   })
 
   # Click row to edit
-  observeEvent(input$admin_format_list__selected, {
+  observeEvent(input$admin_format_list__reactable__selected, {
     req(rv$db_con)
-    selected_idx <- input$admin_format_list__selected
+    selected_idx <- input$admin_format_list__reactable__selected
 
     if (is.null(selected_idx)) return()
 
