@@ -2794,11 +2794,85 @@ server <- function(input, output, session) {
     })
   })
 
-  # Clear tournament
+  # Clear tournament - show modal with options
   observeEvent(input$clear_tournament, {
-    rv$active_tournament_id <- NULL
-    rv$current_results <- data.frame()
-    rv$wizard_step <- 1
+    req(rv$active_tournament_id)
+
+    # Count current results for this tournament
+    result_count <- 0
+    if (!is.null(rv$db_con)) {
+      result_count <- dbGetQuery(rv$db_con,
+        "SELECT COUNT(*) as cnt FROM results WHERE tournament_id = ?",
+        params = list(rv$active_tournament_id))$cnt
+    }
+
+    output$start_over_message <- renderUI({
+      if (result_count > 0) {
+        p(class = "text-muted", sprintf("This tournament has %d result(s) entered.", result_count))
+      } else {
+        p(class = "text-muted", "This tournament has no results entered yet.")
+      }
+    })
+
+    output$delete_tournament_warning <- renderUI({
+      tags$small(class = "text-danger text-center",
+        if (result_count > 0) {
+          sprintf("Permanently delete this tournament and all %d result(s).", result_count)
+        } else {
+          "Permanently delete this tournament."
+        }
+      )
+    })
+
+    shinyjs::runjs("$('#start_over_modal').modal('show');")
+  })
+
+  # Clear results only - keep tournament, remove results
+  observeEvent(input$clear_results_only, {
+    req(rv$active_tournament_id, rv$db_con)
+
+    tryCatch({
+      dbExecute(rv$db_con,
+        "DELETE FROM results WHERE tournament_id = ?",
+        params = list(rv$active_tournament_id))
+
+      rv$current_results <- data.frame()
+      rv$results_refresh <- (rv$results_refresh %||% 0) + 1
+
+      shinyjs::runjs("$('#start_over_modal').modal('hide');")
+      showNotification("Results cleared. Tournament kept for re-entry.", type = "message")
+
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
+  })
+
+  # Delete tournament and all results
+  observeEvent(input$delete_tournament_confirm, {
+    req(rv$active_tournament_id, rv$db_con)
+
+    tryCatch({
+      # Delete results first (child records)
+      dbExecute(rv$db_con,
+        "DELETE FROM results WHERE tournament_id = ?",
+        params = list(rv$active_tournament_id))
+
+      # Delete tournament (parent record)
+      dbExecute(rv$db_con,
+        "DELETE FROM tournaments WHERE tournament_id = ?",
+        params = list(rv$active_tournament_id))
+
+      # Reset state
+      rv$active_tournament_id <- NULL
+      rv$current_results <- data.frame()
+      rv$wizard_step <- 1
+
+      shinyjs::runjs("$('#start_over_modal').modal('hide');")
+      showNotification("Tournament deleted.", type = "message")
+
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
   })
 
   # Wizard back button
@@ -3395,15 +3469,23 @@ server <- function(input, output, session) {
 
   # Preview selected card
   output$selected_card_preview <- renderUI({
-    req(input$selected_card_id)
-    card_id <- trimws(input$selected_card_id)
-    if (nchar(card_id) < 3) return(NULL)
+    card_id <- trimws(input$selected_card_id %||% "")
+
+    # Show placeholder if no card selected
+    if (nchar(card_id) < 3) {
+      return(div(
+        class = "text-muted",
+        style = "font-size: 0.85rem;",
+        bsicons::bs_icon("image", size = "2rem"),
+        div(class = "mt-2", "No card selected")
+      ))
+    }
 
     # Construct image URL directly using the card ID (.webp format)
     img_url <- paste0("https://images.digimoncard.io/images/cards/", card_id, ".webp")
 
     div(
-      class = "mt-2 p-2 bg-light rounded text-center",
+      class = "text-center",
       tags$img(src = img_url, style = "max-width: 120px; border-radius: 6px;",
                onerror = "this.onerror=null; this.src=''; this.alt='Image not found'; this.style.height='60px'; this.style.background='#ddd';"),
       div(class = "mt-1 small text-muted", paste("Selected:", card_id))

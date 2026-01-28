@@ -38,20 +38,24 @@ admin_decks_ui <- tagList(
             # Card preview on left
             div(
               class = "text-center",
-              uiOutput("selected_card_preview")
+              div(
+                id = "card_preview_container",
+                class = "border rounded p-2 bg-light",
+                style = "min-height: 170px; display: flex; align-items: center; justify-content: center;",
+                uiOutput("selected_card_preview")
+              )
             ),
             # Search on right
             div(
               div(
                 class = "d-flex gap-2 align-items-end mb-3",
-                div(class = "flex-grow-1",
-                    textInput("card_search", "Search", placeholder = "Type card name...")),
+                textInput("card_search", "Search", placeholder = "Type card name...", width = "180px"),
                 actionButton("search_card_btn", bsicons::bs_icon("search"),
                              class = "btn-info", style = "height: 38px; margin-bottom: 15px;")
               ),
               uiOutput("card_search_results"),
               div(class = "mt-2",
-                  textInput("selected_card_id", "Selected Card ID", placeholder = "e.g., BT17-042"),
+                  textInput("selected_card_id", "Selected Card ID", placeholder = "e.g., BT17-042", width = "180px"),
                   div(class = "small text-muted", "Click a card above to auto-fill, or enter ID manually"))
             )
           ),

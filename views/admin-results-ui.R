@@ -99,11 +99,11 @@ admin_results_ui <- tagList(
             hr(),
 
             numericInput("result_placement", "Placement", value = 1, min = 1),
-            layout_columns(
-              col_widths = c(3, 3, 3),
-              div(style = "max-width: 100px;", numericInput("result_wins", "W", value = 0, min = 0)),
-              div(style = "max-width: 100px;", numericInput("result_losses", "L", value = 0, min = 0)),
-              div(style = "max-width: 100px;", numericInput("result_ties", "T", value = 0, min = 0))
+            div(
+              class = "d-flex gap-3",
+              numericInput("result_wins", "W", value = 0, min = 0, width = "70px"),
+              numericInput("result_losses", "L", value = 0, min = 0, width = "70px"),
+              numericInput("result_ties", "T", value = 0, min = 0, width = "70px")
             ),
             textInput("result_decklist_url", "Decklist URL (optional)",
                       placeholder = "e.g., digimonmeta.com/deck/..."),
@@ -157,6 +157,41 @@ admin_results_ui <- tagList(
           actionButton("edit_existing_tournament", "View/Edit Existing", class = "btn-info"),
           actionButton("create_anyway", "Create Anyway", class = "btn-warning"),
           tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel")
+        )
+      )
+    )
+  ),
+
+  # Start over modal (clear results vs delete tournament)
+  tags$div(
+    id = "start_over_modal",
+    class = "modal fade",
+    tabindex = "-1",
+    tags$div(
+      class = "modal-dialog",
+      tags$div(
+        class = "modal-content",
+        tags$div(
+          class = "modal-header",
+          tags$h5(class = "modal-title", "Start Over?"),
+          tags$button(type = "button", class = "btn-close", `data-bs-dismiss` = "modal")
+        ),
+        tags$div(
+          class = "modal-body",
+          p("What would you like to do?"),
+          uiOutput("start_over_message")
+        ),
+        tags$div(
+          class = "modal-footer d-flex flex-column gap-2 align-items-stretch",
+          actionButton("clear_results_only", "Clear Results",
+                       class = "btn-warning",
+                       icon = icon("eraser")),
+          tags$small(class = "text-muted text-center", "Remove entered results but keep the tournament for re-entry."),
+          actionButton("delete_tournament_confirm", "Delete Tournament",
+                       class = "btn-danger",
+                       icon = icon("trash")),
+          uiOutput("delete_tournament_warning"),
+          tags$button(type = "button", class = "btn btn-secondary mt-2", `data-bs-dismiss` = "modal", "Cancel")
         )
       )
     )
