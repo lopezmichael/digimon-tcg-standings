@@ -99,12 +99,9 @@ admin_results_ui <- tagList(
             hr(),
 
             numericInput("result_placement", "Placement", value = 1, min = 1),
-            div(
-              class = "d-flex gap-3",
-              numericInput("result_wins", "W", value = 0, min = 0, width = "70px"),
-              numericInput("result_losses", "L", value = 0, min = 0, width = "70px"),
-              numericInput("result_ties", "T", value = 0, min = 0, width = "70px")
-            ),
+            numericInput("result_wins", "Wins", value = 0, min = 0),
+            numericInput("result_losses", "Losses", value = 0, min = 0),
+            numericInput("result_ties", "Ties", value = 0, min = 0),
             textInput("result_decklist_url", "Decklist URL (optional)",
                       placeholder = "e.g., digimonmeta.com/deck/..."),
             actionButton("add_result", "Add Result", class = "btn-success w-100 mt-3")
