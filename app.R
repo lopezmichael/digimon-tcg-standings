@@ -3392,8 +3392,8 @@ server <- function(input, output, session) {
 
     name <- trimws(input$deck_name)
     primary_color <- input$deck_primary_color
-    secondary_color <- if (input$deck_secondary_color == "") NULL else input$deck_secondary_color
-    card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NULL
+    secondary_color <- if (input$deck_secondary_color == "") NA_character_ else input$deck_secondary_color
+    card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NA_character_
 
     # Validation
     if (is.null(name) || nchar(name) == 0) {
@@ -3549,8 +3549,8 @@ server <- function(input, output, session) {
     archetype_id <- as.integer(input$editing_archetype_id)
     name <- trimws(input$deck_name)
     primary_color <- input$deck_primary_color
-    secondary_color <- if (input$deck_secondary_color == "") NULL else input$deck_secondary_color
-    card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NULL
+    secondary_color <- if (input$deck_secondary_color == "") NA_character_ else input$deck_secondary_color
+    card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NA_character_
 
     if (is.null(name) || nchar(name) == 0) {
       showNotification("Please enter an archetype name", type = "error")
