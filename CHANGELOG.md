@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-01-27 - Format Management
+
+### Added
+- **Format Management Admin UI**: Manage game formats/sets via admin interface
+  - Add, edit, and delete formats
+  - Fields: Set Code, Set Name, Display Name, Release Date, Sort Order, Active status
+  - Referential integrity checks (blocks delete if tournaments use format)
+  - Dynamic dropdown updates across app when formats change
+- **Formats Database Table**: New `formats` table for storing set information
+  - `format_id` (primary key): Set code like 'BT19', 'EX08'
+  - `set_name`: Full name like 'Xros Encounter'
+  - `display_name`: Combined display like 'BT19 (Xros Encounter)'
+  - `release_date`: For sorting by newest
+  - `sort_order`: Manual sort override
+  - `is_active`: Toggle visibility in dropdowns
+- **Database Migration Script**: `R/migrate_v0.6.0.R` for adding formats table and seeding data
+
+### Changed
+- Format dropdowns now load from database instead of hardcoded list
+- Dashboard and tournament entry forms dynamically update when formats are modified
+
+### Migration Required
+Run `source("R/migrate_v0.6.0.R")` then `migrate_v0.6.0(con)` to add formats table and seed initial data.
+
+---
+
 ## [0.5.0] - 2026-01-27 - Admin Pages Enhancement
 
 ### Added

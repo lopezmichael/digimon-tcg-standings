@@ -27,6 +27,25 @@ CREATE TABLE IF NOT EXISTS stores (
 );
 
 -- =============================================================================
+-- FORMATS TABLE
+-- Reference table for game formats/sets (BT19, EX08, etc.)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS formats (
+    format_id VARCHAR PRIMARY KEY,           -- Set code: 'BT19', 'EX08', etc.
+    set_name VARCHAR NOT NULL,               -- Full name: 'Xros Encounter'
+    display_name VARCHAR NOT NULL,           -- Display: 'BT19 (Xros Encounter)'
+    release_date DATE,                       -- Release date for sorting
+    sort_order INTEGER,                      -- Manual sort order (lower = newer)
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for format lookups
+CREATE INDEX IF NOT EXISTS idx_formats_active ON formats(is_active);
+CREATE INDEX IF NOT EXISTS idx_formats_sort ON formats(sort_order);
+
+-- =============================================================================
 -- PLAYERS TABLE
 -- Tracks players participating in local tournaments
 -- =============================================================================
