@@ -1396,6 +1396,47 @@ dbDisconnect(con)
 
 ---
 
+## 2026-01-28: DuckDB Foreign Key Constraint Fix
+
+### Issue
+Updating deck archetypes failed with FK constraint error:
+```
+Constraint Error: Violates foreign key constraint because key "archetype_id: 30"
+is still referenced by a foreign key in a different table.
+```
+
+This occurred when clicking "Update Archetype" even though UPDATE shouldn't trigger FK violations.
+
+### Root Cause
+DuckDB internally rewrites UPDATE statements as DELETE + INSERT. When there are FK references to the row being updated, the DELETE phase fails because the key is "still referenced."
+
+This is a known DuckDB limitation documented in:
+- https://github.com/duckdb/duckdb/issues/16409
+- https://github.com/duckdb/duckdb/discussions/12917
+
+### Solution
+Removed FK constraints from the `results` table via migration script (`scripts/migrate_drop_fk.py`).
+
+Since we already handle referential integrity at the application level (checking for references before allowing delete), the FK constraints were redundant and causing problems.
+
+### Migration Details
+- Created new results table without REFERENCES clauses
+- Copied all existing data (8 results)
+- Dropped old table and renamed new table
+- Recreated indexes
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `scripts/migrate_drop_fk.py` | Migration to remove FK constraints from results table |
+
+### Lessons Learned
+- DuckDB UPDATE = DELETE + INSERT internally
+- Avoid FK constraints on tables that need frequent updates to referenced rows
+- Handle referential integrity at application level instead
+
+---
+
 *Template for future entries:*
 
 ```
