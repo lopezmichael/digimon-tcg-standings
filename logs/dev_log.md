@@ -1326,6 +1326,76 @@ dbDisconnect(con)
 
 ---
 
+## 2026-01-27: Card Cache & UI Improvements
+
+### Completed
+- [x] Implemented card cache in MotherDuck to bypass DigimonCard.io API 403 blocks
+- [x] Created Python sync script for fetching cards from API
+- [x] Added GitHub Actions workflow for monthly card sync
+- [x] Fixed DuckDB bind parameter error (NULL → NA_character_) for archetype updates
+- [x] Added tournament deletion feature via enhanced "Start Over" modal
+- [x] UI improvements: card preview placeholder, smaller search inputs, W/L/T stacked layout
+- [x] Simplified Manage Formats (auto-generate display_name, sort by release_date)
+- [x] Added "Online Tournament" event type
+- [x] Removed hardcoded FORMAT_CHOICES, load dynamically from database
+- [x] Standardized reset buttons across all filter tabs
+
+### Technical Decisions
+
+**Card Cache for Local Search**
+- DigimonCard.io API returns 403 on Posit Connect Cloud (blocks server IPs)
+- Solution: Cache 2,843 cards in MotherDuck `cards` table
+- Python script `scripts/sync_cards.py` fetches cards respecting rate limits
+- R function `search_cards_local()` queries cached cards instead of API
+- Card images still loaded from DigimonCard.io CDN (works fine)
+- GitHub Actions workflow runs monthly to sync new cards
+
+**Tournament Deletion Feature**
+- Enhanced "Start Over" button to show modal with two options:
+  - "Clear Results": Keeps tournament, removes results (stays on Step 2)
+  - "Delete Tournament": Cascade deletes tournament and all results (returns to Step 1)
+- Confirmation shows result count to prevent accidental deletion
+- Designed for "accidentally created tournament" use case
+
+**W/L/T Input Layout**
+- Attempted various approaches: CSS Grid, flexbox, splitLayout, fixed widths
+- Bootstrap 5's form-control has aggressive min-width that resists shrinking
+- Final solution: Simple stacked layout with full labels (Wins, Losses, Ties)
+- Clean, works reliably, better mobile experience
+
+**Manage Formats Simplification**
+- Removed display_name and sort_order fields from UI
+- Auto-generate display_name as "{format_id} ({set_name})"
+- Sort by release_date DESC (most recent first)
+- Reduces admin friction when adding new formats
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `scripts/sync_cards.py` | Python script to fetch cards from DigimonCard.io API |
+| `scripts/migrate_v0.5.0.py` | Python migration for MotherDuck (adds missing columns) |
+| `.github/workflows/sync-cards.yml` | Monthly GitHub Actions workflow for card sync |
+| `docs/plans/2026-01-27-tournament-deletion-design.md` | Design doc for deletion feature |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Card cache search, tournament deletion handlers, format simplification, NA_character_ fix |
+| `db/schema.sql` | Added cards table for cache |
+| `R/digimoncard_api.R` | Added search_cards_local() function |
+| `views/admin-results-ui.R` | Start over modal, W/L/T stacked layout |
+| `views/admin-decks-ui.R` | Card preview placeholder, smaller search inputs |
+| `views/admin-formats-ui.R` | Simplified form (removed display_name, sort_order) |
+| `views/*.R` | Standardized reset buttons across all filter tabs |
+
+### API 403 Issue Details
+- Card search worked locally but returned 403 on Posit Connect
+- DigimonCard.io blocks cloud server IP ranges
+- Card images (CDN) work fine - only API endpoints blocked
+- Cache solution allows full functionality without API dependency
+
+---
+
 *Template for future entries:*
 
 ```
