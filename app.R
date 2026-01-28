@@ -150,27 +150,13 @@ ADMIN_PASSWORD <- Sys.getenv("ADMIN_PASSWORD", "digimon2026")
 # Event type choices
 EVENT_TYPES <- c(
   "Locals" = "locals",
+  "Online Tournament" = "online",
   "Evolution Cup" = "evo_cup",
   "Store Championship" = "store_championship",
   "Regionals" = "regionals",
   "Regulation Battle" = "regulation_battle",
   "Release Event" = "release_event",
   "Other" = "other"
-)
-
-# Format/Set choices (most recent first)
-# Update this list when new sets release
-FORMAT_CHOICES <- c(
-  "BT19 (Xros Encounter)" = "BT19",
-  "EX08 (New Awakening)" = "EX08",
-  "BT18 (Dimensional Phase)" = "BT18",
-  "EX07 (Digimon Liberator)" = "EX07",
-  "BT17 (Secret Crisis)" = "BT17",
-  "ST19/ST20 (Fable Waltz)" = "ST19",
-  "BT16 (Beginning Observer)" = "BT16",
-  "EX06 (Infernal Ascension)" = "EX06",
-  "BT15 (Exceed Apocalypse)" = "BT15",
-  "Older Format" = "older"
 )
 
 # =============================================================================
@@ -501,14 +487,18 @@ server <- function(input, output, session) {
   }
 
   get_format_choices <- function(con) {
-    if (is.null(con) || !dbIsValid(con)) return(FORMAT_CHOICES)
+    if (is.null(con) || !dbIsValid(con)) {
+      return(c("Database unavailable" = ""))
+    }
     formats <- dbGetQuery(con, "
       SELECT format_id, display_name
       FROM formats
       WHERE is_active = TRUE
-      ORDER BY sort_order
+      ORDER BY release_date DESC NULLS LAST
     ")
-    if (nrow(formats) == 0) return(FORMAT_CHOICES)
+    if (nrow(formats) == 0) {
+      return(c("No formats configured" = ""))
+    }
     choices <- setNames(formats$format_id, formats$display_name)
     return(choices)
   }
@@ -523,16 +513,18 @@ server <- function(input, output, session) {
       format_choices <- get_format_choices(rv$db_con)
       first_format <- if (length(format_choices) > 0) format_choices[1] else ""
 
-      # Update dashboard format dropdown
-      updateSelectInput(session, "dashboard_format",
-                        choices = list(
-                          "All Formats" = "",
-                          "Recent Formats" = format_choices
-                        ))
+      # Format choices with "All Formats" option
+      format_choices_with_all <- list(
+        "All Formats" = "",
+        "Recent Formats" = format_choices
+      )
 
-      # Update tournament format dropdown
-      updateSelectInput(session, "tournament_format",
-                        choices = format_choices)
+      # Update all format dropdowns
+      updateSelectInput(session, "dashboard_format", choices = format_choices_with_all)
+      updateSelectInput(session, "players_format", choices = format_choices_with_all)
+      updateSelectInput(session, "meta_format", choices = format_choices_with_all)
+      updateSelectInput(session, "tournaments_format", choices = format_choices_with_all)
+      updateSelectInput(session, "tournament_format", choices = format_choices)
     }
   })
 
@@ -3187,7 +3179,7 @@ server <- function(input, output, session) {
     rv$results_refresh
 
     results <- dbGetQuery(rv$db_con, "
-      SELECT p.display_name as Player, da.archetype_name as Deck,
+      SELECT r.result_id, p.display_name as Player, da.archetype_name as Deck,
              r.placement as Place, r.wins as W, r.losses as L, r.ties as T
       FROM results r
       JOIN players p ON r.player_id = p.player_id
@@ -3198,8 +3190,40 @@ server <- function(input, output, session) {
 
     if (nrow(results) == 0) {
       results <- data.frame(Message = "No results entered yet")
+      return(reactable(results, compact = TRUE, striped = TRUE))
     }
-    reactable(results, compact = TRUE, striped = TRUE)
+
+    reactable(results, compact = TRUE, striped = TRUE,
+      columns = list(
+        result_id = colDef(
+          name = "",
+          width = 40,
+          cell = function(value) {
+            htmltools::tags$button(
+              onclick = sprintf("Shiny.setInputValue('delete_result_id', %d, {priority: 'event'})", value),
+              class = "btn btn-sm btn-outline-danger p-0",
+              style = "width: 24px; height: 24px; line-height: 1;",
+              htmltools::HTML("&times;")
+            )
+          }
+        )
+      )
+    )
+  })
+
+  # Delete result handler
+  observeEvent(input$delete_result_id, {
+    req(rv$db_con, rv$active_tournament_id)
+    result_id <- input$delete_result_id
+
+    tryCatch({
+      dbExecute(rv$db_con, "DELETE FROM results WHERE result_id = ? AND tournament_id = ?",
+                params = list(result_id, rv$active_tournament_id))
+      showNotification("Result removed", type = "message")
+      rv$results_refresh <- rv$results_refresh + 1
+    }, error = function(e) {
+      showNotification(paste("Error:", e$message), type = "error")
+    })
   })
 
   # Finish tournament
@@ -4134,10 +4158,9 @@ server <- function(input, output, session) {
       SELECT format_id as 'Set Code',
              set_name as 'Set Name',
              release_date as 'Release Date',
-             sort_order as 'Sort',
              is_active as 'Active'
       FROM formats
-      ORDER BY sort_order
+      ORDER BY release_date DESC
     ")
 
     if (nrow(data) == 0) {
@@ -4159,7 +4182,6 @@ server <- function(input, output, session) {
         `Set Code` = colDef(width = 80),
         `Set Name` = colDef(minWidth = 150),
         `Release Date` = colDef(width = 110),
-        Sort = colDef(width = 60),
         Active = colDef(width = 70, cell = function(value) if (value) "Yes" else "No")
       )
     )
@@ -4174,9 +4196,9 @@ server <- function(input, output, session) {
 
     # Get the format_id from the selected row
     data <- dbGetQuery(rv$db_con, "
-      SELECT format_id, set_name, display_name, release_date, sort_order, is_active
+      SELECT format_id, set_name, release_date, is_active
       FROM formats
-      ORDER BY sort_order
+      ORDER BY release_date DESC
     ")
 
     if (selected_idx > nrow(data)) return()
@@ -4187,9 +4209,7 @@ server <- function(input, output, session) {
     updateTextInput(session, "editing_format_id", value = format$format_id)
     updateTextInput(session, "format_id", value = format$format_id)
     updateTextInput(session, "format_set_name", value = format$set_name)
-    updateTextInput(session, "format_display_name", value = format$display_name)
     updateDateInput(session, "format_release_date", value = format$release_date)
-    updateNumericInput(session, "format_sort_order", value = format$sort_order)
     updateCheckboxInput(session, "format_is_active", value = format$is_active)
 
     # Show/hide buttons
@@ -4206,9 +4226,7 @@ server <- function(input, output, session) {
 
     format_id <- trimws(input$format_id)
     set_name <- trimws(input$format_set_name)
-    display_name <- trimws(input$format_display_name)
     release_date <- input$format_release_date
-    sort_order <- input$format_sort_order
     is_active <- input$format_is_active
 
     if (format_id == "" || set_name == "") {
@@ -4216,25 +4234,21 @@ server <- function(input, output, session) {
       return()
     }
 
-    # Auto-generate display_name if blank
-    if (display_name == "") {
-      display_name <- sprintf("%s (%s)", format_id, set_name)
-    }
+    # Auto-generate display_name
+    display_name <- sprintf("%s (%s)", format_id, set_name)
 
     tryCatch({
       dbExecute(rv$db_con, "
         INSERT INTO formats (format_id, set_name, display_name, release_date, sort_order, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6)
-      ", params = list(format_id, set_name, display_name, release_date, sort_order, is_active))
+        VALUES ($1, $2, $3, $4, 0, $5)
+      ", params = list(format_id, set_name, display_name, release_date, is_active))
 
       showNotification(sprintf("Added format: %s", display_name), type = "message")
 
       # Clear form
       updateTextInput(session, "format_id", value = "")
       updateTextInput(session, "format_set_name", value = "")
-      updateTextInput(session, "format_display_name", value = "")
       updateDateInput(session, "format_release_date", value = Sys.Date())
-      updateNumericInput(session, "format_sort_order", value = 1)
       updateCheckboxInput(session, "format_is_active", value = TRUE)
 
       # Refresh format choices
@@ -4256,9 +4270,7 @@ server <- function(input, output, session) {
     original_id <- input$editing_format_id
     format_id <- trimws(input$format_id)
     set_name <- trimws(input$format_set_name)
-    display_name <- trimws(input$format_display_name)
     release_date <- input$format_release_date
-    sort_order <- input$format_sort_order
     is_active <- input$format_is_active
 
     if (format_id == "" || set_name == "") {
@@ -4266,10 +4278,8 @@ server <- function(input, output, session) {
       return()
     }
 
-    # Auto-generate display_name if blank
-    if (display_name == "") {
-      display_name <- sprintf("%s (%s)", format_id, set_name)
-    }
+    # Auto-generate display_name
+    display_name <- sprintf("%s (%s)", format_id, set_name)
 
     tryCatch({
       # If format_id changed, we need to update related tournaments
@@ -4283,14 +4293,14 @@ server <- function(input, output, session) {
         dbExecute(rv$db_con, "DELETE FROM formats WHERE format_id = $1", params = list(original_id))
         dbExecute(rv$db_con, "
           INSERT INTO formats (format_id, set_name, display_name, release_date, sort_order, is_active)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        ", params = list(format_id, set_name, display_name, release_date, sort_order, is_active))
+          VALUES ($1, $2, $3, $4, 0, $5)
+        ", params = list(format_id, set_name, display_name, release_date, is_active))
       } else {
         dbExecute(rv$db_con, "
           UPDATE formats
-          SET set_name = $1, display_name = $2, release_date = $3, sort_order = $4, is_active = $5, updated_at = CURRENT_TIMESTAMP
-          WHERE format_id = $6
-        ", params = list(set_name, display_name, release_date, sort_order, is_active, format_id))
+          SET set_name = $1, display_name = $2, release_date = $3, is_active = $4, updated_at = CURRENT_TIMESTAMP
+          WHERE format_id = $5
+        ", params = list(set_name, display_name, release_date, is_active, format_id))
       }
 
       showNotification(sprintf("Updated format: %s", display_name), type = "message")
@@ -4299,9 +4309,7 @@ server <- function(input, output, session) {
       updateTextInput(session, "editing_format_id", value = "")
       updateTextInput(session, "format_id", value = "")
       updateTextInput(session, "format_set_name", value = "")
-      updateTextInput(session, "format_display_name", value = "")
       updateDateInput(session, "format_release_date", value = Sys.Date())
-      updateNumericInput(session, "format_sort_order", value = 1)
       updateCheckboxInput(session, "format_is_active", value = TRUE)
 
       shinyjs::show("add_format")
@@ -4321,9 +4329,7 @@ server <- function(input, output, session) {
     updateTextInput(session, "editing_format_id", value = "")
     updateTextInput(session, "format_id", value = "")
     updateTextInput(session, "format_set_name", value = "")
-    updateTextInput(session, "format_display_name", value = "")
     updateDateInput(session, "format_release_date", value = Sys.Date())
-    updateNumericInput(session, "format_sort_order", value = 1)
     updateCheckboxInput(session, "format_is_active", value = TRUE)
 
     shinyjs::show("add_format")

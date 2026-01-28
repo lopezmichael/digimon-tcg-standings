@@ -46,7 +46,8 @@ admin_decks_ui <- tagList(
                 class = "d-flex gap-2 align-items-end mb-3",
                 div(class = "flex-grow-1",
                     textInput("card_search", "Search", placeholder = "Type card name...")),
-                actionButton("search_card_btn", "Search", class = "btn-info mb-3")
+                actionButton("search_card_btn", bsicons::bs_icon("search"),
+                             class = "btn-info", style = "height: 38px; margin-bottom: 15px;")
               ),
               uiOutput("card_search_results"),
               div(class = "mt-2",

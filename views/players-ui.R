@@ -19,16 +19,14 @@ players_ui <- tagList(
     div(
       class = "d-flex align-items-end gap-3",
       div(selectInput("players_format", "Format",
-                      choices = list(
-                        "All Formats" = "",
-                        "Recent Formats" = FORMAT_CHOICES
-                      ),
+                      choices = list("Loading..." = ""),
                       selected = "", width = "150px")),
       div(selectInput("players_min_events", "Min Events",
                       choices = c("Any" = 0, "2+" = 2, "3+" = 3, "5+" = 5, "10+" = 10),
                       selected = 0, width = "120px")),
       actionButton("reset_players_filters", "Reset",
-                   class = "btn-outline-secondary btn-sm")
+                   class = "btn-outline-secondary",
+                   style = "height: 38px;")
     )
   ),
 

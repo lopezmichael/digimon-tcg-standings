@@ -40,11 +40,8 @@ dashboard_ui <- tagList(
     layout_columns(
       col_widths = c(4, 4, 4),
       selectInput("dashboard_format", "Format",
-                  choices = list(
-                    "All Formats" = "",
-                    "Recent Formats" = FORMAT_CHOICES
-                  ),
-                  selected = FORMAT_CHOICES[1]),  # Default to first/most recent format
+                  choices = list("Loading..." = ""),
+                  selected = ""),  # Will be populated from database
       selectInput("dashboard_event_type", "Event Type",
                   choices = list(
                     "All Events" = "",
@@ -52,9 +49,10 @@ dashboard_ui <- tagList(
                   ),
                   selected = "locals"),  # Default to Locals
       div(
-        style = "padding-top: 1.75rem;",
-        actionButton("reset_dashboard_filters", "Reset Filters",
-                     class = "btn-outline-secondary btn-sm w-100")
+        style = "margin-top: 1.5rem;",
+        actionButton("reset_dashboard_filters", "Reset",
+                     class = "btn-outline-secondary",
+                     style = "height: 38px;")
       )
     )
   ),

@@ -30,7 +30,7 @@ admin_results_ui <- tagList(
         selectInput("tournament_store", "Store", choices = NULL),
         dateInput("tournament_date", "Date", value = Sys.Date()),
         selectInput("tournament_type", "Event Type", choices = EVENT_TYPES),
-        selectInput("tournament_format", "Format/Set", choices = FORMAT_CHOICES),
+        selectInput("tournament_format", "Format/Set", choices = list("Loading..." = "")),
         numericInput("tournament_players", "Number of Players", value = 8, min = 2),
         numericInput("tournament_rounds", "Number of Rounds", value = 3, min = 1),
         div(
@@ -100,10 +100,10 @@ admin_results_ui <- tagList(
 
             numericInput("result_placement", "Placement", value = 1, min = 1),
             layout_columns(
-              col_widths = c(4, 4, 4),
-              numericInput("result_wins", "Wins", value = 0, min = 0),
-              numericInput("result_losses", "Losses", value = 0, min = 0),
-              numericInput("result_ties", "Ties", value = 0, min = 0)
+              col_widths = c(3, 3, 3),
+              div(style = "max-width: 100px;", numericInput("result_wins", "W", value = 0, min = 0)),
+              div(style = "max-width: 100px;", numericInput("result_losses", "L", value = 0, min = 0)),
+              div(style = "max-width: 100px;", numericInput("result_ties", "T", value = 0, min = 0))
             ),
             textInput("result_decklist_url", "Decklist URL (optional)",
                       placeholder = "e.g., digimonmeta.com/deck/..."),

@@ -23,12 +23,9 @@ admin_formats_ui <- tagList(
 
           textInput("format_id", "Set Code", placeholder = "e.g., BT20, EX09"),
           textInput("format_set_name", "Set Name", placeholder = "e.g., Xros Encounter"),
-          textInput("format_display_name", "Display Name (optional)",
-                    placeholder = "e.g., BT20 (Set Name) - auto-generated if blank"),
           dateInput("format_release_date", "Release Date", value = Sys.Date()),
-          numericInput("format_sort_order", "Sort Order", value = 1, min = 1, step = 1),
-          div(class = "text-muted small mb-2", "Lower numbers appear first in dropdowns"),
           checkboxInput("format_is_active", "Active", value = TRUE),
+          div(class = "text-muted small mb-2", "Formats are sorted by release date (most recent first)"),
 
           div(
             class = "d-flex gap-2",

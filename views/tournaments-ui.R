@@ -19,10 +19,7 @@ tournaments_ui <- tagList(
     div(
       class = "d-flex align-items-end gap-3",
       div(selectInput("tournaments_format", "Format",
-                      choices = list(
-                        "All Formats" = "",
-                        "Recent Formats" = FORMAT_CHOICES
-                      ),
+                      choices = list("Loading..." = ""),
                       selected = "", width = "150px")),
       div(selectInput("tournaments_event_type", "Event Type",
                       choices = list(
@@ -31,7 +28,8 @@ tournaments_ui <- tagList(
                       ),
                       selected = "", width = "150px")),
       actionButton("reset_tournaments_filters", "Reset",
-                   class = "btn-outline-secondary btn-sm")
+                   class = "btn-outline-secondary",
+                   style = "height: 38px;")
     )
   ),
 
