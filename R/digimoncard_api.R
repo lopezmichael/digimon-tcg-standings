@@ -104,7 +104,15 @@ search_cards <- function(card_number = NULL,
   url <- paste0(DIGIMONCARD_API_BASE, "/search")
 
   tryCatch({
-    response <- GET(url, query = params)
+    response <- GET(
+      url,
+      query = params,
+      add_headers(
+        `User-Agent` = "DigimonTCGTracker/1.0 (R/httr)",
+        `Accept` = "application/json"
+      ),
+      timeout(30)
+    )
 
     if (status_code(response) == 429) {
       warning("Rate limited by API. Waiting 60 seconds...")
@@ -133,7 +141,9 @@ search_cards <- function(card_number = NULL,
     return(as.data.frame(cards))
 
   }, error = function(e) {
-    warning("API request failed: ", e$message)
+    message("DigimonCard API request failed: ", e$message)
+    message("URL: ", url)
+    message("Params: ", paste(names(params), params, sep = "=", collapse = ", "))
     return(NULL)
   })
 }
