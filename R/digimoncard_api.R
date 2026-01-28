@@ -107,11 +107,7 @@ search_cards <- function(card_number = NULL,
     response <- GET(
       url,
       query = params,
-      add_headers(
-        `User-Agent` = "DigimonTCGTracker/1.0 (R/httr)",
-        `Accept` = "application/json"
-      ),
-      timeout(30)
+      user_agent("DigimonTCGTracker/1.0 (R/httr)")
     )
 
     if (status_code(response) == 429) {
