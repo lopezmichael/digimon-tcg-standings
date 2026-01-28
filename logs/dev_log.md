@@ -1250,6 +1250,82 @@ dbDisconnect(con)
 
 ---
 
+## 2026-01-27: v0.6.0 - Format Management
+
+### Completed
+- [x] Added formats table to database schema for managing game sets
+- [x] Created migration script (R/migrate_v0.6.0.R) with seed data
+- [x] Built admin UI for format CRUD operations
+- [x] Dynamic format dropdown loading from database
+- [x] Referential integrity checks for format deletion
+- [x] Fixed reactable selection event for row editing
+
+### Technical Decisions
+
+**Formats Table Design**
+- `format_id` (VARCHAR PRIMARY KEY): Set code like 'BT19', 'EX08'
+- `set_name`: Full name like 'Xros Encounter'
+- `display_name`: Combined display like 'BT19 (Xros Encounter)'
+- `release_date`: For sorting by newest
+- `sort_order`: Manual sort override (lower = appears first)
+- `is_active`: Toggle visibility in dropdowns
+
+**Dynamic Format Loading**
+- Added `get_format_choices(con)` helper function
+- Falls back to hardcoded FORMAT_CHOICES if DB unavailable
+- Observer updates dashboard and tournament dropdowns on format change
+- `rv$format_refresh` reactive value triggers dropdown updates
+
+**Admin UI Pattern**
+- Follows existing stores/decks admin pattern
+- Click row to edit, form populates with current values
+- Add/Update/Delete buttons with shinyjs show/hide
+- Modal confirmation for delete with referential integrity check
+- Blocks delete if tournaments reference the format
+
+**Reactable Selection Event**
+- Correct pattern: `{outputId}__reactable__selected`
+- Initial bug used `__selected` instead of `__reactable__selected`
+- Fixed to match working stores/decks implementations
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `views/admin-formats-ui.R` | Admin UI for format management |
+| `R/migrate_v0.6.0.R` | Migration script with formats table and seed data |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Format admin handlers, get_format_choices helper, dynamic dropdown updates |
+| `db/schema.sql` | Added formats table definition and indexes |
+| `CHANGELOG.md` | Added v0.6.0 release notes |
+
+### Migration Instructions
+```r
+source("R/db_connection.R")
+con <- connect_db()
+source("R/migrate_v0.6.0.R")
+migrate_v0.6.0(con)
+dbDisconnect(con)
+```
+
+### Seeded Formats
+| Code | Set Name | Release Date |
+|------|----------|--------------|
+| BT19 | Xros Encounter | 2025-01-24 |
+| EX08 | New Awakening | 2024-11-22 |
+| BT18 | Dimensional Phase | 2024-09-27 |
+| EX07 | Digimon Liberator | 2024-08-09 |
+| BT17 | Secret Crisis | 2024-05-31 |
+| ST19 | Fable Waltz | 2024-04-26 |
+| BT16 | Beginning Observer | 2024-02-23 |
+| EX06 | Infernal Ascension | 2024-01-26 |
+| BT15 | Exceed Apocalypse | 2023-11-17 |
+| older | Older Format | N/A |
+
+---
+
 *Template for future entries:*
 
 ```
