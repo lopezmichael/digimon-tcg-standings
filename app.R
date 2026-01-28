@@ -3240,9 +3240,9 @@ server <- function(input, output, session) {
     })
 
     cards <- tryCatch({
-      search_by_name(input$card_search)
+      search_cards_local(rv$db_con, input$card_search)
     }, error = function(e) {
-      message("API Error: ", e$message)
+      message("Card search error: ", e$message)
       NULL
     })
 

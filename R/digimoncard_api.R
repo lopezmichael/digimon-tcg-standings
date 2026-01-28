@@ -219,6 +219,49 @@ get_card_image_urls <- function(card_numbers) {
 }
 
 # -----------------------------------------------------------------------------
+# Local Database Search (uses cached cards table)
+# -----------------------------------------------------------------------------
+
+#' Search cards from local database cache
+#'
+#' @param con Database connection
+#' @param name Card name (partial match)
+#' @param card_types Vector of types to include (default: Digimon, Tamer)
+#' @param limit Max results
+#' @return Data frame of matching cards
+#' @export
+search_cards_local <- function(con, name, card_types = c("Digimon", "Tamer"), limit = 100) {
+  # Build types filter
+  types_sql <- paste0("'", card_types, "'", collapse = ", ")
+
+  # Escape single quotes in search term
+  name_escaped <- gsub("'", "''", name)
+
+  sql <- sprintf("
+    SELECT card_id, name, display_name, card_type, color, color2,
+           level, dp, digi_type, stage, set_code
+    FROM cards
+    WHERE LOWER(name) LIKE LOWER('%%%s%%')
+      AND card_type IN (%s)
+    ORDER BY set_code DESC, name
+    LIMIT %d
+  ", name_escaped, types_sql, limit)
+
+  tryCatch({
+    result <- DBI::dbGetQuery(con, sql)
+    if (nrow(result) == 0) return(NULL)
+
+    # Add id column for compatibility with existing code
+    result$id <- result$card_id
+
+    return(result)
+  }, error = function(e) {
+    message("Local card search failed: ", e$message)
+    return(NULL)
+  })
+}
+
+# -----------------------------------------------------------------------------
 # Utility Functions
 # -----------------------------------------------------------------------------
 

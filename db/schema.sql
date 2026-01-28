@@ -46,6 +46,34 @@ CREATE INDEX IF NOT EXISTS idx_formats_active ON formats(is_active);
 CREATE INDEX IF NOT EXISTS idx_formats_sort ON formats(sort_order);
 
 -- =============================================================================
+-- CARDS TABLE
+-- Cached card data from DigimonCard.io API for local search
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS cards (
+    card_id VARCHAR PRIMARY KEY,          -- e.g., "BT13-087"
+    name VARCHAR NOT NULL,                -- e.g., "Beelzemon"
+    display_name VARCHAR NOT NULL,        -- e.g., "Beelzemon (BT13-087)"
+    card_type VARCHAR NOT NULL,           -- "Digimon", "Tamer", "Option", "Digi-Egg"
+    color VARCHAR,                        -- Primary color
+    color2 VARCHAR,                       -- Secondary color (if any)
+    level INTEGER,                        -- Digimon level (NULL for others)
+    dp INTEGER,                           -- Digimon DP (NULL for others)
+    play_cost INTEGER,
+    digi_type VARCHAR,                    -- e.g., "Demon Lord"
+    stage VARCHAR,                        -- e.g., "Mega"
+    rarity VARCHAR,                       -- e.g., "SR"
+    set_code VARCHAR,                     -- e.g., "BT13" (extracted from card_id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for card lookups
+CREATE INDEX IF NOT EXISTS idx_cards_name ON cards(name);
+CREATE INDEX IF NOT EXISTS idx_cards_type ON cards(card_type);
+CREATE INDEX IF NOT EXISTS idx_cards_color ON cards(color);
+CREATE INDEX IF NOT EXISTS idx_cards_set ON cards(set_code);
+
+-- =============================================================================
 -- PLAYERS TABLE
 -- Tracks players participating in local tournaments
 -- =============================================================================
