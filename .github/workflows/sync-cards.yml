@@ -6,6 +6,17 @@ on:
     - cron: '0 0 1 * *'
   workflow_dispatch:
     # Allow manual trigger from GitHub Actions UI
+    inputs:
+      full_sync:
+        description: 'Run full sync instead of incremental'
+        required: false
+        default: 'false'
+        type: boolean
+      discover_only:
+        description: 'Only run prefix discovery (no sync)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   sync:
@@ -23,8 +34,23 @@ jobs:
       - name: Install dependencies
         run: pip install duckdb python-dotenv requests
 
-      - name: Sync cards to MotherDuck
-        run: python scripts/sync_cards.py
+      - name: Discover new set prefixes
+        if: ${{ inputs.discover_only == 'true' || github.event_name == 'schedule' }}
+        run: python scripts/sync_cards.py --discover
+        env:
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DATABASE: digimon_tcg_dfw
+
+      - name: Sync cards (incremental)
+        if: ${{ inputs.discover_only != 'true' && inputs.full_sync != 'true' }}
+        run: python scripts/sync_cards.py --by-set --incremental
+        env:
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DATABASE: digimon_tcg_dfw
+
+      - name: Sync cards (full)
+        if: ${{ inputs.full_sync == 'true' }}
+        run: python scripts/sync_cards.py --by-set
         env:
           MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
           MOTHERDUCK_DATABASE: digimon_tcg_dfw

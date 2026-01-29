@@ -13,7 +13,7 @@ A regional tournament tracking application for the Dallas-Fort Worth Digimon Tra
 
 ## Screenshots
 
-*Coming soon*
+The app features a responsive design optimized for both desktop and mobile. Screenshots available in the live deployment.
 
 ## Tech Stack
 
@@ -103,8 +103,13 @@ digimon-tcg-standings/
 │   ├── seed_stores.R        # DFW store data
 │   ├── seed_archetypes.R    # Deck archetype data
 │   ├── seed_mock_data.R     # Test data generator
-│   ├── delete_mock_data.R   # Test data cleanup
 │   └── migrate_db.R         # Database migrations
+├── server/
+│   ├── shared-server.R      # Database, navigation, auth helpers
+│   ├── results-server.R     # Tournament entry wizard
+│   ├── admin-decks-server.R # Deck archetype CRUD
+│   ├── admin-stores-server.R# Store management
+│   └── admin-formats-server.R# Format management
 ├── views/
 │   ├── dashboard-ui.R       # Dashboard with charts and stats
 │   ├── stores-ui.R          # Store directory with map
@@ -114,17 +119,24 @@ digimon-tcg-standings/
 │   ├── admin-results-ui.R   # Tournament entry form
 │   ├── admin-decks-ui.R     # Deck archetype management
 │   └── admin-stores-ui.R    # Store management
+├── scripts/
+│   ├── sync_cards.py        # Sync cards from DigimonCard.io API
+│   ├── sync_to_motherduck.py# Push local DB to cloud
+│   └── sync_from_motherduck.py # Pull cloud DB to local
 ├── db/
 │   └── schema.sql           # Database schema
+├── docs/
+│   ├── card-sync.md         # Card sync documentation
+│   └── solutions/           # Technical solutions & fixes
 ├── www/
 │   └── custom.css           # Custom styles
 ├── data/
-│   ├── local.duckdb         # Local database (gitignored)
-│   └── archetype_changelog.md
+│   └── local.duckdb         # Local database (gitignored)
 ├── logs/
 │   └── dev_log.md           # Development decisions
-├── scripts/
-│   └── sync_to_motherduck.py  # Cloud sync utility
+├── .github/
+│   └── workflows/
+│       └── sync-cards.yml   # Monthly card sync automation
 ├── app.R                    # Main Shiny application
 ├── _brand.yml               # Atom brand configuration
 ├── .env                     # Environment variables (gitignored)
@@ -161,19 +173,62 @@ digimon-tcg-standings/
 rsconnect::deployApp()
 ```
 
+## Python Scripts
+
+The project includes Python scripts for database synchronization:
+
+### Card Sync (`scripts/sync_cards.py`)
+
+Syncs card data from DigimonCard.io API to the database.
+
+```bash
+# Regular update (fast - only new cards)
+python scripts/sync_cards.py --by-set --incremental
+
+# Full re-sync
+python scripts/sync_cards.py --by-set
+
+# Check for new set prefixes
+python scripts/sync_cards.py --discover
+
+# Sync specific set
+python scripts/sync_cards.py --set BT-25 --by-set
+```
+
+See [docs/card-sync.md](docs/card-sync.md) for full documentation.
+
+### Database Sync
+
+```bash
+# Push local database to MotherDuck cloud
+python scripts/sync_to_motherduck.py
+
+# Pull cloud database to local
+python scripts/sync_from_motherduck.py --yes
+```
+
+### Prerequisites
+
+```bash
+pip install duckdb python-dotenv requests
+```
+
 ## Data Sources
 
-- **DigimonCard.io API**: Card data and images
+- **DigimonCard.io API**: Card data and images (4,200+ cards synced)
 - **Manual Entry**: Tournament results from Bandai TCG+ app
 - **Limitless TCG API**: Online tournament data (future)
 
 ## Current Data
 
-### Stores (13 DFW locations)
-Common Ground Games, Cloud Collectibles, The Card Haven, Game Nerdz (Mesquite, Allen, Wylie), Andyseous Odyssey, Boardwalk Games, Lone Star Pack Breaks, Eclipse Cards and Hobby, Evolution Games, Primal Cards & Collectables, Tony's DTX Cards
+### Stores (14 DFW locations)
+Common Ground Games, Cloud Collectibles, The Card Haven, Game Nerdz (Mesquite, Allen, Wylie), Andyseous Odyssey, Boardwalk Games, Lone Star Pack Breaks, Eclipse Cards and Hobby, Evolution Games, Primal Cards & Collectables, Tony's DTX Cards, and more
 
-### Archetypes (25 BT23/BT24 meta decks)
-Hudiemon, Mastemon, Machinedramon, Royal Knights, Gallantmon, Beelzemon, Fenriloogamon, Imperialdramon, Blue Flare, MagnaGarurumon, Jesmon, Leviamon, Bloomlordmon, Xros Heart, Miragegaogamon, Belphemon, Sakuyamon, Numemon, Chronicle, Omnimon, Dark Animals, Dark Masters, Eater, Blue Hybrid, Purple Hybrid
+### Archetypes (31+ meta decks)
+Deck archetypes are community-maintained and updated as the meta evolves. Includes current competitive decks across all colors.
+
+### Cards (4,200+ cards)
+Full card database synced from DigimonCard.io, covering BT-01 through BT-24, EX-01 through EX-11, starter decks, and promo cards. Automated monthly sync via GitHub Actions.
 
 ## Contributing
 

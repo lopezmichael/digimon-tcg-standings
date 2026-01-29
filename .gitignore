@@ -64,3 +64,18 @@ tests/testthat/_snaps/
 tmp/
 temp/
 *.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+
+# Screenshots (test/dev only)
+screenshots/
+
+# renv local settings
+renv/settings.json
