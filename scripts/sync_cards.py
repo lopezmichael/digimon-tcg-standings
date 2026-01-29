@@ -5,9 +5,18 @@ Fetches all cards from DigimonCard.io API and caches them in the database.
 This allows the Shiny app to search cards locally without external API calls.
 
 Usage:
-    python scripts/sync_cards.py              # Sync to MotherDuck (default)
-    python scripts/sync_cards.py --local      # Sync to local DuckDB
-    python scripts/sync_cards.py --set BT24   # Sync specific set only
+    python scripts/sync_cards.py --by-set           # Full sync by set (recommended)
+    python scripts/sync_cards.py --by-set --incremental  # Only add new cards (fast)
+    python scripts/sync_cards.py --set BT-21 --by-set    # Sync specific set
+    python scripts/sync_cards.py --discover         # Find new set prefixes
+    python scripts/sync_cards.py --local            # Sync to local DuckDB
+
+Flags:
+    --by-set       Fetch by set/pack instead of color (more comprehensive)
+    --incremental  Skip cards already in database (faster for updates)
+    --discover     Scan API for new/unknown set prefixes
+    --set X        Sync only a specific set (e.g., BT-21, ST-15)
+    --local        Sync to local DuckDB instead of MotherDuck
 
 Prerequisites:
     pip install duckdb python-dotenv requests
@@ -81,6 +90,149 @@ def fetch_cards_by_color(color: str, set_filter: str = None) -> list:
         return []
 
 
+def fetch_cards_by_set(set_code: str) -> list:
+    """Fetch all cards from a specific set/pack from the API."""
+    url = f"{API_BASE}/search"
+    params = {
+        "pack": set_code,
+        "limit": 1000
+    }
+
+    headers = {
+        "User-Agent": "DigimonTCGTracker/1.0 (CardSync)"
+    }
+
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=30)
+
+        if response.status_code == 400:
+            return []  # No results
+
+        if response.status_code != 200:
+            print(f"    API error: HTTP {response.status_code}")
+            return []
+
+        return response.json()
+
+    except Exception as e:
+        print(f"    Request failed: {e}")
+        return []
+
+
+def discover_prefixes() -> dict:
+    """Scan API to discover all card prefixes and their counts."""
+    print("\nDiscovering card prefixes from API...")
+
+    all_prefixes = {}
+
+    for color in COLORS:
+        print(f"  Scanning {color}...", end=" ", flush=True)
+        cards = fetch_cards_by_color(color)
+
+        for card in cards:
+            card_id = card.get("id") or card.get("cardnumber", "")
+            match = re.match(r'^([A-Z]+)', card_id)
+            if match:
+                prefix = match.group(1)
+                if prefix not in all_prefixes:
+                    all_prefixes[prefix] = {"count": 0, "examples": []}
+                all_prefixes[prefix]["count"] += 1
+                if len(all_prefixes[prefix]["examples"]) < 3:
+                    all_prefixes[prefix]["examples"].append(card_id)
+
+        print(f"found {len(cards)} cards")
+        time.sleep(REQUEST_DELAY)
+
+    return all_prefixes
+
+
+def get_known_prefixes() -> set:
+    """Return set of prefixes we currently handle."""
+    return {"BT", "EX", "ST", "LM", "RB", "P", "BO"}
+
+
+def get_all_sets() -> list:
+    """Return list of all known set codes to sync."""
+    # Booster sets BT-01 through BT-24 (and beyond as released)
+    bt_sets = [f"BT-{i:02d}" for i in range(1, 25)]
+
+    # EX sets EX-01 through EX-11
+    ex_sets = [f"EX-{i:02d}" for i in range(1, 12)]
+
+    # Starter decks - API uses ST-1 through ST-9 (single digit), then ST-10+
+    st_sets = [f"ST-{i}" for i in range(1, 10)] + [f"ST-{i}" for i in range(10, 23)]
+
+    # Limited card packs LM-01 through LM-08
+    lm_sets = [f"LM-{i:02d}" for i in range(1, 9)]
+
+    # Resurgence Booster
+    rb_sets = ["RB-01"]
+
+    # Excluded: BTC-01 (Ultimate Evolution - 438 cards, different game variant)
+    # Excluded: DM (Demo Decks - 5 cards)
+    # Excluded: MO (Unknown - 12 cards)
+
+    # Major promo packs (P- cards are distributed across these)
+    promo_packs = [
+        # Tamer Battle Packs
+        "Tamer Battle Pack 4",
+        "Tamer Battle Pack 6",
+        "Tamer Battle Pack 10",
+        "Tamer Battle Pack 11",
+        "Tamer Battle Pack 12",
+        "Tamer Battle Pack 13",
+        "Tamer Battle Pack 14",
+        "Tamer Battle Pack 15",
+        "Tamer Battle Pack 16",
+        "Tamer Battle Pack 17",
+        "Tamer Battle Pack 18",
+        "Tamer Battle Pack 19",
+        # Box Promotion Packs
+        "Box Promotion Pack -Next Adventure-",
+        "Box Promotion Pack: Across Time",
+        "Box Promotion Pack: Alternative Being",
+        "Box Promotion Pack: Animal Colosseum",
+        "Box Promotion Pack: Beginning Observer",
+        "Box Promotion Pack: Blast Ace",
+        "Box Promotion Pack: Cyber Eden",
+        "Box Promotion Pack: Dawn of Liberator",
+        "Box Promotion Pack: Dimensional Phase",
+        "Box Promotion Pack: Elemental Successor",
+        "Box Promotion Pack: Exceed Apocalypse",
+        "Box Promotion Pack: Hackers' Slumber",
+        "Box Promotion Pack: Infernal Ascension",
+        "Box Promotion Pack: Over the X",
+        "Box Promotion Pack: Resurgence Booster",
+        "Box Promotion Pack: Secret Crisis",
+        "Box Promotion Pack: Time Stranger",
+        "Box Promotion Pack: Versus Royal Knights",
+        "Box Promotion Pack: Xros Evolution",
+        # Dash Packs
+        "Dash Pack Ver. 1.0",
+        "Dash Pack Ver. 1.5",
+        "Double Diamond Dash Pack",
+        "Summer 2022 Dash Pack",
+        "2026 Dash Pack Campaign",
+        # Update/Anniversary Packs
+        "Update Pack",
+        "Update Pack 2024",
+        "Update Pack 2025",
+        "3rd Anniversary Survey Pack",
+        "3rd Anniversary Update Pack",
+        # Other notable promo sets
+        "1-Year Anniversary Promo Pack",
+        "25th Special Memorial Pack",
+        "Memorial Collection 01",
+        "Memorial Collection 02",
+        "Ghost Game Promo Pack",
+        "Digimon Survive Promo Pack",
+        "Revision Pack 2023",
+        "Special Release Memorial Pack",
+    ]
+
+    return bt_sets + ex_sets + st_sets + lm_sets + rb_sets + promo_packs
+
+
 def process_card(card: dict) -> dict:
     """Transform API card data to our schema format."""
     card_id = card.get("id") or card.get("cardnumber", "")
@@ -103,15 +255,24 @@ def process_card(card: dict) -> dict:
     }
 
 
-def sync_cards(conn, set_filter: str = None):
+def sync_cards(conn, set_filter: str = None, by_set: bool = False, incremental: bool = False):
     """Fetch cards from API and upsert to database."""
     all_cards = []
 
+    # Get existing card IDs if incremental mode
+    existing_ids = set()
+    if incremental:
+        print("\nFetching existing card IDs from database...")
+        result = conn.execute("SELECT card_id FROM cards").fetchall()
+        existing_ids = {row[0] for row in result}
+        print(f"  Found {len(existing_ids)} existing cards")
+
     print("\nFetching cards from DigimonCard.io API...")
 
-    for color in COLORS:
-        print(f"  Fetching {color} cards...", end=" ", flush=True)
-        cards = fetch_cards_by_color(color, set_filter)
+    if by_set and set_filter:
+        # Fetch by set - more comprehensive for a specific set
+        print(f"  Fetching all cards from set {set_filter}...", end=" ", flush=True)
+        cards = fetch_cards_by_set(set_filter)
 
         # Filter to standard arts only
         standard_cards = [c for c in cards if is_standard_art(c.get("id") or c.get("cardnumber", ""))]
@@ -119,10 +280,40 @@ def sync_cards(conn, set_filter: str = None):
         print(f"found {len(cards)}, keeping {len(standard_cards)} (standard art)")
         all_cards.extend(standard_cards)
 
-        # Rate limiting
-        time.sleep(REQUEST_DELAY)
+    elif by_set and not set_filter:
+        # Fetch all known sets
+        sets = get_all_sets()
+        print(f"  Found {len(sets)} sets to sync")
 
-    # Deduplicate by card_id (some cards appear in multiple colors)
+        for set_code in sets:
+            print(f"  Fetching {set_code}...", end=" ", flush=True)
+            cards = fetch_cards_by_set(set_code)
+
+            # Filter to standard arts only
+            standard_cards = [c for c in cards if is_standard_art(c.get("id") or c.get("cardnumber", ""))]
+
+            print(f"found {len(cards)}, keeping {len(standard_cards)} (standard art)")
+            all_cards.extend(standard_cards)
+
+            # Rate limiting
+            time.sleep(REQUEST_DELAY)
+
+    else:
+        # Original color-based fetching
+        for color in COLORS:
+            print(f"  Fetching {color} cards...", end=" ", flush=True)
+            cards = fetch_cards_by_color(color, set_filter)
+
+            # Filter to standard arts only
+            standard_cards = [c for c in cards if is_standard_art(c.get("id") or c.get("cardnumber", ""))]
+
+            print(f"found {len(cards)}, keeping {len(standard_cards)} (standard art)")
+            all_cards.extend(standard_cards)
+
+            # Rate limiting
+            time.sleep(REQUEST_DELAY)
+
+    # Deduplicate by card_id (some cards appear in multiple colors/sets)
     seen_ids = set()
     unique_cards = []
     for card in all_cards:
@@ -131,7 +322,16 @@ def sync_cards(conn, set_filter: str = None):
             seen_ids.add(card_id)
             unique_cards.append(card)
 
-    print(f"\nTotal unique cards to sync: {len(unique_cards)}")
+    print(f"\nTotal unique cards from API: {len(unique_cards)}")
+
+    # Filter out existing cards in incremental mode
+    if incremental and existing_ids:
+        new_cards = [c for c in unique_cards if (c.get("id") or c.get("cardnumber", "")) not in existing_ids]
+        skipped = len(unique_cards) - len(new_cards)
+        print(f"Incremental mode: skipping {skipped} existing cards")
+        unique_cards = new_cards
+
+    print(f"Cards to sync: {len(unique_cards)}")
 
     if not unique_cards:
         print("No cards to sync.")
@@ -176,9 +376,41 @@ def sync_cards(conn, set_filter: str = None):
 
 def main():
     parser = argparse.ArgumentParser(description="Sync DigimonCard.io cards to database")
-    parser.add_argument("--set", help="Sync specific set only (e.g., BT24)")
+    parser.add_argument("--set", help="Sync specific set only (e.g., BT-21)")
     parser.add_argument("--local", action="store_true", help="Sync to local DuckDB instead of MotherDuck")
+    parser.add_argument("--by-set", action="store_true", help="Fetch by set/pack instead of by color (more comprehensive)")
+    parser.add_argument("--incremental", action="store_true", help="Only add cards not already in database (faster)")
+    parser.add_argument("--discover", action="store_true", help="Discover new set prefixes from API")
     args = parser.parse_args()
+
+    # Handle discover mode separately
+    if args.discover:
+        print("=" * 60)
+        print("DigimonCard.io Prefix Discovery")
+        print("=" * 60)
+
+        prefixes = discover_prefixes()
+        known = get_known_prefixes()
+
+        print("\n" + "=" * 60)
+        print("Results:")
+        print("=" * 60)
+
+        new_prefixes = []
+        for prefix, data in sorted(prefixes.items(), key=lambda x: -x[1]["count"]):
+            status = "KNOWN" if prefix in known else "NEW"
+            if prefix not in known:
+                new_prefixes.append(prefix)
+            print(f"  {prefix}: {data['count']} cards [{status}]")
+            print(f"      Examples: {', '.join(data['examples'])}")
+
+        if new_prefixes:
+            print(f"\n[!] New prefixes found: {', '.join(new_prefixes)}")
+            print("    Consider adding these to get_all_sets() in sync_cards.py")
+        else:
+            print("\n[OK] No new prefixes found - all are handled")
+
+        return
 
     if not args.local and not MOTHERDUCK_TOKEN:
         print("Error: MOTHERDUCK_TOKEN not set in .env")
@@ -195,7 +427,18 @@ def main():
     else:
         print(f"Database: {MOTHERDUCK_DB} (MotherDuck)")
 
-    print(f"Mode: {'Set ' + args.set if args.set else 'Full sync'}")
+    mode_parts = []
+    if args.set:
+        mode_parts.append(f"Set {args.set}")
+    else:
+        mode_parts.append("Full sync")
+    if args.by_set:
+        mode_parts.append("(by pack)")
+    else:
+        mode_parts.append("(by color)")
+    if args.incremental:
+        mode_parts.append("[incremental]")
+    print(f"Mode: {' '.join(mode_parts)}")
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # Connect to database
@@ -233,7 +476,7 @@ def main():
     print(f"Cards in database before sync: {before_count}")
 
     # Sync cards
-    processed = sync_cards(conn, args.set)
+    processed = sync_cards(conn, args.set, args.by_set, args.incremental)
 
     # Get count after sync
     after_count = conn.execute("SELECT COUNT(*) FROM cards").fetchone()[0]
