@@ -91,6 +91,13 @@ observeEvent(input$admin_login_link, {
         modalButton("Close")
       )
     ))
+  } else if (is.null(ADMIN_PASSWORD)) {
+    # Admin login disabled
+    showModal(modalDialog(
+      title = "Admin Login Disabled",
+      "Admin login is not configured. Set the ADMIN_PASSWORD environment variable to enable.",
+      footer = modalButton("Close")
+    ))
   } else {
     # Show login form
     showModal(modalDialog(
@@ -106,7 +113,7 @@ observeEvent(input$admin_login_link, {
 
 # Handle login
 observeEvent(input$login_btn, {
-  if (input$admin_password == ADMIN_PASSWORD) {
+  if (!is.null(ADMIN_PASSWORD) && input$admin_password == ADMIN_PASSWORD) {
     rv$is_admin <- TRUE
     removeModal()
     showNotification("Logged in as admin", type = "message")

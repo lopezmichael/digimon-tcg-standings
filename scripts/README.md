@@ -44,7 +44,7 @@ Populates the stores table with DFW-area game stores.
 
 ```r
 source("scripts/seed_stores.R")
-# Adds 14 local game stores with addresses and coordinates
+# Adds 13 local game stores with addresses and coordinates
 ```
 
 ### 3. Seed Deck Archetypes (`seed_archetypes.R`)
@@ -53,10 +53,19 @@ Populates deck archetypes with current meta decks.
 
 ```r
 source("scripts/seed_archetypes.R")
-# Adds 30+ deck archetypes with colors and display cards
+# Adds 25+ deck archetypes with colors and display cards
 ```
 
-### 4. Sync Card Database (Optional but Recommended)
+### 4. Seed Formats (`seed_formats.R`)
+
+Populates the formats table with Digimon TCG set information.
+
+```r
+source("scripts/seed_formats.R")
+# Adds BT01-BT19, EX01-EX08 format entries
+```
+
+### 5. Sync Card Database (Optional but Recommended)
 
 Pull the full card database from DigimonCard.io API.
 
@@ -182,21 +191,6 @@ python scripts/delete_mock_data.py
 # Or R version
 source("scripts/delete_mock_data.R")
 ```
-
----
-
-## Migration Scripts (Legacy)
-
-These scripts were used for one-time database migrations on existing installs. **New users do not need these** - the current schema already includes these changes.
-
-| Script | Purpose | Version |
-|--------|---------|---------|
-| `migrate_v0.5.0.py` | Added wizard flow fields to tournaments | v0.5.0 |
-| `migrate_v0.5.0.R` | R version of above | v0.5.0 |
-| `migrate_v0.6.0.R` | Added formats table | v0.6.0 |
-| `migrate_cards.py` | Initial card table setup | v0.4.0 |
-| `migrate_drop_fk.py` | Removed FK constraints (DuckDB/MotherDuck fix) | v0.6.1 |
-| `migrate_db.R` | General migration utilities | - |
 
 ---
 

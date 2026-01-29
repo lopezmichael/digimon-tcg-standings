@@ -1,7 +1,8 @@
 -- DFW Digimon TCG Tournament Tracker
 -- Database Schema for MotherDuck (Cloud DuckDB)
--- Version: 1.0.0
+-- Version: 1.1.0
 -- Created: January 2026
+-- Updated: 2026-01-28 - Removed FK constraints from results table (DuckDB UPDATE fix)
 
 -- =============================================================================
 -- STORES TABLE
@@ -156,12 +157,15 @@ CREATE INDEX IF NOT EXISTS idx_tournaments_type ON tournaments(event_type);
 -- =============================================================================
 -- RESULTS TABLE
 -- Tracks player results for each tournament
+-- Note: FK constraints intentionally omitted - DuckDB UPDATE operations fail
+-- on tables with FK constraints because it uses DELETE+INSERT internally.
+-- See docs/solutions/duckdb-fk-constraint-fix.md for details.
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS results (
     result_id INTEGER PRIMARY KEY,
-    tournament_id INTEGER NOT NULL REFERENCES tournaments(tournament_id),
-    player_id INTEGER NOT NULL REFERENCES players(player_id),
-    archetype_id INTEGER REFERENCES deck_archetypes(archetype_id),
+    tournament_id INTEGER NOT NULL,  -- References tournaments(tournament_id)
+    player_id INTEGER NOT NULL,      -- References players(player_id)
+    archetype_id INTEGER,            -- References deck_archetypes(archetype_id)
     placement INTEGER,
     wins INTEGER DEFAULT 0,
     losses INTEGER DEFAULT 0,

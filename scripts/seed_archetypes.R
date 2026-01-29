@@ -208,6 +208,42 @@ archetypes <- data.frame(
     '["aggro", "otk"]'             # Purple Hybrid
   ),
   is_active = rep(TRUE, 25),
+  is_multi_color = c(
+    # Top tier
+    FALSE,    # Hudiemon
+    TRUE,     # Mastemon (Yellow/Purple)
+    FALSE,    # Machinedramon
+    FALSE,    # Royal Knights
+    FALSE,    # Gallantmon
+
+    # Strong contenders
+    FALSE,    # Beelzemon
+    FALSE,    # Fenriloogamon
+    TRUE,     # Imperialdramon (Blue/Green)
+    FALSE,    # Blue Flare
+    FALSE,    # MagnaGarurumon
+
+    # Established
+    TRUE,     # Jesmon (Red/Yellow)
+    FALSE,    # Leviamon
+    FALSE,    # Bloomlordmon
+    FALSE,    # Xros Heart
+    FALSE,    # Miragegaogamon
+
+    # Other competitive
+    FALSE,    # Belphemon
+    FALSE,    # Sakuyamon
+    FALSE,    # Numemon
+    FALSE,    # Chronicle
+    FALSE,    # Omnimon
+
+    # Rogue/emerging
+    FALSE,    # Dark Animals
+    FALSE,    # Dark Masters
+    FALSE,    # Eater
+    FALSE,    # Blue Hybrid
+    FALSE     # Purple Hybrid
+  ),
   notes = c(
     # Top tier
     "BT23 meta dominant. CS/Hudie trait synergy.",
@@ -262,8 +298,8 @@ if (existing > 0) {
   for (i in 1:nrow(archetypes)) {
     sql <- "INSERT INTO deck_archetypes
             (archetype_id, archetype_name, display_card_id, primary_color,
-             secondary_color, playstyle_tags, is_active, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+             secondary_color, playstyle_tags, is_active, is_multi_color, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     dbExecute(con, sql, params = list(
       archetypes$archetype_id[i],
@@ -273,6 +309,7 @@ if (existing > 0) {
       archetypes$secondary_color[i],
       archetypes$playstyle_tags[i],
       archetypes$is_active[i],
+      archetypes$is_multi_color[i],
       archetypes$notes[i]
     ))
   }

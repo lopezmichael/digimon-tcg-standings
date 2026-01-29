@@ -79,14 +79,15 @@ MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
 
 4. Initialize the database and seed data:
 ```r
-source("R/init_database.R")
-source("R/seed_stores.R")
-source("R/seed_archetypes.R")
+source("scripts/init_database.R")
+source("scripts/seed_stores.R")
+source("scripts/seed_archetypes.R")
+source("scripts/seed_formats.R")
 ```
 
 5. (Optional) Add mock data for testing:
 ```r
-source("R/seed_mock_data.R")
+source("scripts/seed_mock_data.R")
 ```
 
 6. Run the app:
@@ -100,12 +101,7 @@ shiny::runApp()
 digimon-tcg-standings/
 ├── R/
 │   ├── db_connection.R      # Database connection module
-│   ├── digimoncard_api.R    # DigimonCard.io API integration
-│   ├── init_database.R      # Schema initialization
-│   ├── seed_stores.R        # DFW store data
-│   ├── seed_archetypes.R    # Deck archetype data
-│   ├── seed_mock_data.R     # Test data generator
-│   └── migrate_db.R         # Database migrations
+│   └── digimoncard_api.R    # DigimonCard.io API integration
 ├── server/
 │   ├── shared-server.R      # Database, navigation, auth helpers
 │   ├── results-server.R     # Tournament entry wizard
@@ -122,6 +118,11 @@ digimon-tcg-standings/
 │   ├── admin-decks-ui.R     # Deck archetype management
 │   └── admin-stores-ui.R    # Store management
 ├── scripts/
+│   ├── init_database.R      # Schema initialization
+│   ├── seed_stores.R        # DFW store data
+│   ├── seed_archetypes.R    # Deck archetype data
+│   ├── seed_formats.R       # Format/set data
+│   ├── seed_mock_data.R     # Test data generator
 │   ├── sync_cards.py        # Sync cards from DigimonCard.io API
 │   ├── sync_to_motherduck.py# Push local DB to cloud
 │   └── sync_from_motherduck.py # Pull cloud DB to local
@@ -157,6 +158,8 @@ digimon-tcg-standings/
 - `archetype_cards` - Card-to-archetype mappings
 - `tournaments` - Tournament events
 - `results` - Player tournament results
+- `formats` - Game formats/sets (BT19, EX08, etc.)
+- `cards` - Card database from DigimonCard.io
 - `ingestion_log` - Data import tracking
 
 ### Views
@@ -223,14 +226,34 @@ pip install duckdb python-dotenv requests
 
 ## Current Data
 
-### Stores (14 DFW locations)
+### Stores (13 DFW locations)
 Common Ground Games, Cloud Collectibles, The Card Haven, Game Nerdz (Mesquite, Allen, Wylie), Andyseous Odyssey, Boardwalk Games, Lone Star Pack Breaks, Eclipse Cards and Hobby, Evolution Games, Primal Cards & Collectables, Tony's DTX Cards, and more
 
-### Archetypes (31+ meta decks)
+### Archetypes (25+ meta decks)
 Deck archetypes are community-maintained and updated as the meta evolves. Includes current competitive decks across all colors.
 
 ### Cards (4,200+ cards)
 Full card database synced from DigimonCard.io, covering BT-01 through BT-24, EX-01 through EX-11, starter decks, and promo cards. Automated monthly sync via GitHub Actions.
+
+## Roadmap
+
+### UI Polish (Current Priority)
+- [ ] Fix menu bar "menu" text and white space issues
+- [ ] Comprehensive mobile view review and fixes
+- [ ] Correct button alignment throughout the app
+- [ ] Improve header design and add Digimon TCG logo
+- [ ] Add links to GitHub repo and "Buy Me a Coffee"
+- [ ] Replace individual chart spinners with app-wide loading screen
+
+### Future Features
+- [ ] Limitless TCG API integration for online tournament data
+- [ ] Matchup analysis (deck A vs deck B win rates)
+- [ ] Full Elo-style player rating system
+- [ ] Discord bot for result reporting
+- [ ] Expand to other Texas regions (Houston, Austin, San Antonio)
+- [ ] One Piece TCG support (multi-game expansion)
+- [ ] Community-submitted archetype suggestions with approval workflow
+- [ ] Mobile-first data entry PWA
 
 ## Contributing
 

@@ -179,8 +179,12 @@ notify <- function(message, type = "message", duration = 5) {
 # Configuration
 # =============================================================================
 
-# Admin password (in production, use environment variable)
-ADMIN_PASSWORD <- Sys.getenv("ADMIN_PASSWORD", "digimon2026")
+# Admin password - MUST be set via environment variable
+ADMIN_PASSWORD <- Sys.getenv("ADMIN_PASSWORD")
+if (ADMIN_PASSWORD == "") {
+  warning("ADMIN_PASSWORD environment variable not set - admin login disabled")
+  ADMIN_PASSWORD <- NULL
+}
 
 # Event type choices
 EVENT_TYPES <- c(

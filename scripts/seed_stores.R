@@ -158,6 +158,7 @@ stores <- data.frame(
     NA_character_
   ),
   is_active = rep(TRUE, 13),
+  is_online = rep(FALSE, 13),  # All physical stores
   stringsAsFactors = FALSE
 )
 
@@ -175,8 +176,8 @@ if (existing > 0) {
   # Insert stores
   for (i in 1:nrow(stores)) {
     sql <- "INSERT INTO stores (store_id, name, address, city, state, zip_code,
-            latitude, longitude, schedule_info, tcgplus_store_id, website, phone, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            latitude, longitude, schedule_info, tcgplus_store_id, website, phone, is_active, is_online)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     dbExecute(con, sql, params = list(
       stores$store_id[i],
@@ -191,7 +192,8 @@ if (existing > 0) {
       stores$tcgplus_store_id[i],
       stores$website[i],
       stores$phone[i],
-      stores$is_active[i]
+      stores$is_active[i],
+      stores$is_online[i]
     ))
   }
 
