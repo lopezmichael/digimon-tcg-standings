@@ -2,6 +2,8 @@
 
 A regional tournament tracking application for the Dallas-Fort Worth Digimon Trading Card Game community. Track player performance, store activity, deck meta, and local tournament results.
 
+**Live App:** https://lopezmichael.github.io/digimon-tcg-standings/
+
 ## Features
 
 - **Interactive Dashboard**: Value boxes, charts, and tables showing tournament activity at a glance
