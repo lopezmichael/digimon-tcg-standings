@@ -11,6 +11,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-01-28 - UI Refactor & Card Sync Improvements
+
+### Added
+- **GitHub Pages Hosting**: App now accessible via clean URL at `lopezmichael.github.io/digimon-tcg-standings`
+- **Card Sync Improvements**: Enhanced `sync_cards.py` with new flags:
+  - `--by-set`: Fetch by set/pack for comprehensive coverage (catches multi-color cards)
+  - `--incremental`: Only sync new cards for faster updates
+  - `--discover`: Detect new set prefixes from API
+- **Cloud-to-Local Sync**: New `sync_from_motherduck.py` script to pull cloud database locally
+- **GitHub Actions**: Automated monthly card sync with manual trigger options
+- **Documentation**: Added `docs/card-sync.md` guide and `scripts/README.md`
+
+### Changed
+- **Server Modularization**: Split monolithic `app.R` into focused server modules:
+  - `server/shared-server.R`: Database, navigation, auth helpers
+  - `server/results-server.R`: Tournament entry wizard
+  - `server/admin-decks-server.R`: Deck archetype CRUD
+  - `server/admin-stores-server.R`: Store management
+  - `server/admin-formats-server.R`: Format management
+- **UI Layouts**: Standardized form layouts using `layout_columns` with consistent column widths
+- **Input Width Fix**: Fixed Shiny input overflow caused by default `min-width: 300px`
+- **Card Database**: Expanded from ~2,800 to 4,200+ cards with fixed ST deck format and promo packs
+
+### Fixed
+- ST-1 through ST-9 starter deck cards now sync correctly (API uses single-digit format)
+- Multi-color cards no longer missed during sync (set-based fetching catches all)
+
+---
+
 ## [0.6.0] - 2026-01-27 - Format Management
 
 ### Added
