@@ -228,6 +228,29 @@
   min-height: 90px;
   border-radius: 12px !important;
   overflow: hidden;
+  position: relative;
+}
+
+/* Subtle diagonal pattern overlay for visual richness */
+.overview-value-boxes .bslib-value-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.1) 0%,
+    transparent 50%,
+    rgba(0,0,0,0.1) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ensure content stays above the overlay */
+.overview-value-boxes .bslib-value-box > * {
+  position: relative;
+  z-index: 2;
 }
 
 /* Responsive font sizes - scales smoothly across all screen widths */
@@ -241,11 +264,20 @@
 
 .bslib-value-box .value-box-value {
   font-size: clamp(1.1rem, 3.5vw, 1.8rem) !important;
-  line-height: 1.1;
+  line-height: 1.2;
   font-weight: 700;
+}
+
+/* Allow text wrapping for deck names (4th value box) */
+.overview-value-boxes .bslib-value-box:nth-child(4) .value-box-value {
+  white-space: normal;
+  font-size: clamp(0.9rem, 2.5vw, 1.4rem) !important;
+  word-wrap: break-word;
+}
+
+/* Keep numeric values on single line */
+.overview-value-boxes .bslib-value-box:nth-child(-n+3) .value-box-value {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Give more space to showcase (card image) */
@@ -708,30 +740,38 @@ button.mapbox-gl-draw_point {
   padding: 0.35rem 0.5rem;
 }
 
+/* Force all filter elements to respect grid column boundaries */
+.dashboard-filters .bslib-grid-item,
+.admin-panel .bslib-grid-item {
+  min-width: 0 !important;
+  max-width: 100%;
+}
+
+.dashboard-filters .shiny-input-container,
+.admin-panel .shiny-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+.dashboard-filters .selectize-control,
+.dashboard-filters .selectize-input,
+.admin-panel .selectize-control,
+.admin-panel .selectize-input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
 /* Fix for bslib layout_columns inside dashboard-filters */
 .dashboard-filters .bslib-grid {
   gap: 0.5rem !important;
 }
 
-/* Responsive: Stack filters on smaller screens */
-@media (max-width: 992px) {
-  .dashboard-filters .bslib-grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.75rem !important;
-  }
-
-  .dashboard-filters .bslib-grid > div {
-    width: 100% !important;
-    flex: none !important;
-  }
-}
-
+/* Mobile: reduce padding */
 @media (max-width: 576px) {
-  .dashboard-filters .bslib-grid {
-    grid-template-columns: 1fr !important;
-  }
-
   .dashboard-filters {
     padding: 0.5rem 0.75rem;
   }
@@ -933,6 +973,24 @@ button.mapbox-gl-draw_point {
 }
 
 /* =============================================================================
+   ADMIN DECK MANAGEMENT
+   ============================================================================= */
+
+/* Prevent horizontal scroll in card preview section */
+#card_preview_container img {
+  max-width: 100%;
+  max-height: 150px;
+  object-fit: contain;
+}
+
+/* Card search results - constrain width */
+.card-search-results {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* =============================================================================
    ADMIN EDIT MODE
    ============================================================================= */
 
@@ -988,5 +1046,320 @@ button.mapbox-gl-draw_point {
 .wizard-step.completed .step-number {
   background: #198754;
   color: white;
+}
+
+/* =============================================================================
+   CUSTOM NOTIFICATIONS
+   ============================================================================= */
+
+.custom-notification {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.notify-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.notify-message {
+  line-height: 1.3;
+}
+
+/* Override Shiny notification styling */
+.shiny-notification {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: none !important;
+  padding: 0.75rem 1rem !important;
+}
+
+/* Success notification - green (default "message" type) */
+.shiny-notification-message {
+  background-color: #ECFDF5 !important;
+  border-left: 4px solid #10B981 !important;
+  color: #065F46 !important;
+}
+
+.shiny-notification-message .notify-icon {
+  color: #10B981;
+}
+
+/* Warning notification - amber */
+.shiny-notification-warning {
+  background-color: #FFFBEB !important;
+  border-left: 4px solid #F59E0B !important;
+  color: #92400E !important;
+}
+
+.shiny-notification-warning .notify-icon {
+  color: #F59E0B;
+}
+
+/* Error notification - red */
+.shiny-notification-error {
+  background-color: #FEF2F2 !important;
+  border-left: 4px solid #EF4444 !important;
+  color: #991B1B !important;
+}
+
+.shiny-notification-error .notify-icon {
+  color: #EF4444;
+}
+
+/* Close button styling */
+.shiny-notification .close {
+  opacity: 0.6;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  margin-left: auto;
+}
+
+.shiny-notification .close:hover {
+  opacity: 1;
+}
+
+/* Dark mode notifications */
+[data-bs-theme="dark"] .shiny-notification-message {
+  background-color: #064E3B !important;
+  color: #D1FAE5 !important;
+}
+
+[data-bs-theme="dark"] .shiny-notification-warning {
+  background-color: #78350F !important;
+  color: #FEF3C7 !important;
+}
+
+[data-bs-theme="dark"] .shiny-notification-error {
+  background-color: #7F1D1D !important;
+  color: #FEE2E2 !important;
+}
+
+/* Notification positioning - bottom right on desktop */
+#shiny-notification-panel {
+  bottom: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  top: auto !important;
+  max-width: 400px;
+}
+
+/* Mobile - bottom center, full width */
+@media (max-width: 576px) {
+  #shiny-notification-panel {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    max-width: none;
+  }
+
+  .shiny-notification {
+    width: 100% !important;
+  }
+}
+
+/* =============================================================================
+   MOBILE UI IMPROVEMENTS
+   ============================================================================= */
+
+/* 4a. Mobile Navigation Menu - auto-height, not full screen */
+@media (max-width: 991px) {
+  .bslib-sidebar-layout > .sidebar {
+    max-height: fit-content !important;
+    height: auto !important;
+  }
+
+  .bslib-sidebar-layout > .sidebar.show {
+    max-height: 80vh !important;
+    overflow-y: auto;
+  }
+
+  /* Smaller sidebar title on mobile */
+  .bslib-sidebar-layout > .sidebar > .sidebar-title {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  /* Tighter nav links on mobile */
+  .nav-link-sidebar {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  /* Smaller section labels */
+  .nav-section-label {
+    padding-top: 0.5rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.65rem;
+  }
+}
+
+/* 4b. Mobile Value Boxes - 2x2 grid */
+@media (max-width: 768px) {
+  .overview-value-boxes {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  .overview-value-boxes > div {
+    width: 100% !important;
+  }
+
+  .bslib-value-box {
+    min-height: 70px;
+  }
+
+  .bslib-value-box .value-box-title {
+    font-size: 0.65rem !important;
+  }
+
+  .bslib-value-box .value-box-value {
+    font-size: 1rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* 4c. Mobile Filter Sections - vertical stacking */
+/* Mobile filter stacking now handled by layout_columns responsive behavior */
+
+/* 4d. Mobile Tables - hide less important columns */
+@media (max-width: 768px) {
+  /* Player standings - hide L, T, 1st, Top3 columns */
+  .rt-table [data-col-id="L"],
+  .rt-table [data-col-id="T"],
+  .rt-table [data-col-id="1st"],
+  .rt-table [data-col-id="Top 3"],
+  .rt-table [data-col-id="Losses"],
+  .rt-table [data-col-id="Ties"],
+  .rt-table [data-col-id="1st Places"],
+  .rt-table [data-col-id="Top 3 Finishes"] {
+    display: none !important;
+  }
+
+  /* Smaller table text */
+  .reactable {
+    font-size: 0.8rem;
+  }
+
+  .rt-th {
+    padding: 0.4rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .rt-td {
+    padding: 0.35rem 0.5rem !important;
+  }
+}
+
+/* 5a. Mobile Admin - Enter Tournament Details */
+@media (max-width: 768px) {
+  #wizard_step1 .card-body {
+    padding: 0.75rem;
+  }
+
+  #wizard_step1 .d-flex.gap-3 {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+
+  #wizard_step1 .d-flex.gap-3 > div {
+    flex: none !important;
+    width: 100% !important;
+  }
+
+  /* Center create button on mobile */
+  #wizard_step1 .d-flex.justify-content-end {
+    justify-content: center !important;
+  }
+}
+
+/* 5b. Mobile Admin - Add Results Page */
+@media (max-width: 768px) {
+  /* Stack form and table vertically */
+  #wizard_step2 .bslib-grid {
+    display: block !important;
+  }
+
+  #wizard_step2 .bslib-grid > div {
+    width: 100% !important;
+    margin-bottom: 1rem;
+  }
+
+  /* Compact form on mobile */
+  #wizard_step2 .card-body {
+    padding: 0.75rem;
+  }
+
+  /* Smaller W/L/T inputs on mobile */
+  #wizard_step2 .d-flex.gap-2 .form-control {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* 5c. Mobile Admin - Manage Pages */
+@media (max-width: 768px) {
+  /* Stack columns vertically on manage pages */
+  .admin-panel .bslib-grid {
+    display: block !important;
+  }
+
+  .admin-panel .bslib-grid > div {
+    width: 100% !important;
+    margin-bottom: 1rem;
+  }
+
+  /* Hide less important columns in admin tables */
+  /* Decks: hide Card ID */
+  .admin-panel .rt-table [data-col-id="Card ID"],
+  .admin-panel .rt-table [data-col-id="card_id"],
+  .admin-panel .rt-table [data-col-id="Display Card"] {
+    display: none !important;
+  }
+
+  /* Stores: hide State */
+  .admin-panel .rt-table [data-col-id="State"] {
+    display: none !important;
+  }
+}
+
+/* Mobile header adjustments */
+@media (max-width: 576px) {
+  .app-header {
+    flex-wrap: nowrap;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .header-title-text {
+    font-size: 0.9rem;
+  }
+
+  .header-action-btn {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  /* Smaller page titles on mobile */
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Tighter card padding */
+  .card-body {
+    padding: 0.75rem !important;
+  }
+
+  .card-header {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.85rem !important;
+  }
 }
 

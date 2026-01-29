@@ -4,32 +4,27 @@
 tournaments_ui <- tagList(
   h2("Tournament History"),
 
-  # Filters
+  # Filters - Using layout_columns for responsive sizing
   div(
     class = "dashboard-filters mb-3",
-    # Row 1: Search
-    div(
-      class = "mb-2",
+    layout_columns(
+      col_widths = c(4, 3, 3, 2),
+      textInput("tournaments_search", "Search Store", placeholder = "Type a store name..."),
+      selectInput("tournaments_format", "Format",
+                  choices = list("Loading..." = ""),
+                  selected = ""),
+      selectInput("tournaments_event_type", "Event Type",
+                  choices = list(
+                    "All Events" = "",
+                    "Event Types" = EVENT_TYPES
+                  ),
+                  selected = ""),
       div(
-        style = "max-width: 300px;",
-        textInput("tournaments_search", "Search Store", placeholder = "Type a store name...")
+        style = "padding-top: 1.5rem;",
+        actionButton("reset_tournaments_filters", "Reset",
+                     class = "btn-outline-secondary",
+                     style = "height: 38px;")
       )
-    ),
-    # Row 2: Format, Event Type, Reset
-    div(
-      class = "d-flex align-items-end gap-3",
-      div(selectInput("tournaments_format", "Format",
-                      choices = list("Loading..." = ""),
-                      selected = "", width = "150px")),
-      div(selectInput("tournaments_event_type", "Event Type",
-                      choices = list(
-                        "All Events" = "",
-                        "Event Types" = EVENT_TYPES
-                      ),
-                      selected = "", width = "150px")),
-      actionButton("reset_tournaments_filters", "Reset",
-                   class = "btn-outline-secondary",
-                   style = "height: 38px;")
     )
   ),
 

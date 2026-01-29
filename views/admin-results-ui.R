@@ -25,27 +25,40 @@ admin_results_ui <- tagList(
   div(
     id = "wizard_step1",
     card(
-      card_header("Tournament Details"),
-      card_body(
-        selectInput("tournament_store", "Store", choices = NULL),
-        dateInput("tournament_date", "Date", value = Sys.Date()),
-        selectInput("tournament_type", "Event Type", choices = EVENT_TYPES),
-        selectInput("tournament_format", "Format/Set", choices = list("Loading..." = "")),
-        numericInput("tournament_players", "Number of Players", value = 8, min = 2),
-        numericInput("tournament_rounds", "Number of Rounds", value = 3, min = 1),
-        div(
-          class = "d-flex justify-content-end mt-3",
-          actionButton("create_tournament", "Create Tournament", class = "btn-primary btn-lg",
-                       icon = icon("arrow-right"))
+        card_header("Tournament Details"),
+        card_body(
+          # Row 1: Store + Date
+          layout_columns(
+            col_widths = c(8, 4),
+            selectInput("tournament_store", "Store", choices = NULL),
+            dateInput("tournament_date", "Date", value = Sys.Date())
+          ),
+          # Row 2: Event Type + Format
+          layout_columns(
+            col_widths = c(6, 6),
+            selectInput("tournament_type", "Event Type", choices = EVENT_TYPES),
+            selectInput("tournament_format", "Format/Set", choices = list("Loading..." = ""))
+          ),
+          # Row 3: Players + Rounds
+          layout_columns(
+            col_widths = c(6, 6),
+            numericInput("tournament_players", "Number of Players", value = 8, min = 2),
+            numericInput("tournament_rounds", "Number of Rounds", value = 3, min = 1)
+          ),
+          div(
+            class = "d-flex justify-content-end mt-3",
+            actionButton("create_tournament", "Create Tournament", class = "btn-primary btn-lg",
+                         icon = icon("arrow-right"))
+          )
         )
       )
-    )
   ),
 
   # Step 2: Add Results (hidden initially)
   shinyjs::hidden(
     div(
       id = "wizard_step2",
+      class = "admin-panel",
       # Tournament summary bar
       uiOutput("tournament_summary_bar"),
 
@@ -98,12 +111,31 @@ admin_results_ui <- tagList(
 
             hr(),
 
-            numericInput("result_placement", "Placement", value = 1, min = 1),
-            numericInput("result_wins", "Wins", value = 0, min = 0),
-            numericInput("result_losses", "Losses", value = 0, min = 0),
-            numericInput("result_ties", "Ties", value = 0, min = 0),
-            textInput("result_decklist_url", "Decklist URL (optional)",
-                      placeholder = "e.g., digimonmeta.com/deck/..."),
+            # Placement + Decklist URL row
+            layout_columns(
+              col_widths = c(4, 8),
+              numericInput("result_placement", "Placement", value = 1, min = 1),
+              textInput("result_decklist_url", "Decklist URL (optional)",
+                        placeholder = "e.g., digimonmeta.com/deck/...")
+            ),
+
+            # W/L/T inline
+            div(
+              class = "mb-3",
+              tags$label("Record (W/L/T)", class = "form-label"),
+              layout_columns(
+                col_widths = c(4, 4, 4),
+                numericInput("result_wins", NULL, value = 0, min = 0),
+                numericInput("result_losses", NULL, value = 0, min = 0),
+                numericInput("result_ties", NULL, value = 0, min = 0)
+              ),
+              layout_columns(
+                col_widths = c(4, 4, 4),
+                span(class = "text-muted small text-center d-block", "Wins"),
+                span(class = "text-muted small text-center d-block", "Losses"),
+                span(class = "text-muted small text-center d-block", "Ties")
+              )
+            ),
             actionButton("add_result", "Add Result", class = "btn-success w-100 mt-3")
           )
         ),
@@ -150,10 +182,10 @@ admin_results_ui <- tagList(
           uiOutput("duplicate_tournament_message")
         ),
         tags$div(
-          class = "modal-footer",
-          actionButton("edit_existing_tournament", "View/Edit Existing", class = "btn-info"),
+          class = "modal-footer d-flex gap-2 justify-content-end",
+          actionButton("edit_existing_tournament", "View/Edit Existing", class = "btn-outline-primary"),
           actionButton("create_anyway", "Create Anyway", class = "btn-warning"),
-          tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel")
+          tags$button(type = "button", class = "btn btn-outline-secondary", `data-bs-dismiss` = "modal", "Cancel")
         )
       )
     )

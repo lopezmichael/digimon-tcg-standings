@@ -4,29 +4,24 @@
 meta_ui <- tagList(
   h2("Deck Meta Analysis"),
 
-  # Filters
+  # Filters - Using layout_columns for responsive sizing
   div(
     class = "dashboard-filters mb-3",
-    # Row 1: Search
-    div(
-      class = "mb-2",
+    layout_columns(
+      col_widths = c(4, 3, 3, 2),
+      textInput("meta_search", "Search Deck", placeholder = "Type a deck name..."),
+      selectInput("meta_format", "Format",
+                  choices = list("Loading..." = ""),
+                  selected = ""),
+      selectInput("meta_min_entries", "Min Entries",
+                  choices = c("Any" = 0, "2+" = 2, "5+" = 5, "10+" = 10, "20+" = 20),
+                  selected = 2),
       div(
-        style = "max-width: 300px;",
-        textInput("meta_search", "Search Deck", placeholder = "Type a deck name...")
+        style = "padding-top: 1.5rem;",
+        actionButton("reset_meta_filters", "Reset",
+                     class = "btn-outline-secondary",
+                     style = "height: 38px;")
       )
-    ),
-    # Row 2: Format, Min Entries, Reset
-    div(
-      class = "d-flex align-items-end gap-3",
-      div(selectInput("meta_format", "Format",
-                      choices = list("Loading..." = ""),
-                      selected = "", width = "150px")),
-      div(selectInput("meta_min_entries", "Min Entries",
-                      choices = c("Any" = 0, "2+" = 2, "5+" = 5, "10+" = 10, "20+" = 20),
-                      selected = 2, width = "120px")),
-      actionButton("reset_meta_filters", "Reset",
-                   class = "btn-outline-secondary",
-                   style = "height: 38px;")
     )
   ),
 

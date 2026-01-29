@@ -5,32 +5,35 @@ dashboard_ui <- tagList(
   # Region filter indicator (shown when stores are filtered from map)
   uiOutput("region_filter_indicator"),
 
-  layout_columns(
-    col_widths = c(3, 3, 3, 3),
-    value_box(
-      title = "Tournaments",
-      value = textOutput("total_tournaments_val", inline = TRUE),
-      showcase = bsicons::bs_icon("trophy"),
-      theme = value_box_theme(bg = "#0A3055", fg = "#FFFFFF")
-    ),
-    value_box(
-      title = "Players",
-      value = textOutput("total_players_val", inline = TRUE),
-      showcase = bsicons::bs_icon("people"),
-      theme = value_box_theme(bg = "#0F4C81", fg = "#FFFFFF")
-    ),
-    value_box(
-      title = "Deck Types",
-      value = textOutput("total_decks_val", inline = TRUE),
-      showcase = bsicons::bs_icon("stack"),
-      theme = value_box_theme(bg = "#1565A8", fg = "#FFFFFF")
-    ),
-    value_box(
-      title = "Most Popular Deck",
-      value = textOutput("most_popular_deck_val", inline = TRUE),
-      showcase = uiOutput("most_popular_deck_image"),
-      showcase_layout = showcase_left_center(width = 0.4, max_height = "100px"),
-      theme = value_box_theme(bg = "#2A7AB8", fg = "#FFFFFF")
+  div(
+    class = "overview-value-boxes mb-3",
+    layout_columns(
+      col_widths = c(3, 3, 3, 3),
+      value_box(
+        title = "Tournaments",
+        value = textOutput("total_tournaments_val", inline = TRUE),
+        showcase = bsicons::bs_icon("trophy"),
+        theme = value_box_theme(bg = "#0A3055", fg = "#FFFFFF")
+      ),
+      value_box(
+        title = "Players",
+        value = textOutput("total_players_val", inline = TRUE),
+        showcase = bsicons::bs_icon("people"),
+        theme = value_box_theme(bg = "#0F4C81", fg = "#FFFFFF")
+      ),
+      value_box(
+        title = "Deck Types",
+        value = textOutput("total_decks_val", inline = TRUE),
+        showcase = bsicons::bs_icon("stack"),
+        theme = value_box_theme(bg = "#1565A8", fg = "#FFFFFF")
+      ),
+      value_box(
+        title = "Most Popular Deck",
+        value = textOutput("most_popular_deck_val", inline = TRUE),
+        showcase = uiOutput("most_popular_deck_image"),
+        showcase_layout = showcase_left_center(width = 0.4, max_height = "100px"),
+        theme = value_box_theme(bg = "#2A7AB8", fg = "#FFFFFF")
+      )
     )
   ),
 

@@ -41,23 +41,44 @@ admin_decks_ui <- tagList(
               div(
                 id = "card_preview_container",
                 class = "border rounded p-2 bg-light",
-                style = "min-height: 170px; display: flex; align-items: center; justify-content: center;",
+                style = "min-height: 150px; max-height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden;",
                 uiOutput("selected_card_preview")
               )
             ),
-            # Search on right
+            # Search controls on right
             div(
-              div(
-                class = "d-flex gap-2 align-items-end mb-3",
-                textInput("card_search", "Search", placeholder = "Type card name...", width = "180px"),
-                actionButton("search_card_btn", bsicons::bs_icon("search"),
-                             class = "btn-info", style = "height: 38px; margin-bottom: 15px;")
+              # Row 1: Search input + button
+              layout_columns(
+                col_widths = c(8, 4),
+                textInput("card_search", "Search", placeholder = "Type card name..."),
+                div(
+                  style = "padding-top: 1.5rem;",
+                  actionButton("search_card_btn", bsicons::bs_icon("search"),
+                               class = "btn-info w-100", style = "height: 38px;")
+                )
               ),
-              uiOutput("card_search_results"),
-              div(class = "mt-2",
-                  textInput("selected_card_id", "Selected Card ID", placeholder = "e.g., BT17-042", width = "180px"),
-                  div(class = "small text-muted", "Click a card above to auto-fill, or enter ID manually"))
+              # Row 2: Card ID + info icon
+              layout_columns(
+                col_widths = c(10, 2),
+                textInput("selected_card_id", "Selected Card ID", placeholder = "e.g., BT17-042"),
+                div(
+                  style = "padding-top: 1.5rem;",
+                  tags$span(
+                    class = "text-muted",
+                    title = "Click a card from search results to auto-fill, or enter a card ID manually",
+                    style = "cursor: help;",
+                    bsicons::bs_icon("info-circle", size = "1.2rem")
+                  )
+                )
+              )
             )
+          ),
+          # Search results in dedicated box below
+          div(
+            class = "border rounded p-2 bg-light mt-2",
+            style = "min-height: 60px;",
+            tags$label(class = "form-label small text-muted", "Search Results"),
+            uiOutput("card_search_results")
           ),
 
           hr(),

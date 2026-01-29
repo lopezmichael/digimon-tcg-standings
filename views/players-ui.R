@@ -4,29 +4,24 @@
 players_ui <- tagList(
   h2("Player Standings"),
 
-  # Filters
+  # Filters - Using layout_columns for responsive sizing
   div(
     class = "dashboard-filters mb-3",
-    # Row 1: Search
-    div(
-      class = "mb-2",
+    layout_columns(
+      col_widths = c(4, 3, 3, 2),
+      textInput("players_search", "Search Player", placeholder = "Type a name..."),
+      selectInput("players_format", "Format",
+                  choices = list("Loading..." = ""),
+                  selected = ""),
+      selectInput("players_min_events", "Min Events",
+                  choices = c("Any" = 0, "2+" = 2, "3+" = 3, "5+" = 5, "10+" = 10),
+                  selected = 0),
       div(
-        style = "max-width: 300px;",
-        textInput("players_search", "Search Player", placeholder = "Type a name...")
+        style = "padding-top: 1.5rem;",
+        actionButton("reset_players_filters", "Reset",
+                     class = "btn-outline-secondary",
+                     style = "height: 38px;")
       )
-    ),
-    # Row 2: Format, Min Events, Reset
-    div(
-      class = "d-flex align-items-end gap-3",
-      div(selectInput("players_format", "Format",
-                      choices = list("Loading..." = ""),
-                      selected = "", width = "150px")),
-      div(selectInput("players_min_events", "Min Events",
-                      choices = c("Any" = 0, "2+" = 2, "3+" = 3, "5+" = 5, "10+" = 10),
-                      selected = 0, width = "120px")),
-      actionButton("reset_players_filters", "Reset",
-                   class = "btn-outline-secondary",
-                   style = "height: 38px;")
     )
   ),
 
