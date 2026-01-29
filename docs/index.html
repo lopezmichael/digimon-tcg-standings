@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digimon TCG DFW Tournament Tracker</title>
+  <meta name="description" content="Track Dallas-Fort Worth Digimon TCG tournament results, player standings, and deck meta.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    /* Fallback message if iframe fails */
+    .fallback {
+      display: none;
+      text-align: center;
+      padding: 50px 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .fallback a {
+      color: #0A3055;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <iframe
+    src="https://019bfe6c-c032-7134-a060-84ceec5e089d.share.connect.posit.cloud/"
+    title="Digimon TCG DFW Tournament Tracker"
+    allow="fullscreen"
+    loading="eager">
+  </iframe>
+  <noscript>
+    <div class="fallback" style="display: block;">
+      <p>Please enable JavaScript or visit the app directly:</p>
+      <a href="https://019bfe6c-c032-7134-a060-84ceec5e089d.share.connect.posit.cloud/">
+        Open Digimon TCG DFW Tracker
+      </a>
+    </div>
+  </noscript>
+</body>
+</html>
