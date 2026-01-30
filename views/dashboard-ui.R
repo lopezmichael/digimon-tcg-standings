@@ -52,7 +52,7 @@ dashboard_ui <- tagList(
                   ),
                   selected = "locals"),  # Default to Locals
       div(
-        style = "margin-top: 1.5rem;",
+        style = "padding-top: 1.8rem;",
         actionButton("reset_dashboard_filters", "Reset",
                      class = "btn-outline-secondary",
                      style = "height: 38px;")

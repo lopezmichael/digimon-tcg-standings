@@ -201,7 +201,7 @@ observe({
     )
 
     # Update all format dropdowns
-    updateSelectInput(session, "dashboard_format", choices = format_choices_with_all)
+    updateSelectInput(session, "dashboard_format", choices = format_choices_with_all, selected = first_format)
     updateSelectInput(session, "players_format", choices = format_choices_with_all)
     updateSelectInput(session, "meta_format", choices = format_choices_with_all)
     updateSelectInput(session, "tournaments_format", choices = format_choices_with_all)

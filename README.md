@@ -1,4 +1,4 @@
-# Digimon TCG Tournament Tracker
+# Digimon Locals Meta Tracker
 
 A regional tournament tracking application for the Dallas-Fort Worth Digimon Trading Card Game community. Track player performance, store activity, deck meta, and local tournament results.
 
@@ -238,10 +238,11 @@ Full card database synced from DigimonCard.io, covering BT-01 through BT-24, EX-
 ## Roadmap
 
 ### UI Polish (Current Priority)
-- [ ] Fix menu bar "menu" text and white space issues
+- [x] ~~Fix menu bar and sidebar~~ - Renamed to "Digimon Locals Meta Tracker", added Digimon TCG logo
+- [x] ~~Correct button/filter alignment~~ - Fixed on all pages
+- [x] ~~Improve value boxes~~ - Smaller titles, larger numbers and icons
+- [x] ~~Add Rating column to Players~~ - Weighted rating calculation visible
 - [ ] Comprehensive mobile view review and fixes
-- [ ] Correct button alignment throughout the app
-- [ ] Improve header design and add Digimon TCG logo
 - [ ] Add links to GitHub repo and "Buy Me a Coffee"
 - [ ] Replace individual chart spinners with app-wide loading screen
 

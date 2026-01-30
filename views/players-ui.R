@@ -17,7 +17,7 @@ players_ui <- tagList(
                   choices = c("Any" = 0, "2+" = 2, "3+" = 3, "5+" = 5, "10+" = 10),
                   selected = 0),
       div(
-        style = "padding-top: 1.5rem;",
+        style = "padding-top: 1.8rem;",
         actionButton("reset_players_filters", "Reset",
                      class = "btn-outline-secondary",
                      style = "height: 38px;")

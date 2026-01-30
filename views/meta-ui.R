@@ -15,9 +15,9 @@ meta_ui <- tagList(
                   selected = ""),
       selectInput("meta_min_entries", "Min Entries",
                   choices = c("Any" = 0, "2+" = 2, "5+" = 5, "10+" = 10, "20+" = 20),
-                  selected = 2),
+                  selected = 0),
       div(
-        style = "padding-top: 1.5rem;",
+        style = "padding-top: 1.8rem;",
         actionButton("reset_meta_filters", "Reset",
                      class = "btn-outline-secondary",
                      style = "height: 38px;")

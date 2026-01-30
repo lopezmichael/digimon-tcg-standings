@@ -1,0 +1,262 @@
+# DFW Digimon TCG Tournament Tracker - Claude Code Context
+
+This document provides context for Claude Code to quickly understand and contribute to this project.
+
+## Project Overview
+
+A regional tournament tracking application for the Dallas-Fort Worth Digimon Trading Card Game community. Track player performance, store activity, deck meta, and local tournament results.
+
+**Live App:** https://lopezmichael.github.io/digimon-tcg-standings/
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Frontend | R Shiny with bslib + atomtemplates |
+| Database | DuckDB (local) / MotherDuck (cloud) |
+| Charts | Highcharter |
+| Maps | mapgl (Mapbox GL JS) |
+| Tables | reactable |
+| Card Data | DigimonCard.io API (cached locally) |
+| Hosting | Posit Connect Cloud |
+
+## Project Structure
+
+```
+digimon-tcg-standings/
+├── app.R                    # Main Shiny application (thin wrapper)
+├── server/                  # Server logic modules
+│   ├── shared-server.R      # Database, navigation, auth helpers
+│   ├── results-server.R     # Tournament entry wizard
+│   ├── admin-decks-server.R # Deck archetype CRUD
+│   ├── admin-stores-server.R# Store management
+│   └── admin-formats-server.R# Format management
+├── views/                   # UI components
+│   ├── dashboard-ui.R       # Dashboard with charts and stats
+│   ├── stores-ui.R          # Store directory with map
+│   ├── players-ui.R         # Player standings
+│   ├── meta-ui.R            # Meta analysis
+│   ├── tournaments-ui.R     # Tournament history
+│   ├── admin-results-ui.R   # Tournament entry form
+│   ├── admin-decks-ui.R     # Deck archetype management
+│   └── admin-stores-ui.R    # Store management
+├── R/
+│   ├── db_connection.R      # Database connection module
+│   └── digimoncard_api.R    # DigimonCard.io API integration
+├── scripts/                 # Python scripts for data sync
+│   ├── sync_cards.py        # Sync cards from DigimonCard.io API
+│   ├── sync_to_motherduck.py# Push local DB to cloud
+│   └── sync_from_motherduck.py # Pull cloud DB to local
+├── db/
+│   └── schema.sql           # Database schema
+├── docs/
+│   ├── card-sync.md         # Card sync documentation
+│   ├── plans/               # Design documents
+│   └── solutions/           # Technical solutions & fixes
+├── logs/
+│   └── dev_log.md           # Development decisions log
+├── data/
+│   └── local.duckdb         # Local database (gitignored)
+├── www/
+│   └── custom.css           # Custom styles
+├── _brand.yml               # Atom brand configuration
+├── CHANGELOG.md             # Version history
+└── PROJECT_PLAN.md          # Original technical specification
+```
+
+## Outstanding TODO Items
+
+### UI Polish (Current Priority)
+- [x] ~~Fix menu bar "menu" text and white space issues~~ - Renamed to "Digimon Locals Meta Tracker", added Digimon TCG logo to sidebar
+- [ ] Comprehensive mobile view review and fixes
+- [x] ~~Correct button alignment throughout the app~~ - Fixed filter/reset button alignment on all pages
+- [x] ~~Improve header design and add Digimon TCG logo~~ - Updated header with egg icon, added logo to sidebar
+- [ ] Add links to GitHub repo and "Buy Me a Coffee"
+- [ ] Replace individual chart spinners with app-wide loading screen
+
+### From UI Refactor Design (docs/plans/2026-01-28-ui-refactor-design.md)
+- [x] ~~Fix &times; delete button bug~~ - Uses icon("xmark") now
+- [x] ~~Improve notification styling~~ - Custom notifications with icons and colors
+- [x] ~~Desktop: Filter section single-row layouts~~ - All filter pages use layout_columns
+- [x] ~~Desktop: Add Results page two-column + inline W/L/T~~ - Implemented
+- [x] ~~Desktop: Duplicate Tournament modal buttons alignment~~ - Fixed with flexbox
+- [x] ~~Desktop/Mobile: Sidebar "Menu" header simplification~~ - Removed "Menu", added Digimon TCG logo
+- [x] ~~Desktop: Overview value boxes resizing~~ - Smaller titles, larger numbers/icons
+- [x] ~~Desktop: Overview charts polish~~ - Removed x-axis labels, capped y-axis at 100%
+- [x] ~~Desktop: Format auto-select~~ - Defaults to most recent format
+- [x] ~~Desktop: Players page Rating column~~ - Added weighted rating calculation
+- [x] ~~Desktop: Tournaments auto-sort~~ - Defaults to date descending
+- [ ] Desktop: Overview value boxes with card backgrounds
+- [ ] Desktop: Enter Tournament Details constrained width
+- [ ] Desktop: Manage Decks Card ID input width
+- [ ] Mobile: Navigation menu height optimization
+- [ ] Mobile: Overview 2x2 value box grid
+- [ ] Mobile: Filter sections vertical stacking
+- [ ] Mobile: Table column prioritization
+- [ ] Mobile: Enter Tournament center button
+- [ ] Mobile: Add Results compact layout
+
+### User Experience & Onboarding (Future)
+- [ ] Tool introduction / onboarding flow for new users
+- [ ] "About This Tool" section explaining what the tool is, how to use it, and geographic coverage
+- [ ] Contextual help throughout the app (info icons, tooltips, or help text for each tab/feature)
+
+### Multi-Region / Geography Expansion (Future)
+Currently the tool is focused on the North Texas / DFW playerbase. Rethink how geography works to support broader adoption:
+- [ ] Allow users from other regions/states to add their own results
+- [ ] Region/geography selector for users to filter data to their area
+- [ ] Consider how stores, players, and tournaments are scoped by region
+- [ ] Think through data isolation vs. cross-region visibility (can a Houston player see DFW data?)
+- [ ] User-defined regions or predefined metro areas?
+- [ ] How does the map experience change with multiple regions?
+- [ ] Regional leaderboards vs. global leaderboards
+- [ ] Admin permissions per region (who can add data for which areas?)
+
+### Player Rating Redesign (Future)
+Rethink the weighted player rating methodology on the Overview tab. Current formula is basic. Future version should consider:
+- [ ] Total number of players at each tournament (winning a 32-player event > 8-player event)
+- [ ] Placement relative to field size (percentile-based)
+- [ ] Total wins across all tournaments
+- [ ] Average skill level of tournament participants (strength of schedule)
+- [ ] Recency weighting (recent results matter more)
+- [ ] Add the calculated rating as a visible column in the Players tab
+
+### Future Features
+- [ ] Limitless TCG API integration for online tournament data
+- [ ] Matchup analysis (deck A vs deck B win rates)
+- [ ] Full Elo-style player rating system
+- [ ] Discord bot for result reporting
+- [ ] Expand to other Texas regions (Houston, Austin, San Antonio)
+- [ ] One Piece TCG support (multi-game expansion)
+- [ ] Community-submitted archetype suggestions with approval workflow
+- [ ] Mobile-first data entry PWA
+- [ ] Player profile views (detailed)
+- [ ] Deck profile views (detailed)
+- [ ] Date range filtering on dashboard
+
+## Key Logs and Documentation
+
+### Development Log
+**Location:** `logs/dev_log.md`
+
+Contains dated entries explaining development decisions, technical choices, and blockers. Always update this log when making significant technical decisions.
+
+### Changelog
+**Location:** `CHANGELOG.md`
+
+Semantic versioning log of all features, fixes, and changes. Update when releasing new versions.
+
+### Design Documents
+**Location:** `docs/plans/`
+
+Contains design documents for features before implementation. Current plans:
+- `2026-01-28-ui-refactor-design.md` - UI refactor and polish plan
+- `2026-01-27-admin-enhancement-design.md` - Admin page enhancements
+- `2026-01-27-card-cache-design.md` - Card caching solution
+- `2026-01-27-tournament-deletion-design.md` - Tournament deletion feature
+
+## Important Technical Notes
+
+### Database Connection
+- **Windows (local dev):** Uses `data/local.duckdb` file
+- **Linux (Posit Connect):** Uses MotherDuck cloud
+- Connection auto-detects environment via `connect_db()` in `R/db_connection.R`
+
+### DuckDB Gotchas
+1. **NULL values:** DuckDB bind parameters require `NA_character_` or `NA_real_`, not R's `NULL`
+2. **JSON columns:** Use TEXT type (JSON extension unavailable on Windows mingw)
+3. **Foreign keys:** DuckDB UPDATE = DELETE + INSERT internally, causing FK violations. We removed FK constraints and handle referential integrity at application level.
+
+### DigimonCard.io API
+- API returns 403 on Posit Connect Cloud (blocks server IPs)
+- Solution: Cards cached in `cards` table, synced via `scripts/sync_cards.py`
+- Card images (CDN) work fine - only API endpoints blocked
+- GitHub Actions runs monthly sync via `.github/workflows/sync-cards.yml`
+
+### Environment Variables
+Required in `.env` file (copy from `.env.example`):
+```
+MOTHERDUCK_TOKEN=your_motherduck_token_here
+MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
+```
+
+## Using Superpowers
+
+This project uses the Claude Code superpowers skill system. The following superpowers are configured:
+
+### Available Superpowers
+
+1. **superpowers:brainstorming** - Use before any creative work (creating features, building components, adding functionality)
+2. **superpowers:writing-plans** - Use when you have a spec or requirements for a multi-step task, before touching code
+3. **superpowers:subagent-driven-development** - Use when executing implementation plans with independent tasks
+4. **superpowers:finishing-a-development-branch** - Use when implementation is complete and you need to decide how to integrate
+5. **superpowers:verification-before-completion** - Use when about to claim work is complete, before committing or creating PRs
+
+### When to Use Superpowers
+
+- **Before implementing a new feature:** Use `brainstorming` to explore requirements, then `writing-plans` to create a design document
+- **When executing a plan:** Use `subagent-driven-development` for parallel independent tasks
+- **Before claiming done:** Use `verification-before-completion` to ensure tests pass and code works
+- **When finishing a branch:** Use `finishing-a-development-branch` to properly merge/PR
+
+### Workflow Example
+
+```
+1. User requests new feature
+2. /brainstorming - Explore intent and requirements
+3. /writing-plans - Create design doc in docs/plans/
+4. Get user approval
+5. /subagent-driven-development - Execute implementation
+6. /verification-before-completion - Verify everything works
+7. /finishing-a-development-branch - Merge or create PR
+```
+
+## Development Workflow
+
+### Running Locally
+
+1. Copy `.env.example` to `.env` and add your tokens
+2. Initialize database: `source("scripts/init_database.R")`
+3. Seed data: Run seed scripts in `scripts/`
+4. Run app: `shiny::runApp()`
+
+### Adding Mock Data for Testing
+
+```r
+source("scripts/seed_mock_data.R")
+```
+
+### Syncing Database
+
+```bash
+# Push local to MotherDuck
+python scripts/sync_to_motherduck.py
+
+# Pull MotherDuck to local
+python scripts/sync_from_motherduck.py --yes
+```
+
+### Card Sync
+
+```bash
+# Regular update (fast - only new cards)
+python scripts/sync_cards.py --by-set --incremental
+
+# Full re-sync
+python scripts/sync_cards.py --by-set
+```
+
+## Code Style Notes
+
+- **UI refactoring:** Server logic is in `server/` files, UI in `views/` files
+- **Tables:** Use `reactable` (not `tableOutput`)
+- **Charts:** Use `highcharter` with `hc_theme_atom_switch()` for theming
+- **Maps:** Use `atom_mapgl()` from atomtemplates
+- **CSS:** Custom styles in `www/custom.css`, brand config in `_brand.yml`
+- **Layout:** Use `layout_columns` from bslib for consistent layouts
+
+## Current Version
+
+**v0.8.0** - Desktop UI Polish
+
+See `CHANGELOG.md` for full version history.

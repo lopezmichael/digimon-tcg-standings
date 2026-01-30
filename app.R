@@ -242,8 +242,8 @@ ui <- page_fillable(
     class = "app-header",
     div(
       class = "header-title",
-      span(bsicons::bs_icon("controller"), class = "header-icon"),
-      span("Digimon TCG", class = "header-title-text")
+      span(bsicons::bs_icon("egg"), class = "header-icon"),
+      span("Digimon Locals Meta Tracker", class = "header-title-text")
     ),
     div(
       class = "header-actions",
@@ -260,9 +260,19 @@ ui <- page_fillable(
 
     sidebar = sidebar(
       id = "main_sidebar",
-      title = "Menu",
+      title = NULL,  # Remove the "Menu" title
       width = 220,
       bg = "#0A3055",
+
+      # Digimon TCG Logo (saved locally in www/)
+      div(
+        class = "sidebar-logo-container",
+        tags$img(
+          src = "digimon-logo.png",
+          class = "sidebar-logo",
+          alt = "Digimon TCG"
+        )
+      ),
 
       # Navigation
       tags$nav(
@@ -741,7 +751,8 @@ server <- function(input, output, session) {
       hc_yAxis(
         title = list(text = "Meta Share"),
         labels = list(format = "{value}%"),
-        min = 0
+        min = 0,
+        max = 100
       ) |>
       hc_tooltip(
         shared = TRUE,
@@ -984,7 +995,7 @@ server <- function(input, output, session) {
 
     highchart() |>
       hc_chart(type = "bar") |>
-      hc_xAxis(categories = result$color, title = list(text = NULL)) |>
+      hc_xAxis(categories = result$color, title = list(text = NULL), labels = list(enabled = FALSE)) |>
       hc_yAxis(title = list(text = NULL)) |>
       hc_add_series(
         name = "Entries",
@@ -1746,20 +1757,34 @@ server <- function(input, output, session) {
              SUM(r.wins) as W, SUM(r.losses) as L, SUM(r.ties) as T,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%',
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1st',
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3'
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3',
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_count
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
       WHERE 1=1 %s %s
       GROUP BY p.player_id, p.display_name
       HAVING COUNT(DISTINCT r.tournament_id) >= %d
-      ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC,
-               ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) DESC
     ", search_filter, format_filter, min_events))
 
     if (nrow(result) == 0) {
       return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
     }
+
+    # Calculate weighted rating
+    result$win_pct <- result$`Win %`
+    result$win_pct[is.na(result$win_pct)] <- 0
+    result$top3_rate <- result$top3_count / result$Events
+    result$events_bonus <- pmin(result$Events * 2, 20)
+    result$Rating <- round(
+      (result$win_pct * 0.5) +
+      (result$top3_rate * 30) +
+      result$events_bonus,
+      1
+    )
+
+    # Sort by rating
+    result <- result[order(-result$Rating), ]
 
     reactable(
       result,
@@ -1779,7 +1804,12 @@ server <- function(input, output, session) {
         T = colDef(minWidth = 50, align = "center"),
         `Win %` = colDef(minWidth = 70, align = "center"),
         `1st` = colDef(minWidth = 50, align = "center"),
-        `Top 3` = colDef(minWidth = 60, align = "center")
+        `Top 3` = colDef(minWidth = 60, align = "center"),
+        top3_count = colDef(show = FALSE),
+        win_pct = colDef(show = FALSE),
+        top3_rate = colDef(show = FALSE),
+        events_bonus = colDef(show = FALSE),
+        Rating = colDef(minWidth = 70, align = "center")
       )
     )
   })
@@ -1990,7 +2020,7 @@ server <- function(input, output, session) {
   observeEvent(input$reset_meta_filters, {
     updateTextInput(session, "meta_search", value = "")
     updateSelectInput(session, "meta_format", selected = "")
-    updateSelectInput(session, "meta_min_entries", selected = 2)
+    updateSelectInput(session, "meta_min_entries", selected = 0)
   })
 
   # Archetype stats
@@ -2344,6 +2374,7 @@ server <- function(input, output, session) {
       striped = TRUE,
       pagination = TRUE,
       defaultPageSize = 20,
+      defaultSorted = list(Date = "desc"),
       selection = "single",
       onClick = "select",
       rowStyle = list(cursor = "pointer"),

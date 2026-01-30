@@ -20,7 +20,7 @@ tournaments_ui <- tagList(
                   ),
                   selected = ""),
       div(
-        style = "padding-top: 1.5rem;",
+        style = "padding-top: 1.8rem;",
         actionButton("reset_tournaments_filters", "Reset",
                      class = "btn-outline-secondary",
                      style = "height: 38px;")

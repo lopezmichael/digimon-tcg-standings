@@ -11,6 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-01-30 - Desktop UI Polish
+
+### Changed
+- **App Rebranding**: Renamed to "Digimon Locals Meta Tracker" with egg icon in header
+- **Sidebar Logo**: Added Digimon TCG logo to sidebar, removed "Menu" text
+- **Value Boxes**: Smaller titles, larger numbers and icons for better visual hierarchy
+- **Format Default**: Overview page now auto-selects the most recent format
+- **Meta Default**: Meta Analysis now shows all decks by default (min entries = 0)
+
+### Added
+- **Player Rating Column**: Players page now displays weighted rating (win% + top 3 rate + attendance)
+- **Tournament Sorting**: Tournament History auto-sorts by date descending
+
+### Fixed
+- **Filter Alignment**: Reset buttons and search inputs properly aligned on all filter bars
+- **Chart Polish**: Removed redundant x-axis labels from color distribution, capped meta share y-axis at 100%
+- **Value Box Overflow**: Long deck names now truncate properly in "Most Popular Deck" box
+
+---
+
 ## [0.7.0] - 2026-01-28 - UI Refactor & Card Sync Improvements
 
 ### Added

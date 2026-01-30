@@ -125,6 +125,34 @@
   margin-bottom: 0.5rem;
 }
 
+/* Sidebar Logo */
+.sidebar-logo-container {
+  padding: 0.25rem 0.5rem 1rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.75rem;
+  margin-top: -0.5rem;
+}
+
+.sidebar-logo {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Make textInput match selectInput height */
+.dashboard-filters input[type="text"].form-control {
+  height: 38px !important;
+}
+
+/* Center text in reset buttons */
+.dashboard-filters .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* =============================================================================
    BUSY INDICATOR
    ============================================================================= */
@@ -255,24 +283,31 @@
 
 /* Responsive font sizes - scales smoothly across all screen widths */
 .bslib-value-box .value-box-title {
-  font-size: clamp(0.7rem, 1.8vw, 0.9rem) !important;
+  font-size: clamp(0.6rem, 1.5vw, 0.75rem) !important;
   line-height: 1.2;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  opacity: 0.9;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  margin-bottom: 0.25rem !important;
 }
 
 .bslib-value-box .value-box-value {
-  font-size: clamp(1.1rem, 3.5vw, 1.8rem) !important;
-  line-height: 1.2;
+  font-size: clamp(1.4rem, 4vw, 2.2rem) !important;
+  line-height: 1.1;
   font-weight: 700;
 }
 
 /* Allow text wrapping for deck names (4th value box) */
 .overview-value-boxes .bslib-value-box:nth-child(4) .value-box-value {
   white-space: normal;
-  font-size: clamp(0.9rem, 2.5vw, 1.4rem) !important;
+  font-size: clamp(0.75rem, 2vw, 1.1rem) !important;
   word-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
 }
 
 /* Keep numeric values on single line */
@@ -280,16 +315,16 @@
   white-space: nowrap;
 }
 
-/* Give more space to showcase (card image) */
+/* Give more space to showcase (icons and card images) */
 .bslib-value-box .value-box-showcase {
-  font-size: clamp(1.25rem, 4vw, 2.5rem) !important;
+  font-size: clamp(1.5rem, 5vw, 3rem) !important;
   opacity: 1;
   flex-shrink: 0;
 }
 
 /* For value boxes with card images - give showcase more width */
 .bslib-value-box .value-box-showcase img {
-  max-height: 80px !important;
+  max-height: 90px !important;
   width: auto !important;
   object-fit: contain;
   border-radius: 6px;
@@ -297,7 +332,7 @@
 }
 
 .bslib-value-box p {
-  font-size: clamp(0.65rem, 1.5vw, 0.85rem) !important;
+  font-size: clamp(0.6rem, 1.3vw, 0.75rem) !important;
   line-height: 1.2;
   margin-bottom: 0 !important;
 }
