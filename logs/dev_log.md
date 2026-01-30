@@ -1437,6 +1437,47 @@ Since we already handle referential integrity at the application level (checking
 
 ---
 
+## 2026-01-30: Value Box Redesign - Digital Digimon Aesthetic
+
+### Overview
+Brainstormed and designed a complete redesign of the Overview page value boxes to capture an authentic Digimon TCG aesthetic. The design draws inspiration from actual card designs (EX1 retro grid patterns, card back circuit/wireframe effects).
+
+### Design Decisions
+
+**Visual Direction: Grid + Circuit Aesthetic**
+- Grid pattern overlay inspired by EX1 Gabumon card (retro digital feel)
+- Circuit/wireframe accents inspired by card backs (glowing nodes, digital lines)
+- Color-coded left borders as secondary accent (Orange, Blue, Red, Green)
+- Deep blue gradient backgrounds maintained for cohesion
+
+**Stats Redesigned**
+- Tournaments: Count for selected format (was all-time)
+- Players: Unique players for selected format (was all-time)
+- Hot Deck: Biggest meta share increase (NEW - with fallback for insufficient data)
+- Top Deck: Most popular deck with card image (kept)
+
+**Filter UI Restructured**
+- Replaced separate filter bar with integrated title strip
+- Format and Event Type dropdowns moved to compact controls on right
+- Left side shows dynamic context: "BT-19 Format · Locals"
+- Reset button now just an icon (↺)
+
+### Design Document
+Full design specification: `docs/plans/2026-01-30-value-box-redesign-design.md`
+
+### Branch
+`feature/value-box-redesign`
+
+### Next Steps
+- [ ] Implement title strip UI
+- [ ] Refactor value boxes to new layout
+- [ ] Add grid/circuit CSS effects
+- [ ] Update stats to be format-filtered
+- [ ] Add Hot Deck calculation with fallback
+- [ ] Test dark mode + responsive
+
+---
+
 *Template for future entries:*
 
 ```
