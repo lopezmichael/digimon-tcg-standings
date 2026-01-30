@@ -11,6 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-01-30 - Digital Value Box Redesign
+
+### Added
+- **Digital Digimon Aesthetic**: Value boxes redesigned with grid pattern overlay and circuit/wireframe accents inspired by Digimon TCG card designs
+- **Title Strip**: New integrated filter bar showing format context ("BT-19 Format · Locals") with compact dropdown controls
+- **Hot Deck Metric**: New value box showing trending deck with biggest meta share increase (with fallback for insufficient data)
+- **Meta Share Display**: Top Deck now shows percentage of meta alongside deck name
+- **Color-Coded Borders**: Each value box has distinctive left border (orange, blue, red, green)
+
+### Changed
+- **Format-Filtered Stats**: Tournaments and Players counts now respect format/event type filters
+- **Value Box Layout**: Custom CSS implementation replacing bslib value_box for full design control
+- **Filter UI**: Replaced separate filter row with integrated title strip
+- **Reset Button**: Now uses refresh icon instead of text button
+
+### Fixed
+- **Mobile Layout**: Value boxes display as 2x2 grid on mobile devices
+- **Dark Mode**: Value boxes properly styled for dark theme
+- **Responsive Title Strip**: Stacks controls on smaller screens
+
+---
+
 ## [0.8.0] - 2026-01-30 - Desktop UI Polish
 
 ### Changed

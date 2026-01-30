@@ -86,11 +86,11 @@ digimon-tcg-standings/
 - [x] ~~Desktop: Format auto-select~~ - Defaults to most recent format
 - [x] ~~Desktop: Players page Rating column~~ - Added weighted rating calculation
 - [x] ~~Desktop: Tournaments auto-sort~~ - Defaults to date descending
-- [ ] Desktop: Overview value boxes with card backgrounds
+- [x] ~~Desktop: Overview value boxes with card backgrounds~~ - Redesigned with digital Digimon aesthetic (grid pattern, circuit accents, color-coded borders). See docs/plans/2026-01-30-value-box-redesign-design.md
 - [ ] Desktop: Enter Tournament Details constrained width
 - [ ] Desktop: Manage Decks Card ID input width
 - [ ] Mobile: Navigation menu height optimization
-- [ ] Mobile: Overview 2x2 value box grid
+- [x] ~~Mobile: Overview 2x2 value box grid~~ - Implemented in value box redesign
 - [ ] Mobile: Filter sections vertical stacking
 - [ ] Mobile: Table column prioritization
 - [ ] Mobile: Enter Tournament center button
