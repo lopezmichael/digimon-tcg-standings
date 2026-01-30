@@ -391,21 +391,56 @@ server <- function(input, output, session) {
   # Public Dashboard Data
   # ---------------------------------------------------------------------------
 
-  # Value box outputs (text only for bslib value_box)
-  output$total_tournaments_val <- renderText({
-    count <- 0
-    if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-      count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) as n FROM tournaments")$n
+  # Dashboard context text (shows current filter state)
+  output$dashboard_context_text <- renderUI({
+    format_name <- if (!is.null(input$dashboard_format) && input$dashboard_format != "") {
+      # Get format display name from database
+      if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+        result <- dbGetQuery(rv$db_con, sprintf(
+          "SELECT display_name FROM formats WHERE format_id = '%s'",
+          input$dashboard_format
+        ))
+        if (nrow(result) > 0) result$display_name[1] else input$dashboard_format
+      } else {
+        input$dashboard_format
+      }
+    } else {
+      "All Formats"
     }
-    count
+
+    event_name <- if (!is.null(input$dashboard_event_type) && input$dashboard_event_type != "") {
+      # Format event type nicely
+      formatted <- gsub("_", " ", input$dashboard_event_type)
+      formatted <- gsub("\\b([a-z])", "\\U\\1", formatted, perl = TRUE)
+      formatted
+    } else {
+      "All Events"
+    }
+
+    HTML(paste0(format_name, " <span style='opacity: 0.6;'>·</span> ", event_name))
+  })
+
+  # Value box outputs (filtered by format/event type)
+  output$total_tournaments_val <- renderText({
+    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return("0")
+    filters <- build_dashboard_filters("t")
+    query <- sprintf("
+      SELECT COUNT(*) as n FROM tournaments t
+      WHERE 1=1 %s %s %s
+    ", filters$format, filters$event_type, filters$store)
+    dbGetQuery(rv$db_con, query)$n
   })
 
   output$total_players_val <- renderText({
-    count <- 0
-    if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-      count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) as n FROM players")$n
-    }
-    count
+    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return("0")
+    filters <- build_dashboard_filters("t")
+    query <- sprintf("
+      SELECT COUNT(DISTINCT r.player_id) as n
+      FROM results r
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      WHERE 1=1 %s %s %s
+    ", filters$format, filters$event_type, filters$store)
+    dbGetQuery(rv$db_con, query)$n
   })
 
   output$total_stores_val <- renderText({
@@ -424,32 +459,24 @@ server <- function(input, output, session) {
     count
   })
 
-  # Most popular deck value box
+  # Most popular deck (Top Deck) reactive
   most_popular_deck <- reactive({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
     filters <- build_dashboard_filters("t")
 
-    if (filters$any_active) {
-      result <- dbGetQuery(rv$db_con, sprintf("
-        SELECT da.archetype_name, da.display_card_id, COUNT(r.result_id) as entries
-        FROM deck_archetypes da
-        JOIN results r ON da.archetype_id = r.archetype_id
-        JOIN tournaments t ON r.tournament_id = t.tournament_id
-        WHERE 1=1 %s %s %s %s
-        GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
-        ORDER BY entries DESC
-        LIMIT 1
-      ", filters$store, filters$format, filters$event_type, filters$date))
-    } else {
-      result <- dbGetQuery(rv$db_con, "
-        SELECT archetype_name, display_card_id, times_played as entries
-        FROM archetype_meta
-        WHERE times_played > 0
-        ORDER BY times_played DESC
-        LIMIT 1
-      ")
-    }
+    # Always use filtered query for consistency
+    result <- dbGetQuery(rv$db_con, sprintf("
+      SELECT da.archetype_name, da.display_card_id, COUNT(r.result_id) as entries,
+             ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 1) as meta_share
+      FROM deck_archetypes da
+      JOIN results r ON da.archetype_id = r.archetype_id
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      WHERE 1=1 %s %s %s
+      GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
+      ORDER BY entries DESC
+      LIMIT 1
+    ", filters$format, filters$event_type, filters$store))
 
     if (nrow(result) == 0) return(NULL)
     result[1, ]
@@ -461,6 +488,127 @@ server <- function(input, output, session) {
     deck$archetype_name
   })
 
+  # Top Deck image (for new value box layout)
+  output$top_deck_image <- renderUI({
+    deck <- most_popular_deck()
+    if (is.null(deck) || is.na(deck$display_card_id) || nchar(deck$display_card_id) == 0) {
+      return(NULL)
+    }
+    img_url <- sprintf("https://images.digimoncard.io/images/cards/%s.jpg", deck$display_card_id)
+    tags$img(
+      src = img_url,
+      alt = deck$archetype_name
+    )
+  })
+
+  # Top Deck meta share percentage
+  output$top_deck_meta_share <- renderUI({
+    deck <- most_popular_deck()
+    if (is.null(deck) || is.null(deck$meta_share)) return(HTML("--"))
+    HTML(paste0(deck$meta_share, "% of meta"))
+  })
+
+  # Hot Deck calculation - compares meta share between older and newer tournaments
+  hot_deck <- reactive({
+    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+
+    filters <- build_dashboard_filters("t")
+
+    # Get tournament count to check if we have enough data
+    tournament_count <- dbGetQuery(rv$db_con, sprintf("
+      SELECT COUNT(*) as n FROM tournaments t WHERE 1=1 %s %s %s
+    ", filters$format, filters$event_type, filters$store))$n
+
+    # Need at least 10 tournaments for meaningful trend data
+    if (tournament_count < 10) {
+      return(list(insufficient_data = TRUE, tournament_count = tournament_count))
+    }
+
+    # Get median tournament date to split into older/newer halves
+    median_date <- dbGetQuery(rv$db_con, sprintf("
+      SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY event_date) as median_date
+      FROM tournaments t WHERE 1=1 %s %s %s
+    ", filters$format, filters$event_type, filters$store))$median_date
+
+    # Calculate meta share for older tournaments
+    older_meta <- dbGetQuery(rv$db_con, sprintf("
+      SELECT da.archetype_name, da.display_card_id,
+             ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 2) as meta_share
+      FROM deck_archetypes da
+      JOIN results r ON da.archetype_id = r.archetype_id
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      WHERE t.event_date < '%s' %s %s %s
+      GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
+    ", median_date, filters$format, filters$event_type, filters$store))
+
+    # Calculate meta share for newer tournaments
+    newer_meta <- dbGetQuery(rv$db_con, sprintf("
+      SELECT da.archetype_name, da.display_card_id,
+             ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 2) as meta_share
+      FROM deck_archetypes da
+      JOIN results r ON da.archetype_id = r.archetype_id
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      WHERE t.event_date >= '%s' %s %s %s
+      GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
+    ", median_date, filters$format, filters$event_type, filters$store))
+
+    if (nrow(older_meta) == 0 || nrow(newer_meta) == 0) {
+      return(list(insufficient_data = TRUE, tournament_count = tournament_count))
+    }
+
+    # Merge and calculate delta
+    merged <- merge(newer_meta, older_meta, by = c("archetype_name", "display_card_id"),
+                    suffixes = c("_new", "_old"), all.x = TRUE)
+    merged$meta_share_old[is.na(merged$meta_share_old)] <- 0
+    merged$delta <- merged$meta_share_new - merged$meta_share_old
+
+    # Find deck with biggest positive increase
+    hot <- merged[which.max(merged$delta), ]
+
+    if (nrow(hot) == 0 || hot$delta <= 0) {
+      return(list(insufficient_data = FALSE, no_trending = TRUE))
+    }
+
+    list(
+      insufficient_data = FALSE,
+      archetype_name = hot$archetype_name,
+      display_card_id = hot$display_card_id,
+      delta = round(hot$delta, 1)
+    )
+  })
+
+  output$hot_deck_name <- renderUI({
+    hd <- hot_deck()
+    if (is.null(hd)) return(HTML("<span class='vb-tracking'>--</span>"))
+
+    if (isTRUE(hd$insufficient_data)) {
+      return(HTML("<span class='vb-tracking'>Tracking...</span>"))
+    }
+
+    if (isTRUE(hd$no_trending)) {
+      return(HTML("<span style='opacity: 0.7;'>No trend</span>"))
+    }
+
+    HTML(hd$archetype_name)
+  })
+
+  output$hot_deck_trend <- renderUI({
+    hd <- hot_deck()
+    if (is.null(hd)) return(HTML(""))
+
+    if (isTRUE(hd$insufficient_data)) {
+      needed <- 10 - hd$tournament_count
+      return(HTML(sprintf("<span class='vb-trend-neutral'>%d more events needed</span>", needed)))
+    }
+
+    if (isTRUE(hd$no_trending)) {
+      return(HTML("<span class='vb-trend-neutral'>stable meta</span>"))
+    }
+
+    HTML(sprintf("<span class='vb-trend-up'>+%s%% share</span>", hd$delta))
+  })
+
+  # Legacy output for backward compatibility (if needed elsewhere)
   output$most_popular_deck_image <- renderUI({
     deck <- most_popular_deck()
     if (is.null(deck) || is.na(deck$display_card_id) || nchar(deck$display_card_id) == 0) {

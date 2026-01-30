@@ -5,57 +5,102 @@ dashboard_ui <- tagList(
   # Region filter indicator (shown when stores are filtered from map)
   uiOutput("region_filter_indicator"),
 
+  # Title strip with integrated filters
   div(
-    class = "overview-value-boxes mb-3",
-    layout_columns(
-      col_widths = c(3, 3, 3, 3),
-      value_box(
-        title = "Tournaments",
-        value = textOutput("total_tournaments_val", inline = TRUE),
-        showcase = bsicons::bs_icon("trophy"),
-        theme = value_box_theme(bg = "#0A3055", fg = "#FFFFFF")
+    class = "dashboard-title-strip mb-2",
+    div(
+      class = "title-strip-content",
+      # Left side: context display
+      div(
+        class = "title-strip-context",
+        bsicons::bs_icon("grid-3x3-gap", class = "title-strip-icon"),
+        tags$span(class = "title-strip-text", uiOutput("dashboard_context_text", inline = TRUE))
       ),
-      value_box(
-        title = "Players",
-        value = textOutput("total_players_val", inline = TRUE),
-        showcase = bsicons::bs_icon("people"),
-        theme = value_box_theme(bg = "#0F4C81", fg = "#FFFFFF")
-      ),
-      value_box(
-        title = "Deck Types",
-        value = textOutput("total_decks_val", inline = TRUE),
-        showcase = bsicons::bs_icon("stack"),
-        theme = value_box_theme(bg = "#1565A8", fg = "#FFFFFF")
-      ),
-      value_box(
-        title = "Most Popular Deck",
-        value = textOutput("most_popular_deck_val", inline = TRUE),
-        showcase = uiOutput("most_popular_deck_image"),
-        showcase_layout = showcase_left_center(width = 0.4, max_height = "100px"),
-        theme = value_box_theme(bg = "#2A7AB8", fg = "#FFFFFF")
+      # Right side: compact filters
+      div(
+        class = "title-strip-controls",
+        div(
+          class = "title-strip-select",
+          selectInput("dashboard_format", NULL,
+                      choices = list("Loading..." = ""),
+                      selected = "",
+                      width = "130px")
+        ),
+        div(
+          class = "title-strip-select",
+          selectInput("dashboard_event_type", NULL,
+                      choices = list(
+                        "All Events" = "",
+                        "Event Types" = EVENT_TYPES
+                      ),
+                      selected = "locals",
+                      width = "130px")
+        ),
+        actionButton("reset_dashboard_filters", NULL,
+                     icon = icon("rotate-right"),
+                     class = "btn-title-strip-reset",
+                     title = "Reset filters")
       )
     )
   ),
 
-  # Dashboard filters
+  # Value boxes with digital Digimon aesthetic
   div(
-    class = "dashboard-filters mb-3",
+    class = "overview-value-boxes mb-3",
     layout_columns(
-      col_widths = c(4, 4, 4),
-      selectInput("dashboard_format", "Format",
-                  choices = list("Loading..." = ""),
-                  selected = ""),  # Will be populated from database
-      selectInput("dashboard_event_type", "Event Type",
-                  choices = list(
-                    "All Events" = "",
-                    "Event Types" = EVENT_TYPES
-                  ),
-                  selected = "locals"),  # Default to Locals
+      col_widths = c(3, 3, 3, 3),
+      # Box 1: Tournaments (format-filtered)
       div(
-        style = "padding-top: 1.8rem;",
-        actionButton("reset_dashboard_filters", "Reset",
-                     class = "btn-outline-secondary",
-                     style = "height: 38px;")
+        class = "value-box-digital vb-tournaments",
+        div(class = "vb-digital-grid"),
+        div(
+          class = "vb-content",
+          div(class = "vb-label", "TOURNAMENTS"),
+          div(class = "vb-value", textOutput("total_tournaments_val", inline = TRUE)),
+          div(class = "vb-subtitle", "this format")
+        )
+      ),
+      # Box 2: Players (unique in format)
+      div(
+        class = "value-box-digital vb-players",
+        div(class = "vb-digital-grid"),
+        div(
+          class = "vb-content",
+          div(class = "vb-label", "PLAYERS"),
+          div(class = "vb-value", textOutput("total_players_val", inline = TRUE)),
+          div(class = "vb-subtitle", "unique")
+        )
+      ),
+      # Box 3: Hot Deck (trending)
+      div(
+        class = "value-box-digital vb-hotdeck",
+        div(class = "vb-digital-grid"),
+        div(
+          class = "vb-content",
+          div(class = "vb-label",
+              bsicons::bs_icon("fire", class = "vb-label-icon"),
+              "HOT DECK"),
+          div(class = "vb-value", uiOutput("hot_deck_name", inline = TRUE)),
+          div(class = "vb-subtitle", uiOutput("hot_deck_trend", inline = TRUE))
+        )
+      ),
+      # Box 4: Top Deck (most popular with card image)
+      div(
+        class = "value-box-digital vb-topdeck",
+        div(class = "vb-digital-grid"),
+        div(
+          class = "vb-content-with-image",
+          div(
+            class = "vb-image-showcase",
+            uiOutput("top_deck_image")
+          ),
+          div(
+            class = "vb-content",
+            div(class = "vb-label", "TOP DECK"),
+            div(class = "vb-value vb-value-deck", textOutput("most_popular_deck_val", inline = TRUE)),
+            div(class = "vb-subtitle", uiOutput("top_deck_meta_share", inline = TRUE))
+          )
+        )
       )
     )
   ),
