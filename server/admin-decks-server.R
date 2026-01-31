@@ -250,11 +250,15 @@ output$archetype_list <- renderReactable({
   input$update_archetype
   input$confirm_delete_archetype
 
+  # Sort by Card ID with NULLs first (decks needing review), then alphabetically
   data <- dbGetQuery(rv$db_con, "
     SELECT archetype_id, archetype_name as Deck, primary_color, secondary_color, is_multi_color, display_card_id as 'Card ID'
     FROM deck_archetypes
     WHERE is_active = TRUE
-    ORDER BY archetype_name
+    ORDER BY
+      CASE WHEN display_card_id IS NULL OR display_card_id = '' THEN 0 ELSE 1 END,
+      display_card_id,
+      archetype_name
   ")
   if (nrow(data) == 0) {
     return(reactable(data.frame(Message = "No archetypes yet"), compact = TRUE))
@@ -262,12 +266,20 @@ output$archetype_list <- renderReactable({
   reactable(data, compact = TRUE, striped = TRUE,
     selection = "single",
     onClick = "select",
-    rowStyle = list(cursor = "pointer"),
+    rowStyle = function(index) {
+      # Highlight rows without Card ID
+      if (is.na(data$`Card ID`[index]) || data$`Card ID`[index] == "") {
+        list(cursor = "pointer", backgroundColor = "rgba(247, 148, 29, 0.1)")
+      } else {
+        list(cursor = "pointer")
+      }
+    },
     defaultPageSize = 20,
     showPageSizeOptions = TRUE,
     pageSizeOptions = c(10, 20, 50, 100),
     columns = list(
       archetype_id = colDef(show = FALSE),
+      Deck = colDef(minWidth = 120),
       primary_color = colDef(
         name = "Color",
         cell = function(value, index) {
@@ -280,7 +292,16 @@ output$archetype_list <- renderReactable({
         }
       ),
       secondary_color = colDef(show = FALSE),
-      is_multi_color = colDef(show = FALSE)
+      is_multi_color = colDef(show = FALSE),
+      `Card ID` = colDef(
+        cell = function(value) {
+          if (is.na(value) || value == "") {
+            span(class = "badge bg-warning text-dark", "Needs Card")
+          } else {
+            span(value)
+          }
+        }
+      )
     )
   )
 })
@@ -294,12 +315,15 @@ observeEvent(input$archetype_list__reactable__selected, {
     return()
   }
 
-  # Get archetype data
+  # Get archetype data (must use same order as archetype_list render)
   data <- dbGetQuery(rv$db_con, "
     SELECT archetype_id, archetype_name, primary_color, secondary_color, display_card_id, is_multi_color
     FROM deck_archetypes
     WHERE is_active = TRUE
-    ORDER BY archetype_name
+    ORDER BY
+      CASE WHEN display_card_id IS NULL OR display_card_id = '' THEN 0 ELSE 1 END,
+      display_card_id,
+      archetype_name
   ")
 
   if (selected_idx > nrow(data)) return()

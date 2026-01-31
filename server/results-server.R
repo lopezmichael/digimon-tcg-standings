@@ -452,35 +452,23 @@ add_result_logic <- function() {
   }
 
   tryCatch({
-    # Check if player exists or create new
-    if (grepl("^\\d+$", player_input)) {
-      # Existing player selected (numeric ID)
-      player_id <- as.integer(player_input)
-    } else {
-      # New player name entered - check for existing player with same name first
-      existing_player <- dbGetQuery(rv$db_con, "
-        SELECT player_id FROM players WHERE LOWER(display_name) = LOWER(?)
-      ", params = list(trimws(player_input)))
+    # Player must be selected from dropdown (create = FALSE)
+    # player_input should always be a numeric ID string
+    if (!grepl("^\\d+$", player_input)) {
+      showNotification("Please select a player from the dropdown. Use '+ New Player' to add new players.", type = "error")
+      return()
+    }
 
-      if (nrow(existing_player) > 0) {
-        player_id <- existing_player$player_id[1]
-        showNotification(sprintf("Using existing player: %s", player_input), type = "message")
-      } else {
-        # Create new player
-        max_player_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
-        player_id <- max_player_id + 1
+    player_id <- as.integer(player_input)
 
-        dbExecute(rv$db_con, "
-          INSERT INTO players (player_id, display_name) VALUES (?, ?)
-        ", params = list(player_id, trimws(player_input)))
+    # Verify player exists
+    player_exists <- dbGetQuery(rv$db_con, "
+      SELECT player_id FROM players WHERE player_id = ?
+    ", params = list(player_id))
 
-        showNotification(sprintf("Created new player: %s", player_input), type = "message")
-      }
-
-      # Update player choices
-      updateSelectizeInput(session, "result_player",
-                           choices = get_player_choices(rv$db_con),
-                           server = TRUE)
+    if (nrow(player_exists) == 0) {
+      showNotification("Selected player not found. Please select a valid player.", type = "error")
+      return()
     }
 
     # Check if this player already has a result in this tournament
@@ -519,6 +507,7 @@ add_result_logic <- function() {
     updateNumericInput(session, "result_ties", value = 0)
     updateTextInput(session, "result_decklist_url", value = "")
     updateSelectizeInput(session, "result_player", selected = "")
+    updateSelectizeInput(session, "result_deck", selected = "")
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -604,13 +593,24 @@ output$current_results <- renderReactable({
     columns = list(
       result_id = colDef(
         name = "",
-        width = 40,
+        width = 70,
         cell = function(value) {
-          htmltools::tags$button(
-            onclick = sprintf("Shiny.setInputValue('delete_result_id', %d, {priority: 'event'})", value),
-            class = "btn btn-sm btn-outline-danger p-0",
-            style = "width: 24px; height: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;",
-            shiny::icon("xmark")
+          htmltools::div(
+            class = "d-flex gap-1",
+            htmltools::tags$button(
+              onclick = sprintf("Shiny.setInputValue('edit_result_id', %d, {priority: 'event'})", value),
+              class = "btn btn-sm btn-outline-primary p-0",
+              style = "width: 24px; height: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;",
+              title = "Edit",
+              shiny::icon("pencil")
+            ),
+            htmltools::tags$button(
+              onclick = sprintf("Shiny.setInputValue('delete_result_id', %d, {priority: 'event'})", value),
+              class = "btn btn-sm btn-outline-danger p-0",
+              style = "width: 24px; height: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;",
+              title = "Delete",
+              shiny::icon("xmark")
+            )
           )
         }
       )
@@ -628,6 +628,101 @@ observeEvent(input$delete_result_id, {
               params = list(result_id, rv$active_tournament_id))
     showNotification("Result removed", type = "message")
     rv$results_refresh <- rv$results_refresh + 1
+  }, error = function(e) {
+    showNotification(paste("Error:", e$message), type = "error")
+  })
+})
+
+# ---------------------------------------------------------------------------
+# Edit Result Handlers
+# ---------------------------------------------------------------------------
+
+# Edit result - open modal with existing data
+observeEvent(input$edit_result_id, {
+  req(rv$db_con, rv$active_tournament_id)
+  result_id <- input$edit_result_id
+
+  # Fetch result data
+  result <- dbGetQuery(rv$db_con, "
+    SELECT r.result_id, r.player_id, r.archetype_id, r.placement,
+           r.wins, r.losses, r.ties, r.decklist_url
+    FROM results r
+    WHERE r.result_id = ? AND r.tournament_id = ?
+  ", params = list(result_id, rv$active_tournament_id))
+
+  if (nrow(result) == 0) {
+    showNotification("Result not found", type = "error")
+    return()
+  }
+
+  # Update edit modal dropdowns with current choices
+  updateSelectizeInput(session, "edit_result_player",
+                       choices = get_player_choices(rv$db_con),
+                       selected = result$player_id)
+  updateSelectizeInput(session, "edit_result_deck",
+                       choices = get_archetype_choices(rv$db_con),
+                       selected = result$archetype_id)
+
+  # Populate form fields
+  updateTextInput(session, "editing_result_id", value = as.character(result_id))
+  updateNumericInput(session, "edit_result_placement", value = result$placement)
+  updateNumericInput(session, "edit_result_wins", value = result$wins)
+  updateNumericInput(session, "edit_result_losses", value = result$losses)
+  updateNumericInput(session, "edit_result_ties", value = result$ties)
+  updateTextInput(session, "edit_result_decklist_url",
+                  value = if (is.na(result$decklist_url)) "" else result$decklist_url)
+
+  # Show modal
+  shinyjs::runjs("$('#edit_result_modal').modal('show');")
+})
+
+# Save edited result
+observeEvent(input$save_edit_result, {
+  req(rv$db_con, rv$active_tournament_id, input$editing_result_id)
+
+  result_id <- as.integer(input$editing_result_id)
+  player_id <- as.integer(input$edit_result_player)
+  archetype_id <- as.integer(input$edit_result_deck)
+  placement <- input$edit_result_placement
+  wins <- input$edit_result_wins
+  losses <- input$edit_result_losses
+  ties <- input$edit_result_ties
+  decklist_url <- if (!is.null(input$edit_result_decklist_url) && nchar(input$edit_result_decklist_url) > 0)
+    input$edit_result_decklist_url else NA_character_
+
+  # Validation
+  if (is.na(player_id)) {
+    showNotification("Please select a player", type = "error")
+    return()
+  }
+
+  if (is.na(archetype_id)) {
+    showNotification("Please select a deck", type = "error")
+    return()
+  }
+
+  if (is.na(placement) || placement < 1) {
+    showNotification("Placement must be at least 1", type = "error")
+    return()
+  }
+
+  tryCatch({
+    dbExecute(rv$db_con, "
+      UPDATE results
+      SET player_id = ?, archetype_id = ?, placement = ?,
+          wins = ?, losses = ?, ties = ?, decklist_url = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE result_id = ? AND tournament_id = ?
+    ", params = list(player_id, archetype_id, placement,
+                     wins %||% 0, losses %||% 0, ties %||% 0, decklist_url,
+                     result_id, rv$active_tournament_id))
+
+    showNotification("Result updated!", type = "message")
+
+    # Hide modal and refresh table
+    shinyjs::runjs("$('#edit_result_modal').modal('hide');")
+    rv$results_refresh <- rv$results_refresh + 1
+
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })

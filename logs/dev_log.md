@@ -4,6 +4,59 @@ This log tracks development decisions, blockers, and technical notes for the DFW
 
 ---
 
+## 2026-01-31: Title Strip Filter Styling - Desktop Complete
+
+### Summary
+Completed comprehensive styling overhaul for title strip filter dropdowns across all pages (Overview, Tournaments, Meta Analysis, Players). Resolved issues with selectize.js rendering inconsistencies by switching to native HTML selects with light backgrounds for maximum readability.
+
+### Key Changes
+
+**Native Selects over Selectize**
+- Changed all title strip `selectInput` calls to use `selectize = FALSE`
+- Native HTML selects are more consistently stylable across browsers
+- Dropdown options now readable with dark text on light backgrounds
+
+**Light Background Input Style**
+- Title strip inputs now use light backgrounds (`rgba(255, 255, 255, 0.9)`)
+- Dark text (`#333333`) for readability in both input display and dropdown menus
+- Search inputs updated to match for visual consistency
+- Inputs stand out clearly against the dark blue title strip background
+
+**Consistent Choice Structure**
+- All min_entries/min_events dropdowns now use `list()` with string values (was `c()` with numeric)
+- Labels made more descriptive: "Any Events" → "Any Events", "2+" → "2+ Events"
+- Empty string `""` as default/reset value (matches format dropdowns)
+- Width increased to 120px for format dropdowns, 120px for filter dropdowns
+
+### Technical Decisions
+
+**Why Native Selects?**
+- Selectize.js renders inconsistently across different page contexts
+- Native select dropdown styling is handled by the browser
+- `selectize = FALSE` gives us full CSS control over the input appearance
+- Dropdown options inherit system styling, ensuring readability
+
+**Light Background Approach**
+- Original design had transparent dark backgrounds with white text
+- Issue: Dropdown menus showed white text on white backgrounds (invisible)
+- Solution: Light input backgrounds make dark text visible everywhere
+- Trade-off: Inputs are more prominent but highly readable
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `views/dashboard-ui.R` | Changed to `page-title-strip` class, added `selectize = FALSE`, width 120px |
+| `views/tournaments-ui.R` | Added `selectize = FALSE`, width adjustments |
+| `views/meta-ui.R` | Added `selectize = FALSE`, changed choices to `list()` with strings |
+| `views/players-ui.R` | Added `selectize = FALSE`, changed choices to `list()` with strings |
+| `app.R` | Updated reset handlers to use `selected = ""` |
+| `www/custom.css` | Light background styling for `.title-strip-select .form-select` and `.title-strip-search .form-control` |
+
+### Branch Status
+Desktop design is now complete on `feature/ui-design-overhaul` branch. Ready for mobile responsiveness review as next phase.
+
+---
+
 ## 2026-01-30: Desktop Design Overhaul Complete
 
 ### Summary

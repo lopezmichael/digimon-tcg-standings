@@ -237,14 +237,23 @@ Full card database synced from DigimonCard.io, covering BT-01 through BT-24, EX-
 
 ## Roadmap
 
-### UI Polish (Current Priority)
+### Desktop Design - COMPLETE ✓
 - [x] ~~Fix menu bar and sidebar~~ - Renamed to "Digimon Locals Meta Tracker", added Digimon TCG logo
 - [x] ~~Correct button/filter alignment~~ - Fixed on all pages
-- [x] ~~Improve value boxes~~ - Smaller titles, larger numbers and icons
+- [x] ~~Improve value boxes~~ - Digital Digimon aesthetic with grid patterns and circuit accents
 - [x] ~~Add Rating column to Players~~ - Weighted rating calculation visible
+- [x] ~~App-wide loading screen~~ - "Opening Digital Gate..." sequence with themed messages
+- [x] ~~Title strip filter styling~~ - Consistent dropdowns across all pages with readable text
+
+### Mobile Responsiveness (Next Priority)
 - [ ] Comprehensive mobile view review and fixes
+- [ ] Navigation menu height optimization
+- [ ] Table column prioritization for small screens
+- [ ] Touch-friendly input sizing
+
+### Future Enhancements
 - [ ] Add links to GitHub repo and "Buy Me a Coffee"
-- [ ] Replace individual chart spinners with app-wide loading screen
+- [ ] Replace header cards icon with actual Digivice SVG
 
 ### Future Features
 - [ ] Limitless TCG API integration for online tournament data

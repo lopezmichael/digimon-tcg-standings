@@ -7,7 +7,7 @@ dashboard_ui <- tagList(
 
   # Title strip with integrated filters
   div(
-    class = "dashboard-title-strip mb-2",
+    class = "page-title-strip mb-2",
     div(
       class = "title-strip-content",
       # Left side: context display
@@ -22,9 +22,10 @@ dashboard_ui <- tagList(
         div(
           class = "title-strip-select",
           selectInput("dashboard_format", NULL,
-                      choices = list("Loading..." = ""),
+                      choices = list("All Formats" = ""),
                       selected = "",
-                      width = "130px")
+                      width = "140px",
+                      selectize = FALSE)
         ),
         div(
           class = "title-strip-select",
@@ -34,7 +35,8 @@ dashboard_ui <- tagList(
                         "Event Types" = EVENT_TYPES
                       ),
                       selected = "locals",
-                      width = "130px")
+                      width = "120px",
+                      selectize = FALSE)
         ),
         actionButton("reset_dashboard_filters", NULL,
                      icon = icon("rotate-right"),

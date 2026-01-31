@@ -23,9 +23,10 @@ tournaments_ui <- tagList(
         div(
           class = "title-strip-select",
           selectInput("tournaments_format", NULL,
-                      choices = list("Loading..." = ""),
+                      choices = list("All Formats" = ""),
                       selected = "",
-                      width = "120px")
+                      width = "140px",
+                      selectize = FALSE)
         ),
         div(
           class = "title-strip-select",
@@ -35,7 +36,8 @@ tournaments_ui <- tagList(
                         "Event Types" = EVENT_TYPES
                       ),
                       selected = "",
-                      width = "100px")
+                      width = "120px",
+                      selectize = FALSE)
         ),
         actionButton("reset_tournaments_filters", NULL,
                      icon = icon("rotate-right"),

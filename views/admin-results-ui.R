@@ -27,23 +27,30 @@ admin_results_ui <- tagList(
     card(
         card_header("Tournament Details"),
         card_body(
+          class = "tournament-details-form",
           # Row 1: Store + Date
-          layout_columns(
-            col_widths = c(8, 4),
-            selectInput("tournament_store", "Store", choices = NULL),
-            dateInput("tournament_date", "Date", value = Sys.Date())
+          div(
+            class = "row g-3 mb-3",
+            div(class = "col-md-8",
+                selectInput("tournament_store", "Store", choices = NULL)),
+            div(class = "col-md-4",
+                dateInput("tournament_date", "Date", value = Sys.Date()))
           ),
           # Row 2: Event Type + Format
-          layout_columns(
-            col_widths = c(6, 6),
-            selectInput("tournament_type", "Event Type", choices = EVENT_TYPES),
-            selectInput("tournament_format", "Format/Set", choices = list("Loading..." = ""))
+          div(
+            class = "row g-3 mb-3",
+            div(class = "col-md-6",
+                selectInput("tournament_type", "Event Type", choices = EVENT_TYPES)),
+            div(class = "col-md-6",
+                selectInput("tournament_format", "Format/Set", choices = list("Loading..." = "")))
           ),
           # Row 3: Players + Rounds
-          layout_columns(
-            col_widths = c(6, 6),
-            numericInput("tournament_players", "Number of Players", value = 8, min = 2),
-            numericInput("tournament_rounds", "Number of Rounds", value = 3, min = 1)
+          div(
+            class = "row g-3 mb-3",
+            div(class = "col-md-6",
+                numericInput("tournament_players", "Number of Players", value = 8, min = 2)),
+            div(class = "col-md-6",
+                numericInput("tournament_rounds", "Number of Rounds", value = 3, min = 1))
           ),
           div(
             class = "d-flex justify-content-end mt-3",
@@ -71,43 +78,51 @@ admin_results_ui <- tagList(
             # Player selection with quick add
             selectizeInput("result_player", "Player Name",
                            choices = NULL,
-                           options = list(create = TRUE, placeholder = "Type to search or add new...")),
+                           options = list(create = FALSE, placeholder = "Select a player...")),
             shinyjs::hidden(
               div(
                 id = "quick_add_player_form",
-                class = "border rounded p-2 mb-3 bg-light",
-                textInput("quick_player_name", "New Player Name"),
+                class = "card-search-results-container p-3 mb-3",
+                tags$label(class = "form-label small text-muted",
+                           bsicons::bs_icon("person-plus"), " Add New Player"),
+                textInput("quick_player_name", NULL, placeholder = "Enter player name..."),
                 div(
-                  class = "d-flex gap-2",
-                  actionButton("quick_add_player_submit", "Add", class = "btn-sm btn-success"),
-                  actionButton("quick_add_player_cancel", "Cancel", class = "btn-sm btn-secondary")
+                  class = "d-flex gap-2 mt-2",
+                  actionButton("quick_add_player_submit", "Add Player",
+                               class = "btn-sm btn-quick-add", icon = icon("plus")),
+                  actionButton("quick_add_player_cancel", "Cancel",
+                               class = "btn-sm btn-outline-secondary")
                 )
               )
             ),
-            actionLink("show_quick_add_player", "+ New Player", class = "small"),
+            actionLink("show_quick_add_player", "+ New Player", class = "small text-primary"),
 
             hr(),
 
             # Deck selection with quick add
             selectizeInput("result_deck", "Deck Archetype",
                            choices = NULL,
-                           options = list(placeholder = "Type to search decks...")),
+                           options = list(create = FALSE, placeholder = "Select a deck...")),
             shinyjs::hidden(
               div(
                 id = "quick_add_deck_form",
-                class = "border rounded p-2 mb-3 bg-light",
-                textInput("quick_deck_name", "Deck Name", placeholder = "e.g., New Archetype"),
+                class = "card-search-results-container p-3 mb-3",
+                tags$label(class = "form-label small text-muted",
+                           bsicons::bs_icon("collection"), " Add New Deck"),
+                textInput("quick_deck_name", NULL, placeholder = "e.g., New Archetype"),
                 selectInput("quick_deck_color", "Primary Color",
                             choices = c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White")),
-                div(class = "small text-muted mb-2", "(Full details can be added later in Manage Decks)"),
+                div(class = "small text-muted mb-2", "(Complete details in Manage Decks later)"),
                 div(
                   class = "d-flex gap-2",
-                  actionButton("quick_add_deck_submit", "Add", class = "btn-sm btn-success"),
-                  actionButton("quick_add_deck_cancel", "Cancel", class = "btn-sm btn-secondary")
+                  actionButton("quick_add_deck_submit", "Add Deck",
+                               class = "btn-sm btn-quick-add", icon = icon("plus")),
+                  actionButton("quick_add_deck_cancel", "Cancel",
+                               class = "btn-sm btn-outline-secondary")
                 )
               )
             ),
-            actionLink("show_quick_add_deck", "+ New Deck", class = "small"),
+            actionLink("show_quick_add_deck", "+ New Deck", class = "small text-primary"),
 
             hr(),
 
@@ -176,6 +191,58 @@ admin_results_ui <- tagList(
           actionButton("edit_existing_tournament", "View/Edit Existing", class = "btn-outline-primary"),
           actionButton("create_anyway", "Create Anyway", class = "btn-warning"),
           tags$button(type = "button", class = "btn btn-outline-secondary", `data-bs-dismiss` = "modal", "Cancel")
+        )
+      )
+    )
+  ),
+
+  # Edit result modal
+  tags$div(
+    id = "edit_result_modal",
+    class = "modal fade",
+    tabindex = "-1",
+    tags$div(
+      class = "modal-dialog",
+      tags$div(
+        class = "modal-content",
+        tags$div(
+          class = "modal-header modal-header-digital",
+          tags$h5(class = "modal-title", bsicons::bs_icon("pencil-square"), " Edit Result"),
+          tags$button(type = "button", class = "btn-close", `data-bs-dismiss` = "modal")
+        ),
+        tags$div(
+          class = "modal-body modal-form-inputs",
+          # Hidden field for result ID
+          textInput("editing_result_id", NULL, value = ""),
+          tags$script("document.getElementById('editing_result_id').parentElement.style.display = 'none';"),
+
+          selectizeInput("edit_result_player", "Player",
+                         choices = NULL,
+                         options = list(create = FALSE, placeholder = "Select a player...")),
+          selectizeInput("edit_result_deck", "Deck Archetype",
+                         choices = NULL,
+                         options = list(create = FALSE, placeholder = "Select a deck...")),
+          div(
+            class = "row g-2 mb-3",
+            div(class = "col-4",
+                numericInput("edit_result_placement", "Placement", value = 1, min = 1)),
+            div(class = "col-8",
+                textInput("edit_result_decklist_url", "Decklist URL (optional)"))
+          ),
+          div(
+            class = "row g-2",
+            div(class = "col-4",
+                numericInput("edit_result_wins", "Wins", value = 0, min = 0)),
+            div(class = "col-4",
+                numericInput("edit_result_losses", "Losses", value = 0, min = 0)),
+            div(class = "col-4",
+                numericInput("edit_result_ties", "Ties", value = 0, min = 0))
+          )
+        ),
+        tags$div(
+          class = "modal-footer",
+          tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel"),
+          actionButton("save_edit_result", "Save Changes", class = "btn-primary")
         )
       )
     )

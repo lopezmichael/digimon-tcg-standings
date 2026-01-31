@@ -98,7 +98,7 @@ digimon-tcg-standings/
 - [ ] Mobile: Add Results compact layout
 
 ### Desktop Design - COMPLETE ✓
-The desktop UI design overhaul is now complete. Key features implemented:
+The desktop UI design overhaul is now complete (v0.12.0). Key features implemented:
 - Digital Digimon aesthetic throughout (grid patterns, circuit accents, cyan glow effects)
 - App-wide loading screen with "Opening Digital Gate..." sequence
 - Digital empty states with scanner aesthetic
@@ -108,6 +108,7 @@ The desktop UI design overhaul is now complete. Key features implemented:
 - Online Tournament Organizers section with connection node animations
 - Card search scanner effect with corner accents
 - Map card with "Location Scanner" styling
+- Title strip filter inputs with light backgrounds and native HTML selects for consistent styling
 
 **Next Phase: Mobile responsiveness review and fixes**
 
@@ -181,6 +182,12 @@ Contains design documents for features before implementation. Current plans:
 1. **NULL values:** DuckDB bind parameters require `NA_character_` or `NA_real_`, not R's `NULL`
 2. **JSON columns:** Use TEXT type (JSON extension unavailable on Windows mingw)
 3. **Foreign keys:** DuckDB UPDATE = DELETE + INSERT internally, causing FK violations. We removed FK constraints and handle referential integrity at application level.
+
+### Shiny selectInput Styling
+- **Use `selectize = FALSE` for title strip dropdowns** - Native HTML selects are more consistently stylable
+- Selectize.js dropdown options cannot be reliably styled with CSS (browser ignores most option styling)
+- Native selects with light backgrounds (`rgba(255, 255, 255, 0.9)`) and dark text work best
+- When using native selects, choice values should use `list()` with string values for consistency
 
 ### DigimonCard.io API
 - API returns 403 on Posit Connect Cloud (blocks server IPs)
@@ -272,6 +279,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.10.0** - Digital Design Language Extension
+**v0.12.0** - Title Strip Filter Polish (Desktop Complete)
 
 See `CHANGELOG.md` for full version history.

@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.0] - 2026-01-31 - Title Strip Filter Polish
+
+### Changed
+- **Native HTML Selects**: All title strip dropdowns now use native selects (`selectize = FALSE`) for consistent cross-browser styling
+- **Light Input Backgrounds**: Title strip inputs use light backgrounds (`rgba(255, 255, 255, 0.9)`) with dark text for maximum readability
+- **Consistent Choice Structure**: Min entries/events dropdowns now use `list()` with string values matching format dropdown pattern
+- **Descriptive Labels**: Filter options now more descriptive ("Any Events", "2+ Events" instead of "Any", "2+")
+
+### Fixed
+- **Dropdown Readability**: Dropdown menus now show dark text on light backgrounds (was white-on-white, invisible)
+- **Inconsistent Selectize Rendering**: Native selects render consistently across all pages
+- **Search Input Styling**: Search inputs now match dropdown styling with light backgrounds
+
+### Technical
+- Desktop UI design phase complete - ready for mobile responsiveness review
+- All title strip filter inputs standardized across Overview, Tournaments, Meta Analysis, and Players pages
+
+---
+
 ## [0.11.0] - 2026-01-30 - Desktop Design Complete
 
 ### Added

@@ -76,6 +76,11 @@ observeEvent(input$nav_admin_formats, {
   rv$current_nav <- "admin_formats"
 })
 
+observeEvent(input$nav_admin_players, {
+  nav_select("main_content", "admin_players")
+  rv$current_nav <- "admin_players"
+})
+
 # ---------------------------------------------------------------------------
 # Authentication
 # ---------------------------------------------------------------------------

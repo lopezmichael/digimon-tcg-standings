@@ -227,6 +227,7 @@ source("views/admin-results-ui.R", local = TRUE)
 source("views/admin-decks-ui.R", local = TRUE)
 source("views/admin-stores-ui.R", local = TRUE)
 source("views/admin-formats-ui.R", local = TRUE)
+source("views/admin-players-ui.R", local = TRUE)
 
 # =============================================================================
 # UI
@@ -370,6 +371,9 @@ ui <- page_fillable(
                      class = "nav-link-sidebar"),
           actionLink("nav_admin_formats",
                      tagList(bsicons::bs_icon("calendar3"), " Manage Formats"),
+                     class = "nav-link-sidebar"),
+          actionLink("nav_admin_players",
+                     tagList(bsicons::bs_icon("people"), " Manage Players"),
                      class = "nav-link-sidebar")
         )
       )
@@ -391,7 +395,8 @@ ui <- page_fillable(
         nav_panel_hidden(value = "admin_results", admin_results_ui),
         nav_panel_hidden(value = "admin_decks", admin_decks_ui),
         nav_panel_hidden(value = "admin_stores", admin_stores_ui),
-        nav_panel_hidden(value = "admin_formats", admin_formats_ui)
+        nav_panel_hidden(value = "admin_formats", admin_formats_ui),
+        nav_panel_hidden(value = "admin_players", admin_players_ui)
       )
     )
   )
@@ -415,6 +420,7 @@ server <- function(input, output, session) {
     current_nav = "dashboard",
     selected_store_ids = NULL,  # For map-based filtering
     selected_store_detail = NULL,  # For store detail modal
+    selected_online_store_detail = NULL,  # For online store detail modal
     selected_player_id = NULL,  # For player profile modal
     selected_archetype_id = NULL,  # For deck profile modal
     selected_tournament_id = NULL,  # For tournament detail modal
@@ -447,6 +453,7 @@ server <- function(input, output, session) {
   source("server/admin-decks-server.R", local = TRUE)
   source("server/admin-stores-server.R", local = TRUE)
   source("server/admin-formats-server.R", local = TRUE)
+  source("server/admin-players-server.R", local = TRUE)
 
   # ---------------------------------------------------------------------------
   # Public Dashboard Data
@@ -1457,29 +1464,29 @@ server <- function(input, output, session) {
 
       # Activity stats
       div(
-        class = "d-flex justify-content-evenly mb-3 p-3 bg-light rounded",
+        class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
         div(
-          class = "text-center px-3",
-          div(class = "h4 mb-0 text-primary", store$tournament_count),
-          div(class = "small text-muted", "Events")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", store$tournament_count),
+          div(class = "modal-stat-label", "Events")
         ),
         div(
-          class = "text-center px-3",
-          div(class = "h4 mb-0 text-primary", if (store$avg_players > 0) store$avg_players else "-"),
-          div(class = "small text-muted", "Avg Players")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", if (store$avg_players > 0) store$avg_players else "-"),
+          div(class = "modal-stat-label", "Avg Players")
         ),
         div(
-          class = "text-center px-3",
-          div(class = "h4 mb-0 text-primary",
+          class = "modal-stat-item",
+          div(class = "modal-stat-value",
               if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-"),
-          div(class = "small text-muted", "Last Event")
+          div(class = "modal-stat-label", "Last Event")
         )
       ),
 
       # Recent tournaments
       if (!is.null(recent_tournaments) && nrow(recent_tournaments) > 0) {
         tagList(
-          h6(class = "border-bottom pb-2", "Recent Tournaments"),
+          h6(class = "modal-section-header", "Recent Tournaments"),
           tags$table(
             class = "table table-sm table-striped",
             tags$thead(
@@ -1519,7 +1526,7 @@ server <- function(input, output, session) {
       # Top players
       if (!is.null(top_players) && nrow(top_players) > 0) {
         tagList(
-          h6(class = "border-bottom pb-2 mt-3", "Top Players at This Store"),
+          h6(class = "modal-section-header mt-3", "Top Players at This Store"),
           tags$table(
             class = "table table-sm table-striped",
             tags$thead(
@@ -1548,10 +1555,15 @@ server <- function(input, output, session) {
     req(rv$db_con)
 
     online_stores <- dbGetQuery(rv$db_con, "
-      SELECT name, city as region, website, schedule_info
-      FROM stores
-      WHERE is_online = TRUE AND is_active = TRUE
-      ORDER BY name
+      SELECT s.store_id, s.name, s.city as region, s.website, s.schedule_info,
+             COUNT(t.tournament_id) as tournament_count,
+             COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
+             MAX(t.event_date) as last_event
+      FROM stores s
+      LEFT JOIN tournaments t ON s.store_id = t.store_id
+      WHERE s.is_online = TRUE AND s.is_active = TRUE
+      GROUP BY s.store_id, s.name, s.city, s.website, s.schedule_info
+      ORDER BY s.name
     ")
 
     if (nrow(online_stores) == 0) {
@@ -1563,7 +1575,8 @@ server <- function(input, output, session) {
       card_header(
         class = "d-flex align-items-center gap-2",
         bsicons::bs_icon("globe"),
-        span("Online Tournament Organizers")
+        span("Online Tournament Organizers"),
+        span(class = "small text-muted ms-auto", "Click for details")
       ),
       card_body(
         div(
@@ -1572,22 +1585,152 @@ server <- function(input, output, session) {
             store <- online_stores[i, ]
             div(
               class = "col-md-4",
-              div(
-                class = "online-store-item p-3 h-100",
+              tags$button(
+                type = "button",
+                class = "online-store-item p-3 h-100 w-100 text-start border-0",
+                onclick = sprintf("Shiny.setInputValue('online_store_click', %d, {priority: 'event'})", store$store_id),
                 h6(class = "mb-1", store$name),
                 if (!is.na(store$region) && nchar(store$region) > 0)
                   p(class = "text-muted small mb-1", bsicons::bs_icon("geo"), " ", store$region),
                 if (!is.na(store$schedule_info) && nchar(store$schedule_info) > 0)
                   p(class = "small mb-1", bsicons::bs_icon("calendar"), " ", store$schedule_info),
-                if (!is.na(store$website) && nchar(store$website) > 0)
-                  a(href = store$website, target = "_blank", class = "small",
-                    bsicons::bs_icon("link-45deg"), " Website")
+                if (store$tournament_count > 0)
+                  p(class = "small mb-0 text-primary",
+                    bsicons::bs_icon("trophy"), " ", store$tournament_count, " events")
               )
             )
           })
         )
       )
     )
+  })
+
+  # Online store click handler
+ observeEvent(input$online_store_click, {
+    rv$selected_online_store_detail <- input$online_store_click
+  })
+
+  # Online store detail modal
+  output$online_store_detail_modal <- renderUI({
+    req(rv$selected_online_store_detail)
+
+    store_id <- rv$selected_online_store_detail
+
+    store <- dbGetQuery(rv$db_con, sprintf("
+      SELECT s.store_id, s.name, s.city as region, s.website, s.schedule_info,
+             COUNT(t.tournament_id) as tournament_count,
+             COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
+             MAX(t.event_date) as last_event
+      FROM stores s
+      LEFT JOIN tournaments t ON s.store_id = t.store_id
+      WHERE s.store_id = %d
+      GROUP BY s.store_id, s.name, s.city, s.website, s.schedule_info
+    ", store_id))
+
+    if (nrow(store) == 0) return(NULL)
+
+    # Get recent tournaments
+    recent_tournaments <- dbGetQuery(rv$db_con, sprintf("
+      SELECT t.event_date as Date, t.event_type as Type, t.format as Format,
+             t.player_count as Players, p.display_name as Winner,
+             da.archetype_name as Deck
+      FROM tournaments t
+      LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
+      LEFT JOIN players p ON r.player_id = p.player_id
+      LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
+      WHERE t.store_id = %d
+      ORDER BY t.event_date DESC
+      LIMIT 5
+    ", store_id))
+
+    # Get top players
+    top_players <- dbGetQuery(rv$db_con, sprintf("
+      SELECT p.display_name as Player,
+             COUNT(DISTINCT r.tournament_id) as Events,
+             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
+      FROM players p
+      JOIN results r ON p.player_id = r.player_id
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      WHERE t.store_id = %d
+      GROUP BY p.player_id, p.display_name
+      ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
+      LIMIT 5
+    ", store_id))
+
+    showModal(modalDialog(
+      title = div(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("globe"),
+        store$name
+      ),
+      size = "l",
+      easyClose = TRUE,
+      footer = modalButton("Close"),
+
+      # Store info
+      div(
+        class = "mb-3",
+        if (!is.na(store$region) && store$region != "")
+          p(bsicons::bs_icon("geo-alt"), " ", store$region),
+        if (!is.na(store$schedule_info) && store$schedule_info != "")
+          p(class = "small", bsicons::bs_icon("calendar"), " ", store$schedule_info),
+        if (!is.na(store$website) && store$website != "")
+          p(tags$a(href = store$website, target = "_blank",
+                   bsicons::bs_icon("link-45deg"), " Website"))
+      ),
+
+      # Activity stats
+      div(
+        class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
+        div(
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", store$tournament_count),
+          div(class = "modal-stat-label", "Events")
+        ),
+        div(
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", if (store$avg_players > 0) store$avg_players else "-"),
+          div(class = "modal-stat-label", "Avg Players")
+        ),
+        div(
+          class = "modal-stat-item",
+          div(class = "modal-stat-value",
+              if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-"),
+          div(class = "modal-stat-label", "Last Event")
+        )
+      ),
+
+      # Recent tournaments
+      if (!is.null(recent_tournaments) && nrow(recent_tournaments) > 0) {
+        tagList(
+          h6(class = "modal-section-header", "Recent Tournaments"),
+          reactable(recent_tournaments, compact = TRUE, striped = TRUE,
+                    columns = list(
+                      Date = colDef(width = 90),
+                      Type = colDef(width = 80),
+                      Format = colDef(width = 60),
+                      Players = colDef(width = 60),
+                      Winner = colDef(minWidth = 100),
+                      Deck = colDef(minWidth = 100)
+                    ))
+        )
+      } else {
+        p(class = "text-muted", "No tournaments recorded yet.")
+      },
+
+      # Top players
+      if (!is.null(top_players) && nrow(top_players) > 0) {
+        tagList(
+          h6(class = "modal-section-header mt-3", "Top Players"),
+          reactable(top_players, compact = TRUE, striped = TRUE,
+                    columns = list(
+                      Player = colDef(minWidth = 120),
+                      Events = colDef(width = 70),
+                      Wins = colDef(width = 60)
+                    ))
+        )
+      }
+    ))
   })
 
   # Reactive: All stores data with activity metrics (for filtering and map)
@@ -1943,7 +2086,7 @@ server <- function(input, output, session) {
   observeEvent(input$reset_players_filters, {
     updateTextInput(session, "players_search", value = "")
     updateSelectInput(session, "players_format", selected = "")
-    updateSelectInput(session, "players_min_events", selected = 0)
+    updateSelectInput(session, "players_min_events", selected = "")
   })
 
   output$player_standings <- renderReactable({
@@ -2230,7 +2373,7 @@ server <- function(input, output, session) {
   observeEvent(input$reset_meta_filters, {
     updateTextInput(session, "meta_search", value = "")
     updateSelectInput(session, "meta_format", selected = "")
-    updateSelectInput(session, "meta_min_entries", selected = 0)
+    updateSelectInput(session, "meta_min_entries", selected = "")
   })
 
   # Archetype stats

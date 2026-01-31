@@ -23,16 +23,18 @@ players_ui <- tagList(
         div(
           class = "title-strip-select",
           selectInput("players_format", NULL,
-                      choices = list("Loading..." = ""),
+                      choices = list("All Formats" = ""),
                       selected = "",
-                      width = "120px")
+                      width = "140px",
+                      selectize = FALSE)
         ),
         div(
           class = "title-strip-select",
           selectInput("players_min_events", NULL,
-                      choices = c("Any" = 0, "2+" = 2, "3+" = 3, "5+" = 5, "10+" = 10),
-                      selected = 0,
-                      width = "80px")
+                      choices = list("Any Events" = "", "2+ Events" = "2", "3+ Events" = "3", "5+ Events" = "5", "10+ Events" = "10"),
+                      selected = "",
+                      width = "120px",
+                      selectize = FALSE)
         ),
         actionButton("reset_players_filters", NULL,
                      icon = icon("rotate-right"),

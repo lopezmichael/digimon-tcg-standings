@@ -23,16 +23,18 @@ meta_ui <- tagList(
         div(
           class = "title-strip-select",
           selectInput("meta_format", NULL,
-                      choices = list("Loading..." = ""),
+                      choices = list("All Formats" = ""),
                       selected = "",
-                      width = "120px")
+                      width = "140px",
+                      selectize = FALSE)
         ),
         div(
           class = "title-strip-select",
           selectInput("meta_min_entries", NULL,
-                      choices = c("Any" = 0, "2+" = 2, "5+" = 5, "10+" = 10, "20+" = 20),
-                      selected = 0,
-                      width = "80px")
+                      choices = list("Any Size" = "", "2+ Entries" = "2", "5+ Entries" = "5", "10+ Entries" = "10", "20+ Entries" = "20"),
+                      selected = "",
+                      width = "120px",
+                      selectize = FALSE)
         ),
         actionButton("reset_meta_filters", NULL,
                      icon = icon("rotate-right"),

@@ -94,7 +94,10 @@ admin_decks_ui <- tagList(
       card(
         card_header(
           class = "d-flex justify-content-between align-items-center",
-          "Current Archetypes",
+          div(
+            "Current Archetypes",
+            div(class = "small text-muted", "Decks without cards shown first")
+          ),
           span(class = "small text-muted", "Click a row to edit")
         ),
         card_body(
