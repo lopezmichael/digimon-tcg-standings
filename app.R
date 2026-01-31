@@ -255,7 +255,7 @@ ui <- page_fillable(
       var loadingMessages = [
         { main: 'Opening Digital Gate...', sub: 'Establishing connection' },
         { main: 'Scanning Local Meta...', sub: 'Loading tournament data' },
-        { main: 'Synchronizing...', sub: 'Preparing dashboard' }
+        { main: 'Synchronizing...', sub: 'Preparing tool' }
       ];
       var currentMessage = 0;
 
@@ -294,8 +294,21 @@ ui <- page_fillable(
     class = "app-header",
     div(
       class = "header-title",
-      span(bsicons::bs_icon("egg"), class = "header-icon"),
-      span("Digimon Locals Meta Tracker", class = "header-title-text")
+      # Digivice-style icon (custom SVG)
+      span(
+        class = "header-icon",
+        HTML('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
+          <circle cx="12" cy="10" r="4"/>
+          <circle cx="12" cy="10" r="2" fill="currentColor" opacity="0.3"/>
+          <line x1="9" y1="17" x2="11" y2="17"/>
+          <line x1="13" y1="17" x2="15" y2="17"/>
+          <line x1="12" y1="2" x2="12" y2="4"/>
+        </svg>')
+      ),
+      span("Digimon Locals Meta Tracker", class = "header-title-text"),
+      span(class = "header-badge", "BETA"),
+      span(class = "header-circuit-line")
     ),
     div(
       class = "header-actions",

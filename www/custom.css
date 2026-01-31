@@ -55,10 +55,26 @@
   z-index: 9;
 }
 
-/* Header icon styling */
+/* Header icon styling with pulse animation */
 .header-icon {
   font-size: 1.25rem !important;
   color: #FFFFFF !important;
+  animation: icon-pulse 3s ease-in-out infinite;
+}
+
+.header-icon svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: currentColor;
+}
+
+@keyframes icon-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(0, 200, 255, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(0, 200, 255, 0.8));
+  }
 }
 
 .header-title {
@@ -75,6 +91,46 @@
   letter-spacing: -0.02em;
   white-space: nowrap;
   color: #FFFFFF !important;
+}
+
+/* BETA badge */
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0A3055;
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.9) 0%, rgba(0, 180, 230, 0.9) 100%);
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(0, 200, 255, 0.4);
+  margin-left: 0.5rem;
+}
+
+/* Circuit line accent after title */
+.header-circuit-line {
+  display: flex;
+  align-items: center;
+  margin-left: 0.75rem;
+}
+
+.header-circuit-line::before {
+  content: '';
+  width: 30px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.5), transparent);
+}
+
+.header-circuit-line::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 200, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 200, 255, 0.5);
+  margin-left: -2px;
 }
 
 .header-actions {
@@ -1413,6 +1469,29 @@ a:hover, .nav-link:hover {
 
 [data-bs-theme="dark"] .btn-card-search:hover {
   background: rgba(0, 200, 255, 0.15);
+}
+
+/* Search row alignment - button aligns with input box bottom */
+.search-row-aligned {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.search-input-wrapper {
+  flex: 1;
+}
+
+.search-btn-wrapper {
+  flex-shrink: 0;
+}
+
+.search-btn-wrapper .btn-card-search {
+  height: 38px;
+  width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* =============================================================================

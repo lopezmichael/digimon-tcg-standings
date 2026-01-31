@@ -47,15 +47,13 @@ admin_decks_ui <- tagList(
             ),
             # Search controls on right
             div(
-              # Row 1: Search input + button
-              layout_columns(
-                col_widths = c(9, 3),
-                textInput("card_search", "Search", placeholder = "Type card name..."),
-                div(
-                  style = "padding-top: 1.5rem;",
-                  actionButton("search_card_btn", bsicons::bs_icon("search"),
-                               class = "btn-card-search", style = "height: 38px; width: 100%;")
-                )
+              # Row 1: Search input + button (aligned with flexbox)
+              div(
+                class = "search-row-aligned",
+                div(class = "search-input-wrapper", textInput("card_search", "Search", placeholder = "Type card name...")),
+                div(class = "search-btn-wrapper",
+                    actionButton("search_card_btn", bsicons::bs_icon("search"),
+                                 class = "btn-card-search"))
               ),
               # Row 2: Card ID with inline info icon in label
               div(
