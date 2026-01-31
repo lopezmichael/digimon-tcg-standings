@@ -1303,21 +1303,92 @@ button.mapbox-gl-draw_point {
 }
 
 /* =============================================================================
-   ADMIN DECK MANAGEMENT
+   ADMIN DECK MANAGEMENT - Digital Scanner Aesthetic
    ============================================================================= */
 
-/* Prevent horizontal scroll in card preview section */
+/* Card preview container - scanner effect */
+#card_preview_container {
+  position: relative;
+  background: linear-gradient(135deg, #0A3055 0%, #0F4C81 100%) !important;
+  border: 1px solid rgba(0, 200, 255, 0.3) !important;
+  /* Grid overlay */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, transparent 1px, transparent 15px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, transparent 1px, transparent 15px),
+    linear-gradient(135deg, #0A3055 0%, #0F4C81 100%) !important;
+}
+
+/* Circuit node below preview */
+#card_preview_container::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 200, 255, 0.5);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 200, 255, 0.6);
+}
+
+/* Card preview image */
 #card_preview_container img {
   max-width: 100%;
   max-height: 150px;
   object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Card search results - constrain width */
+/* Selection glow pulse animation */
+@keyframes card-selected-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 200, 255, 0.6); }
+  50% { box-shadow: 0 0 15px 3px rgba(0, 200, 255, 0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 200, 255, 0); }
+}
+
+#card_preview_container.card-selected {
+  animation: card-selected-pulse 0.6s ease-out;
+}
+
+/* Card search results container */
 .card-search-results {
   max-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Search result cards - hover glow */
+.card-search-btn {
+  transition: all 0.2s ease !important;
+  border: 1px solid transparent !important;
+}
+
+.card-search-btn:hover {
+  border-color: rgba(0, 200, 255, 0.5) !important;
+  background-color: rgba(0, 200, 255, 0.1) !important;
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.card-search-btn:active,
+.card-search-btn:focus {
+  border-color: #F7941D !important;
+  box-shadow: 0 0 0 3px rgba(247, 148, 29, 0.25) !important;
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] #card_preview_container {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0px, transparent 1px, transparent 15px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0px, transparent 1px, transparent 15px),
+    linear-gradient(135deg, #1A202C 0%, #2D3748 100%) !important;
+  border-color: rgba(0, 200, 255, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .card-search-btn:hover {
+  background-color: rgba(0, 200, 255, 0.15) !important;
 }
 
 /* =============================================================================
