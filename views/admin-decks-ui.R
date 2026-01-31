@@ -40,7 +40,7 @@ admin_decks_ui <- tagList(
               class = "text-center",
               div(
                 id = "card_preview_container",
-                class = "border rounded p-2 bg-light",
+                class = "rounded p-2",
                 style = "min-height: 150px; max-height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden;",
                 uiOutput("selected_card_preview")
               )

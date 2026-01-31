@@ -1477,44 +1477,6 @@ button.mapbox-gl-draw_point {
 }
 
 /* =============================================================================
-   CARD SEARCH BUTTONS (Admin Deck Management)
-   ============================================================================= */
-
-.card-search-btn {
-  transition: all 0.2s ease !important;
-}
-
-.card-search-btn:hover {
-  border-color: #0F4C81 !important;
-  background-color: #f0f7ff !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card-search-btn:active,
-.card-search-btn:focus {
-  border-color: #F7941D !important;
-  background-color: #FEF3E2 !important;
-  box-shadow: 0 0 0 3px rgba(247, 148, 29, 0.25) !important;
-}
-
-[data-bs-theme="dark"] .card-search-btn {
-  background: #2D3748 !important;
-  border-color: #4A5568 !important;
-}
-
-[data-bs-theme="dark"] .card-search-btn:hover {
-  background: #3D4A5C !important;
-  border-color: #0F4C81 !important;
-}
-
-[data-bs-theme="dark"] .card-search-btn:active,
-[data-bs-theme="dark"] .card-search-btn:focus {
-  border-color: #F7941D !important;
-  background-color: #4A5568 !important;
-}
-
-/* =============================================================================
    ADMIN DECK MANAGEMENT - Digital Scanner Aesthetic
    ============================================================================= */
 
