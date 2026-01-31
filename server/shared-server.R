@@ -9,6 +9,14 @@
 
 observe({
   rv$db_con <- connect_db()
+
+  # Once database is connected, hide the loading screen
+  if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+    # Small delay to let initial data queries complete
+    shinyjs::delay(800, {
+      session$sendCustomMessage("hideLoading", list())
+    })
+  }
 })
 
 onStop(function() {

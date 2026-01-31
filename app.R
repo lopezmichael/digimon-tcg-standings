@@ -176,6 +176,22 @@ notify <- function(message, type = "message", duration = 5) {
 }
 
 # =============================================================================
+# Helper: Digital Empty State
+# =============================================================================
+
+digital_empty_state <- function(title = "No signal detected",
+                                 subtitle = "// awaiting data",
+                                 icon = "reception-0") {
+  div(
+    class = "empty-state-digital",
+    div(class = "empty-state-corners"),
+    div(class = "empty-state-icon", bsicons::bs_icon(icon)),
+    div(class = "empty-state-title", title),
+    div(class = "empty-state-subtitle", subtitle)
+  )
+}
+
+# =============================================================================
 # Configuration
 # =============================================================================
 
@@ -228,13 +244,54 @@ ui <- page_fillable(
   # Custom CSS and JavaScript
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
-    # JavaScript to handle active nav state
+    # JavaScript to handle active nav state and loading screen
     tags$script(HTML("
       $(document).on('click', '.nav-link-sidebar', function() {
         $('.nav-link-sidebar').removeClass('active');
         $(this).addClass('active');
       });
+
+      // Loading screen message cycling
+      var loadingMessages = [
+        { main: 'Opening Digital Gate...', sub: 'Establishing connection' },
+        { main: 'Scanning Local Meta...', sub: 'Loading tournament data' },
+        { main: 'Synchronizing...', sub: 'Preparing dashboard' }
+      ];
+      var currentMessage = 0;
+
+      function cycleLoadingMessage() {
+        if (currentMessage < loadingMessages.length) {
+          var msg = loadingMessages[currentMessage];
+          $('.loading-message').text(msg.main);
+          $('.loading-submessage').text(msg.sub);
+          currentMessage++;
+        }
+      }
+
+      // Start cycling messages
+      $(document).ready(function() {
+        setInterval(cycleLoadingMessage, 1200);
+      });
+
+      // Function to hide loading screen (called from Shiny server)
+      Shiny.addCustomMessageHandler('hideLoading', function(message) {
+        setTimeout(function() {
+          $('.app-loading-overlay').addClass('loaded');
+        }, 500);
+      });
     "))
+  ),
+
+  # App-wide loading screen
+  div(
+    class = "app-loading-overlay",
+    div(class = "loading-scanline"),
+    div(
+      class = "loading-gate",
+      div(class = "loading-gate-center")
+    ),
+    div(class = "loading-message", "Opening Digital Gate..."),
+    div(class = "loading-submessage", "Establishing connection")
   ),
 
   # Header Bar
@@ -951,7 +1008,7 @@ server <- function(input, output, session) {
   # Win rate = 1st place finishes / total tournaments in filter
   output$top_decks_with_images <- renderUI({
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
-      return(div(class = "text-muted", "No data available"))
+      return(digital_empty_state("Connection lost", "// reconnecting...", "wifi-off"))
     }
 
     # Build filter conditions
@@ -959,7 +1016,7 @@ server <- function(input, output, session) {
     total_tournaments <- filtered_tournament_count()
 
     if (total_tournaments == 0) {
-      return(div(class = "text-muted text-center p-4", "No tournament data yet"))
+      return(digital_empty_state("No tournament data", "// awaiting results", "inbox"))
     }
 
     # Query top decks with 1st place finishes
@@ -978,7 +1035,7 @@ server <- function(input, output, session) {
     ", filters$store, filters$format, filters$event_type, filters$date))
 
     if (nrow(result) == 0) {
-      return(div(class = "text-muted text-center p-4", "No tournament data yet"))
+      return(digital_empty_state("No deck data found", "// expand search filters", "search"))
     }
 
     # Calculate win rate = 1st places / total tournaments
@@ -1452,7 +1509,7 @@ server <- function(input, output, session) {
           )
         )
       } else {
-        p(class = "text-muted", "No tournaments recorded yet")
+        digital_empty_state("No tournaments recorded", "// check back soon", "calendar-x")
       },
 
       # Top players
@@ -1498,6 +1555,7 @@ server <- function(input, output, session) {
     }
 
     card(
+      class = "card-online mt-3",
       card_header(
         class = "d-flex align-items-center gap-2",
         bsicons::bs_icon("globe"),
@@ -1511,7 +1569,7 @@ server <- function(input, output, session) {
             div(
               class = "col-md-4",
               div(
-                class = "border rounded p-3 h-100",
+                class = "online-store-item p-3 h-100",
                 h6(class = "mb-1", store$name),
                 if (!is.na(store$region) && nchar(store$region) > 0)
                   p(class = "text-muted small mb-1", bsicons::bs_icon("geo"), " ", store$region),
@@ -2159,7 +2217,7 @@ server <- function(input, output, session) {
           )
         )
       } else {
-        p(class = "text-muted", "No tournament results recorded")
+        digital_empty_state("No results recorded", "// deck data pending", "clipboard-x")
       }
     ))
   })
@@ -2458,7 +2516,7 @@ server <- function(input, output, session) {
           )
         )
       } else {
-        p(class = "text-muted", "No tournament results recorded")
+        digital_empty_state("No tournament history", "// player data pending", "person-x")
       }
     ))
   })
@@ -2688,7 +2746,7 @@ server <- function(input, output, session) {
           )
         )
       } else {
-        p(class = "text-muted", "No results recorded for this tournament")
+        digital_empty_state("No results recorded", "// tournament data pending", "list-ul")
       }
     ))
   })
