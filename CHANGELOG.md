@@ -11,6 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.11.0] - 2026-01-30 - Desktop Design Complete
+
+### Added
+- **App-Wide Loading Screen**: "Opening Digital Gate..." sequence with spinning rings, scan line animation, and themed messages
+- **Digital Empty States**: Scanner-aesthetic empty states with corner accents and pulsing icons throughout the app
+- **Modal Stat Boxes**: All modals (tournament, player, deck) now have digital grid overlay with corner accents
+- **Modal Section Headers**: "Final Standings", "Top Pilots", "Recent Results" etc. have circuit node accent
+- **Placement Colors**: 1st place gold (#D4AF37), 2nd silver (#A8A9AD), 3rd bronze (#CD7F32)
+- **Online Tournament Organizers**: Digital card styling with pulsing connection nodes
+- **Header Enhancements**: Cards icon (placeholder for digivice), BETA badge, circuit line accent, icon pulse animation
+- **Tournament Summary Bar**: Digital styling for the Enter Results page info bar
+
+### Changed
+- **Add Result Button**: Now uses blue-to-orange hover gradient (btn-add-result class)
+- **W/L/T Inputs**: Individual "Wins", "Losses", "Ties" labels instead of grouped "Record (W/L/T)"
+- **Search Button (Manage Decks)**: Matches digital theme, properly aligned with input
+- **Info Icon (Manage Decks)**: Moved next to "Selected Card ID" label for cleaner layout
+- **Card Search Results**: Individual cards have grid overlay and corner scan accents
+- **Map Card**: "Location Scanner" header with scan animation on hover
+
+### Fixed
+- **prependContent Warning**: Loading overlay now injected via JavaScript to avoid htmlwidgets conflict
+- **Search Button Alignment**: Properly aligned with input box using flexbox spacer
+
+### Technical
+- Desktop design overhaul complete - ready for mobile responsiveness review
+- All design changes on `feature/ui-design-overhaul` branch (not yet merged to main)
+
+---
+
 ## [0.10.0] - 2026-01-30 - Digital Design Language Extension
 
 ### Added

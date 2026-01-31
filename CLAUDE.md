@@ -68,11 +68,12 @@ digimon-tcg-standings/
 
 ### UI Polish (Current Priority)
 - [x] ~~Fix menu bar "menu" text and white space issues~~ - Renamed to "Digimon Locals Meta Tracker", added Digimon TCG logo to sidebar
-- [ ] Comprehensive mobile view review and fixes
+- [ ] Comprehensive mobile view review and fixes (NEXT PRIORITY)
 - [x] ~~Correct button alignment throughout the app~~ - Fixed filter/reset button alignment on all pages
-- [x] ~~Improve header design and add Digimon TCG logo~~ - Updated header with egg icon, added logo to sidebar
+- [x] ~~Improve header design and add Digimon TCG logo~~ - Header now has cards icon (placeholder), BETA badge, circuit line accent, and pulse animation
 - [ ] Add links to GitHub repo and "Buy Me a Coffee"
-- [ ] Replace individual chart spinners with app-wide loading screen
+- [x] ~~Replace individual chart spinners with app-wide loading screen~~ - Digital "Opening Digital Gate..." loading screen with themed messages
+- [ ] Replace header cards icon with actual Digivice SVG icon (placeholder for now)
 
 ### From UI Refactor Design (docs/plans/2026-01-28-ui-refactor-design.md)
 - [x] ~~Fix &times; delete button bug~~ - Uses icon("xmark") now
@@ -87,14 +88,28 @@ digimon-tcg-standings/
 - [x] ~~Desktop: Players page Rating column~~ - Added weighted rating calculation
 - [x] ~~Desktop: Tournaments auto-sort~~ - Defaults to date descending
 - [x] ~~Desktop: Overview value boxes with card backgrounds~~ - Redesigned with digital Digimon aesthetic (grid pattern, circuit accents, color-coded borders). See docs/plans/2026-01-30-value-box-redesign-design.md
-- [ ] Desktop: Enter Tournament Details constrained width
-- [ ] Desktop: Manage Decks Card ID input width
+- [x] ~~Desktop: Enter Tournament Details constrained width~~ - Tournament summary bar with digital styling
+- [x] ~~Desktop: Manage Decks Card ID input width~~ - Info icon moved to label, search button properly aligned
 - [ ] Mobile: Navigation menu height optimization
 - [x] ~~Mobile: Overview 2x2 value box grid~~ - Implemented in value box redesign
 - [x] ~~Mobile: Filter sections vertical stacking~~ - Title strips stack controls on mobile
 - [ ] Mobile: Table column prioritization
 - [ ] Mobile: Enter Tournament center button
 - [ ] Mobile: Add Results compact layout
+
+### Desktop Design - COMPLETE ✓
+The desktop UI design overhaul is now complete. Key features implemented:
+- Digital Digimon aesthetic throughout (grid patterns, circuit accents, cyan glow effects)
+- App-wide loading screen with "Opening Digital Gate..." sequence
+- Digital empty states with scanner aesthetic
+- Modal stat boxes with grid overlay and section headers
+- Placement colors (gold/silver/bronze for 1st/2nd/3rd)
+- Header with icon pulse animation, BETA badge, circuit line accent
+- Online Tournament Organizers section with connection node animations
+- Card search scanner effect with corner accents
+- Map card with "Location Scanner" styling
+
+**Next Phase: Mobile responsiveness review and fixes**
 
 ### User Experience & Onboarding (Future)
 - [ ] Tool introduction / onboarding flow for new users
