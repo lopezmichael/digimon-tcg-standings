@@ -73,9 +73,9 @@ admin_decks_ui <- tagList(
               )
             )
           ),
-          # Search results in dedicated box below
+          # Search results in dedicated box below - digital scanner container
           div(
-            class = "border rounded p-2 bg-light mt-2",
+            class = "card-search-results-container p-2 mt-2",
             style = "min-height: 60px;",
             tags$label(class = "form-label small text-muted", "Search Results"),
             uiOutput("card_search_results")

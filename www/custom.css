@@ -879,6 +879,121 @@
 }
 
 /* =============================================================================
+   MAP CARD - Digital Location Scanner
+   ============================================================================= */
+
+.card-map {
+  border: 1px solid rgba(0, 200, 255, 0.2) !important;
+  overflow: hidden;
+}
+
+.card-map .card-header {
+  position: relative;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 20px),
+    linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  border-bottom: 1px solid rgba(0, 200, 255, 0.15) !important;
+}
+
+/* Scanner corner accents */
+.card-map .card-header::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.5), transparent);
+}
+
+.card-map .card-header::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.5), transparent);
+}
+
+/* Circuit node in header */
+.card-map .card-header .map-circuit-node {
+  position: relative;
+}
+
+.card-map .card-header .map-circuit-node::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -20px;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 200, 255, 0.5);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 200, 255, 0.6);
+}
+
+/* Map container with subtle digital border */
+.card-map .card-body {
+  position: relative;
+}
+
+.card-map .card-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(0, 200, 255, 0.1);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Scan line animation on map */
+@keyframes map-scan {
+  0% { top: 0; opacity: 0.5; }
+  50% { opacity: 0.8; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.card-map:hover .card-body::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.5), transparent);
+  animation: map-scan 2s ease-in-out;
+  pointer-events: none;
+  z-index: 11;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] .card-map {
+  border-color: rgba(0, 200, 255, 0.3) !important;
+}
+
+[data-bs-theme="dark"] .card-map .card-header {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 20px),
+    linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%) !important;
+  border-bottom-color: rgba(0, 200, 255, 0.2) !important;
+}
+
+[data-bs-theme="dark"] .card-map .card-header::before,
+[data-bs-theme="dark"] .card-map .card-header::after {
+  opacity: 0.8;
+}
+
+[data-bs-theme="dark"] .card-map .card-body::before {
+  border-color: rgba(0, 200, 255, 0.15);
+}
+
+/* =============================================================================
    CONTROLS CARD
    ============================================================================= */
 
@@ -1526,30 +1641,117 @@ button.mapbox-gl-draw_point {
   animation: card-selected-pulse 0.6s ease-out;
 }
 
-/* Card search results container */
+/* Card search results container - digital scanner box */
+.card-search-results-container {
+  position: relative;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 12px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 12px),
+    linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid rgba(0, 200, 255, 0.25) !important;
+  border-radius: 8px;
+}
+
+/* Corner accent node */
+.card-search-results-container::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 200, 255, 0.5);
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0, 200, 255, 0.5);
+}
+
+.card-search-results-container::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 200, 255, 0.5);
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0, 200, 255, 0.5);
+}
+
 .card-search-results {
   max-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Search result cards - hover glow */
+/* Search result cards - digital scanner aesthetic */
 .card-search-btn {
-  transition: all 0.2s ease !important;
-  border: 1px solid transparent !important;
+  position: relative;
+  transition: all 0.25s ease !important;
+  border: 1px solid rgba(0, 200, 255, 0.2) !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.02) 0px, transparent 1px, transparent 10px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.02) 0px, transparent 1px, transparent 10px),
+    linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  overflow: hidden;
+}
+
+/* Corner scan line accent */
+.card-search-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.4), transparent);
+  transition: all 0.25s ease;
+}
+
+.card-search-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.4), transparent);
+  transition: all 0.25s ease;
 }
 
 .card-search-btn:hover {
-  border-color: rgba(0, 200, 255, 0.5) !important;
-  background-color: rgba(0, 200, 255, 0.1) !important;
-  box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+  border-color: rgba(0, 200, 255, 0.6) !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 10px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 10px),
+    linear-gradient(135deg, rgba(0, 200, 255, 0.08) 0%, rgba(0, 200, 255, 0.02) 100%) !important;
+  box-shadow: 0 0 12px rgba(0, 200, 255, 0.35), inset 0 0 20px rgba(0, 200, 255, 0.05);
   transform: translateY(-2px);
+}
+
+.card-search-btn:hover::before {
+  width: 30px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.7), transparent);
+}
+
+.card-search-btn:hover::after {
+  height: 30px;
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.7), transparent);
 }
 
 .card-search-btn:active,
 .card-search-btn:focus {
   border-color: #F7941D !important;
-  box-shadow: 0 0 0 3px rgba(247, 148, 29, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(247, 148, 29, 0.25), 0 0 15px rgba(247, 148, 29, 0.3) !important;
+}
+
+.card-search-btn:active::before,
+.card-search-btn:focus::before {
+  background: linear-gradient(90deg, rgba(247, 148, 29, 0.7), transparent);
+}
+
+.card-search-btn:active::after,
+.card-search-btn:focus::after {
+  background: linear-gradient(180deg, rgba(247, 148, 29, 0.7), transparent);
 }
 
 /* Dark mode adjustments */
@@ -1561,8 +1763,27 @@ button.mapbox-gl-draw_point {
   border-color: rgba(0, 200, 255, 0.4) !important;
 }
 
+[data-bs-theme="dark"] .card-search-results-container {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 12px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 12px),
+    linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+  border-color: rgba(0, 200, 255, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .card-search-btn {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.02) 0px, transparent 1px, transparent 10px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.02) 0px, transparent 1px, transparent 10px),
+    linear-gradient(135deg, #2D3748 0%, #1A202C 100%) !important;
+  border-color: rgba(0, 200, 255, 0.25) !important;
+}
+
 [data-bs-theme="dark"] .card-search-btn:hover {
-  background-color: rgba(0, 200, 255, 0.15) !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.05) 0px, transparent 1px, transparent 10px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.05) 0px, transparent 1px, transparent 10px),
+    linear-gradient(135deg, rgba(0, 200, 255, 0.12) 0%, rgba(0, 200, 255, 0.03) 100%) !important;
 }
 
 /* =============================================================================
