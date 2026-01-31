@@ -2,28 +2,45 @@
 # Tournaments history tab UI with filters and detail modal
 
 tournaments_ui <- tagList(
-  h2("Tournament History"),
-
-  # Filters - Using layout_columns for responsive sizing
+  # Title strip with integrated filters
   div(
-    class = "dashboard-filters mb-3",
-    layout_columns(
-      col_widths = c(4, 3, 3, 2),
-      textInput("tournaments_search", "Search Store", placeholder = "Type a store name..."),
-      selectInput("tournaments_format", "Format",
-                  choices = list("Loading..." = ""),
-                  selected = ""),
-      selectInput("tournaments_event_type", "Event Type",
-                  choices = list(
-                    "All Events" = "",
-                    "Event Types" = EVENT_TYPES
-                  ),
-                  selected = ""),
+    class = "page-title-strip mb-3",
+    div(
+      class = "title-strip-content",
+      # Left side: page title
       div(
-        style = "padding-top: 1.8rem;",
-        actionButton("reset_tournaments_filters", "Reset",
-                     class = "btn-outline-secondary",
-                     style = "height: 38px;")
+        class = "title-strip-context",
+        bsicons::bs_icon("trophy", class = "title-strip-icon"),
+        tags$span(class = "title-strip-text", "Tournament History")
+      ),
+      # Right side: compact filters
+      div(
+        class = "title-strip-controls",
+        div(
+          class = "title-strip-search",
+          textInput("tournaments_search", NULL, placeholder = "Search...", width = "120px")
+        ),
+        div(
+          class = "title-strip-select",
+          selectInput("tournaments_format", NULL,
+                      choices = list("Loading..." = ""),
+                      selected = "",
+                      width = "120px")
+        ),
+        div(
+          class = "title-strip-select",
+          selectInput("tournaments_event_type", NULL,
+                      choices = list(
+                        "All Events" = "",
+                        "Event Types" = EVENT_TYPES
+                      ),
+                      selected = "",
+                      width = "100px")
+        ),
+        actionButton("reset_tournaments_filters", NULL,
+                     icon = icon("rotate-right"),
+                     class = "btn-title-strip-reset",
+                     title = "Reset filters")
       )
     )
   ),

@@ -2,25 +2,42 @@
 # Players tab UI with player profiles
 
 players_ui <- tagList(
-  h2("Player Standings"),
-
-  # Filters - Using layout_columns for responsive sizing
+  # Title strip with integrated filters
   div(
-    class = "dashboard-filters mb-3",
-    layout_columns(
-      col_widths = c(4, 3, 3, 2),
-      textInput("players_search", "Search Player", placeholder = "Type a name..."),
-      selectInput("players_format", "Format",
-                  choices = list("Loading..." = ""),
-                  selected = ""),
-      selectInput("players_min_events", "Min Events",
-                  choices = c("Any" = 0, "2+" = 2, "3+" = 3, "5+" = 5, "10+" = 10),
-                  selected = 0),
+    class = "page-title-strip mb-3",
+    div(
+      class = "title-strip-content",
+      # Left side: page title
       div(
-        style = "padding-top: 1.8rem;",
-        actionButton("reset_players_filters", "Reset",
-                     class = "btn-outline-secondary",
-                     style = "height: 38px;")
+        class = "title-strip-context",
+        bsicons::bs_icon("people", class = "title-strip-icon"),
+        tags$span(class = "title-strip-text", "Player Standings")
+      ),
+      # Right side: compact filters
+      div(
+        class = "title-strip-controls",
+        div(
+          class = "title-strip-search",
+          textInput("players_search", NULL, placeholder = "Search...", width = "120px")
+        ),
+        div(
+          class = "title-strip-select",
+          selectInput("players_format", NULL,
+                      choices = list("Loading..." = ""),
+                      selected = "",
+                      width = "120px")
+        ),
+        div(
+          class = "title-strip-select",
+          selectInput("players_min_events", NULL,
+                      choices = c("Any" = 0, "2+" = 2, "3+" = 3, "5+" = 5, "10+" = 10),
+                      selected = 0,
+                      width = "80px")
+        ),
+        actionButton("reset_players_filters", NULL,
+                     icon = icon("rotate-right"),
+                     class = "btn-title-strip-reset",
+                     title = "Reset filters")
       )
     )
   ),
