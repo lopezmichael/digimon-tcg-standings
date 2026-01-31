@@ -662,11 +662,12 @@
   border-radius: 10px !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
   border: 1px solid rgba(0, 0, 0, 0.06) !important;
-  transition: box-shadow 0.2s ease !important;
+  transition: all 0.2s ease !important;
 }
 
+/* Data cards (Tier 2) - subtle cyan glow on hover */
 .card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 200, 255, 0.1) !important;
 }
 
 .card-header {
@@ -678,6 +679,36 @@
   border-radius: 10px 10px 0 0 !important;
 }
 
+/* =============================================================================
+   FEATURE CARDS (Tier 1) - Charts and Key Data
+   ============================================================================= */
+
+/* Feature card header with grid pattern + circuit node */
+.card-feature .card-header,
+.card:has(.highchartOutput) .card-header,
+.card:has(highchartOutput) .card-header {
+  position: relative;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.04) 0px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.04) 0px, transparent 1px, transparent 20px),
+    linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+}
+
+/* Circuit node in top-right of feature card header */
+.card-feature .card-header::after,
+.card:has(.highchartOutput) .card-header::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  background: rgba(0, 200, 255, 0.4);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 200, 255, 0.5);
+}
+
 /* Dark mode */
 [data-bs-theme="dark"] .card {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -685,7 +716,15 @@
 }
 
 [data-bs-theme="dark"] .card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 200, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .card-feature .card-header,
+[data-bs-theme="dark"] .card:has(.highchartOutput) .card-header {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 20px),
+    linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%) !important;
 }
 
 [data-bs-theme="dark"] .card-header {
