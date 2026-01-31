@@ -268,30 +268,25 @@ ui <- page_fillable(
         }
       }
 
-      // Start cycling messages
-      $(document).ready(function() {
-        setInterval(cycleLoadingMessage, 1200);
-      });
-
       // Function to hide loading screen (called from Shiny server)
       Shiny.addCustomMessageHandler('hideLoading', function(message) {
         setTimeout(function() {
           $('.app-loading-overlay').addClass('loaded');
         }, 500);
       });
-    "))
-  ),
 
-  # App-wide loading screen
-  div(
-    class = "app-loading-overlay",
-    div(class = "loading-scanline"),
-    div(
-      class = "loading-gate",
-      div(class = "loading-gate-center")
-    ),
-    div(class = "loading-message", "Opening Digital Gate..."),
-    div(class = "loading-submessage", "Establishing connection")
+      // Inject loading overlay into body on document ready (avoids prependContent warning)
+      $(document).ready(function() {
+        var loadingHTML = '<div class=\"app-loading-overlay\">' +
+          '<div class=\"loading-scanline\"></div>' +
+          '<div class=\"loading-gate\"><div class=\"loading-gate-center\"></div></div>' +
+          '<div class=\"loading-message\">Opening Digital Gate...</div>' +
+          '<div class=\"loading-submessage\">Establishing connection</div>' +
+        '</div>';
+        $('body').prepend(loadingHTML);
+        setInterval(cycleLoadingMessage, 1200);
+      });
+    "))
   ),
 
   # Header Bar
