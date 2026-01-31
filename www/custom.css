@@ -1471,10 +1471,9 @@ a:hover, .nav-link:hover {
   background: rgba(0, 200, 255, 0.15);
 }
 
-/* Search row alignment - button aligns with input box bottom */
+/* Search row alignment - button aligns with input box */
 .search-row-aligned {
   display: flex;
-  align-items: flex-end;
   gap: 0.5rem;
 }
 
@@ -1482,8 +1481,22 @@ a:hover, .nav-link:hover {
   flex: 1;
 }
 
+/* Remove bottom margin from the input wrapper to align properly */
+.search-input-wrapper .form-group {
+  margin-bottom: 0;
+}
+
 .search-btn-wrapper {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Account for the label height (approximately 1.5rem + 0.5rem gap) */
+.search-btn-wrapper::before {
+  content: '';
+  height: calc(1.5rem + 0.25rem);
 }
 
 .search-btn-wrapper .btn-card-search {
