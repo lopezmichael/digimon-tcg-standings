@@ -979,6 +979,71 @@ a:hover, .nav-link:hover {
 [data-bs-theme="dark"] .deck-badge-yellow { background-color: #D69E2E; }
 
 /* =============================================================================
+   MODAL HEADERS - Digital Theming
+   ============================================================================= */
+
+.modal-header {
+  position: relative;
+  background: linear-gradient(135deg, #0A3055 0%, #0F4C81 100%);
+  color: #FFFFFF;
+  border-bottom: none;
+  /* Subtle grid pattern */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0px, transparent 1px, transparent 24px),
+    linear-gradient(135deg, #0A3055 0%, #0F4C81 100%);
+}
+
+/* Circuit node in modal header */
+.modal-header::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 48px;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  background: rgba(0, 200, 255, 0.5);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 200, 255, 0.6);
+}
+
+.modal-title {
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+/* Close button in modal header */
+.modal-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+  opacity: 0.8;
+}
+
+.modal-header .btn-close:hover {
+  opacity: 1;
+}
+
+/* Modal content border radius */
+.modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 200, 255, 0.2);
+}
+
+/* Dark mode modal */
+[data-bs-theme="dark"] .modal-header {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 24px),
+    linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+}
+
+[data-bs-theme="dark"] .modal-content {
+  background-color: #1e1e1e;
+  border-color: rgba(0, 200, 255, 0.3);
+}
+
+/* =============================================================================
    RESPONSIVE ADJUSTMENTS
    ============================================================================= */
 
