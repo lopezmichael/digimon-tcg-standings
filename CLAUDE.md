@@ -91,7 +91,7 @@ digimon-tcg-standings/
 - [ ] Desktop: Manage Decks Card ID input width
 - [ ] Mobile: Navigation menu height optimization
 - [x] ~~Mobile: Overview 2x2 value box grid~~ - Implemented in value box redesign
-- [ ] Mobile: Filter sections vertical stacking
+- [x] ~~Mobile: Filter sections vertical stacking~~ - Title strips stack controls on mobile
 - [ ] Mobile: Table column prioritization
 - [ ] Mobile: Enter Tournament center button
 - [ ] Mobile: Add Results compact layout
@@ -257,6 +257,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.8.0** - Desktop UI Polish
+**v0.10.0** - Digital Design Language Extension
 
 See `CHANGELOG.md` for full version history.

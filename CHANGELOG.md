@@ -11,6 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - 2026-01-30 - Digital Design Language Extension
+
+### Added
+- **Header Bar Enhancement**: Subtle grid pattern overlay (4% opacity), glowing circuit node in top-right corner, faint circuit line along right edge
+- **Sidebar Circuit Theming**: Vertical circuit line along left edge of navigation, glowing cyan node on active nav item
+- **Card Search Scanner Effect**: Digital grid overlay on card preview (scanner aesthetic), hover glow on search results, selection pulse animation
+- **Page Title Strips**: Players, Meta, and Tournaments pages now use integrated title strips with filters (matching dashboard style)
+- **Modal Header Theming**: Grid pattern and circuit node in modal headers, blue gradient background, styled close button
+- **Feature Card Headers**: Charts/key data cards automatically get grid pattern + circuit node in header (using CSS :has() selector)
+
+### Changed
+- **Consistent Filter UI**: All pages now use title strip pattern with compact inline filters
+- **Card Hover Effects**: Data cards show subtle cyan glow on hover
+- **Design System**: Extended digital Digimon aesthetic from value boxes to entire app
+
+### Technical
+- Design language documented in `docs/plans/2026-01-30-design-language-extension-proposal.md`
+- CSS organized with clear section headers for each component type
+- Uses CSS custom properties for consistent glow colors
+
+---
+
 ## [0.9.0] - 2026-01-30 - Digital Value Box Redesign
 
 ### Added
