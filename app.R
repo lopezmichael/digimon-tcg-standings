@@ -2124,38 +2124,38 @@ server <- function(input, output, session) {
 
       # Stats summary
       div(
-        class = "d-flex justify-content-evenly mb-3 p-3 bg-light rounded flex-wrap",
+        class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
         div(
-          class = "text-center px-2",
-          div(class = "h4 mb-0 text-primary", stats$events),
-          div(class = "small text-muted", "Events")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", stats$events),
+          div(class = "modal-stat-label", "Events")
         ),
         div(
-          class = "text-center px-2",
-          div(class = "h4 mb-0 text-primary", sprintf("%d-%d", stats$wins, stats$losses)),
-          div(class = "small text-muted", "Record")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", sprintf("%d-%d", stats$wins, stats$losses)),
+          div(class = "modal-stat-label", "Record")
         ),
         div(
-          class = "text-center px-2",
-          div(class = "h4 mb-0 text-primary", if (!is.na(stats$win_pct)) paste0(stats$win_pct, "%") else "-"),
-          div(class = "small text-muted", "Win Rate")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", if (!is.na(stats$win_pct)) paste0(stats$win_pct, "%") else "-"),
+          div(class = "modal-stat-label", "Win Rate")
         ),
         div(
-          class = "text-center px-2",
-          div(class = "h4 mb-0 text-success", stats$first_places),
-          div(class = "small text-muted", "1st Places")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value stat-highlight place-1st", stats$first_places),
+          div(class = "modal-stat-label", "1st Places")
         ),
         div(
-          class = "text-center px-2",
-          div(class = "h4 mb-0 text-info", stats$top3),
-          div(class = "small text-muted", "Top 3s")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", stats$top3),
+          div(class = "modal-stat-label", "Top 3s")
         )
       ),
 
       # Favorite decks
       if (nrow(favorite_decks) > 0) {
         tagList(
-          h6(class = "border-bottom pb-2", "Favorite Decks"),
+          h6(class = "modal-section-header", "Favorite Decks"),
           div(
             class = "d-flex flex-wrap gap-2 mb-3",
             lapply(1:nrow(favorite_decks), function(i) {
@@ -2174,7 +2174,7 @@ server <- function(input, output, session) {
       # Recent results
       if (nrow(recent_results) > 0) {
         tagList(
-          h6(class = "border-bottom pb-2", "Recent Results"),
+          h6(class = "modal-section-header", "Recent Results"),
           tags$table(
             class = "table table-sm table-striped",
             tags$thead(
@@ -2191,7 +2191,7 @@ server <- function(input, output, session) {
                   tags$td(row$Store),
                   tags$td(row$Deck),
                   tags$td(
-                    class = if (row$Place == 1) "fw-bold text-success" else if (row$Place <= 3) "text-info" else "",
+                    class = if (row$Place == 1) "place-1st" else if (row$Place == 2) "place-2nd" else if (row$Place == 3) "place-3rd" else "",
                     ordinal(row$Place)
                   ),
                   tags$td(sprintf("%d-%d", row$W, row$L)),
@@ -2409,36 +2409,36 @@ server <- function(input, output, session) {
         div(
           class = "flex-grow-1",
           div(
-            class = "d-flex justify-content-evenly flex-wrap p-3 bg-light rounded h-100 align-items-center",
+            class = "modal-stats-box d-flex justify-content-evenly flex-wrap p-3 h-100 align-items-center",
             div(
-              class = "text-center px-2",
-              div(class = "h5 mb-0 text-primary", stats$entries),
-              div(class = "small text-muted", "Entries")
+              class = "modal-stat-item",
+              div(class = "modal-stat-value", stats$entries),
+              div(class = "modal-stat-label", "Entries")
             ),
             div(
-              class = "text-center px-2",
-              div(class = "h5 mb-0 text-primary", stats$pilots),
-              div(class = "small text-muted", "Pilots")
+              class = "modal-stat-item",
+              div(class = "modal-stat-value", stats$pilots),
+              div(class = "modal-stat-label", "Pilots")
             ),
             div(
-              class = "text-center px-2",
-              div(class = "h5 mb-0 text-success", stats$first_places),
-              div(class = "small text-muted", "1st Places")
+              class = "modal-stat-item",
+              div(class = "modal-stat-value stat-highlight place-1st", stats$first_places),
+              div(class = "modal-stat-label", "1st Places")
             ),
             div(
-              class = "text-center px-2",
-              div(class = "h5 mb-0 text-info", stats$top3),
-              div(class = "small text-muted", "Top 3s")
+              class = "modal-stat-item",
+              div(class = "modal-stat-value", stats$top3),
+              div(class = "modal-stat-label", "Top 3s")
             ),
             div(
-              class = "text-center px-2",
-              div(class = "h5 mb-0", if (!is.na(stats$win_pct)) paste0(stats$win_pct, "%") else "-"),
-              div(class = "small text-muted", "Win Rate")
+              class = "modal-stat-item",
+              div(class = "modal-stat-value", if (!is.na(stats$win_pct)) paste0(stats$win_pct, "%") else "-"),
+              div(class = "modal-stat-label", "Win Rate")
             ),
             div(
-              class = "text-center px-2",
-              div(class = "h5 mb-0", if (!is.na(stats$avg_place)) stats$avg_place else "-"),
-              div(class = "small text-muted", "Avg Place")
+              class = "modal-stat-item",
+              div(class = "modal-stat-value", if (!is.na(stats$avg_place)) stats$avg_place else "-"),
+              div(class = "modal-stat-label", "Avg Place")
             )
           )
         )
@@ -2447,7 +2447,7 @@ server <- function(input, output, session) {
       # Top pilots
       if (nrow(top_pilots) > 0) {
         tagList(
-          h6(class = "border-bottom pb-2", "Top Pilots"),
+          h6(class = "modal-section-header", "Top Pilots"),
           tags$table(
             class = "table table-sm table-striped",
             tags$thead(
@@ -2473,7 +2473,7 @@ server <- function(input, output, session) {
       # Recent results
       if (nrow(recent_results) > 0) {
         tagList(
-          h6(class = "border-bottom pb-2 mt-3", "Recent Results"),
+          h6(class = "modal-section-header mt-3", "Recent Results"),
           tags$table(
             class = "table table-sm table-striped",
             tags$thead(
@@ -2490,7 +2490,7 @@ server <- function(input, output, session) {
                   tags$td(row$Store),
                   tags$td(row$Player),
                   tags$td(
-                    class = if (row$Place == 1) "fw-bold text-success" else if (row$Place <= 3) "text-info" else "",
+                    class = if (row$Place == 1) "place-1st" else if (row$Place == 2) "place-2nd" else if (row$Place == 3) "place-3rd" else "",
                     ordinal(row$Place)
                   ),
                   tags$td(sprintf("%d-%d", row$W, row$L)),
@@ -2676,33 +2676,33 @@ server <- function(input, output, session) {
 
       # Tournament info
       div(
-        class = "d-flex justify-content-evenly mb-3 p-3 bg-light rounded flex-wrap",
+        class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
         div(
-          class = "text-center px-3",
-          div(class = "h5 mb-0 text-primary", event_type_display),
-          div(class = "small text-muted", "Event Type")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", event_type_display),
+          div(class = "modal-stat-label", "Event Type")
         ),
         div(
-          class = "text-center px-3",
-          div(class = "h5 mb-0 text-primary", if (!is.na(tournament$format)) tournament$format else "-"),
-          div(class = "small text-muted", "Format")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", if (!is.na(tournament$format)) tournament$format else "-"),
+          div(class = "modal-stat-label", "Format")
         ),
         div(
-          class = "text-center px-3",
-          div(class = "h5 mb-0 text-primary", tournament$player_count),
-          div(class = "small text-muted", "Players")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value stat-highlight", tournament$player_count),
+          div(class = "modal-stat-label", "Players")
         ),
         div(
-          class = "text-center px-3",
-          div(class = "h5 mb-0 text-primary", if (!is.na(tournament$rounds)) tournament$rounds else "-"),
-          div(class = "small text-muted", "Rounds")
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", if (!is.na(tournament$rounds)) tournament$rounds else "-"),
+          div(class = "modal-stat-label", "Rounds")
         )
       ),
 
       # Full standings
       if (nrow(results) > 0) {
         tagList(
-          h6(class = "border-bottom pb-2", "Final Standings"),
+          h6(class = "modal-section-header", "Final Standings"),
           tags$table(
             class = "table table-sm table-striped",
             tags$thead(
@@ -2716,7 +2716,7 @@ server <- function(input, output, session) {
                 row <- results[i, ]
                 tags$tr(
                   tags$td(
-                    class = if (row$Place == 1) "fw-bold text-success" else if (row$Place <= 3) "fw-bold text-info" else "",
+                    class = if (row$Place == 1) "place-1st" else if (row$Place == 2) "place-2nd" else if (row$Place == 3) "place-3rd" else "",
                     ordinal(row$Place)
                   ),
                   tags$td(row$Player),

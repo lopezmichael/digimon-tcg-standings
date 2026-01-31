@@ -269,15 +269,15 @@ output$tournament_summary_bar <- renderUI({
   if (nrow(info) == 0) return(NULL)
 
   div(
-    class = "alert alert-info d-flex align-items-center gap-3 mb-3",
-    bsicons::bs_icon("geo-alt-fill"),
-    span(info$store_name),
-    span("|"),
-    span(format(as.Date(info$event_date), "%b %d, %Y")),
-    span("|"),
-    span(info$event_type),
-    span("|"),
-    span(sprintf("%d players", info$player_count))
+    class = "tournament-summary-bar",
+    span(class = "summary-icon", bsicons::bs_icon("geo-alt-fill")),
+    span(class = "summary-item", info$store_name),
+    span(class = "summary-divider", "|"),
+    span(class = "summary-item", format(as.Date(info$event_date), "%b %d, %Y")),
+    span(class = "summary-divider", "|"),
+    span(class = "summary-item", info$event_type),
+    span(class = "summary-divider", "|"),
+    span(class = "summary-item", sprintf("%d players", info$player_count))
   )
 })
 

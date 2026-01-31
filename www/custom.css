@@ -1159,6 +1159,263 @@ a:hover, .nav-link:hover {
 }
 
 /* =============================================================================
+   MODAL STAT BOXES - Digital Scanner Aesthetic
+   ============================================================================= */
+
+.modal-stats-box {
+  position: relative;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 18px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 18px),
+    linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid rgba(0, 200, 255, 0.2);
+  border-radius: 8px;
+}
+
+/* Corner accents */
+.modal-stats-box::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 18px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.5), transparent);
+}
+
+.modal-stats-box::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 2px;
+  height: 18px;
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.5), transparent);
+}
+
+/* Stat item styling */
+.modal-stat-item {
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.modal-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F4C81;
+  line-height: 1.2;
+}
+
+.modal-stat-value.stat-highlight {
+  color: #F7941D;
+}
+
+.modal-stat-label {
+  font-size: 0.75rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] .modal-stats-box {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 18px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 18px),
+    linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+  border-color: rgba(0, 200, 255, 0.3);
+}
+
+[data-bs-theme="dark"] .modal-stat-value {
+  color: rgba(0, 200, 255, 0.9);
+}
+
+[data-bs-theme="dark"] .modal-stat-label {
+  color: #a0aec0;
+}
+
+/* =============================================================================
+   MODAL SECTION HEADERS
+   ============================================================================= */
+
+.modal-section-header {
+  position: relative;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0F4C81;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+}
+
+.modal-section-header::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.7), transparent);
+}
+
+.modal-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 200, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 200, 255, 0.5);
+}
+
+[data-bs-theme="dark"] .modal-section-header {
+  color: rgba(0, 200, 255, 0.9);
+  border-color: rgba(0, 200, 255, 0.3);
+}
+
+/* =============================================================================
+   PLACEMENT COLORS (Gold, Silver, Bronze)
+   ============================================================================= */
+
+.place-1st {
+  color: #D4AF37 !important;
+  font-weight: 700;
+  text-shadow: 0 0 4px rgba(212, 175, 55, 0.3);
+}
+
+.place-2nd {
+  color: #A8A9AD !important;
+  font-weight: 600;
+}
+
+.place-3rd {
+  color: #CD7F32 !important;
+  font-weight: 600;
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .place-1st {
+  color: #FFD700 !important;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+[data-bs-theme="dark"] .place-2nd {
+  color: #C0C0C0 !important;
+}
+
+[data-bs-theme="dark"] .place-3rd {
+  color: #D4A574 !important;
+}
+
+/* =============================================================================
+   TOURNAMENT SUMMARY BAR (Enter Results)
+   ============================================================================= */
+
+.tournament-summary-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 15px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 15px),
+    linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
+  border: 1px solid rgba(0, 200, 255, 0.25);
+  border-left: 3px solid #0F4C81;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.tournament-summary-bar .summary-icon {
+  color: #0F4C81;
+  font-size: 1.1rem;
+}
+
+.tournament-summary-bar .summary-divider {
+  color: rgba(0, 200, 255, 0.4);
+}
+
+.tournament-summary-bar .summary-item {
+  font-weight: 500;
+  color: #2D3748;
+}
+
+[data-bs-theme="dark"] .tournament-summary-bar {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 15px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.03) 0px, transparent 1px, transparent 15px),
+    linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+  border-color: rgba(0, 200, 255, 0.3);
+  border-left-color: rgba(0, 200, 255, 0.6);
+}
+
+[data-bs-theme="dark"] .tournament-summary-bar .summary-item {
+  color: #E2E8F0;
+}
+
+/* =============================================================================
+   ADD RESULT BUTTON
+   ============================================================================= */
+
+.btn-add-result {
+  background: linear-gradient(135deg, #0F4C81 0%, #1565a8 100%);
+  border: none;
+  color: white;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-add-result:hover {
+  background: linear-gradient(135deg, #F7941D 0%, #E8842C 100%);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(247, 148, 29, 0.3);
+}
+
+.btn-add-result:active {
+  transform: translateY(0);
+}
+
+/* =============================================================================
+   SEARCH BUTTON (Manage Decks) - Match reset button style
+   ============================================================================= */
+
+.btn-card-search {
+  background: transparent;
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  color: #0F4C81;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-card-search:hover {
+  background: rgba(0, 200, 255, 0.1);
+  border-color: rgba(0, 200, 255, 0.6);
+  color: #0F4C81;
+  box-shadow: 0 0 8px rgba(0, 200, 255, 0.2);
+}
+
+.btn-card-search:active,
+.btn-card-search:focus {
+  background: rgba(0, 200, 255, 0.15);
+  border-color: #F7941D;
+  box-shadow: 0 0 0 2px rgba(247, 148, 29, 0.2);
+}
+
+[data-bs-theme="dark"] .btn-card-search {
+  color: rgba(0, 200, 255, 0.9);
+  border-color: rgba(0, 200, 255, 0.5);
+}
+
+[data-bs-theme="dark"] .btn-card-search:hover {
+  background: rgba(0, 200, 255, 0.15);
+}
+
+/* =============================================================================
    RESPONSIVE ADJUSTMENTS
    ============================================================================= */
 

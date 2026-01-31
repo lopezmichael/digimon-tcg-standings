@@ -119,24 +119,14 @@ admin_results_ui <- tagList(
                         placeholder = "e.g., digimonmeta.com/deck/...")
             ),
 
-            # W/L/T inline
-            div(
-              class = "mb-3",
-              tags$label("Record (W/L/T)", class = "form-label"),
-              layout_columns(
-                col_widths = c(4, 4, 4),
-                numericInput("result_wins", NULL, value = 0, min = 0),
-                numericInput("result_losses", NULL, value = 0, min = 0),
-                numericInput("result_ties", NULL, value = 0, min = 0)
-              ),
-              layout_columns(
-                col_widths = c(4, 4, 4),
-                span(class = "text-muted small text-center d-block", "Wins"),
-                span(class = "text-muted small text-center d-block", "Losses"),
-                span(class = "text-muted small text-center d-block", "Ties")
-              )
+            # W/L/T with individual labels
+            layout_columns(
+              col_widths = c(4, 4, 4),
+              numericInput("result_wins", "Wins", value = 0, min = 0),
+              numericInput("result_losses", "Losses", value = 0, min = 0),
+              numericInput("result_ties", "Ties", value = 0, min = 0)
             ),
-            actionButton("add_result", "Add Result", class = "btn-success w-100 mt-3")
+            actionButton("add_result", "Add Result", class = "btn-add-result w-100 mt-3")
           )
         ),
         # Right: Results table

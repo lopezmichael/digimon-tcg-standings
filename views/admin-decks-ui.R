@@ -49,27 +49,28 @@ admin_decks_ui <- tagList(
             div(
               # Row 1: Search input + button
               layout_columns(
-                col_widths = c(8, 4),
+                col_widths = c(9, 3),
                 textInput("card_search", "Search", placeholder = "Type card name..."),
                 div(
                   style = "padding-top: 1.5rem;",
                   actionButton("search_card_btn", bsicons::bs_icon("search"),
-                               class = "btn-info w-100", style = "height: 38px;")
+                               class = "btn-card-search", style = "height: 38px; width: 100%;")
                 )
               ),
-              # Row 2: Card ID + info icon
-              layout_columns(
-                col_widths = c(10, 2),
-                textInput("selected_card_id", "Selected Card ID", placeholder = "e.g., BT17-042"),
-                div(
-                  style = "padding-top: 1.5rem;",
+              # Row 2: Card ID with inline info icon in label
+              div(
+                tags$label(
+                  `for` = "selected_card_id",
+                  class = "form-label d-flex align-items-center gap-1",
+                  "Selected Card ID",
                   tags$span(
                     class = "text-muted",
                     title = "Click a card from search results to auto-fill, or enter a card ID manually",
                     style = "cursor: help;",
-                    bsicons::bs_icon("info-circle", size = "1.2rem")
+                    bsicons::bs_icon("info-circle", size = "0.9rem")
                   )
-                )
+                ),
+                textInput("selected_card_id", NULL, placeholder = "e.g., BT17-042")
               )
             )
           ),
