@@ -802,69 +802,61 @@ server <- function(input, output, session) {
   })
 
   # Top players (filters by selected stores, format, date range)
-  # Shows: Player, Events, Event Wins, Top 3 Placements, Rating (with tooltip)
+  # Shows: Player, Events, Event Wins, Top 3, Rating (Elo), Achievement
   output$top_players <- renderReactable({
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     filters <- build_dashboard_filters("t")
 
-    # Query players with stats needed for weighted rating
+    # Query players with basic stats
     result <- dbGetQuery(rv$db_con, sprintf("
-      SELECT p.display_name as Player,
+      SELECT p.player_id,
+             p.display_name as Player,
              COUNT(DISTINCT r.tournament_id) as Events,
-             SUM(r.wins) as total_wins,
-             SUM(r.losses) as total_losses,
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as event_wins,
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_placements,
-             ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_placements
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
       WHERE 1=1 %s %s %s %s
       GROUP BY p.player_id, p.display_name
       HAVING COUNT(DISTINCT r.tournament_id) > 0
-      ORDER BY COUNT(DISTINCT r.tournament_id) DESC
-      LIMIT 20
     ", filters$store, filters$format, filters$event_type, filters$date))
 
     if (nrow(result) == 0) {
       return(reactable(data.frame(Message = "No player data yet"), compact = TRUE))
     }
 
-    # Handle NA win percentages
-    result$win_pct[is.na(result$win_pct)] <- 0
+    # Join with competitive ratings
+    comp_ratings <- player_competitive_ratings()
+    result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
+    result$competitive_rating[is.na(result$competitive_rating)] <- 1500
 
-    # Calculate weighted rating: (win% * 0.5) + (top3_rate * 30) + (events_bonus)
-    # This rewards consistent performance, top finishes, and attendance
-    result$top3_rate <- result$top3_placements / result$Events
-    result$events_bonus <- pmin(result$Events * 2, 20)  # Cap at 20 points
-    result$weighted_rating <- round(
-      (result$win_pct * 0.5) +           # 50% weight on win rate
-      (result$top3_rate * 30) +          # 30 points max for top 3 rate
-      result$events_bonus,               # Up to 20 points for attendance
-      1
-    )
+    # Join with achievement scores
+    ach_scores <- player_achievement_scores()
+    result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
+    result$achievement_score[is.na(result$achievement_score)] <- 0
 
-    # Sort by weighted rating
-    result <- result[order(-result$weighted_rating), ]
+    # Sort by competitive rating
+    result <- result[order(-result$competitive_rating), ]
     result <- head(result, 10)
 
     reactable(result, compact = TRUE, striped = TRUE,
       columns = list(
+        player_id = colDef(show = FALSE),
         Player = colDef(minWidth = 120),
         Events = colDef(minWidth = 60, align = "center"),
-        total_wins = colDef(show = FALSE),
-        total_losses = colDef(show = FALSE),
-        event_wins = colDef(name = "Event Wins", minWidth = 80, align = "center"),
+        event_wins = colDef(name = "Wins", minWidth = 60, align = "center"),
         top3_placements = colDef(name = "Top 3", minWidth = 60, align = "center"),
-        win_pct = colDef(show = FALSE),
-        top3_rate = colDef(show = FALSE),
-        events_bonus = colDef(show = FALSE),
-        weighted_rating = colDef(
+        competitive_rating = colDef(
           name = "Rating",
           minWidth = 70,
-          align = "center",
-          cell = function(value) sprintf("%.1f", value)
+          align = "center"
+        ),
+        achievement_score = colDef(
+          name = "Achv",
+          minWidth = 60,
+          align = "center"
         )
       )
     )
