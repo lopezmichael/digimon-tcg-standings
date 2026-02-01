@@ -11,6 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.13.0] - 2026-01-31 - Mobile UI Polish
+
+### Added
+- **Responsive Value Boxes**: Value boxes now use bslib `breakpoints()` for proper responsive behavior (full width on mobile, 2x2 on tablet, 4-column on desktop)
+- **Mobile Filter Layouts**: Dashboard uses 2-row filter layout, other pages (Players, Meta, Tournaments) use 3-row layout with CSS `:has()` selector
+
+### Changed
+- **App Title**: Shortened to "Digimon TCG Tracker" for better mobile fit
+- **Header Spacing**: Reduced whitespace between header and content on both desktop and mobile
+- **BETA Badge**: Hidden on mobile to prevent overlap with admin button
+
+### Fixed
+- **bslib Spacing Override**: Target `bslib-gap-spacing` and `bslib-mb-spacing` classes to reduce excessive whitespace
+- **Value Box Width**: Fixed issue where value boxes only took 50% width on certain viewport sizes
+- **Reset Button Alignment**: Reset button now properly inline with last filter dropdown on mobile
+
+### Technical
+- Mobile UI phase complete - both desktop and mobile designs now polished
+- CSS uses `:has()` selector to differentiate page layouts without JavaScript
+- bslib `breakpoints()` in R code handles responsive grid, CSS no longer fights inline styles
+
+---
+
 ## [0.12.0] - 2026-01-31 - Title Strip Filter Polish
 
 ### Changed

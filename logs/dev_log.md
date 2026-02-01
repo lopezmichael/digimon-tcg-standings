@@ -4,6 +4,63 @@ This log tracks development decisions, blockers, and technical notes for the DFW
 
 ---
 
+## 2026-01-31: Mobile UI Polish - Complete
+
+### Summary
+Completed mobile UI improvements including responsive value boxes, smart filter layouts, and reduced header/content spacing. Both desktop and mobile designs are now polished and merged to main.
+
+### Key Changes
+
+**Responsive Value Boxes**
+- Switched from CSS grid overrides to bslib `breakpoints()` in R code
+- `col_widths = breakpoints(sm = c(12,12,12,12), md = c(6,6,6,6), lg = c(3,3,3,3))`
+- CSS no longer fights bslib's inline styles
+- Full width on mobile, 2x2 on tablet, 4-column on desktop
+
+**Smart Filter Layouts**
+- Dashboard uses 2-row layout: Format dropdown (full width), Event type + Reset button
+- Other pages (Players, Meta, Tournaments) use 3-row layout: Search, Format, Tab-specific + Reset
+- Implemented with CSS `:has()` selector to detect presence of search input
+- No JavaScript required, pure CSS solution
+
+**Header/Content Spacing**
+- Targeted bslib utility classes that add spacing:
+  - `body.bslib-gap-spacing { gap: 0.25rem !important; }`
+  - `.bslib-mb-spacing { margin-bottom: 0 !important; }`
+  - `.bslib-sidebar-layout { gap: 0 !important; }`
+- Reduced header `margin-bottom` from 1rem to 0.25rem
+- Mobile gets even tighter spacing (0.125rem)
+
+**Other Mobile Fixes**
+- BETA badge hidden on mobile (`display: none` at 576px) to prevent overlap with admin button
+- App title shortened to "Digimon TCG Tracker" for better mobile fit
+
+### Technical Decisions
+
+**Why bslib breakpoints() instead of CSS?**
+- bslib's `layout_columns()` applies inline styles via JavaScript
+- CSS `!important` on grid properties was unreliable
+- Using R's `breakpoints()` function works with bslib, not against it
+- Cleaner separation: R handles layout, CSS handles aesthetics
+
+**Why CSS :has() for filter layouts?**
+- Different pages need different filter row counts
+- `:has(.title-strip-search)` detects if search input exists
+- No need to add extra classes or modify R code per page
+- Modern browsers all support `:has()` selector now
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `app.R` | Title shortened to "Digimon TCG Tracker" |
+| `views/dashboard-ui.R` | Added `breakpoints()` to `layout_columns()` for value boxes |
+| `www/custom.css` | bslib spacing overrides, filter grid layouts, BETA badge hide |
+
+### Branch Status
+Feature branch `feature/ui-design-overhaul` merged to main and deleted. v0.13.0 released.
+
+---
+
 ## 2026-01-31: Title Strip Filter Styling - Desktop Complete
 
 ### Summary

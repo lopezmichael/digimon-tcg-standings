@@ -67,8 +67,8 @@ digimon-tcg-standings/
 ## Outstanding TODO Items
 
 ### UI Polish (Current Priority)
-- [x] ~~Fix menu bar "menu" text and white space issues~~ - Renamed to "Digimon Locals Meta Tracker", added Digimon TCG logo to sidebar
-- [ ] Comprehensive mobile view review and fixes (NEXT PRIORITY)
+- [x] ~~Fix menu bar "menu" text and white space issues~~ - Renamed to "Digimon TCG Tracker", added Digimon TCG logo to sidebar
+- [x] ~~Comprehensive mobile view review and fixes~~ - Mobile UI polish complete (v0.13.0)
 - [x] ~~Correct button alignment throughout the app~~ - Fixed filter/reset button alignment on all pages
 - [x] ~~Improve header design and add Digimon TCG logo~~ - Header now has cards icon (placeholder), BETA badge, circuit line accent, and pulse animation
 - [ ] Add links to GitHub repo and "Buy Me a Coffee"
@@ -90,15 +90,17 @@ digimon-tcg-standings/
 - [x] ~~Desktop: Overview value boxes with card backgrounds~~ - Redesigned with digital Digimon aesthetic (grid pattern, circuit accents, color-coded borders). See docs/plans/2026-01-30-value-box-redesign-design.md
 - [x] ~~Desktop: Enter Tournament Details constrained width~~ - Tournament summary bar with digital styling
 - [x] ~~Desktop: Manage Decks Card ID input width~~ - Info icon moved to label, search button properly aligned
-- [ ] Mobile: Navigation menu height optimization
-- [x] ~~Mobile: Overview 2x2 value box grid~~ - Implemented in value box redesign
-- [x] ~~Mobile: Filter sections vertical stacking~~ - Title strips stack controls on mobile
-- [ ] Mobile: Table column prioritization
-- [ ] Mobile: Enter Tournament center button
-- [ ] Mobile: Add Results compact layout
+- [x] ~~Mobile: Navigation menu height optimization~~ - Reduced header/content spacing via bslib class overrides
+- [x] ~~Mobile: Overview 2x2 value box grid~~ - Implemented via bslib breakpoints()
+- [x] ~~Mobile: Filter sections vertical stacking~~ - Dashboard 2-row, other pages 3-row layout
+- [ ] Mobile: Table column prioritization (Future)
+- [ ] Mobile: Enter Tournament center button (Future)
+- [ ] Mobile: Add Results compact layout (Future)
 
-### Desktop Design - COMPLETE ✓
-The desktop UI design overhaul is now complete (v0.12.0). Key features implemented:
+### Desktop & Mobile Design - COMPLETE ✓
+The UI design overhaul is now complete (v0.13.0). Key features implemented:
+
+**Desktop (v0.12.0):**
 - Digital Digimon aesthetic throughout (grid patterns, circuit accents, cyan glow effects)
 - App-wide loading screen with "Opening Digital Gate..." sequence
 - Digital empty states with scanner aesthetic
@@ -108,9 +110,16 @@ The desktop UI design overhaul is now complete (v0.12.0). Key features implement
 - Online Tournament Organizers section with connection node animations
 - Card search scanner effect with corner accents
 - Map card with "Location Scanner" styling
-- Title strip filter inputs with light backgrounds and native HTML selects for consistent styling
+- Title strip filter inputs with light backgrounds and native HTML selects
 
-**Next Phase: Mobile responsiveness review and fixes**
+**Mobile (v0.13.0):**
+- Responsive value boxes via bslib breakpoints() (full width → 2x2 → 4-column)
+- Smart filter layouts: Dashboard 2-row, other pages 3-row (via CSS :has())
+- Reduced header/content spacing targeting bslib-gap-spacing classes
+- BETA badge hidden on mobile to prevent overlap
+- App title shortened to "Digimon TCG Tracker"
+
+**Next Phase: User experience & onboarding improvements**
 
 ### User Experience & Onboarding (Future)
 - [ ] Tool introduction / onboarding flow for new users
@@ -279,6 +288,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.12.0** - Title Strip Filter Polish (Desktop Complete)
+**v0.13.0** - Mobile UI Polish (Desktop & Mobile Complete)
 
 See `CHANGELOG.md` for full version history.
