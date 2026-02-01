@@ -749,15 +749,16 @@ server <- function(input, output, session) {
   }
 
   # Recent tournaments (filters by selected stores, format, date range)
-  # Shows Winner column and formatted Type (no Format column)
+  # Shows Winner column, formatted Type, and Store Rating
   output$recent_tournaments <- renderReactable({
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     filters <- build_dashboard_filters("t")
 
-    # Query with winner (player who got placement = 1)
+    # Query with winner (player who got placement = 1) and store_id for rating join
     query <- sprintf("
-      SELECT s.name as Store, t.event_date as Date, t.event_type as Type,
+      SELECT t.tournament_id, s.store_id, s.name as Store,
+             t.event_date as Date, t.event_type as Type,
              t.player_count as Players, p.display_name as Winner
       FROM tournaments t
       JOIN stores s ON t.store_id = s.store_id
@@ -772,6 +773,14 @@ server <- function(input, output, session) {
     if (nrow(data) == 0) {
       return(reactable(data.frame(Message = "No tournaments yet"), compact = TRUE))
     }
+
+    # Join with store ratings
+    str_ratings <- store_ratings()
+    data <- merge(data, str_ratings, by = "store_id", all.x = TRUE)
+    data$store_rating[is.na(data$store_rating)] <- 0
+
+    # Re-sort by date (merge may have changed order)
+    data <- data[order(as.Date(data$Date), decreasing = TRUE), ]
 
     # Format event type nicely
     event_type_labels <- c(
@@ -792,11 +801,19 @@ server <- function(input, output, session) {
 
     reactable(data, compact = TRUE, striped = TRUE,
       columns = list(
+        tournament_id = colDef(show = FALSE),
+        store_id = colDef(show = FALSE),
         Store = colDef(minWidth = 120),
         Date = colDef(minWidth = 90),
         Type = colDef(minWidth = 80),
         Players = colDef(minWidth = 60, align = "center"),
-        Winner = colDef(minWidth = 100)
+        Winner = colDef(minWidth = 100),
+        store_rating = colDef(
+          name = "Store",
+          minWidth = 60,
+          align = "center",
+          cell = function(value) if (value == 0) "-" else value
+        )
       )
     )
   })
