@@ -25,6 +25,7 @@ library(brand.yml)
 # Load modules
 source("R/db_connection.R")
 source("R/digimoncard_api.R")
+source("R/ratings.R")
 
 # Load environment variables
 if (file.exists(".env")) {
@@ -455,6 +456,39 @@ server <- function(input, output, session) {
   source("server/admin-stores-server.R", local = TRUE)
   source("server/admin-formats-server.R", local = TRUE)
   source("server/admin-players-server.R", local = TRUE)
+
+  # ---------------------------------------------------------------------------
+  # Rating Calculations (reactive)
+  # ---------------------------------------------------------------------------
+
+  # Reactive: Calculate competitive ratings for all players
+  player_competitive_ratings <- reactive({
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+      return(data.frame(player_id = integer(), competitive_rating = numeric()))
+    }
+    # Invalidate when results change
+    rv$results_refresh
+    calculate_competitive_ratings(rv$db_con)
+  })
+
+  # Reactive: Calculate achievement scores for all players
+  player_achievement_scores <- reactive({
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+      return(data.frame(player_id = integer(), achievement_score = numeric()))
+    }
+    rv$results_refresh
+    calculate_achievement_scores(rv$db_con)
+  })
+
+  # Reactive: Calculate store ratings
+  store_ratings <- reactive({
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+      return(data.frame(store_id = integer(), store_rating = numeric()))
+    }
+    rv$results_refresh
+    player_rtgs <- player_competitive_ratings()
+    calculate_store_ratings(rv$db_con, player_rtgs)
+  })
 
   # ---------------------------------------------------------------------------
   # Public Dashboard Data
