@@ -1246,15 +1246,15 @@ server <- function(input, output, session) {
       sprintf("AND store_id IN (%s)", paste(rv$selected_store_ids, collapse = ", "))
     } else ""
 
-    # Query tournaments aggregated by week with avg players
+    # Query tournaments aggregated by day with avg players
     result <- dbGetQuery(rv$db_con, sprintf("
-      SELECT date_trunc('week', event_date) as week_start,
+      SELECT event_date,
              COUNT(*) as tournaments,
              ROUND(AVG(player_count), 1) as avg_players
       FROM tournaments
       WHERE 1=1 %s %s %s
-      GROUP BY date_trunc('week', event_date)
-      ORDER BY week_start
+      GROUP BY event_date
+      ORDER BY event_date
     ", store_filter, format_filter, event_type_filter))
 
     if (nrow(result) == 0) {
@@ -1266,18 +1266,21 @@ server <- function(input, output, session) {
     }
 
     # Convert dates - handle both Date objects and character strings
-    if (!inherits(result$week_start, "Date")) {
-      result$week_start <- as.Date(as.character(result$week_start))
+    if (!inherits(result$event_date, "Date")) {
+      result$event_date <- as.Date(as.character(result$event_date))
     }
 
-    # Calculate 4-week rolling average
+    # Calculate 7-day (weekly) rolling average
     result$rolling_avg <- sapply(1:nrow(result), function(i) {
-      start_idx <- max(1, i - 3)  # Look back 3 weeks (4 week window)
-      round(mean(result$avg_players[start_idx:i], na.rm = TRUE), 1)
+      current_date <- result$event_date[i]
+      week_ago <- current_date - 7
+      # Include all data points within the last 7 days
+      in_window <- result$event_date >= week_ago & result$event_date <= current_date
+      round(mean(result$avg_players[in_window], na.rm = TRUE), 1)
     })
 
     # Convert dates to milliseconds since epoch for Highcharts
-    result$timestamp <- as.numeric(result$week_start) * 86400000  # days to milliseconds
+    result$timestamp <- as.numeric(result$event_date) * 86400000  # days to milliseconds
 
     highchart() |>
       hc_chart(type = "spline") |>
@@ -1287,7 +1290,7 @@ server <- function(input, output, session) {
       ) |>
       hc_yAxis(title = list(text = "Players"), min = 0) |>
       hc_add_series(
-        name = "Avg Players",
+        name = "Daily Avg",
         data = lapply(1:nrow(result), function(i) {
           list(x = result$timestamp[i], y = result$avg_players[i], tournaments = result$tournaments[i])
         }),
@@ -1295,7 +1298,7 @@ server <- function(input, output, session) {
         marker = list(enabled = TRUE, radius = 4)
       ) |>
       hc_add_series(
-        name = "4-Week Rolling Avg",
+        name = "7-Day Rolling Avg",
         data = lapply(1:nrow(result), function(i) {
           list(x = result$timestamp[i], y = result$rolling_avg[i])
         }),
