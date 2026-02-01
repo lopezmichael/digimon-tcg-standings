@@ -241,7 +241,7 @@ Full card database synced from DigimonCard.io, covering BT-01 through BT-24, EX-
 - [x] ~~Fix menu bar and sidebar~~ - Renamed to "Digimon Locals Meta Tracker", added Digimon TCG logo
 - [x] ~~Correct button/filter alignment~~ - Fixed on all pages
 - [x] ~~Improve value boxes~~ - Digital Digimon aesthetic with grid patterns and circuit accents
-- [x] ~~Add Rating column to Players~~ - Weighted rating calculation visible
+- [x] ~~Add Rating column to Players~~ - Elo-style competitive rating + achievement score
 - [x] ~~App-wide loading screen~~ - "Opening Digital Gate..." sequence with themed messages
 - [x] ~~Title strip filter styling~~ - Consistent dropdowns across all pages with readable text
 
@@ -258,7 +258,7 @@ Full card database synced from DigimonCard.io, covering BT-01 through BT-24, EX-
 ### Future Features
 - [ ] Limitless TCG API integration for online tournament data
 - [ ] Matchup analysis (deck A vs deck B win rates)
-- [ ] Full Elo-style player rating system
+- [x] ~~Full Elo-style player rating system~~ - Implemented with competitive rating, achievement score, and store rating
 - [ ] Discord bot for result reporting
 - [ ] Expand to other Texas regions (Houston, Austin, San Antonio)
 - [ ] One Piece TCG support (multi-game expansion)

@@ -161,7 +161,7 @@ dashboard_ui <- tagList(
         "Top Players",
         tags$span(
           class = "rating-info-icon",
-          title = "Rating combines three factors: how often you win matches (50%), how often you finish in the top 3 (30%), and how many events you attend (20%). Higher rating = stronger overall performance.",
+          title = "Rating: Elo-style skill rating (1200-2000+) based on tournament placements and opponent strength. Achv: Achievement score based on placements, store diversity, and deck variety.",
           bsicons::bs_icon("info-circle", size = "0.9rem")
         )
       ),
