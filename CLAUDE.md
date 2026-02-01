@@ -137,19 +137,28 @@ Currently the tool is focused on the North Texas / DFW playerbase. Rethink how g
 - [ ] Regional leaderboards vs. global leaderboards
 - [ ] Admin permissions per region (who can add data for which areas?)
 
-### Player Rating Redesign (Future)
-Rethink the weighted player rating methodology on the Overview tab. Current formula is basic. Future version should consider:
-- [ ] Total number of players at each tournament (winning a 32-player event > 8-player event)
-- [ ] Placement relative to field size (percentile-based)
-- [ ] Total wins across all tournaments
-- [ ] Average skill level of tournament participants (strength of schedule)
-- [ ] Recency weighting (recent results matter more)
-- [ ] Add the calculated rating as a visible column in the Players tab
+### Rating System Implementation (Current Priority)
+See `docs/plans/2026-02-01-rating-system-design.md` for full design document.
+
+**Phase 1 - Core Implementation:**
+- [ ] Implement Competitive Rating (Elo-style with implied results)
+- [ ] Implement Achievement Score (points-based)
+- [ ] Implement Store Rating (weighted blend)
+- [ ] Add ratings to Overview > Top Players table
+- [ ] Add Store Rating to Overview > Recent Tournaments table
+- [ ] Add ratings to Players tab table
+- [ ] Add Store Rating to Stores tab table
+
+**Phase 2 - UI/UX (Future Session):**
+- [ ] Achievement Score decay - keep cumulative or add decay?
+- [ ] UI display - separate tabs, combined player profile, or both?
+- [ ] Separate leaderboards for each rating type?
+- [ ] Badge visibility - public or private to player?
+- [ ] Methodology explanation tab/page for users
 
 ### Future Features
 - [ ] Limitless TCG API integration for online tournament data
 - [ ] Matchup analysis (deck A vs deck B win rates)
-- [ ] Full Elo-style player rating system
 - [ ] Discord bot for result reporting
 - [ ] Expand to other Texas regions (Houston, Austin, San Antonio)
 - [ ] One Piece TCG support (multi-game expansion)
@@ -175,6 +184,7 @@ Semantic versioning log of all features, fixes, and changes. Update when releasi
 **Location:** `docs/plans/`
 
 Contains design documents for features before implementation. Current plans:
+- `2026-02-01-rating-system-design.md` - Competitive Rating, Achievement Score, Store Rating methodology
 - `2026-01-28-ui-refactor-design.md` - UI refactor and polish plan
 - `2026-01-27-admin-enhancement-design.md` - Admin page enhancements
 - `2026-01-27-card-cache-design.md` - Card caching solution
