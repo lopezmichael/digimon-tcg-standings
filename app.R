@@ -1365,6 +1365,11 @@ server <- function(input, output, session) {
       return(reactable(data.frame(Message = "No stores yet"), compact = TRUE))
     }
 
+    # Join with store ratings
+    str_ratings <- store_ratings()
+    stores <- merge(stores, str_ratings, by = "store_id", all.x = TRUE)
+    stores$store_rating[is.na(stores$store_rating)] <- 0
+
     # Format last event date
     stores$last_event_display <- sapply(stores$last_event, function(d) {
       if (is.na(d)) return("-")
@@ -1376,13 +1381,10 @@ server <- function(input, output, session) {
       else format(as.Date(d), "%b %d")
     })
 
-    # Format for display - include activity metrics
-    data <- stores[order(-stores$tournament_count, stores$city, stores$name),
-                   c("name", "city", "tournament_count", "avg_players", "last_event_display")]
-    names(data) <- c("Store", "City", "Events", "Avg Players", "Last Event")
-
-    # Store the store_id for row click handling
-    data$store_id <- stores[order(-stores$tournament_count, stores$city, stores$name), "store_id"]
+    # Format for display - include activity metrics and rating
+    data <- stores[order(-stores$store_rating, -stores$tournament_count, stores$city, stores$name),
+                   c("name", "city", "tournament_count", "avg_players", "store_rating", "last_event_display", "store_id")]
+    names(data) <- c("Store", "City", "Events", "Avg Players", "Rating", "Last Event", "store_id")
 
     reactable(
       data,
@@ -1390,7 +1392,7 @@ server <- function(input, output, session) {
       striped = TRUE,
       selection = "single",
       onClick = "select",
-      defaultSorted = list(Events = "desc"),
+      defaultSorted = list(Rating = "desc"),
       rowStyle = list(cursor = "pointer"),
       columns = list(
         Store = colDef(minWidth = 180),
@@ -1409,8 +1411,15 @@ server <- function(input, output, session) {
             if (value == 0) "-" else value
           }
         ),
+        Rating = colDef(
+          minWidth = 70,
+          align = "center",
+          cell = function(value) {
+            if (value == 0) "-" else value
+          }
+        ),
         `Last Event` = colDef(minWidth = 100, align = "center"),
-        store_id = colDef(show = FALSE)  # Hidden column for ID
+        store_id = colDef(show = FALSE)
       )
     )
   })
