@@ -20,7 +20,7 @@ calculate_competitive_ratings <- function(db_con, format_filter = NULL) {
   } else ""
 
   # Get all tournament results with player counts and dates
-  results <- DBI::DBI::dbGetQuery(db_con, sprintf("
+  results <- DBI::dbGetQuery(db_con, sprintf("
     SELECT r.tournament_id, r.player_id, r.placement,
            t.event_date, t.player_count, t.rounds,
            p.display_name
