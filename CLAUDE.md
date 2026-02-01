@@ -298,6 +298,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.13.0** - Mobile UI Polish (Desktop & Mobile Complete)
+**v0.14.0** - Rating System (Elo-style Competitive Rating, Achievement Score, Store Rating)
 
 See `CHANGELOG.md` for full version history.
