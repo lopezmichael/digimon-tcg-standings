@@ -4,6 +4,58 @@ This log tracks development decisions, blockers, and technical notes for the DFW
 
 ---
 
+## 2026-02-01: Rating System Implementation
+
+### Summary
+Implemented comprehensive rating system with three distinct scores:
+1. **Competitive Rating** - Elo-style skill rating (1200-2000+)
+2. **Achievement Score** - Points-based engagement metric
+3. **Store Rating** - Venue quality score (0-100)
+
+### Design Documents
+- Full methodology: `docs/plans/2026-02-01-rating-system-design.md`
+- Implementation plan: `docs/plans/2026-02-01-rating-system-implementation.md`
+
+### Key Technical Decisions
+
+**Elo-Style Competitive Rating**
+- Uses "implied results" from placements (place 3rd = beat everyone 4th+, lost to 1st-2nd)
+- 5 iterative passes for rating convergence (strength of schedule)
+- 4-month half-life decay keeps ratings current
+- Round multiplier: 1.0x (3 rounds) to 1.4x (7+ rounds)
+- K-factor: 48 for provisional (< 5 events), 24 for established
+
+**Achievement Score**
+- Base points: 1st=50, 2nd=30, 3rd=20, Top4=15, Top8=10, Participated=5
+- Size multiplier: 1.0x (8-11) to 2.0x (32+ players)
+- Diversity bonuses: store variety (+10/25/50), deck variety (+15), format variety (+10)
+
+**Store Rating**
+- Weighted blend: 50% player strength + 30% attendance + 20% activity
+- Based on last 6 months of data
+- Normalized to 0-100 scale
+
+**Why calculate ratings in-app vs pre-computed?**
+- Data volume is small (~100 results, ~50 players)
+- Full Elo calculation takes milliseconds
+- Reactive system ensures ratings always fresh
+- No need for background jobs or cached tables
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `R/ratings.R` | New module with three rating calculation functions |
+| `app.R` | Source ratings, add reactive calculations, update 4 tables |
+| `views/dashboard-ui.R` | Updated tooltip text for new rating explanation |
+
+### Tables Updated
+- Overview > Top Players: Rating (Elo) + Achv columns
+- Overview > Recent Tournaments: Store Rating column
+- Players tab: Rating (Elo) + Achv columns
+- Stores tab: Rating column
+
+---
+
 ## 2026-01-31: Mobile UI Polish - Complete
 
 ### Summary

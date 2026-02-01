@@ -25,6 +25,7 @@ library(brand.yml)
 # Load modules
 source("R/db_connection.R")
 source("R/digimoncard_api.R")
+source("R/ratings.R")
 
 # Load environment variables
 if (file.exists(".env")) {
@@ -457,6 +458,39 @@ server <- function(input, output, session) {
   source("server/admin-players-server.R", local = TRUE)
 
   # ---------------------------------------------------------------------------
+  # Rating Calculations (reactive)
+  # ---------------------------------------------------------------------------
+
+  # Reactive: Calculate competitive ratings for all players
+  player_competitive_ratings <- reactive({
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+      return(data.frame(player_id = integer(), competitive_rating = numeric()))
+    }
+    # Invalidate when results change
+    rv$results_refresh
+    calculate_competitive_ratings(rv$db_con)
+  })
+
+  # Reactive: Calculate achievement scores for all players
+  player_achievement_scores <- reactive({
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+      return(data.frame(player_id = integer(), achievement_score = numeric()))
+    }
+    rv$results_refresh
+    calculate_achievement_scores(rv$db_con)
+  })
+
+  # Reactive: Calculate store ratings
+  store_ratings <- reactive({
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+      return(data.frame(store_id = integer(), store_rating = numeric()))
+    }
+    rv$results_refresh
+    player_rtgs <- player_competitive_ratings()
+    calculate_store_ratings(rv$db_con, player_rtgs)
+  })
+
+  # ---------------------------------------------------------------------------
   # Public Dashboard Data
   # ---------------------------------------------------------------------------
 
@@ -715,15 +749,16 @@ server <- function(input, output, session) {
   }
 
   # Recent tournaments (filters by selected stores, format, date range)
-  # Shows Winner column and formatted Type (no Format column)
+  # Shows Winner column, formatted Type, and Store Rating
   output$recent_tournaments <- renderReactable({
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     filters <- build_dashboard_filters("t")
 
-    # Query with winner (player who got placement = 1)
+    # Query with winner (player who got placement = 1) and store_id for rating join
     query <- sprintf("
-      SELECT s.name as Store, t.event_date as Date, t.event_type as Type,
+      SELECT t.tournament_id, s.store_id, s.name as Store,
+             t.event_date as Date, t.event_type as Type,
              t.player_count as Players, p.display_name as Winner
       FROM tournaments t
       JOIN stores s ON t.store_id = s.store_id
@@ -738,6 +773,14 @@ server <- function(input, output, session) {
     if (nrow(data) == 0) {
       return(reactable(data.frame(Message = "No tournaments yet"), compact = TRUE))
     }
+
+    # Join with store ratings
+    str_ratings <- store_ratings()
+    data <- merge(data, str_ratings, by = "store_id", all.x = TRUE)
+    data$store_rating[is.na(data$store_rating)] <- 0
+
+    # Re-sort by date (merge may have changed order)
+    data <- data[order(as.Date(data$Date), decreasing = TRUE), ]
 
     # Format event type nicely
     event_type_labels <- c(
@@ -758,79 +801,79 @@ server <- function(input, output, session) {
 
     reactable(data, compact = TRUE, striped = TRUE,
       columns = list(
+        tournament_id = colDef(show = FALSE),
+        store_id = colDef(show = FALSE),
         Store = colDef(minWidth = 120),
         Date = colDef(minWidth = 90),
         Type = colDef(minWidth = 80),
         Players = colDef(minWidth = 60, align = "center"),
-        Winner = colDef(minWidth = 100)
+        Winner = colDef(minWidth = 100),
+        store_rating = colDef(
+          name = "Store",
+          minWidth = 60,
+          align = "center",
+          cell = function(value) if (value == 0) "-" else value
+        )
       )
     )
   })
 
   # Top players (filters by selected stores, format, date range)
-  # Shows: Player, Events, Event Wins, Top 3 Placements, Rating (with tooltip)
+  # Shows: Player, Events, Event Wins, Top 3, Rating (Elo), Achievement
   output$top_players <- renderReactable({
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     filters <- build_dashboard_filters("t")
 
-    # Query players with stats needed for weighted rating
+    # Query players with basic stats
     result <- dbGetQuery(rv$db_con, sprintf("
-      SELECT p.display_name as Player,
+      SELECT p.player_id,
+             p.display_name as Player,
              COUNT(DISTINCT r.tournament_id) as Events,
-             SUM(r.wins) as total_wins,
-             SUM(r.losses) as total_losses,
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as event_wins,
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_placements,
-             ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_placements
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
       WHERE 1=1 %s %s %s %s
       GROUP BY p.player_id, p.display_name
       HAVING COUNT(DISTINCT r.tournament_id) > 0
-      ORDER BY COUNT(DISTINCT r.tournament_id) DESC
-      LIMIT 20
     ", filters$store, filters$format, filters$event_type, filters$date))
 
     if (nrow(result) == 0) {
       return(reactable(data.frame(Message = "No player data yet"), compact = TRUE))
     }
 
-    # Handle NA win percentages
-    result$win_pct[is.na(result$win_pct)] <- 0
+    # Join with competitive ratings
+    comp_ratings <- player_competitive_ratings()
+    result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
+    result$competitive_rating[is.na(result$competitive_rating)] <- 1500
 
-    # Calculate weighted rating: (win% * 0.5) + (top3_rate * 30) + (events_bonus)
-    # This rewards consistent performance, top finishes, and attendance
-    result$top3_rate <- result$top3_placements / result$Events
-    result$events_bonus <- pmin(result$Events * 2, 20)  # Cap at 20 points
-    result$weighted_rating <- round(
-      (result$win_pct * 0.5) +           # 50% weight on win rate
-      (result$top3_rate * 30) +          # 30 points max for top 3 rate
-      result$events_bonus,               # Up to 20 points for attendance
-      1
-    )
+    # Join with achievement scores
+    ach_scores <- player_achievement_scores()
+    result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
+    result$achievement_score[is.na(result$achievement_score)] <- 0
 
-    # Sort by weighted rating
-    result <- result[order(-result$weighted_rating), ]
+    # Sort by competitive rating
+    result <- result[order(-result$competitive_rating), ]
     result <- head(result, 10)
 
     reactable(result, compact = TRUE, striped = TRUE,
       columns = list(
+        player_id = colDef(show = FALSE),
         Player = colDef(minWidth = 120),
         Events = colDef(minWidth = 60, align = "center"),
-        total_wins = colDef(show = FALSE),
-        total_losses = colDef(show = FALSE),
-        event_wins = colDef(name = "Event Wins", minWidth = 80, align = "center"),
+        event_wins = colDef(name = "Wins", minWidth = 60, align = "center"),
         top3_placements = colDef(name = "Top 3", minWidth = 60, align = "center"),
-        win_pct = colDef(show = FALSE),
-        top3_rate = colDef(show = FALSE),
-        events_bonus = colDef(show = FALSE),
-        weighted_rating = colDef(
+        competitive_rating = colDef(
           name = "Rating",
           minWidth = 70,
-          align = "center",
-          cell = function(value) sprintf("%.1f", value)
+          align = "center"
+        ),
+        achievement_score = colDef(
+          name = "Achv",
+          minWidth = 60,
+          align = "center"
         )
       )
     )
@@ -1322,6 +1365,11 @@ server <- function(input, output, session) {
       return(reactable(data.frame(Message = "No stores yet"), compact = TRUE))
     }
 
+    # Join with store ratings
+    str_ratings <- store_ratings()
+    stores <- merge(stores, str_ratings, by = "store_id", all.x = TRUE)
+    stores$store_rating[is.na(stores$store_rating)] <- 0
+
     # Format last event date
     stores$last_event_display <- sapply(stores$last_event, function(d) {
       if (is.na(d)) return("-")
@@ -1333,13 +1381,10 @@ server <- function(input, output, session) {
       else format(as.Date(d), "%b %d")
     })
 
-    # Format for display - include activity metrics
-    data <- stores[order(-stores$tournament_count, stores$city, stores$name),
-                   c("name", "city", "tournament_count", "avg_players", "last_event_display")]
-    names(data) <- c("Store", "City", "Events", "Avg Players", "Last Event")
-
-    # Store the store_id for row click handling
-    data$store_id <- stores[order(-stores$tournament_count, stores$city, stores$name), "store_id"]
+    # Format for display - include activity metrics and rating
+    data <- stores[order(-stores$store_rating, -stores$tournament_count, stores$city, stores$name),
+                   c("name", "city", "tournament_count", "avg_players", "store_rating", "last_event_display", "store_id")]
+    names(data) <- c("Store", "City", "Events", "Avg Players", "Rating", "Last Event", "store_id")
 
     reactable(
       data,
@@ -1347,7 +1392,7 @@ server <- function(input, output, session) {
       striped = TRUE,
       selection = "single",
       onClick = "select",
-      defaultSorted = list(Events = "desc"),
+      defaultSorted = list(Rating = "desc"),
       rowStyle = list(cursor = "pointer"),
       columns = list(
         Store = colDef(minWidth = 180),
@@ -1366,8 +1411,15 @@ server <- function(input, output, session) {
             if (value == 0) "-" else value
           }
         ),
+        Rating = colDef(
+          minWidth = 70,
+          align = "center",
+          cell = function(value) {
+            if (value == 0) "-" else value
+          }
+        ),
         `Last Event` = colDef(minWidth = 100, align = "center"),
-        store_id = colDef(show = FALSE)  # Hidden column for ID
+        store_id = colDef(show = FALSE)
       )
     )
   })
@@ -2094,7 +2146,7 @@ server <- function(input, output, session) {
   })
 
   output$player_standings <- renderReactable({
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     # Build filters
     search_filter <- if (!is.null(input$players_search) && nchar(trimws(input$players_search)) > 0) {
@@ -2114,8 +2166,7 @@ server <- function(input, output, session) {
              SUM(r.wins) as W, SUM(r.losses) as L, SUM(r.ties) as T,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%',
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1st',
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3',
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_count
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3'
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -2128,20 +2179,18 @@ server <- function(input, output, session) {
       return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
     }
 
-    # Calculate weighted rating
-    result$win_pct <- result$`Win %`
-    result$win_pct[is.na(result$win_pct)] <- 0
-    result$top3_rate <- result$top3_count / result$Events
-    result$events_bonus <- pmin(result$Events * 2, 20)
-    result$Rating <- round(
-      (result$win_pct * 0.5) +
-      (result$top3_rate * 30) +
-      result$events_bonus,
-      1
-    )
+    # Join with competitive ratings
+    comp_ratings <- player_competitive_ratings()
+    result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
+    result$competitive_rating[is.na(result$competitive_rating)] <- 1500
 
-    # Sort by rating
-    result <- result[order(-result$Rating), ]
+    # Join with achievement scores
+    ach_scores <- player_achievement_scores()
+    result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
+    result$achievement_score[is.na(result$achievement_score)] <- 0
+
+    # Sort by competitive rating
+    result <- result[order(-result$competitive_rating), ]
 
     reactable(
       result,
@@ -2162,11 +2211,16 @@ server <- function(input, output, session) {
         `Win %` = colDef(minWidth = 70, align = "center"),
         `1st` = colDef(minWidth = 50, align = "center"),
         `Top 3` = colDef(minWidth = 60, align = "center"),
-        top3_count = colDef(show = FALSE),
-        win_pct = colDef(show = FALSE),
-        top3_rate = colDef(show = FALSE),
-        events_bonus = colDef(show = FALSE),
-        Rating = colDef(minWidth = 70, align = "center")
+        competitive_rating = colDef(
+          name = "Rating",
+          minWidth = 70,
+          align = "center"
+        ),
+        achievement_score = colDef(
+          name = "Achv",
+          minWidth = 60,
+          align = "center"
+        )
       )
     )
   })

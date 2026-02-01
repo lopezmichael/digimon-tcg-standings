@@ -140,14 +140,14 @@ Currently the tool is focused on the North Texas / DFW playerbase. Rethink how g
 ### Rating System Implementation (Current Priority)
 See `docs/plans/2026-02-01-rating-system-design.md` for full design document.
 
-**Phase 1 - Core Implementation:**
-- [ ] Implement Competitive Rating (Elo-style with implied results)
-- [ ] Implement Achievement Score (points-based)
-- [ ] Implement Store Rating (weighted blend)
-- [ ] Add ratings to Overview > Top Players table
-- [ ] Add Store Rating to Overview > Recent Tournaments table
-- [ ] Add ratings to Players tab table
-- [ ] Add Store Rating to Stores tab table
+**Phase 1 - Core Implementation: COMPLETE**
+- [x] ~~Implement Competitive Rating (Elo-style with implied results)~~ - `R/ratings.R`
+- [x] ~~Implement Achievement Score (points-based)~~ - `R/ratings.R`
+- [x] ~~Implement Store Rating (weighted blend)~~ - `R/ratings.R`
+- [x] ~~Add ratings to Overview > Top Players table~~ - Rating + Achv columns
+- [x] ~~Add Store Rating to Overview > Recent Tournaments table~~
+- [x] ~~Add ratings to Players tab table~~ - Rating + Achv columns
+- [x] ~~Add Store Rating to Stores tab table~~
 
 **Phase 2 - UI/UX (Future Session):**
 - [ ] Achievement Score decay - keep cumulative or add decay?

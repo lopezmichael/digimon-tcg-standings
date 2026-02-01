@@ -11,6 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.14.0] - 2026-02-01 - Rating System
+
+### Added
+- **Competitive Player Rating**: Elo-style skill rating (1200-2000+ scale) based on tournament placements and opponent strength
+  - Uses "implied results" from placements (place 3rd = beat everyone below, lost to everyone above)
+  - 5 iterative passes for accurate strength-of-schedule calculation
+  - 4-month half-life decay keeps ratings responsive to current form
+  - Round multiplier rewards performance at longer events (1.0x-1.4x)
+  - Provisional period (K=48) for first 5 events, then stabilizes (K=24)
+- **Achievement Score**: Points-based engagement metric
+  - Placement points scaled by tournament size (1st = 50-100 pts, participation = 5-10 pts)
+  - Diversity bonuses: store variety (+10/25/50), deck variety (+15), format variety (+10)
+- **Store Rating**: Venue quality score (0-100 scale)
+  - Weighted blend: 50% player strength + 30% attendance + 20% activity
+  - Based on last 6 months of tournament data
+- **New R Module**: `R/ratings.R` containing all rating calculation functions
+
+### Changed
+- **Overview > Top Players**: Now shows Elo Rating and Achievement Score (replaces old weighted rating)
+- **Overview > Recent Tournaments**: Now includes Store Rating column
+- **Players Tab**: Now shows Elo Rating and Achievement Score columns
+- **Stores Tab**: Now shows Store Rating column, sorted by rating by default
+- **Rating Tooltip**: Updated to explain new Elo-style rating and achievement score
+
+### Technical
+- Ratings calculated reactively in-app (fast enough for real-time)
+- Full design methodology documented in `docs/plans/2026-02-01-rating-system-design.md`
+
+---
+
 ## [0.13.0] - 2026-01-31 - Mobile UI Polish
 
 ### Added
