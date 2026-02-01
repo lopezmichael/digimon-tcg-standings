@@ -2137,7 +2137,7 @@ server <- function(input, output, session) {
   })
 
   output$player_standings <- renderReactable({
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+    if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     # Build filters
     search_filter <- if (!is.null(input$players_search) && nchar(trimws(input$players_search)) > 0) {
@@ -2157,8 +2157,7 @@ server <- function(input, output, session) {
              SUM(r.wins) as W, SUM(r.losses) as L, SUM(r.ties) as T,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%',
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1st',
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3',
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_count
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3'
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -2171,20 +2170,18 @@ server <- function(input, output, session) {
       return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
     }
 
-    # Calculate weighted rating
-    result$win_pct <- result$`Win %`
-    result$win_pct[is.na(result$win_pct)] <- 0
-    result$top3_rate <- result$top3_count / result$Events
-    result$events_bonus <- pmin(result$Events * 2, 20)
-    result$Rating <- round(
-      (result$win_pct * 0.5) +
-      (result$top3_rate * 30) +
-      result$events_bonus,
-      1
-    )
+    # Join with competitive ratings
+    comp_ratings <- player_competitive_ratings()
+    result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
+    result$competitive_rating[is.na(result$competitive_rating)] <- 1500
 
-    # Sort by rating
-    result <- result[order(-result$Rating), ]
+    # Join with achievement scores
+    ach_scores <- player_achievement_scores()
+    result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
+    result$achievement_score[is.na(result$achievement_score)] <- 0
+
+    # Sort by competitive rating
+    result <- result[order(-result$competitive_rating), ]
 
     reactable(
       result,
@@ -2205,11 +2202,16 @@ server <- function(input, output, session) {
         `Win %` = colDef(minWidth = 70, align = "center"),
         `1st` = colDef(minWidth = 50, align = "center"),
         `Top 3` = colDef(minWidth = 60, align = "center"),
-        top3_count = colDef(show = FALSE),
-        win_pct = colDef(show = FALSE),
-        top3_rate = colDef(show = FALSE),
-        events_bonus = colDef(show = FALSE),
-        Rating = colDef(minWidth = 70, align = "center")
+        competitive_rating = colDef(
+          name = "Rating",
+          minWidth = 70,
+          align = "center"
+        ),
+        achievement_score = colDef(
+          name = "Achv",
+          minWidth = 60,
+          align = "center"
+        )
       )
     )
   })
