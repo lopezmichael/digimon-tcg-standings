@@ -303,7 +303,7 @@ ui <- page_fillable(
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M6.10793 2.53467 0.851879 3.94374c-0.253168 0.06787 -0.403409 0.32809 -0.335603 0.58128L2.82425 13.1429c0.06783 0.2532 0.32817 0.4035 0.58143 0.3356l3.01003 -0.8069" stroke-width="1"></path>
         </svg>')
       ),
-      span("Digimon Locals Meta Tracker", class = "header-title-text"),
+      span("Digimon TCG Tracker", class = "header-title-text"),
       span(class = "header-badge", "BETA"),
       span(class = "header-circuit-line")
     ),
@@ -325,6 +325,7 @@ ui <- page_fillable(
       title = NULL,  # Remove the "Menu" title
       width = 220,
       bg = "#0A3055",
+      open = "desktop",  # Closed on mobile by default
 
       # Digimon TCG Logo (saved locally in www/)
       div(

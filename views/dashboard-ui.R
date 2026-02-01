@@ -50,7 +50,11 @@ dashboard_ui <- tagList(
   div(
     class = "overview-value-boxes mb-3",
     layout_columns(
-      col_widths = c(3, 3, 3, 3),
+      col_widths = breakpoints(
+        sm = c(12, 12, 12, 12),
+        md = c(6, 6, 6, 6),
+        lg = c(3, 3, 3, 3)
+      ),
       # Box 1: Tournaments (format-filtered)
       div(
         class = "value-box-digital vb-tournaments",

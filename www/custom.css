@@ -16,7 +16,7 @@
   color: #FFFFFF;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   margin: -1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
   width: calc(100% + 2rem);
   min-height: 48px;
   max-height: 56px;
@@ -354,10 +354,47 @@
   padding: 0;
 }
 
+/* Reduce whitespace between header and content */
+/* Target bslib spacing classes on body and containers */
+body.bslib-gap-spacing {
+  gap: 0.25rem !important;
+}
+
+.bslib-mb-spacing {
+  margin-bottom: 0 !important;
+}
+
+.bslib-sidebar-layout {
+  margin-top: 0 !important;
+  gap: 0 !important;
+}
+
+.bslib-sidebar-layout > .main,
+.bslib-sidebar-layout > main,
+.bslib-sidebar-layout > [role="main"],
+.bslib-sidebar-layout > :not(.sidebar) {
+  padding-top: 0.25rem !important;
+}
+
 /* Responsive header */
 @media (max-width: 576px) {
   .app-header {
     padding: 0.5rem 1rem;
+    margin-bottom: 0.125rem;
+  }
+
+  /* Even tighter gap on mobile */
+  body.bslib-gap-spacing {
+    gap: 0.125rem !important;
+  }
+
+  /* Tighter padding on mobile */
+  .bslib-sidebar-layout > .main,
+  .bslib-sidebar-layout > main,
+  .bslib-sidebar-layout > [role="main"],
+  .bslib-sidebar-layout > :not(.sidebar) {
+    padding: 0.25rem 0.5rem !important;
+    padding-top: 0.125rem !important;
   }
 
   .header-title-text {
@@ -746,26 +783,71 @@
   }
 }
 
-/* Mobile - full width stacked */
+/* Mobile - full width stacked with inline reset button */
 @media (max-width: 768px) {
-  .page-title-strip .title-strip-content {
+  .page-title-strip .title-strip-content,
+  .dashboard-title-strip .title-strip-content {
     flex-direction: column;
     gap: 0.5rem;
   }
 
   .page-title-strip .title-strip-controls {
     width: 100%;
-    flex-direction: column;
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
     gap: 0.5rem;
+    align-items: center;
   }
 
-  .page-title-strip .title-strip-search,
-  .page-title-strip .title-strip-select {
+  /* ========== DASHBOARD (no search - 2 rows) ========== */
+  /* When there's NO search, first select spans full width */
+  .page-title-strip .title-strip-controls:not(:has(.title-strip-search)) > .title-strip-select:first-child {
+    grid-column: 1 / -1;
     width: 100%;
   }
 
-  .page-title-strip .title-strip-text {
+  /* ========== OTHER PAGES (has search - 3 rows) ========== */
+  /* Search spans full width - Row 1 */
+  .page-title-strip .title-strip-search {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  /* When there IS a search, the format dropdown (2nd child) spans full width - Row 2 */
+  .page-title-strip .title-strip-controls:has(.title-strip-search) > .title-strip-select:nth-child(2) {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  /* All dropdowns fill their cell */
+  .page-title-strip .title-strip-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Reset button in last column */
+  .page-title-strip .btn-title-strip-reset {
+    justify-self: end;
+  }
+
+  .page-title-strip .title-strip-text,
+  .dashboard-title-strip .title-strip-text {
     font-size: 0.9rem;
+  }
+
+  /* Store page buttons - keep Apply/Clear on same row */
+  .page-title-strip .title-strip-controls .btn-sm,
+  .dashboard-title-strip .title-strip-controls .btn-sm {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  /* When there are multiple buttons side by side, keep them together */
+  .page-title-strip .title-strip-controls .btn-primary,
+  .page-title-strip .title-strip-controls .btn-outline-secondary {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 }
 
@@ -948,18 +1030,9 @@
     repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0px, transparent 1px, transparent 20px);
 }
 
-/* Mobile responsive */
+/* Mobile responsive - let bslib handle grid layout via breakpoints() */
 @media (max-width: 768px) {
-  .overview-value-boxes {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.5rem !important;
-  }
-
-  .overview-value-boxes > div {
-    width: 100% !important;
-  }
-
+  /* Only style adjustments, no grid overrides */
   .value-box-digital {
     min-height: 80px;
   }
@@ -981,16 +1054,8 @@
     gap: 0.5rem;
   }
 
-  .title-strip-controls {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-
-  .title-strip-select {
-    width: 100%;
-  }
+  /* Note: title-strip-controls flex behavior is defined earlier in the file
+     with flex-wrap: wrap to keep reset button inline */
 
   .title-strip-select .shiny-input-container {
     max-width: 100% !important;
@@ -1003,16 +1068,66 @@
 }
 
 @media (max-width: 576px) {
+  /* Value box text truncation on mobile */
+  .vb-label {
+    display: block !important;
+    font-size: 0.55rem;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Hide icon in label on mobile to save space */
+  .vb-label-icon {
+    display: none;
+  }
+
+  .vb-value {
+    display: block !important;
+    font-size: 1rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vb-value-deck {
+    font-size: 0.8rem !important;
+    -webkit-line-clamp: 1;
+  }
+
+  .vb-subtitle {
+    display: block !important;
+    font-size: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vb-content {
+    padding: 0.5rem 0.75rem;
+    overflow: hidden;
+  }
+
+  /* Ensure value boxes don't overflow */
+  .value-box-digital {
+    min-height: 70px;
+  }
+}
+
+/* Very narrow screens - text adjustments only, bslib handles layout */
+@media (max-width: 480px) {
+  .value-box-digital {
+    min-height: 60px;
+  }
+
   .vb-label {
     font-size: 0.6rem;
   }
 
   .vb-value {
     font-size: 1.1rem !important;
-  }
-
-  .vb-subtitle {
-    font-size: 0.65rem;
   }
 }
 
@@ -1608,6 +1723,28 @@ a:hover, .nav-link:hover {
 
 [data-bs-theme="dark"] .tournament-summary-bar .summary-item {
   color: #E2E8F0;
+}
+
+/* Mobile: Stack tournament summary into rows */
+@media (max-width: 768px) {
+  .tournament-summary-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .tournament-summary-bar .summary-divider {
+    display: none;
+  }
+
+  .tournament-summary-bar .summary-icon {
+    font-size: 1rem;
+  }
+
+  .tournament-summary-bar .summary-item {
+    font-size: 0.9rem;
+  }
 }
 
 /* =============================================================================
@@ -2601,6 +2738,8 @@ button.mapbox-gl-draw_point {
   .bslib-sidebar-layout > .sidebar {
     max-height: fit-content !important;
     height: auto !important;
+    /* Ensure background color on mobile overlay */
+    background-color: #0A3055 !important;
   }
 
   .bslib-sidebar-layout > .sidebar.show {
@@ -2629,18 +2768,8 @@ button.mapbox-gl-draw_point {
   }
 }
 
-/* 4b. Mobile Value Boxes - 2x2 grid */
+/* 4b. Mobile Value Boxes - let bslib handle grid via breakpoints() */
 @media (max-width: 768px) {
-  .overview-value-boxes {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.5rem !important;
-  }
-
-  .overview-value-boxes > div {
-    width: 100% !important;
-  }
-
   .bslib-value-box {
     min-height: 70px;
   }
@@ -2775,6 +2904,41 @@ button.mapbox-gl-draw_point {
   .header-action-btn {
     padding: 0.25rem 0.4rem;
     font-size: 0.75rem;
+  }
+
+  /* Hide decorative elements on mobile to prevent overlap */
+  .header-badge {
+    display: none;
+  }
+
+  .header-circuit-line {
+    display: none;
+  }
+
+  /* Hide circuit node and line pseudo-elements on mobile */
+  .app-header::before,
+  .app-header::after {
+    display: none;
+  }
+
+  /* Reduce header icon size on mobile */
+  .header-icon {
+    font-size: 1rem !important;
+  }
+
+  .header-icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  /* Reduce gap in header-title on mobile */
+  .header-title {
+    gap: 0.5rem;
+  }
+
+  /* Reduce gap in header-actions on mobile */
+  .header-actions {
+    gap: 0.5rem;
   }
 
   /* Smaller page titles on mobile */
