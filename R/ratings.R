@@ -20,7 +20,7 @@ calculate_competitive_ratings <- function(db_con, format_filter = NULL) {
   } else ""
 
   # Get all tournament results with player counts and dates
-  results <- dbGetQuery(db_con, sprintf("
+  results <- DBI::DBI::dbGetQuery(db_con, sprintf("
     SELECT r.tournament_id, r.player_id, r.placement,
            t.event_date, t.player_count, t.rounds,
            p.display_name
@@ -39,7 +39,7 @@ calculate_competitive_ratings <- function(db_con, format_filter = NULL) {
   }
 
   # Initialize all players at 1500
- players <- unique(results$player_id)
+  players <- unique(results$player_id)
   ratings <- setNames(rep(1500, length(players)), as.character(players))
   events_played <- setNames(rep(0, length(players)), as.character(players))
 
@@ -137,7 +137,7 @@ calculate_competitive_ratings <- function(db_con, format_filter = NULL) {
 calculate_achievement_scores <- function(db_con) {
 
   # Get all results with tournament info
-  results <- dbGetQuery(db_con, "
+  results <- DBI::dbGetQuery(db_con, "
     SELECT r.player_id, r.tournament_id, r.placement, r.archetype_id,
            t.player_count, t.store_id, t.format
     FROM results r
@@ -220,7 +220,7 @@ calculate_store_ratings <- function(db_con, player_ratings) {
   # Get store tournament activity (last 6 months)
   six_months_ago <- Sys.Date() - 180
 
-  store_stats <- dbGetQuery(db_con, sprintf("
+  store_stats <- DBI::dbGetQuery(db_con, sprintf("
     SELECT s.store_id, s.name,
            COUNT(DISTINCT t.tournament_id) as event_count,
            AVG(t.player_count) as avg_attendance
@@ -236,7 +236,7 @@ calculate_store_ratings <- function(db_con, player_ratings) {
   }
 
   # Get player ratings per store (last 6 months)
-  store_players <- dbGetQuery(db_con, sprintf("
+  store_players <- DBI::dbGetQuery(db_con, sprintf("
     SELECT DISTINCT t.store_id, r.player_id
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
