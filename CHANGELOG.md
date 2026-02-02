@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Meta Chart Color Sorting (I13)**: "Meta Share Over Time" chart series sorted by deck color for visual grouping (Red, Blue, Yellow, Green, Purple, Black, White, Multi, Other)
 - **Modal Naming Consistency (I12)**: "1st Places" → "1sts" across all modals
 - **Top Pilots Table (I12)**: Pilot names now clickable links to player modals
+- **Sidebar Tab Order**: Public tabs reordered by engagement (Overview, Players, Meta, Tournaments, Stores); Admin tabs reordered by frequency of use
+- **Admin Tab Naming**: "Manage X" renamed to "Edit X" for shorter labels
+- **Recent Tournaments Table (Overview)**: Removed Type column, optimized column widths so Store names have more room
 
 ### Fixed
 - **Sidebar Navigation Sync**: Sidebar now correctly highlights active tab when navigating programmatically (via Overview clicks or cross-modal links)
