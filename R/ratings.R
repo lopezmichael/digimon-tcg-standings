@@ -137,11 +137,13 @@ calculate_competitive_ratings <- function(db_con, format_filter = NULL) {
 calculate_achievement_scores <- function(db_con) {
 
   # Get all results with tournament info
+  # Include archetype_name to filter out UNKNOWN for deck variety calculation
   results <- DBI::dbGetQuery(db_con, "
     SELECT r.player_id, r.tournament_id, r.placement, r.archetype_id,
-           t.player_count, t.store_id, t.format
+           t.player_count, t.store_id, t.format, da.archetype_name
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     WHERE r.placement IS NOT NULL
   ")
 
@@ -187,7 +189,10 @@ calculate_achievement_scores <- function(db_con) {
       else 0
 
     # Deck variety bonus (3+ different decks)
-    unique_decks <- length(unique(na.omit(player_results$archetype_id)))
+    # Exclude UNKNOWN archetype from variety count
+    known_decks <- player_results[!is.na(player_results$archetype_name) &
+                                  player_results$archetype_name != "UNKNOWN", ]
+    unique_decks <- length(unique(known_decks$archetype_id))
     deck_bonus <- if (unique_decks >= 3) 15 else 0
 
     # Format variety bonus (2+ formats)

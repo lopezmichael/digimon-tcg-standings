@@ -569,13 +569,14 @@ server <- function(input, output, session) {
     filters <- build_dashboard_filters("t")
 
     # Always use filtered query for consistency
+    # Exclude UNKNOWN archetype from analytics
     result <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_name, da.display_card_id, COUNT(r.result_id) as entries,
              ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 1) as meta_share
       FROM deck_archetypes da
       JOIN results r ON da.archetype_id = r.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s %s
+      WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s
       GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
       ORDER BY entries DESC
       LIMIT 1
@@ -634,24 +635,26 @@ server <- function(input, output, session) {
     ", filters$format, filters$event_type, filters$store))$median_date
 
     # Calculate meta share for older tournaments
+    # Exclude UNKNOWN archetype from analytics
     older_meta <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_name, da.display_card_id,
              ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 2) as meta_share
       FROM deck_archetypes da
       JOIN results r ON da.archetype_id = r.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE t.event_date < '%s' %s %s %s
+      WHERE t.event_date < '%s' AND da.archetype_name != 'UNKNOWN' %s %s %s
       GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
     ", median_date, filters$format, filters$event_type, filters$store))
 
     # Calculate meta share for newer tournaments
+    # Exclude UNKNOWN archetype from analytics
     newer_meta <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_name, da.display_card_id,
              ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 2) as meta_share
       FROM deck_archetypes da
       JOIN results r ON da.archetype_id = r.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE t.event_date >= '%s' %s %s %s
+      WHERE t.event_date >= '%s' AND da.archetype_name != 'UNKNOWN' %s %s %s
       GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
     ", median_date, filters$format, filters$event_type, filters$store))
 
@@ -891,6 +894,7 @@ server <- function(input, output, session) {
     filters <- build_dashboard_filters("t")
 
     # Query results by week and archetype
+    # Exclude UNKNOWN archetype from analytics
     result <- dbGetQuery(rv$db_con, sprintf("
       SELECT date_trunc('week', t.event_date) as week_start,
              da.archetype_name,
@@ -899,7 +903,7 @@ server <- function(input, output, session) {
       FROM results r
       JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s %s %s
+      WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
       GROUP BY date_trunc('week', t.event_date), da.archetype_id, da.archetype_name, da.primary_color
       ORDER BY week_start, entries DESC
     ", filters$store, filters$format, filters$event_type, filters$date))
@@ -1075,6 +1079,7 @@ server <- function(input, output, session) {
     }
 
     # Query top decks with 1st place finishes
+    # Exclude UNKNOWN archetype from analytics
     result <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_name, da.display_card_id, da.primary_color,
              COUNT(r.result_id) as times_played,
@@ -1082,7 +1087,7 @@ server <- function(input, output, session) {
       FROM deck_archetypes da
       JOIN results r ON da.archetype_id = r.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s %s %s
+      WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
       GROUP BY da.archetype_id, da.archetype_name, da.display_card_id, da.primary_color
       HAVING COUNT(r.result_id) >= 1
       ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(r.result_id) DESC
@@ -1164,6 +1169,7 @@ server <- function(input, output, session) {
     filters <- build_dashboard_filters("t")
 
     # Query conversion rate (top 3 finishes / total entries) - minimum 2 entries
+    # Exclude UNKNOWN archetype from analytics
     result <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_name as name, da.primary_color as color,
              COUNT(r.result_id) as entries,
@@ -1172,7 +1178,7 @@ server <- function(input, output, session) {
       FROM results r
       JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s %s %s
+      WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
       GROUP BY da.archetype_id, da.archetype_name, da.primary_color
       HAVING COUNT(r.result_id) >= 2
       ORDER BY conversion DESC
@@ -1228,6 +1234,7 @@ server <- function(input, output, session) {
     filters <- build_dashboard_filters("t")
 
     # Query color distribution - single colors + "Multi" for dual-color decks
+    # Exclude UNKNOWN archetype from analytics
     result <- dbGetQuery(rv$db_con, sprintf("
       SELECT
         CASE WHEN da.secondary_color IS NOT NULL THEN 'Multi' ELSE da.primary_color END as color,
@@ -1235,7 +1242,7 @@ server <- function(input, output, session) {
       FROM results r
       JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s %s %s
+      WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
       GROUP BY CASE WHEN da.secondary_color IS NOT NULL THEN 'Multi' ELSE da.primary_color END
       ORDER BY count DESC
     ", filters$store, filters$format, filters$event_type, filters$date))
@@ -2291,13 +2298,14 @@ server <- function(input, output, session) {
     ", player_id))
 
     # Get favorite decks (most played)
+    # Exclude UNKNOWN archetype from player profiles
     favorite_decks <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_name as Deck, da.primary_color as color,
              COUNT(*) as Times,
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
       FROM results r
       JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE r.player_id = %d
+      WHERE r.player_id = %d AND da.archetype_name != 'UNKNOWN'
       GROUP BY da.archetype_id, da.archetype_name, da.primary_color
       ORDER BY COUNT(*) DESC
       LIMIT 5
@@ -2450,6 +2458,7 @@ server <- function(input, output, session) {
     min_entries <- as.numeric(input$meta_min_entries)
     if (is.na(min_entries)) min_entries <- 0
 
+    # Exclude UNKNOWN archetype from analytics
     result <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_id, da.archetype_name as Deck, da.primary_color as Color,
              COUNT(r.result_id) as Entries,
@@ -2460,7 +2469,7 @@ server <- function(input, output, session) {
       FROM deck_archetypes da
       JOIN results r ON da.archetype_id = r.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s
+      WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s
       GROUP BY da.archetype_id, da.archetype_name, da.primary_color
       HAVING COUNT(r.result_id) >= %d
       ORDER BY COUNT(r.result_id) DESC, COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
