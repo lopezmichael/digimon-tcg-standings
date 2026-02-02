@@ -4,6 +4,38 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-02: Bug Fix & Branding Assets
+
+### Summary
+Fixed a SQL bug in player search and created initial branding assets (logo, icon, favicon) for DigiLab.
+
+### Bug Fix: Player Search Query
+- **Issue**: Searching for players by name in the Players tab caused SQL error: "Referenced table p not found"
+- **Root cause**: The `main_decks` subquery used `search_filter` which referenced `p.display_name`, but the subquery didn't join the `players` table
+- **Fix**: Added `JOIN players p ON r.player_id = p.player_id` to the `main_decks` CTE in `app.R:2311`
+
+### Branding Assets
+Created SVG assets for DigiLab branding:
+- `docs/digilab-logo.svg` - Banner format (400x200) with "DigiLab" text, subtitle, grid pattern, cyan circuit accents
+- `docs/digilab-icon.svg` - Square format (200x200) with "DL" initials
+- `docs/favicon.svg` - Minimal favicon (32x32) with "D" letter, orange accent dot
+
+Design notes:
+- Attempted to create a digivice-shaped logo based on original Digimon Adventure digivice, but the complex shape was difficult to replicate accurately in SVG
+- Simplified to text-based logo with the app's existing digital aesthetic (grid pattern, cyan glow, circuit accents)
+- May revisit digivice logo in future with traced reference or professional design
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `app.R` | Added missing players table join in main_decks query |
+| `docs/index.html` | Added favicon link, updated OG/Twitter images to use custom logo |
+| `docs/digilab-logo.svg` | New file - banner logo |
+| `docs/digilab-icon.svg` | New file - square icon |
+| `docs/favicon.svg` | New file - browser tab favicon |
+
+---
+
 ## 2026-02-02: v0.15.0 - Bug Fixes & Quick Polish
 
 ### Summary
