@@ -2309,6 +2309,7 @@ server <- function(input, output, session) {
                COUNT(*) as times_played,
                ROW_NUMBER() OVER (PARTITION BY r.player_id ORDER BY COUNT(*) DESC) as rn
         FROM results r
+        JOIN players p ON r.player_id = p.player_id
         JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
         JOIN tournaments t ON r.tournament_id = t.tournament_id
         WHERE da.archetype_name != 'UNKNOWN' %s %s
