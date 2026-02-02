@@ -261,6 +261,12 @@ ui <- page_fillable(
         $(this).addClass('active');
       });
 
+      // Custom handler to update sidebar when programmatically navigating
+      Shiny.addCustomMessageHandler('updateSidebarNav', function(navId) {
+        $('.nav-link-sidebar').removeClass('active');
+        $('#' + navId).addClass('active');
+      });
+
       // Loading screen message cycling
       var loadingMessages = [
         { main: 'Opening Digital Gate...', sub: 'Establishing connection' },
@@ -832,6 +838,12 @@ server <- function(input, output, session) {
     data$Winner[is.na(data$Winner)] <- "-"
 
     reactable(data, compact = TRUE, striped = TRUE,
+      rowStyle = list(cursor = "pointer"),
+      onClick = JS("function(rowInfo, column) {
+        if (rowInfo) {
+          Shiny.setInputValue('overview_tournament_clicked', rowInfo.row.tournament_id, {priority: 'event'})
+        }
+      }"),
       columns = list(
         tournament_id = colDef(show = FALSE),
         store_id = colDef(show = FALSE),
@@ -892,6 +904,12 @@ server <- function(input, output, session) {
     result <- head(result, 10)
 
     reactable(result, compact = TRUE, striped = TRUE,
+      rowStyle = list(cursor = "pointer"),
+      onClick = JS("function(rowInfo, column) {
+        if (rowInfo) {
+          Shiny.setInputValue('overview_player_clicked', rowInfo.row.player_id, {priority: 'event'})
+        }
+      }"),
       columns = list(
         player_id = colDef(show = FALSE),
         Player = colDef(minWidth = 120),
@@ -1477,6 +1495,24 @@ server <- function(input, output, session) {
     rv$selected_store_detail <- input$store_clicked
   })
 
+  # Handle cross-modal store click (from player modal, tournament modal, etc.)
+  observeEvent(input$modal_store_clicked, {
+    removeModal()  # Close current modal
+    rv$selected_store_detail <- input$modal_store_clicked
+    nav_select("main_content", "stores")
+    rv$current_nav <- "stores"
+    session$sendCustomMessage("updateSidebarNav", "nav_stores")
+  })
+
+  # Handle cross-modal player click (from deck modal, tournament modal, etc.)
+  observeEvent(input$modal_player_clicked, {
+    removeModal()  # Close current modal
+    rv$selected_player <- input$modal_player_clicked
+    nav_select("main_content", "players")
+    rv$current_nav <- "players"
+    session$sendCustomMessage("updateSidebarNav", "nav_players")
+  })
+
   # Render store detail modal
   output$store_detail_modal <- renderUI({
     req(rv$selected_store_detail)
@@ -1521,6 +1557,37 @@ server <- function(input, output, session) {
       ", store_id))
     }
 
+    # Get store rating
+    str_ratings <- store_ratings()
+    store_rating <- str_ratings$store_rating[str_ratings$store_id == store_id]
+    if (length(store_rating) == 0) store_rating <- 0
+
+    # Get total unique players
+    unique_players <- 0
+    if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+      unique_players <- dbGetQuery(rv$db_con, sprintf("
+        SELECT COUNT(DISTINCT r.player_id) as cnt
+        FROM results r
+        JOIN tournaments t ON r.tournament_id = t.tournament_id
+        WHERE t.store_id = %d
+      ", store_id))$cnt
+    }
+
+    # Get most popular deck at this store
+    popular_deck <- NULL
+    if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+      popular_deck <- dbGetQuery(rv$db_con, sprintf("
+        SELECT da.archetype_name, da.primary_color, COUNT(*) as cnt
+        FROM results r
+        JOIN tournaments t ON r.tournament_id = t.tournament_id
+        JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
+        WHERE t.store_id = %d AND da.archetype_name != 'UNKNOWN'
+        GROUP BY da.archetype_id, da.archetype_name, da.primary_color
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+      ", store_id))
+    }
+
     # Format event type
     format_event_type <- function(et) {
       if (is.na(et)) return("Unknown")
@@ -1555,9 +1622,14 @@ server <- function(input, output, session) {
         )
       ),
 
-      # Activity stats
+      # Activity stats with Store Rating, unique players
       div(
         class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
+        div(
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", if (store_rating > 0) store_rating else "-"),
+          div(class = "modal-stat-label", "Store Rating")
+        ),
         div(
           class = "modal-stat-item",
           div(class = "modal-stat-value", store$tournament_count),
@@ -1565,8 +1637,13 @@ server <- function(input, output, session) {
         ),
         div(
           class = "modal-stat-item",
+          div(class = "modal-stat-value", unique_players),
+          div(class = "modal-stat-label", "Players")
+        ),
+        div(
+          class = "modal-stat-item",
           div(class = "modal-stat-value", if (store$avg_players > 0) store$avg_players else "-"),
-          div(class = "modal-stat-label", "Avg Players")
+          div(class = "modal-stat-label", "Avg Size")
         ),
         div(
           class = "modal-stat-item",
@@ -1575,6 +1652,16 @@ server <- function(input, output, session) {
           div(class = "modal-stat-label", "Last Event")
         )
       ),
+
+      # Most popular deck
+      if (!is.null(popular_deck) && nrow(popular_deck) > 0) {
+        div(
+          class = "mb-3",
+          span(class = "text-muted small", "Most played deck: "),
+          span(class = paste("deck-badge deck-badge-", tolower(popular_deck$primary_color), sep = ""),
+               popular_deck$archetype_name)
+        )
+      },
 
       # Recent tournaments
       if (!is.null(recent_tournaments) && nrow(recent_tournaments) > 0) {
@@ -2331,6 +2418,14 @@ server <- function(input, output, session) {
     rv$selected_player_id <- input$player_clicked
   })
 
+  # Handle Overview player click - switch to Players tab and open modal
+  observeEvent(input$overview_player_clicked, {
+    rv$selected_player_id <- input$overview_player_clicked
+    nav_select("main_content", "players")
+    rv$current_nav <- "players"
+    session$sendCustomMessage("updateSidebarNav", "nav_players")
+  })
+
   # Render player detail modal
   output$player_detail_modal <- renderUI({
     req(rv$selected_player_id)
@@ -2340,7 +2435,7 @@ server <- function(input, output, session) {
 
     # Get player info
     player <- dbGetQuery(rv$db_con, sprintf("
-      SELECT p.display_name, s.name as home_store
+      SELECT p.player_id, p.display_name, p.home_store_id, s.name as home_store
       FROM players p
       LEFT JOIN stores s ON p.home_store_id = s.store_id
       WHERE p.player_id = %d
@@ -2348,16 +2443,25 @@ server <- function(input, output, session) {
 
     if (nrow(player) == 0) return(NULL)
 
-    # Get overall stats
+    # Get overall stats including ties and avg placement
     stats <- dbGetQuery(rv$db_con, sprintf("
       SELECT COUNT(DISTINCT r.tournament_id) as events,
-             SUM(r.wins) as wins, SUM(r.losses) as losses,
+             SUM(r.wins) as wins, SUM(r.losses) as losses, SUM(r.ties) as ties,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct,
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as first_places,
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3,
+             ROUND(AVG(r.placement), 1) as avg_placement
       FROM results r
       WHERE r.player_id = %d
     ", player_id))
+
+    # Get rating and achievement score
+    p_ratings <- player_competitive_ratings()
+    p_achievements <- player_achievement_scores()
+    player_rating <- p_ratings$competitive_rating[p_ratings$player_id == player_id]
+    player_score <- p_achievements$achievement_score[p_achievements$player_id == player_id]
+    if (length(player_rating) == 0) player_rating <- 1500
+    if (length(player_score) == 0) player_score <- 0
 
     # Get favorite decks (most played)
     # Exclude UNKNOWN archetype from player profiles
@@ -2397,12 +2501,22 @@ server <- function(input, output, session) {
       easyClose = TRUE,
       footer = modalButton("Close"),
 
-      # Player info
-      if (!is.na(player$home_store)) {
+      # Player info with clickable home store
+      if (!is.na(player$home_store) && !is.na(player$home_store_id)) {
+        p(class = "text-muted",
+          bsicons::bs_icon("shop"), " Home store: ",
+          actionLink(
+            inputId = paste0("player_modal_store_", player$home_store_id),
+            label = player$home_store,
+            class = "text-primary",
+            onclick = sprintf("Shiny.setInputValue('modal_store_clicked', %d, {priority: 'event'}); return false;", player$home_store_id)
+          )
+        )
+      } else if (!is.na(player$home_store)) {
         p(class = "text-muted", bsicons::bs_icon("shop"), " Home store: ", player$home_store)
       },
 
-      # Stats summary
+      # Stats summary with Rating, Score, W-L-T colors
       div(
         class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
         div(
@@ -2412,23 +2526,32 @@ server <- function(input, output, session) {
         ),
         div(
           class = "modal-stat-item",
-          div(class = "modal-stat-value", sprintf("%d-%d", stats$wins, stats$losses)),
+          div(class = "modal-stat-value",
+            span(class = "text-success", stats$wins %||% 0), "-",
+            span(class = "text-danger", stats$losses %||% 0), "-",
+            span(class = "text-warning", stats$ties %||% 0)
+          ),
           div(class = "modal-stat-label", "Record")
         ),
         div(
           class = "modal-stat-item",
-          div(class = "modal-stat-value", if (!is.na(stats$win_pct)) paste0(stats$win_pct, "%") else "-"),
-          div(class = "modal-stat-label", "Win Rate")
+          div(class = "modal-stat-value", round(player_rating)),
+          div(class = "modal-stat-label", "Rating")
+        ),
+        div(
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", player_score),
+          div(class = "modal-stat-label", "Score")
         ),
         div(
           class = "modal-stat-item",
           div(class = "modal-stat-value stat-highlight place-1st", stats$first_places),
-          div(class = "modal-stat-label", "1st Places")
+          div(class = "modal-stat-label", "1sts")
         ),
         div(
           class = "modal-stat-item",
-          div(class = "modal-stat-value", stats$top3),
-          div(class = "modal-stat-label", "Top 3s")
+          div(class = "modal-stat-value", if (!is.na(stats$avg_placement)) stats$avg_placement else "-"),
+          div(class = "modal-stat-label", "Avg Place")
         )
       ),
 
@@ -2595,22 +2718,32 @@ server <- function(input, output, session) {
 
     if (nrow(archetype) == 0) return(NULL)
 
-    # Get overall stats
+    # Get overall stats with meta share and conversion rate
     stats <- dbGetQuery(rv$db_con, sprintf("
-      SELECT COUNT(r.result_id) as entries,
-             COUNT(DISTINCT r.tournament_id) as tournaments,
-             COUNT(DISTINCT r.player_id) as pilots,
-             ROUND(AVG(r.placement), 1) as avg_place,
-             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as first_places,
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3,
-             ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct
-      FROM results r
-      WHERE r.archetype_id = %d
+      WITH deck_stats AS (
+        SELECT COUNT(r.result_id) as entries,
+               COUNT(DISTINCT r.tournament_id) as tournaments,
+               COUNT(DISTINCT r.player_id) as pilots,
+               ROUND(AVG(r.placement), 1) as avg_place,
+               COUNT(CASE WHEN r.placement = 1 THEN 1 END) as first_places,
+               COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3,
+               ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct
+        FROM results r
+        WHERE r.archetype_id = %d
+      ),
+      total_entries AS (
+        SELECT COUNT(*) as total FROM results
+      )
+      SELECT ds.*,
+             ROUND(ds.entries * 100.0 / NULLIF(te.total, 0), 1) as meta_pct,
+             ROUND(ds.top3 * 100.0 / NULLIF(ds.entries, 0), 1) as conv_pct
+      FROM deck_stats ds, total_entries te
     ", archetype_id))
 
-    # Get top pilots
+    # Get top pilots (include player_id for clickable links)
     top_pilots <- dbGetQuery(rv$db_con, sprintf("
-      SELECT p.display_name as Player,
+      SELECT p.player_id,
+             p.display_name as Player,
              COUNT(*) as Times,
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
@@ -2677,8 +2810,8 @@ server <- function(input, output, session) {
             class = "modal-stats-box d-flex justify-content-evenly flex-wrap p-3 h-100 align-items-center",
             div(
               class = "modal-stat-item",
-              div(class = "modal-stat-value", stats$entries),
-              div(class = "modal-stat-label", "Entries")
+              div(class = "modal-stat-value", if (!is.na(stats$meta_pct)) paste0(stats$meta_pct, "%") else "-"),
+              div(class = "modal-stat-label", "Meta %")
             ),
             div(
               class = "modal-stat-item",
@@ -2688,12 +2821,12 @@ server <- function(input, output, session) {
             div(
               class = "modal-stat-item",
               div(class = "modal-stat-value stat-highlight place-1st", stats$first_places),
-              div(class = "modal-stat-label", "1st Places")
+              div(class = "modal-stat-label", "1sts")
             ),
             div(
               class = "modal-stat-item",
-              div(class = "modal-stat-value", stats$top3),
-              div(class = "modal-stat-label", "Top 3s")
+              div(class = "modal-stat-value", if (!is.na(stats$conv_pct)) paste0(stats$conv_pct, "%") else "-"),
+              div(class = "modal-stat-label", "Conv %")
             ),
             div(
               class = "modal-stat-item",
@@ -2709,7 +2842,7 @@ server <- function(input, output, session) {
         )
       ),
 
-      # Top pilots
+      # Top pilots (clickable to open player modal)
       if (nrow(top_pilots) > 0) {
         tagList(
           h6(class = "modal-section-header", "Top Pilots"),
@@ -2724,7 +2857,15 @@ server <- function(input, output, session) {
               lapply(1:nrow(top_pilots), function(i) {
                 row <- top_pilots[i, ]
                 tags$tr(
-                  tags$td(row$Player),
+                  tags$td(
+                    tags$a(
+                      href = "#",
+                      class = "text-primary text-decoration-none",
+                      style = "cursor: pointer;",
+                      onclick = sprintf("Shiny.setInputValue('modal_player_clicked', %d, {priority: 'event'}); return false;", row$player_id),
+                      row$Player
+                    )
+                  ),
                   tags$td(class = "text-center", row$Times),
                   tags$td(class = "text-center", row$Wins),
                   tags$td(class = "text-center", if (!is.na(row$`Win %`)) paste0(row$`Win %`, "%") else "-")
@@ -2867,6 +3008,14 @@ server <- function(input, output, session) {
     rv$selected_tournament_id <- input$tournament_clicked
   })
 
+  # Handle Overview tournament click - switch to Tournaments tab and open modal
+  observeEvent(input$overview_tournament_clicked, {
+    rv$selected_tournament_id <- input$overview_tournament_clicked
+    nav_select("main_content", "tournaments")
+    rv$current_nav <- "tournaments"
+    session$sendCustomMessage("updateSidebarNav", "nav_tournaments")
+  })
+
   # Render tournament detail modal
   output$tournament_detail_modal <- renderUI({
     req(rv$selected_tournament_id)
@@ -2874,15 +3023,21 @@ server <- function(input, output, session) {
     tournament_id <- rv$selected_tournament_id
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-    # Get tournament info
+    # Get tournament info (include store_id for clickable link)
     tournament <- dbGetQuery(rv$db_con, "
-      SELECT t.event_date, t.event_type, t.format, t.player_count, t.rounds, s.name as store_name
+      SELECT t.event_date, t.event_type, t.format, t.player_count, t.rounds,
+             s.store_id, s.name as store_name
       FROM tournaments t
       JOIN stores s ON t.store_id = s.store_id
       WHERE t.tournament_id = ?
     ", params = list(tournament_id))
 
     if (nrow(tournament) == 0) return(NULL)
+
+    # Calculate Store Rating for this store
+    store_rating <- tryCatch({
+      calculate_store_rating(rv$db_con, tournament$store_id)
+    }, error = function(e) NA_real_)
 
     # Get all results for this tournament
     results <- dbGetQuery(rv$db_con, "
@@ -2909,7 +3064,15 @@ server <- function(input, output, session) {
       title = div(
         class = "d-flex align-items-center gap-2",
         bsicons::bs_icon("trophy"),
-        sprintf("%s - %s", tournament$store_name, format(as.Date(tournament$event_date), "%B %d, %Y"))
+        tags$a(
+          href = "#",
+          class = "text-primary text-decoration-none",
+          style = "cursor: pointer;",
+          onclick = sprintf("Shiny.setInputValue('modal_store_clicked', %d, {priority: 'event'}); return false;", tournament$store_id),
+          tournament$store_name
+        ),
+        span(class = "text-muted", "-"),
+        span(format(as.Date(tournament$event_date), "%B %d, %Y"))
       ),
       size = "l",
       easyClose = TRUE,
@@ -2937,6 +3100,11 @@ server <- function(input, output, session) {
           class = "modal-stat-item",
           div(class = "modal-stat-value", if (!is.na(tournament$rounds)) tournament$rounds else "-"),
           div(class = "modal-stat-label", "Rounds")
+        ),
+        div(
+          class = "modal-stat-item",
+          div(class = "modal-stat-value", if (!is.na(store_rating)) round(store_rating, 0) else "-"),
+          div(class = "modal-stat-label", "Store Rating")
         )
       ),
 
