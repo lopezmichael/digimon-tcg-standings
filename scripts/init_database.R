@@ -5,7 +5,7 @@
 
 cat("
 ╔═══════════════════════════════════════════════════════════╗
-║     DFW Digimon TCG Tournament Tracker                    ║
+║     DigiLab - Digimon TCG Tournament Tracker              ║
 ║     Database Initialization                               ║
 ╚═══════════════════════════════════════════════════════════╝
 \n")

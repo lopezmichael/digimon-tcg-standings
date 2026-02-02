@@ -1,6 +1,7 @@
 # =============================================================================
-# DFW Digimon TCG Tournament Tracker
+# DigiLab - Digimon TCG Tournament Tracker
 # Main Shiny Application
+# https://digilab.cards/
 # =============================================================================
 
 library(shiny)

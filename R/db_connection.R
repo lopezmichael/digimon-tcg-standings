@@ -1,6 +1,6 @@
 # =============================================================================
 # Database Connection Module
-# DFW Digimon TCG Tournament Tracker
+# DigiLab - https://digilab.cards/
 #
 # Auto-detects environment:
 #   - Local Windows dev → uses local DuckDB file

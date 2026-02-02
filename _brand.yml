@@ -1,9 +1,9 @@
-# _brand.yml - Digimon TCG DFW Brand Configuration
+# _brand.yml - DigiLab Brand Configuration
 # Classic Digimon logo colors: Deep blue primary with orange accents
 
 meta:
-  name: DFW Digimon TCG
-  link: https://world.digimoncard.com
+  name: DigiLab
+  link: https://digilab.cards
 
 color:
   palette:

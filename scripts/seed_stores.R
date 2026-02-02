@@ -12,7 +12,7 @@ source("R/db_connection.R")
 con <- connect_db()
 
 # -----------------------------------------------------------------------------
-# DFW Digimon TCG Stores
+# DFW Area Stores for DigiLab
 # Last updated: January 2026
 # -----------------------------------------------------------------------------
 

@@ -278,4 +278,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 - [DigimonCard.io](https://digimoncard.io) for card data API
 - [DigimonMeta](https://digimonmeta.com) and [Digital Gate Open](https://digitalgateopen.com) for meta research
 - [atomtemplates](https://lopezmichael.dev) for the Shiny design system
-- The DFW Digimon TCG community
+- The DFW Digimon TCG community for being the inspiration for DigiLab

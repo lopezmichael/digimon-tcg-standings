@@ -1,6 +1,6 @@
-# DFW Digimon TCG Tournament Tracker
+# DigiLab - Digimon TCG Tournament Tracker
 
-**Project Plan & Technical Specification**  
+**Project Plan & Technical Specification**
 Version 1.1 | January 2026
 
 ---

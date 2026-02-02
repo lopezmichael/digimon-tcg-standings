@@ -1,4 +1,4 @@
--- DFW Digimon TCG Tournament Tracker
+-- DigiLab - Digimon TCG Tournament Tracker
 -- Database Schema for MotherDuck (Cloud DuckDB)
 -- Version: 1.1.0
 -- Created: January 2026

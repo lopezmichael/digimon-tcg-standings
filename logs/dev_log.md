@@ -1,6 +1,6 @@
 # Development Log
 
-This log tracks development decisions, blockers, and technical notes for the DFW Digimon TCG Tournament Tracker project.
+This log tracks development decisions, blockers, and technical notes for DigiLab (https://digilab.cards/).
 
 ---
 

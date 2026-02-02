@@ -1,8 +1,8 @@
-# DFW Digimon TCG Tournament Tracker - Roadmap
+# DigiLab - Roadmap
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.16.0
+**Current Version:** v0.16.1
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 

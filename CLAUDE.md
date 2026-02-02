@@ -298,6 +298,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.16.0** - UX Improvements & Modal Enhancements (Manage Tournaments, cross-modal navigation, auto-refresh)
+**v0.16.1** - DigiLab Rebranding (custom domain at digilab.cards)
 
 See `CHANGELOG.md` for full version history.

@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document defines three distinct rating systems for the DFW Digimon TCG Tournament Tracker:
+This document defines three distinct rating systems for DigiLab:
 
 1. **Competitive Rating** - Elo-style rating measuring player skill
 2. **Store Rating** - Quality/prestige score for tournament venues
