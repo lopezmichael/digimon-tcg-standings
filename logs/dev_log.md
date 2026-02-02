@@ -4,6 +4,53 @@ This log tracks development decisions, blockers, and technical notes for the DFW
 
 ---
 
+## 2026-02-02: v0.15.0 - Bug Fixes & Quick Polish
+
+### Summary
+Released v0.15.0 with bug fixes, UI improvements, and new table columns. Also created ROADMAP.md to track all planned work through v1.0.
+
+### Key Changes
+
+**Modal Selection Bug Fix (B1)**
+- Root cause: Tables used row index to look up record ID, but re-ran query with hardcoded ORDER BY. After user sorting, visual order didn't match query order.
+- Fix: Changed from `onClick="select"` + `getReactableState()` to JavaScript `onClick` callbacks that pass actual row data via `Shiny.setInputValue()`.
+- Affected tables: archetype_stats, player_standings, store_list, tournament_history
+- Documented in `docs/solutions/modal-selection-bug.md`
+
+**Table Column Reorganization**
+- Players Tab: Added Record (W-L-T with colored numbers), Main Deck (with color badge)
+- Meta Tab: Added Meta % (share of entries), Conv % (Top 3s / Entries), removed Avg Place
+- Used pre-computed HTML columns to avoid reactable pagination index issues
+
+**Other Changes**
+- Blue deck badge: "B" → "U" (black stays "B")
+- Default 32 rows for main tables
+- GitHub + Ko-fi links in header
+- Top decks reduced from 8 to 6 for cleaner responsive grids
+- UNKNOWN archetype filtered from all analytics (but visible in historical records)
+
+### Technical Notes
+
+**Pre-computed HTML columns in reactable**
+When using `cell = function(value, index)`, the `index` refers to the current page position, not the full dataframe index. For columns that need to reference other columns (like Record needing W, L, T values), pre-compute the HTML before passing to reactable:
+```r
+result$Record <- sapply(1:nrow(result), function(i) {
+  sprintf("<span style='color: green;'>%d</span>-<span style='color: red;'>%d</span>",
+    result$W[i], result$L[i])
+})
+# Then use html = TRUE in colDef
+```
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `app.R` | Modal fixes, column reorganization, Ko-fi link, top decks limit |
+| `www/custom.css` | Ko-fi hover color (coral) |
+| `ROADMAP.md` | New file - full roadmap v0.15 through v1.0 |
+| `docs/solutions/modal-selection-bug.md` | New file - bug documentation |
+
+---
+
 ## 2026-02-01: Rating System Implementation
 
 ### Summary
