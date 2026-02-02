@@ -236,6 +236,9 @@ observeEvent(input$add_archetype, {
     # Update archetype dropdown
     updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
 
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
@@ -393,6 +396,9 @@ observeEvent(input$update_archetype, {
     # Update dropdown
     updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
 
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
@@ -495,6 +501,9 @@ observeEvent(input$confirm_delete_archetype, {
 
     # Update archetype dropdown
     updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")

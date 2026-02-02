@@ -136,7 +136,10 @@ observeEvent(input$add_store, {
     updateCheckboxInput(session, "store_is_online", value = FALSE)
 
     # Update store dropdown
-    updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con))
+    updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con, include_none = TRUE))
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -338,7 +341,10 @@ observeEvent(input$update_store, {
     shinyjs::hide("delete_store")
 
     # Update dropdown
-    updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con))
+    updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con, include_none = TRUE))
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -432,7 +438,10 @@ observeEvent(input$confirm_delete_store, {
     shinyjs::hide("delete_store")
 
     # Update dropdown
-    updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con))
+    updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con, include_none = TRUE))
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")

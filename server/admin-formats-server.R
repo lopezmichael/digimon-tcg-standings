@@ -108,8 +108,9 @@ observeEvent(input$add_format, {
     updateDateInput(session, "format_release_date", value = Sys.Date())
     updateCheckboxInput(session, "format_is_active", value = TRUE)
 
-    # Refresh format choices
+    # Refresh format choices and public tables
     rv$format_refresh <- (rv$format_refresh %||% 0) + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     if (grepl("unique|duplicate|primary key", e$message, ignore.case = TRUE)) {
@@ -173,8 +174,9 @@ observeEvent(input$update_format, {
     shinyjs::hide("update_format")
     shinyjs::hide("delete_format")
 
-    # Refresh format choices
+    # Refresh format choices and public tables
     rv$format_refresh <- (rv$format_refresh %||% 0) + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -253,8 +255,9 @@ observeEvent(input$confirm_delete_format, {
     shinyjs::hide("update_format")
     shinyjs::hide("delete_format")
 
-    # Refresh format choices
+    # Refresh format choices and public tables
     rv$format_refresh <- (rv$format_refresh %||% 0) + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")

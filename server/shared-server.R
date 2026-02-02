@@ -61,6 +61,11 @@ observeEvent(input$nav_admin_results, {
   rv$current_nav <- "admin_results"
 })
 
+observeEvent(input$nav_admin_tournaments, {
+  nav_select("main_content", "admin_tournaments")
+  rv$current_nav <- "admin_tournaments"
+})
+
 observeEvent(input$nav_admin_decks, {
   nav_select("main_content", "admin_decks")
   rv$current_nav <- "admin_decks"
@@ -133,7 +138,7 @@ observeEvent(input$login_btn, {
 
     # Update dropdowns with data
     updateSelectInput(session, "tournament_store",
-                      choices = get_store_choices(rv$db_con))
+                      choices = get_store_choices(rv$db_con, include_none = TRUE))
     updateSelectizeInput(session, "result_deck",
                       choices = get_archetype_choices(rv$db_con))
     updateSelectizeInput(session, "result_player",
@@ -159,10 +164,13 @@ observeEvent(input$logout_btn, {
 # Helper Functions
 # ---------------------------------------------------------------------------
 
-get_store_choices <- function(con) {
+get_store_choices <- function(con, include_none = FALSE) {
   if (is.null(con) || !dbIsValid(con)) return(c("Loading..." = ""))
   stores <- dbGetQuery(con, "SELECT store_id, name FROM stores WHERE is_active = TRUE ORDER BY name")
   choices <- setNames(stores$store_id, stores$name)
+  if (include_none) {
+    choices <- c("Select a store..." = "", choices)
+  }
   return(choices)
 }
 

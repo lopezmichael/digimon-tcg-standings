@@ -232,6 +232,7 @@ source("views/players-ui.R", local = TRUE)
 source("views/meta-ui.R", local = TRUE)
 source("views/tournaments-ui.R", local = TRUE)
 source("views/admin-results-ui.R", local = TRUE)
+source("views/admin-tournaments-ui.R", local = TRUE)
 source("views/admin-decks-ui.R", local = TRUE)
 source("views/admin-stores-ui.R", local = TRUE)
 source("views/admin-formats-ui.R", local = TRUE)
@@ -386,6 +387,9 @@ ui <- page_fillable(
           actionLink("nav_admin_results",
                      tagList(bsicons::bs_icon("pencil-square"), " Enter Results"),
                      class = "nav-link-sidebar"),
+          actionLink("nav_admin_tournaments",
+                     tagList(bsicons::bs_icon("trophy"), " Manage Tournaments"),
+                     class = "nav-link-sidebar"),
           actionLink("nav_admin_decks",
                      tagList(bsicons::bs_icon("collection"), " Manage Decks"),
                      class = "nav-link-sidebar"),
@@ -416,6 +420,7 @@ ui <- page_fillable(
         nav_panel_hidden(value = "meta", meta_ui),
         nav_panel_hidden(value = "tournaments", tournaments_ui),
         nav_panel_hidden(value = "admin_results", admin_results_ui),
+        nav_panel_hidden(value = "admin_tournaments", admin_tournaments_ui),
         nav_panel_hidden(value = "admin_decks", admin_decks_ui),
         nav_panel_hidden(value = "admin_stores", admin_stores_ui),
         nav_panel_hidden(value = "admin_formats", admin_formats_ui),
@@ -453,7 +458,8 @@ server <- function(input, output, session) {
     wizard_step = 1,  # Wizard navigation: 1 = Details, 2 = Results
     duplicate_tournament = NULL,  # Store duplicate tournament info for modal
     results_refresh = 0,  # Trigger to refresh results table
-    card_search_page = 1  # Current page for card search pagination
+    card_search_page = 1,  # Current page for card search pagination
+    data_refresh = 0  # Trigger to refresh all public tables when admin makes changes
   )
 
   # Helper function for ordinal numbers (1st, 2nd, 3rd, etc.)
@@ -473,6 +479,7 @@ server <- function(input, output, session) {
 
   source("server/shared-server.R", local = TRUE)
   source("server/results-server.R", local = TRUE)
+  source("server/admin-tournaments-server.R", local = TRUE)
   source("server/admin-decks-server.R", local = TRUE)
   source("server/admin-stores-server.R", local = TRUE)
   source("server/admin-formats-server.R", local = TRUE)
@@ -775,6 +782,7 @@ server <- function(input, output, session) {
   # Recent tournaments (filters by selected stores, format, date range)
   # Shows Winner column, formatted Type, and Store Rating
   output$recent_tournaments <- renderReactable({
+    rv$data_refresh  # Trigger refresh on admin changes
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     filters <- build_dashboard_filters("t")
@@ -845,6 +853,7 @@ server <- function(input, output, session) {
   # Top players (filters by selected stores, format, date range)
   # Shows: Player, Events, Event Wins, Top 3, Rating (Elo), Achievement
   output$top_players <- renderReactable({
+    rv$data_refresh  # Trigger refresh on admin changes
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     filters <- build_dashboard_filters("t")
@@ -946,12 +955,17 @@ server <- function(input, output, session) {
     week_totals <- aggregate(entries ~ week_start, data = result, FUN = sum)
     names(week_totals)[2] <- "week_total"
 
-    # Calculate overall share and sort decks by popularity
+    # Calculate overall share and sort decks by color then popularity
     overall <- aggregate(entries ~ archetype_name + primary_color, data = result, FUN = sum)
     overall$overall_share <- overall$entries / sum(overall$entries) * 100
-    overall <- overall[order(-overall$overall_share), ]
 
-    # Show all decks (sorted by overall popularity for legend order)
+    # Sort by color order first, then by share within each color group
+    color_order <- c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White", "Multi", "Other")
+    overall$color_rank <- match(overall$primary_color, color_order)
+    overall$color_rank[is.na(overall$color_rank)] <- 999  # Unknown colors last
+    overall <- overall[order(overall$color_rank, -overall$overall_share), ]
+
+    # Show all decks (sorted by color for visual grouping in legend)
     selected_decks <- overall$archetype_name
 
     # Merge with week totals
@@ -1387,6 +1401,7 @@ server <- function(input, output, session) {
 
   # Store list (uses filtered stores from map selection)
   output$store_list <- renderReactable({
+    rv$data_refresh  # Trigger refresh on admin changes
     stores <- filtered_stores()
 
     if (is.null(stores) || nrow(stores) == 0) {
@@ -2168,6 +2183,7 @@ server <- function(input, output, session) {
   })
 
   output$player_standings <- renderReactable({
+    rv$data_refresh  # Trigger refresh on admin changes
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
     # Build filters
@@ -2490,6 +2506,7 @@ server <- function(input, output, session) {
 
   # Archetype stats
   output$archetype_stats <- renderReactable({
+    rv$data_refresh  # Trigger refresh on admin changes
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
     # Build filters
@@ -2773,6 +2790,7 @@ server <- function(input, output, session) {
   })
 
   output$tournament_history <- renderReactable({
+    rv$data_refresh  # Trigger refresh on admin changes
     if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
     # Build filters

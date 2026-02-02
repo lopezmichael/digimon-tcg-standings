@@ -203,6 +203,9 @@ observeEvent(input$delete_tournament_confirm, {
     shinyjs::runjs("$('#start_over_modal').modal('hide');")
     showNotification("Tournament deleted.", type = "message")
 
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
@@ -338,6 +341,9 @@ observeEvent(input$quick_add_player_submit, {
     shinyjs::hide("quick_add_player_form")
     updateTextInput(session, "quick_player_name", value = "")
 
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
@@ -387,6 +393,9 @@ observeEvent(input$quick_add_deck_submit, {
     # Hide form and clear
     shinyjs::hide("quick_add_deck_form")
     updateTextInput(session, "quick_deck_name", value = "")
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -497,8 +506,9 @@ add_result_logic <- function() {
 
     showNotification("Result added!", type = "message")
 
-    # Trigger table refresh
+    # Trigger table refresh (admin + public tables)
     rv$results_refresh <- rv$results_refresh + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
     # Reset form for next entry
     updateNumericInput(session, "result_placement", value = placement + 1)
@@ -559,6 +569,9 @@ observeEvent(input$quick_add_deck, {
 
     # Clear quick-add form
     updateTextInput(session, "quick_deck_name", value = "")
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -719,9 +732,10 @@ observeEvent(input$save_edit_result, {
 
     showNotification("Result updated!", type = "message")
 
-    # Hide modal and refresh table
+    # Hide modal and refresh table (admin + public tables)
     shinyjs::runjs("$('#edit_result_modal').modal('hide');")
     rv$results_refresh <- rv$results_refresh + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")

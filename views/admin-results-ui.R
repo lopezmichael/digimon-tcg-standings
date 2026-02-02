@@ -40,7 +40,8 @@ admin_results_ui <- tagList(
           div(
             class = "row g-3 mb-3",
             div(class = "col-md-6",
-                selectInput("tournament_type", "Event Type", choices = EVENT_TYPES)),
+                selectInput("tournament_type", "Event Type",
+                            choices = c("Select event type..." = "", EVENT_TYPES))),
             div(class = "col-md-6",
                 selectInput("tournament_format", "Format/Set", choices = list("Loading..." = "")))
           ),

@@ -196,6 +196,9 @@ observeEvent(input$update_player, {
     # Update player dropdown in results entry
     updateSelectizeInput(session, "result_player", choices = get_player_choices(rv$db_con))
 
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
@@ -272,6 +275,9 @@ observeEvent(input$confirm_delete_player, {
 
     # Update player dropdown
     updateSelectizeInput(session, "result_player", choices = get_player_choices(rv$db_con))
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -356,6 +362,9 @@ observeEvent(input$confirm_merge_players, {
 
     # Update player dropdown
     updateSelectizeInput(session, "result_player", choices = get_player_choices(rv$db_con))
+
+    # Trigger refresh of public tables
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
