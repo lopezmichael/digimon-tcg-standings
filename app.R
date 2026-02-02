@@ -134,10 +134,17 @@ deck_color_badge_dual <- function(primary, secondary = NULL) {
   }
 
   # Dual color - show as split badge with initials
+  # Use "U" for Blue to distinguish from Black ("B")
+  get_color_initial <- function(color) {
+    color_lower <- tolower(trimws(color))
+    if (color_lower == "blue") return("U")
+    toupper(substr(color, 1, 1))
+  }
+
   htmltools::div(
     class = "deck-badge-multi",
-    htmltools::span(class = get_color_class(primary), toupper(substr(primary, 1, 1))),
-    htmltools::span(class = get_color_class(secondary), toupper(substr(secondary, 1, 1)))
+    htmltools::span(class = get_color_class(primary), get_color_initial(primary)),
+    htmltools::span(class = get_color_class(secondary), get_color_initial(secondary))
   )
 }
 
@@ -310,6 +317,20 @@ ui <- page_fillable(
     ),
     div(
       class = "header-actions",
+      tags$a(
+        href = "https://github.com/lopezmichael/digimon-tcg-standings",
+        target = "_blank",
+        class = "header-action-btn",
+        title = "View on GitHub",
+        bsicons::bs_icon("github")
+      ),
+      tags$a(
+        href = "https://ko-fi.com/atomshell",
+        target = "_blank",
+        class = "header-action-btn header-coffee-btn",
+        title = "Support on Ko-fi",
+        bsicons::bs_icon("cup-hot")
+      ),
       actionLink("admin_login_link",
                  tagList(bsicons::bs_icon("lock"), " Admin"),
                  class = "header-action-btn"),
@@ -1091,7 +1112,7 @@ server <- function(input, output, session) {
       GROUP BY da.archetype_id, da.archetype_name, da.display_card_id, da.primary_color
       HAVING COUNT(r.result_id) >= 1
       ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(r.result_id) DESC
-      LIMIT 8
+      LIMIT 6
     ", filters$store, filters$format, filters$event_type, filters$date))
 
     if (nrow(result) == 0) {
@@ -1397,10 +1418,15 @@ server <- function(input, output, session) {
       data,
       compact = TRUE,
       striped = TRUE,
-      selection = "single",
-      onClick = "select",
+      pagination = TRUE,
+      defaultPageSize = 32,
       defaultSorted = list(Rating = "desc"),
       rowStyle = list(cursor = "pointer"),
+      onClick = JS("function(rowInfo, column) {
+        if (rowInfo) {
+          Shiny.setInputValue('store_clicked', rowInfo.row.store_id, {priority: 'event'})
+        }
+      }"),
       columns = list(
         Store = colDef(minWidth = 180),
         City = colDef(minWidth = 100),
@@ -1431,20 +1457,9 @@ server <- function(input, output, session) {
     )
   })
 
-  # Handle store row selection - open detail modal
-  observeEvent(getReactableState("store_list", "selected"), {
-    selected_row <- getReactableState("store_list", "selected")
-    if (is.null(selected_row) || length(selected_row) == 0) return()
-
-    # Get store data
-    stores <- filtered_stores()
-    if (is.null(stores)) return()
-
-    # Sort the same way as the table to get correct row
-    sorted_stores <- stores[order(-stores$tournament_count, stores$city, stores$name), ]
-    selected_store <- sorted_stores[selected_row, ]
-
-    rv$selected_store_detail <- selected_store$store_id
+  # Handle store row click - open detail modal
+  observeEvent(input$store_clicked, {
+    rv$selected_store_detail <- input$store_clicked
   })
 
   # Render store detail modal
@@ -2172,8 +2187,8 @@ server <- function(input, output, session) {
              COUNT(DISTINCT r.tournament_id) as Events,
              SUM(r.wins) as W, SUM(r.losses) as L, SUM(r.ties) as T,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%',
-             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1st',
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3'
+             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1sts',
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3s'
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -2181,6 +2196,23 @@ server <- function(input, output, session) {
       GROUP BY p.player_id, p.display_name
       HAVING COUNT(DISTINCT r.tournament_id) >= %d
     ", search_filter, format_filter, min_events))
+
+    # Get most played deck for each player (Main Deck)
+    main_decks <- dbGetQuery(rv$db_con, sprintf("
+      WITH player_deck_counts AS (
+        SELECT r.player_id, da.archetype_name, da.primary_color,
+               COUNT(*) as times_played,
+               ROW_NUMBER() OVER (PARTITION BY r.player_id ORDER BY COUNT(*) DESC) as rn
+        FROM results r
+        JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
+        JOIN tournaments t ON r.tournament_id = t.tournament_id
+        WHERE da.archetype_name != 'UNKNOWN' %s %s
+        GROUP BY r.player_id, da.archetype_name, da.primary_color
+      )
+      SELECT player_id, archetype_name as main_deck, primary_color as main_deck_color
+      FROM player_deck_counts
+      WHERE rn = 1
+    ", search_filter, format_filter))
 
     if (nrow(result) == 0) {
       return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
@@ -2196,6 +2228,36 @@ server <- function(input, output, session) {
     result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
     result$achievement_score[is.na(result$achievement_score)] <- 0
 
+    # Join with main decks
+    result <- merge(result, main_decks, by = "player_id", all.x = TRUE)
+    result$main_deck[is.na(result$main_deck)] <- "-"
+    result$main_deck_color[is.na(result$main_deck_color)] <- ""
+
+    # Create Record column as HTML (W-L-T with colors)
+    result$Record <- sapply(1:nrow(result), function(i) {
+      w <- result$W[i]
+      l <- result$L[i]
+      t <- result$T[i]
+      sprintf(
+        "<span style='color: #22c55e;'>%d</span>-<span style='color: #ef4444;'>%d</span>%s",
+        w, l,
+        if (t > 0) sprintf("-<span style='color: #f97316;'>%d</span>", t) else ""
+      )
+    })
+
+    # Create Main Deck column as HTML (with color badge)
+    result$main_deck_html <- sapply(1:nrow(result), function(i) {
+      deck <- result$main_deck[i]
+      if (is.na(deck) || deck == "-") return("-")
+      color <- result$main_deck_color[i]
+      color_class <- if (!is.na(color) && color != "") {
+        paste0("deck-badge deck-badge-", tolower(color))
+      } else {
+        "deck-badge"
+      }
+      sprintf("<span class='%s'>%s</span>", color_class, deck)
+    })
+
     # Sort by competitive rating
     result <- result[order(-result$competitive_rating), ]
 
@@ -2204,69 +2266,53 @@ server <- function(input, output, session) {
       compact = TRUE,
       striped = TRUE,
       pagination = TRUE,
-      defaultPageSize = 20,
-      selection = "single",
-      onClick = "select",
+      defaultPageSize = 32,
       rowStyle = list(cursor = "pointer"),
+      onClick = JS("function(rowInfo, column) {
+        if (rowInfo) {
+          Shiny.setInputValue('player_clicked', rowInfo.row.player_id, {priority: 'event'})
+        }
+      }"),
       columns = list(
         player_id = colDef(show = FALSE),
-        Player = colDef(minWidth = 150),
-        Events = colDef(minWidth = 70, align = "center"),
-        W = colDef(minWidth = 50, align = "center"),
-        L = colDef(minWidth = 50, align = "center"),
-        T = colDef(minWidth = 50, align = "center"),
-        `Win %` = colDef(minWidth = 70, align = "center"),
-        `1st` = colDef(minWidth = 50, align = "center"),
-        `Top 3` = colDef(minWidth = 60, align = "center"),
+        Player = colDef(minWidth = 140),
+        Events = colDef(minWidth = 60, align = "center"),
         competitive_rating = colDef(
           name = "Rating",
-          minWidth = 70,
+          minWidth = 65,
           align = "center"
         ),
         achievement_score = colDef(
-          name = "Achv",
-          minWidth = 60,
+          name = "Score",
+          minWidth = 55,
           align = "center"
+        ),
+        `1sts` = colDef(minWidth = 45, align = "center"),
+        `Top 3s` = colDef(minWidth = 55, align = "center"),
+        W = colDef(show = FALSE),
+        L = colDef(show = FALSE),
+        T = colDef(show = FALSE),
+        Record = colDef(
+          name = "Record",
+          minWidth = 80,
+          align = "center",
+          html = TRUE
+        ),
+        `Win %` = colDef(minWidth = 60, align = "center"),
+        main_deck = colDef(show = FALSE),
+        main_deck_color = colDef(show = FALSE),
+        main_deck_html = colDef(
+          name = "Main Deck",
+          minWidth = 120,
+          html = TRUE
         )
       )
     )
   })
 
-  # Handle player row selection - open detail modal
-  observeEvent(getReactableState("player_standings", "selected"), {
-    selected_row <- getReactableState("player_standings", "selected")
-    if (is.null(selected_row) || length(selected_row) == 0) return()
-
-    # Get the player_id from the data
-    # We need to re-run the query to get the data in the same order
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return()
-
-    search_filter <- if (!is.null(input$players_search) && nchar(trimws(input$players_search)) > 0) {
-      sprintf("AND LOWER(p.display_name) LIKE LOWER('%%%s%%')", trimws(input$players_search))
-    } else ""
-
-    format_filter <- if (!is.null(input$players_format) && input$players_format != "") {
-      sprintf("AND t.format = '%s'", input$players_format)
-    } else ""
-
-    min_events <- as.numeric(input$players_min_events)
-    if (is.na(min_events)) min_events <- 0
-
-    result <- dbGetQuery(rv$db_con, sprintf("
-      SELECT p.player_id
-      FROM players p
-      JOIN results r ON p.player_id = r.player_id
-      JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s
-      GROUP BY p.player_id, p.display_name
-      HAVING COUNT(DISTINCT r.tournament_id) >= %d
-      ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC,
-               ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) DESC
-    ", search_filter, format_filter, min_events))
-
-    if (selected_row > nrow(result)) return()
-
-    rv$selected_player_id <- result$player_id[selected_row]
+  # Handle player row click - open detail modal
+  observeEvent(input$player_clicked, {
+    rv$selected_player_id <- input$player_clicked
   })
 
   # Render player detail modal
@@ -2462,10 +2508,9 @@ server <- function(input, output, session) {
     result <- dbGetQuery(rv$db_con, sprintf("
       SELECT da.archetype_id, da.archetype_name as Deck, da.primary_color as Color,
              COUNT(r.result_id) as Entries,
-             ROUND(AVG(r.placement), 1) as 'Avg Place',
-             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1st Places',
-             ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%',
-             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3s'
+             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1sts',
+             COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3s',
+             ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
       FROM deck_archetypes da
       JOIN results r ON da.archetype_id = r.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -2479,58 +2524,42 @@ server <- function(input, output, session) {
       return(reactable(data.frame(Message = "No decks match the current filters"), compact = TRUE))
     }
 
+    # Calculate Meta % (share of total entries)
+    total_entries <- sum(result$Entries)
+    result$`Meta %` <- round(result$Entries * 100 / total_entries, 1)
+
+    # Calculate Conv % (conversion rate: Top 3s / Entries)
+    result$`Conv %` <- round(result$`Top 3s` * 100 / result$Entries, 1)
+
     reactable(
       result,
       compact = TRUE,
       striped = TRUE,
-      selection = "single",
-      onClick = "select",
+      pagination = TRUE,
+      defaultPageSize = 32,
       rowStyle = list(cursor = "pointer"),
+      onClick = JS("function(rowInfo, column) {
+        if (rowInfo) {
+          Shiny.setInputValue('archetype_clicked', rowInfo.row.archetype_id, {priority: 'event'})
+        }
+      }"),
       columns = list(
         archetype_id = colDef(show = FALSE),
         Deck = colDef(minWidth = 150),
         Color = colDef(minWidth = 80, cell = function(value) deck_color_badge(value)),
         Entries = colDef(minWidth = 70, align = "center"),
-        `Avg Place` = colDef(minWidth = 80, align = "center"),
-        `1st Places` = colDef(minWidth = 80, align = "center"),
-        `Win %` = colDef(minWidth = 70, align = "center"),
-        `Top 3s` = colDef(minWidth = 70, align = "center")
+        `Meta %` = colDef(minWidth = 70, align = "center"),
+        `1sts` = colDef(minWidth = 50, align = "center"),
+        `Top 3s` = colDef(minWidth = 60, align = "center"),
+        `Conv %` = colDef(minWidth = 70, align = "center"),
+        `Win %` = colDef(minWidth = 60, align = "center")
       )
     )
   })
 
-  # Handle archetype row selection - open detail modal
-  observeEvent(getReactableState("archetype_stats", "selected"), {
-    selected_row <- getReactableState("archetype_stats", "selected")
-    if (is.null(selected_row) || length(selected_row) == 0) return()
-
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return()
-
-    search_filter <- if (!is.null(input$meta_search) && nchar(trimws(input$meta_search)) > 0) {
-      sprintf("AND LOWER(da.archetype_name) LIKE LOWER('%%%s%%')", trimws(input$meta_search))
-    } else ""
-
-    format_filter <- if (!is.null(input$meta_format) && input$meta_format != "") {
-      sprintf("AND t.format = '%s'", input$meta_format)
-    } else ""
-
-    min_entries <- as.numeric(input$meta_min_entries)
-    if (is.na(min_entries)) min_entries <- 0
-
-    result <- dbGetQuery(rv$db_con, sprintf("
-      SELECT da.archetype_id
-      FROM deck_archetypes da
-      JOIN results r ON da.archetype_id = r.archetype_id
-      JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE 1=1 %s %s
-      GROUP BY da.archetype_id, da.archetype_name, da.primary_color
-      HAVING COUNT(r.result_id) >= %d
-      ORDER BY COUNT(r.result_id) DESC, COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
-    ", search_filter, format_filter, min_entries))
-
-    if (selected_row > nrow(result)) return()
-
-    rv$selected_archetype_id <- result$archetype_id[selected_row]
+  # Handle archetype row click - open detail modal
+  observeEvent(input$archetype_clicked, {
+    rv$selected_archetype_id <- input$archetype_clicked
   })
 
   # Render deck detail modal
@@ -2793,11 +2822,14 @@ server <- function(input, output, session) {
       compact = TRUE,
       striped = TRUE,
       pagination = TRUE,
-      defaultPageSize = 20,
+      defaultPageSize = 32,
       defaultSorted = list(Date = "desc"),
-      selection = "single",
-      onClick = "select",
       rowStyle = list(cursor = "pointer"),
+      onClick = JS("function(rowInfo, column) {
+        if (rowInfo) {
+          Shiny.setInputValue('tournament_clicked', rowInfo.row.tournament_id, {priority: 'event'})
+        }
+      }"),
       columns = list(
         tournament_id = colDef(show = FALSE),
         Date = colDef(minWidth = 90),
@@ -2812,37 +2844,9 @@ server <- function(input, output, session) {
     )
   })
 
-  # Handle tournament row selection - open detail modal
-  observeEvent(getReactableState("tournament_history", "selected"), {
-    selected_row <- getReactableState("tournament_history", "selected")
-    if (is.null(selected_row) || length(selected_row) == 0) return()
-
-    if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return()
-
-    # Build same filters to get correct tournament_id
-    search_filter <- if (!is.null(input$tournaments_search) && nchar(trimws(input$tournaments_search)) > 0) {
-      sprintf("AND LOWER(s.name) LIKE LOWER('%%%s%%')", trimws(input$tournaments_search))
-    } else ""
-
-    format_filter <- if (!is.null(input$tournaments_format) && input$tournaments_format != "") {
-      sprintf("AND t.format = '%s'", input$tournaments_format)
-    } else ""
-
-    event_type_filter <- if (!is.null(input$tournaments_event_type) && input$tournaments_event_type != "") {
-      sprintf("AND t.event_type = '%s'", input$tournaments_event_type)
-    } else ""
-
-    result <- dbGetQuery(rv$db_con, sprintf("
-      SELECT t.tournament_id
-      FROM tournaments t
-      JOIN stores s ON t.store_id = s.store_id
-      WHERE 1=1 %s %s %s
-      ORDER BY t.event_date DESC
-    ", search_filter, format_filter, event_type_filter))
-
-    if (selected_row > nrow(result)) return()
-
-    rv$selected_tournament_id <- result$tournament_id[selected_row]
+  # Handle tournament row click - open detail modal
+  observeEvent(input$tournament_clicked, {
+    rv$selected_tournament_id <- input$tournament_clicked
   })
 
   # Render tournament detail modal

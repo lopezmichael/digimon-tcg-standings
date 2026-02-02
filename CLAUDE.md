@@ -298,6 +298,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.14.0** - Rating System (Elo-style Competitive Rating, Achievement Score, Store Rating)
+**v0.15.0** - Bug Fixes & Quick Polish (Modal fix, table columns, Ko-fi link)
 
 See `CHANGELOG.md` for full version history.

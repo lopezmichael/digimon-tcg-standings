@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.15.0] - 2026-02-02 - Bug Fixes & Quick Polish
+
+### Fixed
+- **Modal Selection Bug (B1)**: Clicking rows after sorting tables now opens the correct modal. Changed from row-index-based selection to JavaScript onClick callbacks that pass actual row data (archetype_id, player_id, store_id, tournament_id).
+
+### Added
+- **GitHub & Ko-fi Links (I6)**: Header now includes GitHub repo link and Ko-fi support button
+- **Meta % Column**: Meta tab now shows each deck's share of total entries
+- **Conv % Column**: Meta tab now shows conversion rate (Top 3s / Entries)
+- **Record Column**: Players tab now shows W-L-T with colored numbers (green wins, red losses, orange ties)
+- **Main Deck Column**: Players tab now shows most-played deck with color badge
+
+### Changed
+- **Blue Deck Badge (I1)**: Blue decks now display "U" instead of "B" to distinguish from Black decks
+- **Default Table Rows (I3)**: Meta, Stores, Tournaments, and Players tables now default to 32 rows
+- **Top Decks Count**: Overview page now shows top 6 decks (was 8) for cleaner grid layouts across screen sizes
+- **Players Tab Columns (I11a)**: Reorganized to Player, Events, Rating, Score, 1sts, Top 3s, Record, Win %, Main Deck
+- **Meta Tab Columns (I11b)**: Reorganized to Deck, Color, Entries, Meta %, 1sts, Top 3s, Conv %, Win % (removed Avg Place)
+- **Column Renames**: "Achv" → "Score", "1st" → "1sts", "1st Places" → "1sts", "Top 3" → "Top 3s" for consistency
+
+### Technical
+- Modal selection fix affects: archetype_stats, player_standings, store_list, tournament_history tables
+- All use `Shiny.setInputValue()` with `{priority: 'event'}` for reliable event handling
+- Pre-computed HTML columns for Record and Main Deck to avoid pagination index issues
+
+---
+
 ## [0.14.0] - 2026-02-01 - Rating System
 
 ### Added

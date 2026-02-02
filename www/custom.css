@@ -154,6 +154,12 @@
   color: #FFFFFF !important;
 }
 
+/* Ko-fi support button - coral highlight */
+.header-coffee-btn:hover {
+  background-color: #FF5E5B !important;
+  color: #FFFFFF !important;
+}
+
 /* =============================================================================
    SIDEBAR NAVIGATION
    ============================================================================= */

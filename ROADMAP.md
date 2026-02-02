@@ -2,36 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.14.0
+**Current Version:** v0.15.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.15 - Bug Fixes & Quick Polish
-
-| ID | Type | Description |
-|----|------|-------------|
-| B1 | BUG | Modal selection bug fix - clicking rows after sorting opens wrong modal. See `docs/solutions/modal-selection-bug.md` |
-| I1 | IMPROVEMENT | Change blue deck badge from "B" to "U", keep black as "B" |
-| I3 | IMPROVEMENT | Default 32 rows for main tables (Meta, Stores, Tournaments tabs) |
-| I6 | IMPROVEMENT | Add GitHub repo and "Buy Me a Coffee" links to header/footer |
-| I10 | IMPROVEMENT | Alphabetical sorting for dropdowns where appropriate (stores, players, decks - not formats/event types) |
-| I11 | IMPROVEMENT | Table column reorganization - see details below |
-
-**I11 Details - Table Column Changes:**
-
-*Players Tab:*
-- Rename: Achv → Score, 1st → 1sts
-- Add: Record (W-L-T with colored numbers: green-red-orange)
-- Add: Main Deck (with color badge)
-- Column order: Player, Events, Rating, Score, 1sts, Top 3s, Record, Win %, Main Deck
-
-*Meta Tab:*
-- Rename: 1st Places → 1sts
-- Add: Meta % (share of total entries)
-- Add: Conv % (conversion rate: Top 3s / Entries)
-- Column order: Deck, Color, Entries, Meta %, 1sts, Top 3s, Conv %, Win %
 
 ---
 
@@ -174,6 +147,15 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.15.0 - Bug Fixes & Quick Polish
+- Modal selection bug fixed (JS onClick with row data)
+- Blue deck badge changed to "U" (black remains "B")
+- Default 32 rows for main tables
+- GitHub and Ko-fi links in header
+- Players Tab: added Record (colored W-L-T), Main Deck columns
+- Meta Tab: added Meta %, Conv % columns, removed Avg Place
+- Top Decks reduced to 6 for cleaner grid layouts
 
 ### v0.14.0 - Rating System
 - Competitive Rating (Elo-style with implied results)
