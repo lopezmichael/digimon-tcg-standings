@@ -254,6 +254,18 @@ ui <- page_fillable(
 
   # Custom CSS and JavaScript
   tags$head(
+    # Open Graph meta tags for link previews (Discord, Twitter, etc.)
+    tags$meta(property = "og:title", content = "DigiLab - Digimon TCG Locals Tracker"),
+    tags$meta(property = "og:description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
+    tags$meta(property = "og:type", content = "website"),
+    tags$meta(property = "og:url", content = "https://digilab.cards/"),
+    tags$meta(property = "og:site_name", content = "DigiLab"),
+    # Twitter Card tags
+    tags$meta(name = "twitter:card", content = "summary"),
+    tags$meta(name = "twitter:title", content = "DigiLab - Digimon TCG Locals Tracker"),
+    tags$meta(name = "twitter:description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
+    # Standard meta description
+    tags$meta(name = "description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
     # JavaScript to handle active nav state and loading screen
     tags$script(HTML("
