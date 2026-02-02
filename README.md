@@ -1,8 +1,8 @@
-# Digimon Locals Meta Tracker
+# DigiLab
 
 A regional tournament tracking application for the Dallas-Fort Worth Digimon Trading Card Game community. Track player performance, store activity, deck meta, and local tournament results.
 
-**Live App:** https://lopezmichael.github.io/digimon-tcg-standings/
+**Live App:** https://digilab.cards/
 
 ## Features
 
