@@ -370,12 +370,10 @@ ui <- page_fillable(
       tags$nav(
         class = "sidebar-nav",
 
+        # Public tabs (ordered by engagement: overview, rankings, meta, history, reference)
         actionLink("nav_dashboard",
                    tagList(bsicons::bs_icon("graph-up"), " Overview"),
                    class = "nav-link-sidebar active"),
-        actionLink("nav_stores",
-                   tagList(bsicons::bs_icon("geo-alt"), " Stores"),
-                   class = "nav-link-sidebar"),
         actionLink("nav_players",
                    tagList(bsicons::bs_icon("people"), " Players"),
                    class = "nav-link-sidebar"),
@@ -385,8 +383,11 @@ ui <- page_fillable(
         actionLink("nav_tournaments",
                    tagList(bsicons::bs_icon("trophy"), " Tournaments"),
                    class = "nav-link-sidebar"),
+        actionLink("nav_stores",
+                   tagList(bsicons::bs_icon("geo-alt"), " Stores"),
+                   class = "nav-link-sidebar"),
 
-        # Admin Section (conditionally shown)
+        # Admin Section (conditionally shown, ordered by frequency of use)
         conditionalPanel(
           condition = "output.is_admin",
           tags$div(class = "nav-section-label", "Admin"),
@@ -394,19 +395,19 @@ ui <- page_fillable(
                      tagList(bsicons::bs_icon("pencil-square"), " Enter Results"),
                      class = "nav-link-sidebar"),
           actionLink("nav_admin_tournaments",
-                     tagList(bsicons::bs_icon("trophy"), " Manage Tournaments"),
-                     class = "nav-link-sidebar"),
-          actionLink("nav_admin_decks",
-                     tagList(bsicons::bs_icon("collection"), " Manage Decks"),
-                     class = "nav-link-sidebar"),
-          actionLink("nav_admin_stores",
-                     tagList(bsicons::bs_icon("shop"), " Manage Stores"),
-                     class = "nav-link-sidebar"),
-          actionLink("nav_admin_formats",
-                     tagList(bsicons::bs_icon("calendar3"), " Manage Formats"),
+                     tagList(bsicons::bs_icon("trophy"), " Edit Tournaments"),
                      class = "nav-link-sidebar"),
           actionLink("nav_admin_players",
-                     tagList(bsicons::bs_icon("people"), " Manage Players"),
+                     tagList(bsicons::bs_icon("people"), " Edit Players"),
+                     class = "nav-link-sidebar"),
+          actionLink("nav_admin_decks",
+                     tagList(bsicons::bs_icon("collection"), " Edit Decks"),
+                     class = "nav-link-sidebar"),
+          actionLink("nav_admin_stores",
+                     tagList(bsicons::bs_icon("shop"), " Edit Stores"),
+                     class = "nav-link-sidebar"),
+          actionLink("nav_admin_formats",
+                     tagList(bsicons::bs_icon("calendar3"), " Edit Formats"),
                      class = "nav-link-sidebar")
         )
       )

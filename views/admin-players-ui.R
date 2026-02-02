@@ -4,7 +4,7 @@
 admin_players_ui <- tagList(
   div(
     class = "d-flex justify-content-between align-items-center mb-3",
-    h2("Manage Players", class = "mb-0"),
+    h2("Edit Players", class = "mb-0"),
     actionButton("show_merge_modal", "Merge Players",
                  class = "btn-outline-warning",
                  icon = icon("code-merge"))

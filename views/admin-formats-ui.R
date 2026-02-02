@@ -2,7 +2,7 @@
 # Admin - Manage formats UI
 
 admin_formats_ui <- tagList(
-  h2("Manage Formats"),
+  h2("Edit Formats"),
   div(
     class = "admin-panel",
     layout_columns(

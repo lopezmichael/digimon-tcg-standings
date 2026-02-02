@@ -1,5 +1,5 @@
 # =============================================================================
-# Admin: Manage Tournaments Server Logic
+# Admin: Edit Tournaments Server Logic
 # =============================================================================
 
 # Update edit form dropdowns when data changes

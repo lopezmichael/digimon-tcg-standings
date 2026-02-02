@@ -2,7 +2,7 @@
 # Admin - Manage deck archetypes UI
 
 admin_decks_ui <- tagList(
-  h2("Manage Deck Archetypes"),
+  h2("Edit Deck Archetypes"),
   div(
     class = "admin-panel",
     layout_columns(

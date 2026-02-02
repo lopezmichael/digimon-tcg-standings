@@ -2,7 +2,7 @@
 # Admin - Manage stores UI
 
 admin_stores_ui <- tagList(
-  h2("Manage Stores"),
+  h2("Edit Stores"),
   div(
     class = "admin-panel",
     layout_columns(

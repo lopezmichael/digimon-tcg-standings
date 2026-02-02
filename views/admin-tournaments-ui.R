@@ -2,7 +2,7 @@
 # Admin - Manage tournaments UI
 
 admin_tournaments_ui <- tagList(
-  h2("Manage Tournaments"),
+  h2("Edit Tournaments"),
   div(
     class = "admin-panel",
     layout_columns(
