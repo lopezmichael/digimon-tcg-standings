@@ -266,6 +266,14 @@ ui <- page_fillable(
     tags$meta(name = "twitter:description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
     # Standard meta description
     tags$meta(name = "description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
+    # Google Analytics
+    tags$script(async = NA, src = "https://www.googletagmanager.com/gtag/js?id=G-NJ3SMG8HGG"),
+    tags$script(HTML("
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-NJ3SMG8HGG');
+    ")),
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
     # JavaScript to handle active nav state and loading screen
     tags$script(HTML("
