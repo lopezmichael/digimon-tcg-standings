@@ -835,16 +835,15 @@ server <- function(input, output, session) {
         tournament_id = colDef(show = FALSE),
         store_id = colDef(show = FALSE),
         Store = colDef(
-          minWidth = 120,
-          maxWidth = 180,
+          minWidth = 150,
           style = list(overflow = "hidden", textOverflow = "ellipsis", whiteSpace = "nowrap")
         ),
-        Date = colDef(minWidth = 90),
-        Players = colDef(minWidth = 60, align = "center"),
-        Winner = colDef(minWidth = 100),
+        Date = colDef(width = 100),
+        Players = colDef(width = 65, align = "center"),
+        Winner = colDef(width = 110),
         store_rating = colDef(
           name = "Rating",
-          minWidth = 60,
+          width = 60,
           align = "center",
           cell = function(value) if (value == 0) "-" else value
         )
