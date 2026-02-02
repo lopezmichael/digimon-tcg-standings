@@ -17,6 +17,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 | I5 | IMPROVEMENT | Database auto-refresh for admins - no more hard browser refresh needed after modifications |
 | F1 | FEATURE | Overview click → modal + tab switch - clicking player/tournament in Overview opens modal and switches to appropriate tab |
 | I12 | IMPROVEMENT | Modal updates - see details below |
+| I13 | IMPROVEMENT | Sort "Meta Share Over Time" chart series by deck color for visual grouping |
 
 **I12 Details - Modal Updates:**
 
