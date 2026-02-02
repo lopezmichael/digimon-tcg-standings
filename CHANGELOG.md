@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-*No unreleased changes*
+### Added
+- **Open Graph Meta Tags**: Link previews on Discord, Twitter, and other platforms now show proper DigiLab branding and description
 
 ---
 
