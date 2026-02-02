@@ -797,8 +797,8 @@ server <- function(input, output, session) {
     # Query with winner (player who got placement = 1) and store_id for rating join
     query <- sprintf("
       SELECT t.tournament_id, s.store_id, s.name as Store,
-             t.event_date as Date, t.event_type as Type,
-             t.player_count as Players, p.display_name as Winner
+             t.event_date as Date, t.player_count as Players,
+             p.display_name as Winner
       FROM tournaments t
       JOIN stores s ON t.store_id = s.store_id
       LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
@@ -821,20 +821,6 @@ server <- function(input, output, session) {
     # Re-sort by date (merge may have changed order)
     data <- data[order(as.Date(data$Date), decreasing = TRUE), ]
 
-    # Format event type nicely
-    event_type_labels <- c(
-      "locals" = "Locals",
-      "evo_cup" = "Evo Cup",
-      "store_championship" = "Store Champ",
-      "regionals" = "Regionals",
-      "regulation_battle" = "Reg Battle",
-      "release_event" = "Release",
-      "other" = "Other"
-    )
-    data$Type <- sapply(data$Type, function(t) {
-      if (t %in% names(event_type_labels)) event_type_labels[t] else t
-    })
-
     # Replace NA winners with "-"
     data$Winner[is.na(data$Winner)] <- "-"
 
@@ -848,13 +834,16 @@ server <- function(input, output, session) {
       columns = list(
         tournament_id = colDef(show = FALSE),
         store_id = colDef(show = FALSE),
-        Store = colDef(minWidth = 120),
+        Store = colDef(
+          minWidth = 120,
+          maxWidth = 180,
+          style = list(overflow = "hidden", textOverflow = "ellipsis", whiteSpace = "nowrap")
+        ),
         Date = colDef(minWidth = 90),
-        Type = colDef(minWidth = 80),
         Players = colDef(minWidth = 60, align = "center"),
         Winner = colDef(minWidth = 100),
         store_rating = colDef(
-          name = "Store",
+          name = "Rating",
           minWidth = 60,
           align = "center",
           cell = function(value) if (value == 0) "-" else value
