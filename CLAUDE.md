@@ -298,6 +298,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.15.0** - Bug Fixes & Quick Polish (Modal fix, table columns, Ko-fi link)
+**v0.16.0** - UX Improvements & Modal Enhancements (Manage Tournaments, cross-modal navigation, auto-refresh)
 
 See `CHANGELOG.md` for full version history.

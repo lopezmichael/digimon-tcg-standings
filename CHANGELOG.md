@@ -11,6 +11,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.0] - 2026-02-02 - UX Improvements & Modal Enhancements
+
+### Added
+- **Manage Tournaments Admin Tab (I4)**: Full edit and delete capabilities for tournaments
+  - Edit tournament details (date, store, format, event type, player count, rounds)
+  - Cascade delete with confirmation (removes tournament and all associated results)
+  - Searchable tournament list with filters
+- **Overview Click Navigation (F1)**: Clicking rows in Overview tables opens modals and switches tabs
+  - Top Players → Players tab + player modal
+  - Recent Tournaments → Tournaments tab + tournament modal
+- **Cross-Modal Navigation (I12)**: Click links within modals to navigate between entities
+  - Player modal: Click home store → store modal
+  - Deck modal: Click pilot name → player modal
+  - Tournament modal: Click store name → store modal
+- **Deck Modal Stats (I12)**: Added Meta % and Conv % (conversion rate)
+- **Tournament Modal Stats (I12)**: Added Store Rating
+- **'None' Option in Admin Dropdowns (I2)**: Clear/reset selection for store and event type fields
+
+### Changed
+- **Database Auto-Refresh (I5)**: All public tables now auto-refresh after admin modifications
+- **Meta Chart Color Sorting (I13)**: "Meta Share Over Time" chart series sorted by deck color for visual grouping (Red, Blue, Yellow, Green, Purple, Black, White, Multi, Other)
+- **Modal Naming Consistency (I12)**: "1st Places" → "1sts" across all modals
+- **Top Pilots Table (I12)**: Pilot names now clickable links to player modals
+
+### Fixed
+- **Sidebar Navigation Sync**: Sidebar now correctly highlights active tab when navigating programmatically (via Overview clicks or cross-modal links)
+
+### Technical
+- Added `updateSidebarNav` JavaScript handler for programmatic sidebar updates
+- Tournament management uses cascade delete pattern (results first, then tournament)
+- Cross-modal navigation uses `removeModal()` + `nav_select()` + custom message pattern
+
+---
+
 ## [0.15.0] - 2026-02-02 - Bug Fixes & Quick Polish
 
 ### Fixed

@@ -2,45 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.15.0
+**Current Version:** v0.16.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.16 - UX Improvements
-
-| ID | Type | Description |
-|----|------|-------------|
-| I2 | IMPROVEMENT | Add 'None' option in admin page dropdowns |
-| I4 | FEATURE | New "Manage Tournaments" admin tab - edit tournament details, delete tournaments (replaces buried deletion flow) |
-| I5 | IMPROVEMENT | Database auto-refresh for admins - no more hard browser refresh needed after modifications |
-| F1 | FEATURE | Overview click → modal + tab switch - clicking player/tournament in Overview opens modal and switches to appropriate tab |
-| I12 | IMPROVEMENT | Modal updates - see details below |
-| I13 | IMPROVEMENT | Sort "Meta Share Over Time" chart series by deck color for visual grouping |
-
-**I12 Details - Modal Updates:**
-
-*All Modals:*
-- Consistent naming with table columns (Score not Achv, 1sts not 1st Places, etc.)
-- Cross-modal links (click store name → opens store modal, etc.)
-
-*Store Modal:*
-- Add: Store Rating, Total unique players, Most popular deck at this store
-- Link to: Tournament modals (recent tournaments)
-
-*Player Modal:*
-- Add: Rating, Score, Avg Placement
-- Change: Record to W-L-T with colors (green-red-orange)
-- Link to: Store modal (home store)
-
-*Deck/Archetype Modal:*
-- Add: Meta %, Conv %, Win %, Avg Placement
-- Link to: Player modals (top pilots)
-
-*Tournament Modal:*
-- Add: Store Rating
-- Link to: Store modal
 
 ---
 
@@ -148,6 +112,15 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.16.0 - UX Improvements & Modal Enhancements
+- I2: 'None' option in admin dropdowns (clear/reset selection)
+- I4: Manage Tournaments admin tab (full edit + delete)
+- I5: Database auto-refresh for admins (all tables)
+- F1: Overview click → modal + tab switch
+- I12: Modal updates (Meta %, Conv %, Store Rating, cross-modal links, consistent naming)
+- I13: Meta chart series sorted by deck color
+- Sidebar sync fix for programmatic navigation
 
 ### v0.15.0 - Bug Fixes & Quick Polish
 - Modal selection bug fixed (JS onClick with row data)
