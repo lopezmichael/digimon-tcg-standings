@@ -241,6 +241,7 @@ reset_tournament_form <- function() {
 
   shinyjs::hide("update_tournament")
   shinyjs::hide("delete_tournament")
+  shinyjs::hide("view_results_btn_container")
 }
 
 # Delete button click - show modal
