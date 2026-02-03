@@ -489,8 +489,15 @@ observeEvent(input$modal_result_clicked, {
   updateNumericInput(session, "modal_edit_wins", value = result$wins)
   updateNumericInput(session, "modal_edit_losses", value = result$losses)
   updateNumericInput(session, "modal_edit_ties", value = result$ties)
-  updateTextInput(session, "modal_edit_decklist",
-                  value = if (is.na(result$decklist_url)) "" else result$decklist_url)
+
+  # Handle various empty/null representations from DuckDB
+  decklist_val <- result$decklist_url
+  decklist_display <- if (is.null(decklist_val) ||
+                          length(decklist_val) == 0 ||
+                          is.na(decklist_val) ||
+                          decklist_val == "" ||
+                          decklist_val == "NA") "" else decklist_val
+  updateTextInput(session, "modal_edit_decklist", value = decklist_display)
 
   # Show edit modal
   shinyjs::runjs("$('#modal_edit_result').modal('show');")
