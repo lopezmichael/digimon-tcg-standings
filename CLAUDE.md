@@ -298,6 +298,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.16.1** - DigiLab Rebranding (custom domain at digilab.cards)
+**v0.17.0** - Admin UX Improvements (Edit Results modal, required date validation)
 
 See `CHANGELOG.md` for full version history.

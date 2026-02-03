@@ -2,21 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.16.1
+**Current Version:** v0.17.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.17 - Admin UX Improvements
-
-| ID | Type | Description |
-|----|------|-------------|
-| A2 | FEATURE | Edit Results modal - access player results from Edit Tournaments page |
-| A3 | IMPROVEMENT | Blank date field with required validation - prevents accidental wrong dates |
-| A4 | IMPROVEMENT | Update duplicate tournament flow - "View/Edit Existing" navigates to Edit Tournaments |
-
-**Design Document:** `docs/plans/2026-02-03-admin-ux-improvements-design.md`
 
 ---
 
@@ -124,6 +112,12 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.17.0 - Admin UX Improvements
+- A2: Edit Results modal from Edit Tournaments page
+- A3: Blank date field with required validation
+- A4: Duplicate tournament flow navigates to Edit Tournaments
+- Bug fixes: date observer, reactable columns, input widths, decklist URL handling
 
 ### v0.16.1 - DigiLab Rebranding
 - Custom domain: digilab.cards
