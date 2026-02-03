@@ -509,7 +509,7 @@ server <- function(input, output, session) {
   # ---------------------------------------------------------------------------
 
   source("server/shared-server.R", local = TRUE)
-  source("server/results-server.R", local = TRUE)
+  source("server/admin-results-server.R", local = TRUE)
   source("server/admin-tournaments-server.R", local = TRUE)
   source("server/admin-decks-server.R", local = TRUE)
   source("server/admin-stores-server.R", local = TRUE)
