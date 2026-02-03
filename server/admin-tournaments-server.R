@@ -532,3 +532,68 @@ observeEvent(input$modal_confirm_delete_result, {
     showNotification(paste("Error:", e$message), type = "error")
   })
 })
+
+# =============================================================================
+# Add New Result Handlers
+# =============================================================================
+
+# Show add result form
+observeEvent(input$modal_add_result, {
+  # Reset form
+  updateSelectizeInput(session, "modal_new_player", selected = "")
+  updateSelectizeInput(session, "modal_new_deck", selected = "")
+  updateNumericInput(session, "modal_new_placement", value = 1)
+  updateNumericInput(session, "modal_new_wins", value = 0)
+  updateNumericInput(session, "modal_new_losses", value = 0)
+  updateNumericInput(session, "modal_new_ties", value = 0)
+  updateTextInput(session, "modal_new_decklist", value = "")
+
+  shinyjs::show("modal_add_result_form")
+})
+
+# Cancel add result
+observeEvent(input$modal_cancel_new_result, {
+  shinyjs::hide("modal_add_result_form")
+})
+
+# Save new result
+observeEvent(input$modal_save_new_result, {
+  req(rv$db_con, rv$modal_tournament_id)
+
+  player_id <- as.integer(input$modal_new_player)
+  archetype_id <- as.integer(input$modal_new_deck)
+  placement <- input$modal_new_placement
+  wins <- input$modal_new_wins %||% 0
+  losses <- input$modal_new_losses %||% 0
+  ties <- input$modal_new_ties %||% 0
+  decklist_url <- if (!is.null(input$modal_new_decklist) && nchar(input$modal_new_decklist) > 0)
+    input$modal_new_decklist else NA_character_
+
+  # Validation
+  if (is.na(player_id)) {
+    showNotification("Please select a player", type = "error")
+    return()
+  }
+  if (is.na(archetype_id)) {
+    showNotification("Please select a deck", type = "error")
+    return()
+  }
+
+  tryCatch({
+    dbExecute(rv$db_con, "
+      INSERT INTO results (tournament_id, player_id, archetype_id, placement,
+                           wins, losses, ties, decklist_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ", params = list(rv$modal_tournament_id, player_id, archetype_id, placement,
+                     wins, losses, ties, decklist_url))
+
+    showNotification("Result added!", type = "message")
+
+    shinyjs::hide("modal_add_result_form")
+    rv$modal_results_refresh <- (rv$modal_results_refresh %||% 0) + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+  }, error = function(e) {
+    showNotification(paste("Error:", e$message), type = "error")
+  })
+})
