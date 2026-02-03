@@ -314,6 +314,25 @@ Before committing, always verify code works:
 2. Test the specific feature/fix that was changed
 3. Confirm no console errors
 
+### Documentation Updates (REQUIRED)
+
+Keep documentation in sync with code changes. Update these files regularly:
+
+| File | When to Update |
+|------|----------------|
+| `CHANGELOG.md` | Every version release (features, fixes, changes) |
+| `logs/dev_log.md` | Significant technical decisions, blockers, architecture changes |
+| `ARCHITECTURE.md` | New reactive values, server modules, or patterns |
+| `README.md` | New features, changed setup instructions, updated screenshots |
+| `ROADMAP.md` | Completed milestones, new planned features |
+
+**Guidelines:**
+- Update `CHANGELOG.md` when releasing a new version (not every commit)
+- Update `dev_log.md` for technical decisions worth remembering
+- Update `README.md` when user-facing features change significantly
+- Update `ARCHITECTURE.md` before adding new reactive values or modules
+- Don't let documentation drift - if you change code, check if docs need updating
+
 ## Development Workflow
 
 ### Running Locally
