@@ -429,7 +429,7 @@ output$modal_results_table <- renderReactable({
 
   display_data <- data.frame(
     result_id = results$result_id,
-    `#` = results$placement,
+    Place = results$placement,
     Player = results$player,
     Deck = results$deck,
     Record = results$Record,
@@ -452,7 +452,7 @@ output$modal_results_table <- renderReactable({
     pagination = FALSE,
     columns = list(
       result_id = colDef(show = FALSE),
-      `#` = colDef(width = 50, align = "center"),
+      Place = colDef(name = "#", width = 50, align = "center"),
       Player = colDef(minWidth = 120),
       Deck = colDef(minWidth = 120),
       Record = colDef(width = 80, align = "center")
