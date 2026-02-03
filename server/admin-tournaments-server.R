@@ -303,3 +303,122 @@ observeEvent(input$confirm_delete_tournament, {
     showNotification(paste("Error:", e$message), type = "error")
   })
 })
+
+# =============================================================================
+# Results Modal Handlers
+# =============================================================================
+
+# Show View/Edit Results button when tournament is selected
+observeEvent(input$admin_tournament_list_clicked, {
+  # Button is shown in the existing click handler, add this line there
+  shinyjs::show("view_results_btn_container")
+}, priority = -1)  # Run after main handler
+
+# Hide button when form is cancelled/reset
+observeEvent(input$cancel_edit_tournament, {
+  shinyjs::hide("view_results_btn_container")
+}, priority = -1)
+
+# Open results modal
+observeEvent(input$view_edit_results, {
+  req(rv$db_con, input$editing_tournament_id)
+
+  # Store the tournament ID for modal operations
+  rv$modal_tournament_id <- as.integer(input$editing_tournament_id)
+
+  # Update dropdowns for add/edit forms
+  updateSelectizeInput(session, "modal_new_player",
+                       choices = get_player_choices(rv$db_con))
+  updateSelectizeInput(session, "modal_new_deck",
+                       choices = get_archetype_choices(rv$db_con))
+  updateSelectizeInput(session, "modal_edit_player",
+                       choices = get_player_choices(rv$db_con))
+  updateSelectizeInput(session, "modal_edit_deck",
+                       choices = get_archetype_choices(rv$db_con))
+
+  # Reset add form
+  shinyjs::hide("modal_add_result_form")
+
+  # Show modal
+  shinyjs::runjs("$('#tournament_results_modal').modal('show');")
+})
+
+# Results modal summary
+output$results_modal_summary <- renderUI({
+  req(rv$db_con, rv$modal_tournament_id)
+
+  tournament <- dbGetQuery(rv$db_con, "
+    SELECT t.*, s.name as store_name
+    FROM tournaments t
+    LEFT JOIN stores s ON t.store_id = s.store_id
+    WHERE t.tournament_id = ?
+  ", params = list(rv$modal_tournament_id))
+
+  if (nrow(tournament) == 0) return(NULL)
+
+  div(
+    class = "d-flex flex-wrap gap-3 align-items-center text-muted",
+    span(tags$strong(tournament$store_name)),
+    span(bsicons::bs_icon("calendar"), " ", as.character(tournament$event_date)),
+    span(bsicons::bs_icon("tag"), " ", tournament$format),
+    span(bsicons::bs_icon("people"), " ", tournament$player_count, " players")
+  )
+})
+
+# Results table in modal
+output$modal_results_table <- renderReactable({
+  req(rv$db_con, rv$modal_tournament_id)
+
+  # Trigger refresh
+  rv$modal_results_refresh
+
+  results <- dbGetQuery(rv$db_con, "
+    SELECT r.result_id, r.placement, p.display_name as player,
+           da.archetype_name as deck, da.primary_color,
+           r.wins, r.losses, r.ties, r.decklist_url
+    FROM results r
+    JOIN players p ON r.player_id = p.player_id
+    LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
+    WHERE r.tournament_id = ?
+    ORDER BY r.placement
+  ", params = list(rv$modal_tournament_id))
+
+  if (nrow(results) == 0) {
+    return(reactable(data.frame(Message = "No results entered yet")))
+  }
+
+  # Format record
+  results$Record <- paste0(results$wins, "-", results$losses, "-", results$ties)
+
+  display_data <- data.frame(
+    result_id = results$result_id,
+    `#` = results$placement,
+    Player = results$player,
+    Deck = results$deck,
+    Record = results$Record,
+    stringsAsFactors = FALSE
+  )
+
+  reactable(
+    display_data,
+    selection = "single",
+    onClick = JS("function(rowInfo, column) {
+      if (rowInfo) {
+        Shiny.setInputValue('modal_result_clicked', {
+          result_id: rowInfo.row.result_id,
+          nonce: Math.random()
+        }, {priority: 'event'});
+      }
+    }"),
+    highlight = TRUE,
+    compact = TRUE,
+    pagination = FALSE,
+    columns = list(
+      result_id = colDef(show = FALSE),
+      `#` = colDef(width = 50, align = "center"),
+      Player = colDef(minWidth = 120),
+      Deck = colDef(minWidth = 120),
+      Record = colDef(width = 80, align = "center")
+    )
+  )
+})
