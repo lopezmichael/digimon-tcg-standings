@@ -487,7 +487,10 @@ server <- function(input, output, session) {
     duplicate_tournament = NULL,  # Store duplicate tournament info for modal
     results_refresh = 0,  # Trigger to refresh results table
     card_search_page = 1,  # Current page for card search pagination
-    data_refresh = 0  # Trigger to refresh all public tables when admin makes changes
+    data_refresh = 0,  # Trigger to refresh all public tables when admin makes changes
+    modal_results_refresh = 0,  # Trigger to refresh results modal table
+    modal_tournament_id = NULL,  # Tournament ID for results modal
+    navigate_to_tournament_id = NULL  # For duplicate flow navigation
   )
 
   # Helper function for ordinal numbers (1st, 2nd, 3rd, etc.)
