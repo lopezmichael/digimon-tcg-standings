@@ -242,13 +242,9 @@ observeEvent(input$edit_existing_tournament, {
   rv$navigate_to_tournament_id <- rv$duplicate_tournament$tournament_id
 
   # Navigate to Edit Tournaments tab
-  nav_select("main_tabs", "admin_tournaments")
-
-  # Update sidebar highlight
-  shinyjs::runjs("
-    $('.nav-link').removeClass('active');
-    $('#nav_admin_tournaments').addClass('active');
-  ")
+  nav_select("main_content", "admin_tournaments")
+  rv$current_nav <- "admin_tournaments"
+  session$sendCustomMessage("updateSidebarNav", "nav_admin_tournaments")
 })
 
 # Handle "Create Anyway" button from duplicate modal
