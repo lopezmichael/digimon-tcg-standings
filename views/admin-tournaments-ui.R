@@ -228,15 +228,14 @@ admin_tournaments_ui <- tagList(
                          choices = NULL,
                          options = list(create = FALSE, placeholder = "Select deck...")),
           div(
-            class = "row g-2",
-            div(class = "col-md-3",
-                numericInput("modal_edit_placement", "Place", value = 1, min = 1)),
-            div(class = "col-md-3",
-                numericInput("modal_edit_wins", "Wins", value = 0, min = 0)),
-            div(class = "col-md-3",
-                numericInput("modal_edit_losses", "Losses", value = 0, min = 0)),
-            div(class = "col-md-3",
-                numericInput("modal_edit_ties", "Ties", value = 0, min = 0))
+            class = "modal-numeric-inputs",
+            layout_columns(
+              col_widths = c(3, 3, 3, 3),
+              numericInput("modal_edit_placement", "Place", value = 1, min = 1),
+              numericInput("modal_edit_wins", "Wins", value = 0, min = 0),
+              numericInput("modal_edit_losses", "Losses", value = 0, min = 0),
+              numericInput("modal_edit_ties", "Ties", value = 0, min = 0)
+            )
           ),
           div(
             class = "mt-2",

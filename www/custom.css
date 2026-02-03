@@ -3293,3 +3293,19 @@ button.mapbox-gl-draw_point {
   margin-top: 0.25rem;
 }
 
+/* =============================================================================
+   MODAL NUMERIC INPUTS - Fix layout_columns width issues
+   ============================================================================= */
+
+.modal-numeric-inputs .bslib-grid-item {
+  min-width: 0 !important;
+  max-width: 100%;
+}
+
+.modal-numeric-inputs .shiny-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
