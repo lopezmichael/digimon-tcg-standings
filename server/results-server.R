@@ -59,8 +59,9 @@ observeEvent(input$create_tournament, {
     return()
   }
 
-  if (is.null(event_date) || nchar(event_date) == 0) {
-    showNotification("Please select a date", type = "error")
+  # Date validation
+  if (is.null(input$tournament_date) || is.na(input$tournament_date)) {
+    showNotification("Please select a tournament date", type = "error")
     return()
   }
 
@@ -210,6 +211,17 @@ observeEvent(input$delete_tournament_confirm, {
     showNotification(paste("Error:", e$message), type = "error")
   })
 })
+
+# Hide date required hint when date is selected
+observeEvent(input$tournament_date, {
+  if (!is.null(input$tournament_date) && !is.na(input$tournament_date)) {
+    shinyjs::hide("date_required_hint")
+    shinyjs::runjs("$('#tournament_date').closest('.date-required').removeClass('date-required');")
+  } else {
+    shinyjs::show("date_required_hint")
+    shinyjs::runjs("$('#tournament_date').closest('.shiny-date-input').addClass('date-required');")
+  }
+}, ignoreNULL = FALSE)
 
 # Wizard back button
 observeEvent(input$wizard_back, {

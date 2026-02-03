@@ -3278,3 +3278,18 @@ button.mapbox-gl-draw_point {
   border-color: rgba(0, 200, 255, 0.25) !important;
 }
 
+/* =============================================================================
+   REQUIRED DATE FIELD STYLING
+   ============================================================================= */
+
+.date-required .form-control {
+  border-color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
+.date-required-hint {
+  color: #dc3545;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+

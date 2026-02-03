@@ -34,7 +34,11 @@ admin_results_ui <- tagList(
             div(class = "col-md-8",
                 selectInput("tournament_store", "Store", choices = NULL)),
             div(class = "col-md-4",
-                dateInput("tournament_date", "Date", value = Sys.Date()))
+                div(
+                  class = "date-required",
+                  dateInput("tournament_date", "Date *", value = NA),
+                  div(id = "date_required_hint", class = "date-required-hint", "Required")
+                ))
           ),
           # Row 2: Event Type + Format
           div(
