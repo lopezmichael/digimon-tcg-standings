@@ -4,6 +4,90 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-03: v0.17.0 - Admin UX Improvements
+
+### Summary
+Released v0.17.0 addressing key admin pain points: editing tournament results is now accessible from Edit Tournaments page, date field requires explicit selection to prevent wrong dates, and duplicate tournament flow navigates to edit mode.
+
+### Design Process
+Used brainstorming skill to explore the problem space before implementation:
+- **Pain point 1**: Editing player results required navigating through Enter Results wizard, finding the tournament, then editing - unintuitive for quick corrections
+- **Pain point 2**: Date field defaulted to today, causing accidental wrong date submissions
+- **Pain point 3**: After duplicating a tournament, staying on Enter Results page was confusing
+
+Design document: `docs/plans/2026-02-03-admin-ux-improvements-design.md`
+
+### Implementation
+
+**Edit Results Modal (from Edit Tournaments)**
+- Added "View/Edit Results" button that appears when a tournament is selected
+- Modal shows tournament summary (store, date, format, player count) and results table
+- Click any row to edit: player, deck, placement, W/L/T, decklist URL
+- Add new results directly from modal
+- Delete results with confirmation dialog
+- Uses nested modals (results modal → edit modal → delete confirmation)
+
+**Required Date Field**
+- Changed `dateInput` default from `Sys.Date()` to `NA`
+- Added CSS class `date-required` with red border styling
+- Added "Required" hint text below field
+- Observer shows/hides validation styling based on date selection
+- Create tournament handler validates date before submission
+
+**Duplicate Tournament Flow**
+- After duplication, now calls `nav_select()` to switch to Edit Tournaments tab
+- Sets `rv$navigate_to_tournament_id` to auto-select the new tournament
+- Observer in Edit Tournaments picks up the ID and populates the form
+
+### Bug Fixes During Testing
+
+**Date Observer Error**
+- Issue: `is.na()` failed on zero-length date input during initial load
+- Fix: Check `length(input$tournament_date) > 0` before `anyNA()`
+
+**Reactable Column Name Error**
+- Issue: R data.frame converts `` `#` `` to invalid column name
+- Fix: Use `Place` internally, `colDef(name = "#")` for display
+
+**Modal Input Widths**
+- Issue: Place/Wins/Losses/Ties fields not evenly distributed
+- Fix: Wrapped in `layout_columns(col_widths = c(3, 3, 3, 3))` with CSS override for min-width
+
+**Decklist URL Display**
+- Issue: Field showed unexpected content for some records
+- Fix: Robust null checking for NULL, NA, "", "NA" literal, zero-length values
+
+### Technical Notes
+
+**Shiny Date Input Edge Cases**
+When using `dateInput` with `value = NA`, the input starts as zero-length vector, not NA. Must check:
+```r
+date_valid <- !is.null(input$date) &&
+              length(input$date) > 0 &&
+              !anyNA(input$date)
+```
+
+**Cross-Tab Navigation with Auto-Selection**
+Pattern for navigating to a tab and auto-selecting a record:
+1. Set reactive value: `rv$navigate_to_tournament_id <- new_id`
+2. Navigate: `nav_select("main_nav", "admin_tournaments")`
+3. Observer in target tab watches for the reactive value, populates form, clears value
+
+**Nested Bootstrap Modals**
+Bootstrap 5 supports nested modals but requires `data-bs-backdrop="static"` on parent to prevent dismissal when clicking backdrop. Child modals appear above parent.
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `views/admin-tournaments-ui.R` | Added View/Edit Results button, results modal, edit modal, delete confirmation modal |
+| `server/admin-tournaments-server.R` | Added modal handlers, edit/delete/add result handlers, navigate observer |
+| `views/admin-results-ui.R` | Changed date default to NA, added required styling |
+| `server/results-server.R` | Added date validation, updated duplicate flow navigation |
+| `app.R` | Initialized new reactive values (modal_results_refresh, modal_tournament_id, navigate_to_tournament_id) |
+| `www/custom.css` | Added date-required styles, modal-numeric-inputs fix |
+
+---
+
 ## 2026-02-02: Bug Fix, Branding & Analytics
 
 ### Summary
