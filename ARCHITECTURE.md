@@ -4,6 +4,8 @@ Technical reference for the DigiLab codebase. Consult this document before addin
 
 **Last Updated:** February 2026 (v0.18.1)
 
+> **Note:** Always keep this document in sync with code changes. Update when adding new reactive values, server modules, or patterns.
+
 ---
 
 ## Table of Contents

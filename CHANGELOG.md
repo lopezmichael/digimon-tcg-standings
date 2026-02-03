@@ -21,6 +21,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.18.1] - 2026-02-03 - Code Cleanup Refactor
+
+### Added
+- **ARCHITECTURE.md**: Comprehensive technical reference document
+  - Server module structure and naming conventions
+  - Complete reactive values reference (32 values across 6 categories)
+  - Navigation, modal, and database patterns
+  - Quick reference cheatsheet
+
+### Changed
+- **Reactive Values**: Reorganized and documented all 32 reactive values in `app.R`
+  - Grouped into 6 categories: Core, Navigation, Modal State, Form/Wizard, Refresh Triggers, Delete Permission
+  - All values now initialized explicitly (no ad-hoc creation in server files)
+  - Renamed for consistency:
+    - `selected_store_detail` → `selected_store_id`
+    - `selected_online_store_detail` → `selected_online_store_id`
+    - `selected_player` → `selected_player_id`
+- **CLAUDE.md**: Added required workflow documentation
+  - Superpowers usage now explicitly required
+  - Git workflow requirements (feature branches, regular commits, review before merge)
+  - R installation path for code verification
+- **PROJECT_PLAN.md**: Moved to `docs/original-project-plan.md` (historical reference)
+
+### Technical
+- Design document: `docs/plans/2026-02-03-reactive-values-cleanup-design.md`
+- No functional changes - refactor only affects code organization and documentation
+
+---
+
 ## [0.18.0] - 2026-02-03 - Server Extraction Refactor
 
 ### Changed

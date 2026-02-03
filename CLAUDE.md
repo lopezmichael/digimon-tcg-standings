@@ -69,7 +69,7 @@ digimon-tcg-standings/
 ├── _brand.yml               # Atom brand configuration
 ├── CHANGELOG.md             # Version history
 ├── ARCHITECTURE.md          # Technical architecture reference
-└── PROJECT_PLAN.md          # Original technical specification
+└── ROADMAP.md               # Future features and milestones
 ```
 
 ## Architecture Reference
@@ -243,36 +243,76 @@ MOTHERDUCK_TOKEN=your_motherduck_token_here
 MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
 ```
 
-## Using Superpowers
+## Required Workflows
 
-This project uses the Claude Code superpowers skill system. The following superpowers are configured:
+### Superpowers (REQUIRED)
 
-### Available Superpowers
+**Always use superpowers for any non-trivial work.** This is not optional.
 
-1. **superpowers:brainstorming** - Use before any creative work (creating features, building components, adding functionality)
-2. **superpowers:writing-plans** - Use when you have a spec or requirements for a multi-step task, before touching code
-3. **superpowers:subagent-driven-development** - Use when executing implementation plans with independent tasks
-4. **superpowers:finishing-a-development-branch** - Use when implementation is complete and you need to decide how to integrate
-5. **superpowers:verification-before-completion** - Use when about to claim work is complete, before committing or creating PRs
+| Superpower | When to Use | Required? |
+|------------|-------------|-----------|
+| `brainstorming` | Before any new feature or creative work | Yes |
+| `writing-plans` | Before implementing multi-step tasks | Yes |
+| `subagent-driven-development` | When executing plans with independent tasks | Yes |
+| `verification-before-completion` | Before claiming work is complete | Yes |
+| `finishing-a-development-branch` | When ready to merge/PR | Yes |
 
-### When to Use Superpowers
-
-- **Before implementing a new feature:** Use `brainstorming` to explore requirements, then `writing-plans` to create a design document
-- **When executing a plan:** Use `subagent-driven-development` for parallel independent tasks
-- **Before claiming done:** Use `verification-before-completion` to ensure tests pass and code works
-- **When finishing a branch:** Use `finishing-a-development-branch` to properly merge/PR
-
-### Workflow Example
+### Standard Feature Workflow
 
 ```
 1. User requests new feature
 2. /brainstorming - Explore intent and requirements
 3. /writing-plans - Create design doc in docs/plans/
 4. Get user approval
-5. /subagent-driven-development - Execute implementation
-6. /verification-before-completion - Verify everything works
-7. /finishing-a-development-branch - Merge or create PR
+5. Create feature branch (git checkout -b feature/feature-name)
+6. /subagent-driven-development - Execute implementation
+7. Commit regularly (small, logical commits)
+8. /verification-before-completion - Verify everything works
+9. /finishing-a-development-branch - Create PR for review
+10. Merge to main after approval
 ```
+
+### Git Workflow (REQUIRED)
+
+**Feature branches:** All new features and non-trivial changes must be developed on feature branches, not directly on main.
+
+```bash
+# Create feature branch
+git checkout -b feature/feature-name
+
+# Or for refactors
+git checkout -b refactor/refactor-name
+
+# Or for fixes
+git checkout -b fix/fix-name
+```
+
+**Commit regularly:** Make small, logical commits as you work. Don't wait until everything is done.
+
+**Review before merge:** Feature branches require review before merging to main. Use PRs or get explicit user approval.
+
+**Exception:** Documentation-only changes and minor config tweaks can go directly to main.
+
+### Code Verification (REQUIRED)
+
+Before committing, always verify code works:
+
+**R Installation Path (Windows):**
+```bash
+# R is installed at:
+"/c/Program Files/R/R-4.5.0/bin/Rscript.exe"
+
+# Run syntax check
+"/c/Program Files/R/R-4.5.0/bin/Rscript.exe" -e "source('app.R')"
+
+# Run lintr (if available)
+"/c/Program Files/R/R-4.5.0/bin/Rscript.exe" -e "lintr::lint('app.R')"
+```
+
+**Manual verification:** If R can't be run from bash, ask the user to:
+1. Run `shiny::runApp()` and verify app loads
+2. Test the specific feature/fix that was changed
+3. Confirm no console errors
 
 ## Development Workflow
 
@@ -320,6 +360,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.18.0** - Server Extraction Refactor (app.R reduced from 3,178 to 566 lines)
+**v0.18.1** - Code Cleanup Refactor (reactive values documented, ARCHITECTURE.md created)
 
-See `CHANGELOG.md` for full version history.
+See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.
