@@ -4,6 +4,74 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-03: v0.18.0 - Server Extraction Refactor
+
+### Summary
+Major codebase refactor to improve maintainability. Extracted all public page server logic from the monolithic `app.R` (3,178 lines) into modular `server/public-*.R` files. The main `app.R` is now a thin wrapper at 566 lines.
+
+### Motivation
+- **Maintainability**: The 3,000+ line monolith was becoming difficult to navigate
+- **Onboarding**: Smaller, focused files are less intimidating for contributors
+- **Bug Prevention**: Standardized patterns reduce copy-paste errors
+- **Future-Proofing**: Cleaner base for multi-game expansion
+
+### Design Process
+Used brainstorming skill to design the refactor approach:
+- Identified that public page logic was the largest portion of `app.R`
+- Decided on incremental extraction (one tab at a time) to minimize risk
+- Established naming convention: `public-*` for public tabs, `admin-*` for admin tabs
+- Created design document: `docs/plans/2026-02-03-server-extraction-refactor.md`
+
+### Implementation
+
+**Extraction Order** (simplest to most complex):
+1. Meta tab → `public-meta-server.R` (305 lines)
+2. Stores tab → `public-stores-server.R` (851 lines)
+3. Tournaments tab → `public-tournaments-server.R` (237 lines)
+4. Players tab → `public-players-server.R` (364 lines)
+5. Dashboard tab → `public-dashboard-server.R` (889 lines)
+
+**Naming Standardization**:
+- Renamed `results-server.R` → `admin-results-server.R`
+- All admin modules now use `admin-*` prefix
+- All public modules use `public-*` prefix
+
+### Technical Notes
+
+**What stayed in app.R**:
+- Library imports
+- Environment setup
+- Helper functions (parse_schedule_info, deck_color_badge)
+- UI definitions
+- Reactive values initialization
+- Rating calculations (shared across multiple tabs)
+- Source calls to server modules
+
+**Cross-tab handlers**:
+- `modal_player_clicked` - Opens player modal from any context (kept in Stores for now)
+- `overview_player_clicked` / `overview_tournament_clicked` - From Dashboard to detail tabs
+- These handlers navigate between tabs and open modals
+
+**Testing approach**:
+- Extracted one file at a time
+- Tested app launch after each extraction
+- Committed after each successful extraction
+- Used separate `refactor/server-extraction` branch
+
+### Results
+
+| Metric | Before | After |
+|--------|--------|-------|
+| `app.R` lines | 3,178 | 566 |
+| Server modules | 7 | 12 |
+| Reduction | - | 82% |
+
+### Future Considerations (Out of Scope)
+- Reactive value cleanup: Document, group, standardize naming (~30+ rv values)
+- CSS cleanup: Consolidate custom.css, remove inline styles from R code
+
+---
+
 ## 2026-02-03: v0.17.0 - Admin UX Improvements
 
 ### Summary

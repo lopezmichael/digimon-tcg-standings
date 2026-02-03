@@ -24,13 +24,20 @@ A regional tournament tracking application for the Dallas-Fort Worth Digimon Tra
 
 ```
 digimon-tcg-standings/
-├── app.R                    # Main Shiny application (thin wrapper)
+├── app.R                    # Main Shiny application (thin wrapper, ~566 lines)
 ├── server/                  # Server logic modules
 │   ├── shared-server.R      # Database, navigation, auth helpers
-│   ├── results-server.R     # Tournament entry wizard
-│   ├── admin-decks-server.R # Deck archetype CRUD
-│   ├── admin-stores-server.R# Store management
-│   └── admin-formats-server.R# Format management
+│   ├── public-dashboard-server.R  # Dashboard/Overview tab
+│   ├── public-players-server.R    # Players tab
+│   ├── public-meta-server.R       # Meta analysis tab
+│   ├── public-tournaments-server.R # Tournaments tab
+│   ├── public-stores-server.R     # Stores tab with map
+│   ├── admin-results-server.R     # Tournament entry wizard
+│   ├── admin-tournaments-server.R # Tournament management
+│   ├── admin-decks-server.R       # Deck archetype CRUD
+│   ├── admin-stores-server.R      # Store management
+│   ├── admin-players-server.R     # Player management
+│   └── admin-formats-server.R     # Format management
 ├── views/                   # UI components
 │   ├── dashboard-ui.R       # Dashboard with charts and stats
 │   ├── stores-ui.R          # Store directory with map
@@ -298,6 +305,6 @@ python scripts/sync_cards.py --by-set
 
 ## Current Version
 
-**v0.17.0** - Admin UX Improvements (Edit Results modal, required date validation)
+**v0.18.0** - Server Extraction Refactor (app.R reduced from 3,178 to 566 lines)
 
 See `CHANGELOG.md` for full version history.

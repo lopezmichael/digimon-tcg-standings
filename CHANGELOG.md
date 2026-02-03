@@ -21,6 +21,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.18.0] - 2026-02-03 - Server Extraction Refactor
+
+### Changed
+- **Codebase Refactor**: Extracted public page server logic from monolithic `app.R` into modular server files
+  - `app.R` reduced from 3,178 to 566 lines (~82% reduction)
+  - Created 5 new public server modules:
+    - `server/public-dashboard-server.R` (889 lines) - Dashboard/Overview tab
+    - `server/public-stores-server.R` (851 lines) - Stores tab with map
+    - `server/public-players-server.R` (364 lines) - Players tab
+    - `server/public-meta-server.R` (305 lines) - Meta analysis tab
+    - `server/public-tournaments-server.R` (237 lines) - Tournaments tab
+  - Renamed `results-server.R` → `admin-results-server.R` for naming consistency
+- **Naming Convention**: Standardized server module naming
+  - `public-*` prefix for public/viewer-facing tabs
+  - `admin-*` prefix for admin/management tabs
+
+### Technical
+- Design document: `docs/plans/2026-02-03-server-extraction-refactor.md`
+- No functional changes - refactor only affects code organization
+- All existing functionality preserved and tested
+
+---
+
 ## [0.17.0] - 2026-02-03 - Admin UX Improvements
 
 ### Added
