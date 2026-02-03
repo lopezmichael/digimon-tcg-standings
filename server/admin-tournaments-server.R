@@ -16,6 +16,42 @@ observe({
   updateSelectInput(session, "edit_tournament_format", choices = format_choices)
 })
 
+# Auto-select tournament when navigated from duplicate modal
+observe({
+  req(rv$navigate_to_tournament_id)
+
+  # Trigger the same logic as clicking a row
+  tournament_id <- rv$navigate_to_tournament_id
+  rv$navigate_to_tournament_id <- NULL  # Clear to prevent re-triggering
+
+  # Get tournament details
+  tournament <- dbGetQuery(rv$db_con, "
+    SELECT t.*, s.name as store_name
+    FROM tournaments t
+    LEFT JOIN stores s ON t.store_id = s.store_id
+    WHERE t.tournament_id = ?
+  ", params = list(tournament_id))
+
+  if (nrow(tournament) == 0) return()
+
+  # Fill form (same as click handler)
+  updateTextInput(session, "editing_tournament_id", value = as.character(tournament$tournament_id))
+  updateSelectInput(session, "edit_tournament_store", selected = tournament$store_id)
+  updateDateInput(session, "edit_tournament_date", value = tournament$event_date)
+  updateSelectInput(session, "edit_tournament_type", selected = tournament$event_type)
+  updateSelectInput(session, "edit_tournament_format", selected = tournament$format)
+  updateNumericInput(session, "edit_tournament_players", value = tournament$player_count)
+  updateNumericInput(session, "edit_tournament_rounds", value = tournament$rounds)
+
+  # Show buttons
+  shinyjs::show("update_tournament")
+  shinyjs::show("delete_tournament")
+  shinyjs::show("view_results_btn_container")
+
+  showNotification(sprintf("Editing: %s - %s", tournament$store_name, tournament$event_date),
+                   type = "message", duration = 3)
+})
+
 # Tournament list table
 output$admin_tournament_list <- renderReactable({
   req(rv$db_con)

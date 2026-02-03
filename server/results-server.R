@@ -221,8 +221,17 @@ observeEvent(input$edit_existing_tournament, {
   req(rv$duplicate_tournament)
   shinyjs::runjs("$('#duplicate_tournament_modal').modal('hide');")
 
-  rv$active_tournament_id <- rv$duplicate_tournament$tournament_id
-  rv$wizard_step <- 2
+  # Store the tournament ID so Edit Tournaments can select it
+  rv$navigate_to_tournament_id <- rv$duplicate_tournament$tournament_id
+
+  # Navigate to Edit Tournaments tab
+  nav_select("main_tabs", "admin_tournaments")
+
+  # Update sidebar highlight
+  shinyjs::runjs("
+    $('.nav-link').removeClass('active');
+    $('#nav_admin_tournaments').addClass('active');
+  ")
 })
 
 # Handle "Create Anyway" button from duplicate modal
