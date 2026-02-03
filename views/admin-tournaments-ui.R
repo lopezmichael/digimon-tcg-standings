@@ -49,6 +49,17 @@ admin_tournaments_ui <- tagList(
           # Tournament stats (read-only info)
           uiOutput("tournament_stats_info"),
 
+          # View/Edit Results button (only shown when tournament selected)
+          shinyjs::hidden(
+            div(
+              id = "view_results_btn_container",
+              class = "mt-3",
+              actionButton("view_edit_results", "View/Edit Results",
+                           class = "btn-primary w-100",
+                           icon = icon("list-check"))
+            )
+          ),
+
           hr(),
 
           # Action buttons
