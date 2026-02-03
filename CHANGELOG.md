@@ -21,6 +21,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.17.0] - 2026-02-03 - Admin UX Improvements
+
+### Added
+- **Edit Results from Edit Tournaments**: New "View/Edit Results" button when a tournament is selected
+  - Opens modal showing all results for the tournament
+  - Click any row to edit player, deck, placement, record, and decklist URL
+  - Add new results directly from the modal
+  - Delete results with confirmation
+- **Required Date Field**: Enter Results date field now starts blank with required validation
+  - Red border and "Required" hint shown until date is selected
+  - Prevents accidental submissions with wrong date (previously defaulted to today)
+
+### Changed
+- **Duplicate Tournament Flow**: After duplicating a tournament, navigates to Edit Tournaments tab with the new tournament auto-selected (previously stayed on Enter Results page)
+
+### Fixed
+- **Date Observer Error**: Fixed crash when date input is empty during initial load (proper null/length checking)
+- **Reactable Column Names**: Fixed invalid column name error in modal results table (`#` → `Place` internally)
+- **Modal Input Widths**: Place/Wins/Losses/Ties fields now evenly distributed using `layout_columns`
+- **Decklist URL Display**: Robustly handles various null/empty representations from DuckDB (NULL, NA, "", "NA")
+
+---
+
 ## [0.16.1] - 2026-02-02 - DigiLab Rebranding
 
 ### Changed
