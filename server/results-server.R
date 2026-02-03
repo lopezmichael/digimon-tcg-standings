@@ -214,7 +214,12 @@ observeEvent(input$delete_tournament_confirm, {
 
 # Hide date required hint when date is selected
 observeEvent(input$tournament_date, {
-  if (!is.null(input$tournament_date) && !is.na(input$tournament_date)) {
+  # Check if date is valid (not null, has length > 0, and not NA)
+  date_valid <- !is.null(input$tournament_date) &&
+                length(input$tournament_date) > 0 &&
+                !anyNA(input$tournament_date)
+
+  if (date_valid) {
     shinyjs::hide("date_required_hint")
     shinyjs::runjs("$('#tournament_date').closest('.date-required').removeClass('date-required');")
   } else {
