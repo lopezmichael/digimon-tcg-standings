@@ -466,31 +466,56 @@ server <- function(input, output, session) {
 
   # ---------------------------------------------------------------------------
   # Reactive Values
+  # See ARCHITECTURE.md for full documentation of each value
   # ---------------------------------------------------------------------------
 
   rv <- reactiveValues(
-    is_admin = FALSE,
+    # === CORE ===
     db_con = NULL,
+    is_admin = FALSE,
+
+    # === NAVIGATION ===
+    current_nav = "dashboard",
+    navigate_to_tournament_id = NULL,
+
+    # === MODAL STATE ===
+    # Pattern: selected_{entity}_id (singular), selected_{entity}_ids (plural/multiple)
+    selected_store_id = NULL,
+    selected_online_store_id = NULL,
+    selected_player_id = NULL,
+    selected_archetype_id = NULL,
+    selected_tournament_id = NULL,
+    selected_store_ids = NULL,  # Map region filter (multiple stores)
+
+    # === FORM/WIZARD STATE ===
+    wizard_step = 1,
     active_tournament_id = NULL,
     current_results = data.frame(),
-    current_nav = "dashboard",
-    selected_store_ids = NULL,  # For map-based filtering
-    selected_store_detail = NULL,  # For store detail modal
-    selected_online_store_detail = NULL,  # For online store detail modal
-    selected_player_id = NULL,  # For player profile modal
-    selected_archetype_id = NULL,  # For deck profile modal
-    selected_tournament_id = NULL,  # For tournament detail modal
-    card_search_results = NULL,  # For card search in deck management
-    editing_store = NULL,  # For edit mode
-    editing_archetype = NULL,  # For edit mode
-    wizard_step = 1,  # Wizard navigation: 1 = Details, 2 = Results
-    duplicate_tournament = NULL,  # Store duplicate tournament info for modal
-    results_refresh = 0,  # Trigger to refresh results table
-    card_search_page = 1,  # Current page for card search pagination
-    data_refresh = 0,  # Trigger to refresh all public tables when admin makes changes
-    modal_results_refresh = 0,  # Trigger to refresh results modal table
-    modal_tournament_id = NULL,  # Tournament ID for results modal
-    navigate_to_tournament_id = NULL  # For duplicate flow navigation
+    duplicate_tournament = NULL,
+    modal_tournament_id = NULL,
+    editing_store = NULL,
+    editing_archetype = NULL,
+    card_search_results = NULL,
+    card_search_page = 1,
+
+    # === REFRESH TRIGGERS ===
+    # Pattern: {scope}_refresh - increment to trigger reactive invalidation
+    data_refresh = 0,
+    results_refresh = 0,
+    format_refresh = 0,
+    tournament_refresh = 0,
+    modal_results_refresh = 0,
+
+    # === DELETE PERMISSION STATE ===
+    # Pattern: can_delete_{entity} + {entity}_{related}_count
+    can_delete_store = FALSE,
+    can_delete_format = FALSE,
+    can_delete_player = FALSE,
+    can_delete_archetype = FALSE,
+    store_tournament_count = 0,
+    format_tournament_count = 0,
+    player_result_count = 0,
+    archetype_result_count = 0
   )
 
   # Helper function for ordinal numbers (1st, 2nd, 3rd, etc.)

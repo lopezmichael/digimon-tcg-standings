@@ -80,13 +80,13 @@ output$store_list <- renderReactable({
 
 # Handle store row click - open detail modal
 observeEvent(input$store_clicked, {
-  rv$selected_store_detail <- input$store_clicked
+  rv$selected_store_id <- input$store_clicked
 })
 
 # Handle cross-modal store click (from player modal, tournament modal, etc.)
 observeEvent(input$modal_store_clicked, {
   removeModal()  # Close current modal
-  rv$selected_store_detail <- input$modal_store_clicked
+  rv$selected_store_id <- input$modal_store_clicked
   nav_select("main_content", "stores")
   rv$current_nav <- "stores"
   session$sendCustomMessage("updateSidebarNav", "nav_stores")
@@ -96,7 +96,7 @@ observeEvent(input$modal_store_clicked, {
 # Note: This navigates to Players tab but is kept here due to physical proximity
 observeEvent(input$modal_player_clicked, {
   removeModal()  # Close current modal
-  rv$selected_player <- input$modal_player_clicked
+  rv$selected_player_id <- input$modal_player_clicked
   nav_select("main_content", "players")
   rv$current_nav <- "players"
   session$sendCustomMessage("updateSidebarNav", "nav_players")
@@ -104,9 +104,9 @@ observeEvent(input$modal_player_clicked, {
 
 # Render store detail modal
 output$store_detail_modal <- renderUI({
-  req(rv$selected_store_detail)
+  req(rv$selected_store_id)
 
-  store_id <- rv$selected_store_detail
+  store_id <- rv$selected_store_id
   stores <- stores_data()
   store <- stores[stores$store_id == store_id, ]
 
@@ -376,14 +376,14 @@ output$online_stores_section <- renderUI({
 
 # Online store click handler
 observeEvent(input$online_store_click, {
-  rv$selected_online_store_detail <- input$online_store_click
+  rv$selected_online_store_id <- input$online_store_click
 })
 
 # Online store detail modal
 output$online_store_detail_modal <- renderUI({
-  req(rv$selected_online_store_detail)
+  req(rv$selected_online_store_id)
 
-  store_id <- rv$selected_online_store_detail
+  store_id <- rv$selected_online_store_id
 
   store <- dbGetQuery(rv$db_con, sprintf("
     SELECT s.store_id, s.name, s.city as region, s.website, s.schedule_info,

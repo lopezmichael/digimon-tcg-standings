@@ -68,8 +68,23 @@ digimon-tcg-standings/
 │   └── custom.css           # Custom styles
 ├── _brand.yml               # Atom brand configuration
 ├── CHANGELOG.md             # Version history
+├── ARCHITECTURE.md          # Technical architecture reference
 └── PROJECT_PLAN.md          # Original technical specification
 ```
+
+## Architecture Reference
+
+**Always consult `ARCHITECTURE.md` before:**
+- Adding new reactive values
+- Creating new server modules
+- Modifying navigation or modal patterns
+
+The architecture doc contains:
+- Server module structure and naming conventions (`public-*`, `admin-*`)
+- Complete reactive values reference (32 values across 6 categories)
+- Navigation patterns (tab switching, sidebar sync)
+- Modal patterns (Bootstrap vs Shiny modals)
+- Database patterns (connection handling, refresh triggers)
 
 ## Outstanding TODO Items
 

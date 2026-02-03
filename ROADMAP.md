@@ -27,6 +27,22 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
+## v0.18.1 - Code Cleanup Refactor
+
+**IN PROGRESS** - Internal codebase cleanup (no user-facing changes)
+
+| ID | Type | Description | Status |
+|----|------|-------------|--------|
+| R4 | REFACTOR | Reactive value cleanup - document, group, and standardize naming convention for `rv` (32 values) | ✓ |
+| R5 | REFACTOR | CSS cleanup - consolidate `custom.css`, remove inline styles from R code, organize by component | |
+
+**R4 Deliverables:**
+- `ARCHITECTURE.md` - Technical reference for server modules, reactive values, patterns
+- Reactive values reorganized into 6 categories (Core, Navigation, Modal State, Form/Wizard, Refresh Triggers, Delete Permission)
+- Renamed `selected_store_detail` → `selected_store_id`, `selected_online_store_detail` → `selected_online_store_id`
+
+---
+
 ## v0.19 - Onboarding & Help
 
 | ID | Type | Description |
