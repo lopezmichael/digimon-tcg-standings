@@ -422,3 +422,113 @@ output$modal_results_table <- renderReactable({
     )
   )
 })
+
+# =============================================================================
+# Edit/Delete Result Handlers
+# =============================================================================
+
+# Click result row to edit
+observeEvent(input$modal_result_clicked, {
+  req(rv$db_con, rv$modal_tournament_id)
+
+  result_id <- input$modal_result_clicked$result_id
+
+  result <- dbGetQuery(rv$db_con, "
+    SELECT r.*
+    FROM results r
+    WHERE r.result_id = ? AND r.tournament_id = ?
+  ", params = list(result_id, rv$modal_tournament_id))
+
+  if (nrow(result) == 0) {
+    showNotification("Result not found", type = "error")
+    return()
+  }
+
+  # Populate edit form
+  updateTextInput(session, "modal_editing_result_id", value = as.character(result_id))
+  updateSelectizeInput(session, "modal_edit_player", selected = result$player_id)
+  updateSelectizeInput(session, "modal_edit_deck", selected = result$archetype_id)
+  updateNumericInput(session, "modal_edit_placement", value = result$placement)
+  updateNumericInput(session, "modal_edit_wins", value = result$wins)
+  updateNumericInput(session, "modal_edit_losses", value = result$losses)
+  updateNumericInput(session, "modal_edit_ties", value = result$ties)
+  updateTextInput(session, "modal_edit_decklist",
+                  value = if (is.na(result$decklist_url)) "" else result$decklist_url)
+
+  # Show edit modal
+  shinyjs::runjs("$('#modal_edit_result').modal('show');")
+})
+
+# Save edited result
+observeEvent(input$modal_save_edit_result, {
+  req(rv$db_con, rv$modal_tournament_id, input$modal_editing_result_id)
+
+  result_id <- as.integer(input$modal_editing_result_id)
+  player_id <- as.integer(input$modal_edit_player)
+  archetype_id <- as.integer(input$modal_edit_deck)
+  placement <- input$modal_edit_placement
+  wins <- input$modal_edit_wins %||% 0
+  losses <- input$modal_edit_losses %||% 0
+  ties <- input$modal_edit_ties %||% 0
+  decklist_url <- if (!is.null(input$modal_edit_decklist) && nchar(input$modal_edit_decklist) > 0)
+    input$modal_edit_decklist else NA_character_
+
+  # Validation
+  if (is.na(player_id)) {
+    showNotification("Please select a player", type = "error")
+    return()
+  }
+  if (is.na(archetype_id)) {
+    showNotification("Please select a deck", type = "error")
+    return()
+  }
+
+  tryCatch({
+    dbExecute(rv$db_con, "
+      UPDATE results
+      SET player_id = ?, archetype_id = ?, placement = ?,
+          wins = ?, losses = ?, ties = ?, decklist_url = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE result_id = ? AND tournament_id = ?
+    ", params = list(player_id, archetype_id, placement,
+                     wins, losses, ties, decklist_url,
+                     result_id, rv$modal_tournament_id))
+
+    showNotification("Result updated!", type = "message")
+
+    shinyjs::runjs("$('#modal_edit_result').modal('hide');")
+    rv$modal_results_refresh <- (rv$modal_results_refresh %||% 0) + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+  }, error = function(e) {
+    showNotification(paste("Error:", e$message), type = "error")
+  })
+})
+
+# Delete result button (shows confirmation)
+observeEvent(input$modal_delete_result, {
+  req(input$modal_editing_result_id)
+  shinyjs::runjs("$('#modal_delete_result_confirm').modal('show');")
+})
+
+# Confirm delete result
+observeEvent(input$modal_confirm_delete_result, {
+  req(rv$db_con, rv$modal_tournament_id, input$modal_editing_result_id)
+
+  result_id <- as.integer(input$modal_editing_result_id)
+
+  tryCatch({
+    dbExecute(rv$db_con, "DELETE FROM results WHERE result_id = ? AND tournament_id = ?",
+              params = list(result_id, rv$modal_tournament_id))
+
+    showNotification("Result deleted", type = "message")
+
+    shinyjs::runjs("$('#modal_delete_result_confirm').modal('hide');")
+    shinyjs::runjs("$('#modal_edit_result').modal('hide');")
+    rv$modal_results_refresh <- (rv$modal_results_refresh %||% 0) + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+  }, error = function(e) {
+    showNotification(paste("Error:", e$message), type = "error")
+  })
+})
