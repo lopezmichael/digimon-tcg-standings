@@ -103,11 +103,18 @@ digimon-tcg-standings/
 │   ├── db_connection.R      # Database connection module
 │   └── digimoncard_api.R    # DigimonCard.io API integration
 ├── server/
-│   ├── shared-server.R      # Database, navigation, auth helpers
-│   ├── results-server.R     # Tournament entry wizard
-│   ├── admin-decks-server.R # Deck archetype CRUD
-│   ├── admin-stores-server.R# Store management
-│   └── admin-formats-server.R# Format management
+│   ├── shared-server.R            # Database, navigation, auth helpers
+│   ├── public-dashboard-server.R  # Dashboard/Overview tab
+│   ├── public-players-server.R    # Players tab
+│   ├── public-meta-server.R       # Meta analysis tab
+│   ├── public-tournaments-server.R # Tournaments tab
+│   ├── public-stores-server.R     # Stores tab with map
+│   ├── admin-results-server.R     # Tournament entry wizard
+│   ├── admin-tournaments-server.R # Tournament management
+│   ├── admin-decks-server.R       # Deck archetype CRUD
+│   ├── admin-stores-server.R      # Store management
+│   ├── admin-players-server.R     # Player management
+│   └── admin-formats-server.R     # Format management
 ├── views/
 │   ├── dashboard-ui.R       # Dashboard with charts and stats
 │   ├── stores-ui.R          # Store directory with map

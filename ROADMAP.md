@@ -2,13 +2,32 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.17.0
+**Current Version:** v0.18.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
 ---
 
-## v0.18 - Onboarding & Help
+## v0.18 - Server Extraction Refactor ✓
+
+**COMPLETED** - Internal codebase refactor (no user-facing changes)
+
+| ID | Type | Description |
+|----|------|-------------|
+| R1 | REFACTOR | Extract public page server logic from monolithic `app.R` into modular `server/public-*.R` files |
+| R2 | REFACTOR | Standardize naming convention: `public-*` for public tabs, `admin-*` for admin tabs |
+| R3 | REFACTOR | Reduce `app.R` from 3,178 to 566 lines (~82% reduction) |
+
+**Files Created:**
+- `server/public-dashboard-server.R` (889 lines)
+- `server/public-stores-server.R` (851 lines)
+- `server/public-players-server.R` (364 lines)
+- `server/public-meta-server.R` (305 lines)
+- `server/public-tournaments-server.R` (237 lines)
+
+---
+
+## v0.19 - Onboarding & Help
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -18,7 +37,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.19 - Self-Service & Sustainability
+## v0.20 - Self-Service & Sustainability
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -37,7 +56,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.20 - Multi-Region Foundation
+## v0.21 - Multi-Region Foundation
 
 | ID | Type | Description |
 |----|------|-------------|
