@@ -4,10 +4,10 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
-## 2026-02-02: Bug Fix & Branding Assets
+## 2026-02-02: Bug Fix, Branding & Analytics
 
 ### Summary
-Fixed a SQL bug in player search and created initial branding assets (logo, icon, favicon) for DigiLab.
+Fixed a SQL bug in player search, created initial branding assets (logo, icon, favicon), and set up Google Analytics for DigiLab.
 
 ### Bug Fix: Player Search Query
 - **Issue**: Searching for players by name in the Players tab caused SQL error: "Referenced table p not found"
@@ -25,11 +25,18 @@ Design notes:
 - Simplified to text-based logo with the app's existing digital aesthetic (grid pattern, cyan glow, circuit accents)
 - May revisit digivice logo in future with traced reference or professional design
 
+### Google Analytics
+Added GA4 tracking (measurement ID: G-NJ3SMG8HGG) to monitor site usage:
+- Added to `docs/index.html` for GitHub Pages wrapper tracking
+- Added to `app.R` for Shiny app tracking
+- Both send data to the same GA property
+- Basic page-level tracking; custom event tracking (tab clicks, etc.) can be added later if needed
+
 ### Files Changed
 | File | Changes |
 |------|---------|
-| `app.R` | Added missing players table join in main_decks query |
-| `docs/index.html` | Added favicon link, updated OG/Twitter images to use custom logo |
+| `app.R` | Added missing players table join in main_decks query; added GA4 tracking script |
+| `docs/index.html` | Added favicon link, updated OG/Twitter images, added GA4 tracking script |
 | `docs/digilab-logo.svg` | New file - banner logo |
 | `docs/digilab-icon.svg` | New file - square icon |
 | `docs/favicon.svg` | New file - browser tab favicon |

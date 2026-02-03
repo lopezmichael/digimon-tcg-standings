@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `digilab-icon.svg` - 200x200 square icon with "DL" initials
   - `favicon.svg` - 32x32 browser tab favicon
 - **Favicon**: Browser tab now shows DigiLab "D" icon
+- **Google Analytics**: Added GA4 tracking to monitor site usage and visitor demographics
 
 ### Fixed
 - **Player Search Bug**: Fixed SQL error when searching players by name in Players tab (missing table join in subquery)
