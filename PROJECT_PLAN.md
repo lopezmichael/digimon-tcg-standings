@@ -1,7 +1,9 @@
 # DigiLab - Digimon TCG Tournament Tracker
 
 **Project Plan & Technical Specification**
-Version 1.1 | January 2026
+Version 2.0 | February 2026
+
+> **Note**: This document has been updated to reflect the current implementation (v0.18.0). Original planning sections preserved for historical context.
 
 ---
 
@@ -117,16 +119,38 @@ This project is **NOT** primarily a meta analysis tool - existing resources alre
 
 ## 5. Technical Architecture
 
-### 5.1 Tech Stack: R Shiny + DuckDB
+### 5.1 Tech Stack (Current Implementation)
 
 | Component | Technology | Rationale |
 |-----------|------------|-----------|
-| Frontend | R Shiny / shinydashboard | Interactive dashboards, reactive data binding |
-| Database | DuckDB | Fast OLAP queries, embedded (no server), Parquet support |
-| Visualization | ggplot2 / plotly / leaflet | Publication-quality charts, interactive maps |
-| Data Entry | Shiny forms / Google Sheets | Simple input, mobile-friendly option |
-| Hosting | shinyapps.io / Docker | Free tier available, easy deployment |
-| Version Control | GitHub | Code storage, README, GitHub Pages for docs |
+| Frontend | R Shiny with bslib + atomtemplates | Modern Bootstrap 5, custom design system |
+| Database | DuckDB (local) / MotherDuck (cloud) | Fast OLAP queries, cloud sync capability |
+| Charts | Highcharter | Interactive JavaScript charts with theming |
+| Maps | mapgl (Mapbox GL JS) | Modern vector maps with draw-to-filter |
+| Tables | reactable | Interactive, sortable, filterable tables |
+| Card Data | DigimonCard.io API (cached locally) | 4,200+ cards synced monthly |
+| Hosting | Posit Connect Cloud | Professional R/Shiny hosting |
+| Version Control | GitHub | Code storage, GitHub Actions for automation |
+
+### 5.1.1 Server Module Architecture (v0.18.0+)
+
+The application uses a modular server architecture with logic extracted into separate files:
+
+```
+server/
+├── shared-server.R            # Database, navigation, auth helpers
+├── public-dashboard-server.R  # Dashboard/Overview tab (889 lines)
+├── public-stores-server.R     # Stores tab with map (851 lines)
+├── public-players-server.R    # Players tab (364 lines)
+├── public-meta-server.R       # Meta analysis tab (305 lines)
+├── public-tournaments-server.R # Tournaments tab (237 lines)
+├── admin-results-server.R     # Tournament entry wizard
+├── admin-tournaments-server.R # Tournament management
+├── admin-decks-server.R       # Deck archetype CRUD
+├── admin-stores-server.R      # Store management
+├── admin-players-server.R     # Player management
+└── admin-formats-server.R     # Format management
+```
 
 ### 5.2 Database Schema
 
@@ -208,6 +232,39 @@ This project is **NOT** primarily a meta analysis tool - existing resources alre
 | ties | INTEGER | Match ties |
 | decklist_json | JSON NULL | Optional full 50-card list if available |
 
+#### `formats` (Added in Implementation)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| format_id | INTEGER PK | Unique identifier |
+| format_code | VARCHAR | Format code (e.g., BT19, EX08) |
+| name | VARCHAR | Display name |
+| release_date | DATE | Set release date |
+| is_current | BOOLEAN | Whether format is current |
+
+#### `cards` (Added in Implementation)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| card_id | VARCHAR PK | DigimonCard.io card number (e.g., BT12-070) |
+| name | VARCHAR | Card name |
+| card_type | VARCHAR | Digimon, Tamer, Option |
+| color | VARCHAR | Primary color |
+| rarity | VARCHAR | Common, Uncommon, Rare, etc. |
+| set_code | VARCHAR | Set identifier |
+| image_url | VARCHAR | CDN URL for card image |
+| ... | ... | Additional card attributes |
+
+#### `ingestion_log` (Added in Implementation)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| log_id | INTEGER PK | Unique identifier |
+| table_name | VARCHAR | Table that was modified |
+| operation | VARCHAR | INSERT, UPDATE, DELETE |
+| record_count | INTEGER | Number of records affected |
+| timestamp | TIMESTAMP | When operation occurred |
+
 ### 5.3 Entity Relationship Diagram
 
 ```
@@ -226,39 +283,54 @@ stores (1) ──────< tournaments (1) ──────< results >─�
 
 ## 6. Implementation Plan
 
-### 6.1 Phase 1: Foundation (Weeks 1-2)
+> **Note**: Original timeline preserved for historical context. Actual implementation completed over ~2 months with iterative development.
 
-1. Set up GitHub repository with README and project structure
-2. Create DuckDB database schema with all tables (including archetype tables)
-3. Populate initial store data for DFW area (5-10 stores)
-4. Build basic R scripts to interact with DigimonCard.io API
-5. Implement logging framework for development tracking
-6. **Build initial deck_archetypes reference (~20-30 meta decks) with archetype_cards mappings**
+### 6.1 Phase 1: Foundation ✓ COMPLETE
 
-### 6.2 Phase 2: Data Collection (Weeks 3-4)
+1. ✓ Set up GitHub repository with README and project structure
+2. ✓ Create DuckDB database schema with all tables (including archetype tables)
+3. ✓ Populate initial store data for DFW area (13 stores)
+4. ✓ Build R scripts to interact with DigimonCard.io API
+5. ✓ Implement logging framework (CHANGELOG.md, dev_log.md)
+6. ✓ Build initial deck_archetypes reference (25+ meta decks)
 
-1. Create Shiny form for manual tournament entry with archetype dropdown
-2. Build archetype selection dropdown with card image preview
-3. Collect historical data from 2-3 months of local events
-4. Integrate Limitless TCG API for online tournament data (optional)
-5. Set up automated data validation and error logging
+### 6.2 Phase 2: Data Collection ✓ COMPLETE
 
-### 6.3 Phase 3: Dashboard Development (Weeks 5-7)
+1. ✓ Create Shiny form for manual tournament entry with archetype dropdown
+2. ✓ Build archetype selection dropdown with card image preview
+3. ✓ Collect tournament data (ongoing)
+4. ○ Limitless TCG API integration (planned for v0.21)
+5. ✓ Set up automated data validation
 
-1. Build main dashboard layout with shinydashboard
-2. Create store map view with Leaflet (locations, activity heatmap)
-3. Implement deck meta breakdown with boss monster images from display_card_id
-4. Add player leaderboard and individual player profiles
-5. Build "find decks using card X" search via archetype_cards
-6. Implement change logs viewable within the application
+### 6.3 Phase 3: Dashboard Development ✓ COMPLETE
 
-### 6.4 Phase 4: Deployment & Polish (Weeks 8-9)
+1. ✓ Build main dashboard layout (bslib, not shinydashboard)
+2. ✓ Create store map view with mapgl (Mapbox GL JS, not Leaflet)
+3. ✓ Implement deck meta breakdown with boss monster images
+4. ✓ Add player leaderboard and player modals
+5. ✓ Build deck filtering and archetype management
+6. ✓ Implement changelog and dev log documentation
 
-1. Deploy to shinyapps.io (free tier) or Docker container
-2. Add authentication for data entry (optional)
-3. Create comprehensive README and user documentation
-4. Performance optimization and caching
-5. Share with local community for feedback
+### 6.4 Phase 4: Deployment & Polish ✓ COMPLETE
+
+1. ✓ Deploy to Posit Connect Cloud (not shinyapps.io)
+2. ✓ Admin authentication for data entry
+3. ✓ Create comprehensive README and documentation
+4. ✓ Performance optimization (card caching, modular server)
+5. ✓ Live at https://digilab.cards/ with community feedback
+
+### 6.5 Phase 5: Rating System ✓ COMPLETE (v0.14.0)
+
+1. ✓ Competitive Rating (Elo-style with implied results)
+2. ✓ Achievement Score (points-based)
+3. ✓ Store Rating (weighted blend)
+4. ✓ Ratings displayed in Overview, Players, and Stores tabs
+
+### 6.6 Phase 6: Server Extraction Refactor ✓ COMPLETE (v0.18.0)
+
+1. ✓ Extract public page server logic into modular files
+2. ✓ Standardize naming convention (public-*, admin-*)
+3. ✓ Reduce app.R from 3,178 to 566 lines (~82% reduction)
 
 ---
 
@@ -296,28 +368,44 @@ The project README.md will include:
 
 ---
 
-## 8. Key Dashboard Features
+## 8. Key Dashboard Features (Implemented)
 
 ### 8.1 Store Map & Directory
 
-- Interactive Leaflet map showing all DFW stores hosting Digimon events
-- Color-coded markers by activity level
-- Click-through to store details (schedule, recent results)
-- Filter by day of week, event type
+- Interactive mapgl (Mapbox GL JS) map showing all DFW stores
+- Draw-to-filter region selection
+- Click-through to store modals with details and recent results
+- Store ratings based on tournament attendance and competition level
+- Online Tournament Organizers section
 
 ### 8.2 Meta Analysis
 
-- Deck archetype representation charts with boss monster images
-- Win rate analysis by deck type
-- Trend lines showing meta shifts over time
-- "Find decks using card X" search via archetype_cards
+- Deck archetype representation charts (Highcharter)
+- Win rate and conversion rate analysis by deck type
+- Meta share timeline showing shifts over time
+- Color distribution chart
+- Top decks grid with boss monster images
 
 ### 8.3 Player Profiles
 
-- Leaderboard ranked by tournament placements
-- Individual player pages with match history
-- Deck preferences and performance by archetype
-- Head-to-head records (if match-level data collected)
+- Leaderboard with Competitive Rating (Elo-style) and Achievement Score
+- Player modals with match history and deck preferences
+- Win/Loss/Tie records with color-coded display
+- Cross-modal navigation (click player → see tournaments)
+
+### 8.4 Tournament Tracking
+
+- Tournament history with store, date, format, player count
+- Tournament modals showing full standings
+- Admin tools for adding/editing/duplicating tournaments
+- Bulk result entry with decklist URL support
+
+### 8.5 Dashboard Overview
+
+- Value boxes with key stats (digital Digimon aesthetic)
+- Recent tournaments and top players tables
+- Meta share and conversion rate charts
+- Top decks carousel with images
 
 ---
 
@@ -336,23 +424,45 @@ The project README.md will include:
 
 ## 10. Future Enhancements
 
+See `ROADMAP.md` for detailed version-by-version plans.
+
+### Near-Term (v0.19-v0.21)
+
+- **v0.19 - Onboarding & Help**: Contextual help, info icons, methodology pages
+- **v0.20 - Self-Service**: Community suggestions, player merge tool, achievement badges
+- **v0.21 - Multi-Region**: Region selector, geographic filtering, Limitless API exploration
+
+### v1.0 - Public Launch
+
+- Website landing page with about, methodology, weekly meta reports
+- Mobile table column prioritization
+- Remove BETA badge
+
+### Long-Term (Parking Lot)
+
+- Screenshot OCR for Bandai TCG+ results parsing
 - Expand to One Piece TCG and other Bandai games
-- Add matchup analysis (deck A vs deck B win rates)
-- Implement Elo-style player rating system
-- Mobile-first data entry app (PWA)
 - Discord bot for result reporting
 - Expand to other Texas regions (Houston, Austin, San Antonio)
-- Community-submitted archetype suggestions with approval workflow
+- Mobile-first data entry PWA
 
 ---
 
 ## 11. Conclusion
 
-This project fills a genuine niche as a regional community analytics platform - not competing with national meta analysis tools, but providing unique value through DFW-specific insights, store-level comparisons, and cross-venue player tracking.
+This project has successfully launched as **DigiLab** at https://digilab.cards/, filling a genuine niche as a regional community analytics platform for the DFW Digimon TCG community.
 
-The revised database schema with `deck_archetypes` and `archetype_cards` tables properly handles the complexity of community deck naming, enabling intuitive data entry (dropdown selection) and powerful queries ("find decks using card X").
+### Achievements
 
-**Next steps**: Review and approve this plan, then begin Phase 1 implementation with Claude Code.
+- **Live Application**: Fully functional tournament tracking with 13 stores, 25+ deck archetypes, 4,200+ cards
+- **Rating System**: Competitive Rating (Elo-style) and Achievement Score for player progression
+- **Modern Tech Stack**: bslib + atomtemplates design system, Highcharter charts, mapgl maps
+- **Clean Architecture**: Modular server extraction reduced app.R by 82%
+- **Automated Pipelines**: Monthly card sync via GitHub Actions, MotherDuck cloud sync
+
+### Next Milestone
+
+**v0.19 - Onboarding & Help**: Contextual help and methodology documentation to improve user understanding.
 
 ---
 
@@ -367,9 +477,9 @@ The revised database schema with `deck_archetypes` and `archetype_cards` tables 
 - **Egman Events**: https://egmanevents.com/digimon
 - **Bandai TCG+**: https://www.bandai-tcg-plus.com/
 
-### Appendix B: Example Archetype Reference Data
+### Appendix B: Deck Archetypes (25+ Meta Decks)
 
-Sample entries for `deck_archetypes` table (current BT24 meta):
+The `deck_archetypes` table is populated with 25+ competitive decks covering all colors. Sample entries:
 
 | Archetype Name | Display Card | Colors | Playstyle |
 |----------------|--------------|--------|-----------|
@@ -381,16 +491,27 @@ Sample entries for `deck_archetypes` table (current BT24 meta):
 | Imperialdramon | BT12-031 | Blue/Green | combo, otk |
 | Leviamon | EX5-063 | Purple | control |
 
-*A full archetype reference dataset (~20-30 decks) with archetype_cards mappings will be compiled during Phase 1 using current meta data from DigimonMeta and DCG-Nexus.*
+*Archetypes are community-maintained via the Admin panel and updated as the meta evolves. See `scripts/seed_archetypes.R` for full dataset.*
 
-### Appendix C: DFW Store Examples
+### Appendix C: DFW Stores (13 Locations)
 
-Initial stores to track (to be expanded during Phase 1):
+Currently tracking:
 
-- **Common Ground Games** (Dallas) - Fridays 7:15pm, Saturdays 3:00pm
-- Additional stores to be identified via Bandai TCG+ store locator
+- Common Ground Games (Dallas)
+- Cloud Collectibles
+- The Card Haven
+- Game Nerdz (Mesquite, Allen, Wylie)
+- Andyseous Odyssey
+- Boardwalk Games
+- Lone Star Pack Breaks
+- Eclipse Cards and Hobby
+- Evolution Games
+- Primal Cards & Collectables
+- Tony's DTX Cards
+
+Plus online tournament organizers for webcam events.
 
 ---
 
-*Document Version: 1.1*  
-*Last Updated: January 2026*
+*Document Version: 2.0*
+*Last Updated: February 2026*
