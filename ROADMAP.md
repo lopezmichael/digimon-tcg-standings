@@ -8,7 +8,19 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.17 - Onboarding & Help
+## v0.17 - Admin UX Improvements
+
+| ID | Type | Description |
+|----|------|-------------|
+| A2 | FEATURE | Edit Results modal - access player results from Edit Tournaments page |
+| A3 | IMPROVEMENT | Blank date field with required validation - prevents accidental wrong dates |
+| A4 | IMPROVEMENT | Update duplicate tournament flow - "View/Edit Existing" navigates to Edit Tournaments |
+
+**Design Document:** `docs/plans/2026-02-03-admin-ux-improvements-design.md`
+
+---
+
+## v0.18 - Onboarding & Help
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -18,7 +30,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.18 - Self-Service & Sustainability
+## v0.19 - Self-Service & Sustainability
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -37,7 +49,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.19 - Multi-Region Foundation
+## v0.20 - Multi-Region Foundation
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -83,15 +95,15 @@ Items for future consideration, not scheduled:
 
 | ID | Type | Description | Notes |
 |----|------|-------------|-------|
-| F2 | FEATURE | Screenshot OCR → parse results | Scope: Bandai TCG Plus screenshots only |
+| F2 | FEATURE | Screenshot OCR → parse results | Bandai TCG+ only. Extracts: placement, username, member#, win points. Still manual: deck, decklist. Design: `docs/plans/2026-02-03-admin-ux-improvements-design.md` |
+| F2b | FEATURE | Public result submission with approval | Allow non-admins to submit results for admin review. Wait until admin bandwidth is bottleneck. |
+| F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification. Lightweight feedback channel. |
 | F8 | FEATURE | Embed widgets for stores | Let stores embed tournament history on their sites |
 | P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration |
 | P2 | FEATURE | Discord bot for result reporting | |
 | P3 | FEATURE | Expand to other Texas regions | After multi-region foundation works |
 | P4 | FEATURE | One Piece TCG support | Multi-game expansion |
-| P5 | FEATURE | Mobile-first data entry PWA | |
-| GA | FEATURE | Google Analytics | Add when needed to show traction |
-| DOM | FEATURE | Custom domain | Ideas: dfwdigimon.com, digitcg.gg, digimonmeta.com |
+| P5 | FEATURE | Mobile-first data entry PWA | Consider platform rewrite if scaling demands it |
 | DL | FEATURE | "Claim your result to add decklist" | Lightweight way for players to add their decklist without accounts |
 
 ---
@@ -112,6 +124,13 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.16.1 - DigiLab Rebranding
+- Custom domain: digilab.cards
+- Google Analytics (GA4)
+- Open Graph meta tags for link previews
+- Branding assets (logo, icon, favicon)
+- Player search SQL bug fix
 
 ### v0.16.0 - UX Improvements & Modal Enhancements
 - I2: 'None' option in admin dropdowns (clear/reset selection)
