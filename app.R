@@ -23,6 +23,9 @@ library(sf)
 library(highcharter)
 library(brand.yml)
 
+# App version (update with each release)
+APP_VERSION <- "0.18.1"
+
 # Load modules
 source("R/db_connection.R")
 source("R/digimoncard_api.R")
@@ -238,6 +241,9 @@ source("views/admin-decks-ui.R", local = TRUE)
 source("views/admin-stores-ui.R", local = TRUE)
 source("views/admin-formats-ui.R", local = TRUE)
 source("views/admin-players-ui.R", local = TRUE)
+source("views/about-ui.R", local = TRUE)
+source("views/faq-ui.R", local = TRUE)
+source("views/for-tos-ui.R", local = TRUE)
 
 # =============================================================================
 # UI
@@ -452,8 +458,30 @@ ui <- page_fillable(
         nav_panel_hidden(value = "admin_decks", admin_decks_ui),
         nav_panel_hidden(value = "admin_stores", admin_stores_ui),
         nav_panel_hidden(value = "admin_formats", admin_formats_ui),
-        nav_panel_hidden(value = "admin_players", admin_players_ui)
+        nav_panel_hidden(value = "admin_players", admin_players_ui),
+
+        # Content pages (accessed via footer)
+        nav_panel_hidden(value = "about", about_ui),
+        nav_panel_hidden(value = "faq", faq_ui),
+        nav_panel_hidden(value = "for_tos", for_tos_ui)
       )
+    )
+  ),
+
+  # Footer (outside layout_sidebar to span full width like header)
+  tags$footer(
+    class = "app-footer",
+    tags$nav(
+      class = "footer-nav",
+      actionLink("nav_about", "About", class = "footer-link"),
+      span(class = "footer-divider", "//"),
+      actionLink("nav_faq", "FAQ", class = "footer-link"),
+      span(class = "footer-divider", "//"),
+      actionLink("nav_for_tos", "For TOs", class = "footer-link")
+    ),
+    tags$div(
+      class = "footer-meta",
+      paste0("v", APP_VERSION, " | \u00A9 2026 DigiLab")
     )
   )
 )
