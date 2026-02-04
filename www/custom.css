@@ -2949,12 +2949,22 @@ button.mapbox-gl-draw_point {
     max-height: fit-content !important;
     height: auto !important;
     /* Match header/footer gradient on mobile */
-    background: linear-gradient(135deg, #0A3055 0%, #0F4C81 100%) !important;
+    background: linear-gradient(180deg, #0A3055 0%, #0F4C81 100%) !important;
+    /* Reset desktop margins for mobile */
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0.5rem !important;
   }
 
   .bslib-sidebar-layout > .sidebar.show {
     max-height: 80vh !important;
     overflow-y: auto;
+  }
+
+  /* Remove gap between header and sidebar on mobile */
+  .bslib-sidebar-layout {
+    margin-top: -2px !important;
   }
 
   /* Smaller sidebar title on mobile */
