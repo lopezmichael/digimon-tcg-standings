@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS players (
     player_id INTEGER PRIMARY KEY,
     display_name VARCHAR NOT NULL,
     tcgplus_id VARCHAR,
+    member_number VARCHAR,  -- Bandai TCG+ member number (0000XXXXXX), uniqueness enforced in app
     limitless_username VARCHAR,
     home_store_id INTEGER REFERENCES stores(store_id),
     is_active BOOLEAN DEFAULT TRUE,
