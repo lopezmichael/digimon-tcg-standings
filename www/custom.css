@@ -396,11 +396,12 @@ body.bslib-gap-spacing {
   margin-bottom: 0 !important;
 }
 
-/* Make sidebar layout extend to left edge */
+/* Make sidebar layout extend to both edges */
 .bslib-sidebar-layout {
   margin-top: 0 !important;
   margin-left: calc(-1rem - 1px) !important;
-  width: calc(100% + 1rem + 1px) !important;
+  margin-right: -1rem !important;
+  width: calc(100% + 2rem + 1px) !important;
   gap: 0 !important;
 }
 
@@ -409,6 +410,8 @@ body.bslib-gap-spacing {
 .bslib-sidebar-layout > [role="main"],
 .bslib-sidebar-layout > :not(.sidebar) {
   padding-top: 0.5rem !important;
+  /* Add right padding so content doesn't touch the edge */
+  padding-right: 1rem !important;
 }
 
 /* Responsive header */
