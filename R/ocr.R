@@ -43,7 +43,7 @@ gcv_detect_text <- function(image_data, api_key = Sys.getenv("GOOGLE_CLOUD_VISIO
       req_body_json(list(
         requests = list(list(
           image = list(content = image_base64),
-          features = list(list(type = "TEXT_DETECTION"))
+          features = list(list(type = "DOCUMENT_TEXT_DETECTION"))
         ))
       )) |>
       req_perform() |>
