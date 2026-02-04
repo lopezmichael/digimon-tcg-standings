@@ -494,6 +494,7 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
   if (verbose) message("[MATCH] Found ", length(username_indices), " potential opponents")
 
   # For each username, scan forward for: round, results, points, member number
+  # Note: OCR order varies - sometimes member number comes before results, sometimes after
   for (idx in username_indices) {
     opponent <- lines[idx]
 
@@ -510,6 +511,9 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
 
     for (j in (idx + 1):search_end) {
       check_line <- lines[j]
+
+      # Stop if we hit another username (next opponent)
+      if (j %in% username_indices) break
 
       # Check for round number (single digit 1-9)
       if (grepl("^[1-9]$", check_line) && is.na(round_num)) {
@@ -535,16 +539,13 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
         next
       }
 
-      # Check for member number
+      # Check for member number (don't break - results might come after)
       member_match <- regmatches(check_line, regexec("Member\\s*Number\\s*:?\\s*(\\d{10})", check_line, ignore.case = TRUE))[[1]]
-      if (length(member_match) > 1) {
+      if (length(member_match) > 1 && is.na(member_num)) {
         member_num <- member_match[2]
         if (verbose) message("[MATCH]   Member: ", member_num)
-        break  # Found member number, done with this opponent
+        next  # Continue scanning - results might come after member number
       }
-
-      # Stop if we hit another username (next opponent)
-      if (j %in% username_indices) break
     }
 
     # Only add if we found a member number (confirms this is a real match row)

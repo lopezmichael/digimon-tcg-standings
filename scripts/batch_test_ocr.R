@@ -47,7 +47,7 @@ ensure_dirs <- function() {
 #' Get list of image files in a directory
 get_images <- function(dir) {
   if (!dir.exists(dir)) return(character(0))
-  list.files(dir, pattern = "\\.(png|jpg|jpeg|PNG|JPG|JPEG)$", full.names = TRUE)
+  list.files(dir, pattern = "\\.(png|jpg|jpeg|webp|PNG|JPG|JPEG|WEBP)$", full.names = TRUE)
 }
 
 #' Process a single standings screenshot
