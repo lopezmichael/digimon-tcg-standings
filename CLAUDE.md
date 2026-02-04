@@ -291,7 +291,9 @@ git checkout -b fix/fix-name
 
 **Review before merge:** Feature branches require review before merging to main. Use PRs or get explicit user approval.
 
-**Exception:** Documentation-only changes and minor config tweaks can go directly to main.
+**v1.0 Release Strategy:** All new features from v0.19 onward should be developed in feature branches and NOT merged to main until v1.0 release. This keeps main stable with the current working version while new features are developed and tested.
+
+**Exception:** Documentation-only changes, bug fixes, and minor config tweaks can go directly to main.
 
 ### Code Verification (REQUIRED)
 
