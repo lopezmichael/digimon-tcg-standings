@@ -73,18 +73,50 @@ observeEvent(input$submit_process_ocr, {
   showNotification("Processing screenshots with OCR...", type = "message", duration = NULL, id = "ocr_processing")
 
   all_results <- list()
+  ocr_errors <- c()
+  ocr_texts <- c()
 
   for (i in seq_len(nrow(files))) {
     file_path <- files$datapath[i]
+    file_name <- files$name[i]
+
+    message("[SUBMIT] Processing file ", i, ": ", file_name)
+    message("[SUBMIT] File path: ", file_path)
+    message("[SUBMIT] File exists: ", file.exists(file_path))
 
     # Call OCR
-    ocr_text <- gcv_detect_text(file_path)
+    ocr_text <- tryCatch({
+      gcv_detect_text(file_path, verbose = TRUE)
+    }, error = function(e) {
+      ocr_errors <<- c(ocr_errors, paste(file_name, ":", e$message))
+      message("[SUBMIT] OCR error for ", file_name, ": ", e$message)
+      NULL
+    })
 
     if (!is.null(ocr_text) && ocr_text != "") {
+      ocr_texts <- c(ocr_texts, paste0("File ", i, ": ", nchar(ocr_text), " chars"))
+
       # Parse results
-      parsed <- parse_tournament_standings(ocr_text, total_rounds)
+      parsed <- tryCatch({
+        parse_tournament_standings(ocr_text, total_rounds, verbose = TRUE)
+      }, error = function(e) {
+        ocr_errors <<- c(ocr_errors, paste("Parse error:", e$message))
+        message("[SUBMIT] Parse error: ", e$message)
+        data.frame()
+      })
+
       if (nrow(parsed) > 0) {
         all_results[[length(all_results) + 1]] <- parsed
+        message("[SUBMIT] Parsed ", nrow(parsed), " results from ", file_name)
+      } else {
+        message("[SUBMIT] No results parsed from ", file_name)
+      }
+    } else {
+      message("[SUBMIT] No OCR text returned for ", file_name)
+      if (is.null(ocr_text)) {
+        ocr_errors <- c(ocr_errors, paste(file_name, ": OCR returned NULL (check API key)"))
+      } else {
+        ocr_errors <- c(ocr_errors, paste(file_name, ": OCR returned empty text"))
       }
     }
   }
@@ -92,8 +124,18 @@ observeEvent(input$submit_process_ocr, {
   removeNotification("ocr_processing")
 
   if (length(all_results) == 0) {
-    showNotification("Could not extract data from screenshots. Please try clearer images.",
-                     type = "error")
+    error_detail <- if (length(ocr_errors) > 0) {
+      paste("\n\nDetails:", paste(ocr_errors, collapse = "\n"))
+    } else if (length(ocr_texts) > 0) {
+      paste("\n\nOCR extracted text but parsing failed. Check R console for debug output.")
+    } else {
+      "\n\nNo text was extracted. Check that GOOGLE_CLOUD_VISION_API_KEY is set in .env"
+    }
+    showNotification(
+      paste0("Could not extract player data from screenshots.", error_detail),
+      type = "error",
+      duration = 10
+    )
     return()
   }
 
