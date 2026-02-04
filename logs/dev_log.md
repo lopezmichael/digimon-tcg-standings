@@ -4,6 +4,58 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-03: v0.18.1 - Code Cleanup Refactor (R4 + R5)
+
+### Summary
+Completed two cleanup tasks from the server extraction refactor plan:
+- **R4**: Reactive values cleanup - documented, grouped, and standardized naming
+- **R5**: CSS cleanup - extracted inline styles to CSS classes
+
+### R4: Reactive Values Cleanup
+
+Created `ARCHITECTURE.md` as the technical reference for the codebase. Documents:
+- Server module structure and naming conventions
+- All 32 reactive values organized into 6 categories
+- Navigation, modal, and database patterns
+- Quick reference cheatsheet
+
+Reactive values were reorganized in `app.R` with explicit initialization and clear section comments.
+
+### R5: CSS Cleanup
+
+**Problem**: 38 inline styles scattered across R files made styling inconsistent and hard to maintain.
+
+**Solution**: Extracted 21 inline styles to named CSS classes. Kept 10+ inline styles that need to remain inline (display toggles for JS, dynamic colors in sprintf).
+
+**New CSS Classes Added:**
+- `.card-search-grid`, `.card-search-item`, `.card-search-thumbnail`, `.card-search-text-id` - Admin deck card search
+- `.clickable-row` - Cursor pointer for clickable table rows
+- `.help-icon` - Cursor help for info icons
+- `.top-deck-image`, `.deck-modal-image` - Image sizing for deck displays
+- `.result-action-btn` - Action buttons in results table
+- `.map-container-flush` - Remove padding from map container
+- `.store-filter-badge--success`, `.store-filter-badge--info` - Store filter badge variants
+
+**Files Updated:**
+- `server/admin-decks-server.R` - 9 styles extracted
+- `views/admin-decks-ui.R` - 3 styles extracted
+- `server/admin-results-server.R` - 2 styles extracted
+- `server/public-dashboard-server.R` - 1 style extracted
+- `server/public-meta-server.R` - 2 styles extracted
+- `server/public-stores-server.R` - 2 styles extracted
+- `server/public-tournaments-server.R` - 1 style extracted
+- `views/stores-ui.R` - 1 style extracted
+
+### Documentation Updates
+
+Also added to `CLAUDE.md`:
+- Required Workflows section (superpowers usage, git workflow, R path, code verification)
+- Documentation Updates requirements
+
+Moved `PROJECT_PLAN.md` to `docs/original-project-plan.md` as historical reference.
+
+---
+
 ## 2026-02-03: v0.18.0 - Server Extraction Refactor
 
 ### Summary
