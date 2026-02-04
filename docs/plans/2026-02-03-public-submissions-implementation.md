@@ -10,6 +10,28 @@
 
 ---
 
+## Implementation Status
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| Phase 1: Foundation & OCR | **COMPLETE** | Tasks 1-5 done, OCR parsing works for Bandai TCG+ screenshots |
+| Phase 2: Requests & Admin | Not started | store_requests, deck_requests tables |
+| Phase 3: Match History | Not started | matches table, match history OCR |
+| Phase 4: Polish | Not started | Mobile optimization, error handling |
+
+**Last Updated:** 2026-02-04
+
+**Branch:** `feature/public-submissions` (10 commits ahead of main)
+
+### Phase 1 Implementation Notes
+
+- DuckDB doesn't support `ALTER TABLE ADD COLUMN ... UNIQUE` - constraint removed, uniqueness enforced in app
+- OCR uses `DOCUMENT_TEXT_DETECTION` feature (better for structured documents than `TEXT_DETECTION`)
+- Parsing tuned to Bandai TCG+ app format - may need adjustments for other screenshot formats
+- Users can edit parsed results before submitting
+
+---
+
 ## Phase 1: Foundation & OCR Integration
 
 ### Task 1: Add member_number to players table

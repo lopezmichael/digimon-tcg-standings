@@ -4,6 +4,71 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-04: v0.19 Public Submissions - Phase 1 Implementation
+
+### Summary
+
+Implemented Phase 1 of the public submissions feature: core OCR integration and Submit Results UI. The feature allows anyone to upload tournament screenshots from the Bandai TCG+ app and have them automatically parsed into structured data.
+
+### Completed Tasks
+
+| Task | Description | Files Created/Modified |
+|------|-------------|----------------------|
+| 1 | Add member_number to players table | `db/schema.sql`, `scripts/migrate_add_member_number.R` |
+| 2 | Create OCR module | `R/ocr.R` |
+| 3 | Create Submit Results UI | `views/submit-ui.R`, `app.R` |
+| 4 | Create Submit Results server logic | `server/public-submit-server.R` |
+| 5 | Test and debug OCR parsing | Multiple iterations on `R/ocr.R` |
+
+### OCR Implementation Details
+
+**API Choice:** Google Cloud Vision API via direct httr2 REST calls
+- Feature: `DOCUMENT_TEXT_DETECTION` (optimized for structured documents)
+- Free tier: 1,000 images/month
+- Handles both file paths and raw bytes
+
+**Parsing Strategy:**
+1. Find potential usernames (alphabetic text, not headers)
+2. Scan forward to find associated member number
+3. Extract placement and points from numbers between username and member number
+4. Calculate W-L-T from points (3 per win, 1 per tie)
+
+**Challenges Encountered:**
+- OCR returns each table cell as separate lines, not row-by-row
+- Battery percentage (50%) was being captured as data - added filter
+- "Member Number XXXXXXXXXX" was being detected as username - added exclusion
+- Placement numbers sometimes missing for first player - use sequential fallback
+
+**Known Limitations:**
+- Parsing is tuned to Bandai TCG+ app screenshot format
+- Different phone models/screen sizes may produce different OCR layouts
+- Users can manually edit parsed results before submitting
+
+### Schema Changes
+
+Added `member_number` column to players table:
+```sql
+member_number VARCHAR,  -- Bandai TCG+ member number (0000XXXXXX)
+```
+
+Note: DuckDB doesn't support `ALTER TABLE ADD COLUMN ... UNIQUE`, so uniqueness is enforced at application level only.
+
+### Branch Status
+
+**Branch:** `feature/public-submissions`
+**Commits:** 10 commits ahead of origin
+**Status:** Phase 1 complete, needs more testing with varied screenshots
+
+### Next Steps (Phase 2+)
+
+1. Create store_requests and deck_requests tables
+2. Build admin approval queue UI
+3. Add match history OCR parsing
+4. Mobile optimization
+5. More robust error handling for varied screenshot formats
+
+---
+
 ## 2026-02-03: v0.19 Public Submissions Design
 
 ### Summary
