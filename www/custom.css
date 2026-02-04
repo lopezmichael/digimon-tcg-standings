@@ -16,7 +16,7 @@
   color: #FFFFFF;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   margin: -1rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
   width: calc(100% + 2rem);
   min-height: 48px;
   max-height: 56px;
@@ -268,6 +268,26 @@
   margin: 0 auto;
 }
 
+/* =============================================================================
+   SIDEBAR FRAME - Seamless integration with header/footer
+   ============================================================================= */
+
+/* Base sidebar styling - match header/footer gradient */
+.bslib-sidebar-layout > .sidebar {
+  background: linear-gradient(135deg, #0A3055 0%, #0F4C81 100%) !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 30px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 30px),
+    linear-gradient(135deg, #0A3055 0%, #0F4C81 100%) !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+/* Remove gap between sidebar and main content */
+.bslib-sidebar-layout {
+  --bslib-sidebar-border-radius: 0;
+}
+
 /* Make textInput match selectInput height */
 .dashboard-filters input[type="text"].form-control {
   height: 38px !important;
@@ -325,9 +345,13 @@
     linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
 }
 
-/* Dark mode sidebar - use darker shade that matches */
+/* Dark mode sidebar - use darker shade with grid pattern */
 [data-bs-theme="dark"] .bslib-sidebar-layout > .sidebar {
-  background-color: #1A202C !important;
+  background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%) !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 30px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 30px),
+    linear-gradient(135deg, #1A202C 0%, #2D3748 100%) !important;
 }
 
 [data-bs-theme="dark"] .bslib-sidebar-layout > .sidebar > .sidebar-title {
@@ -2916,8 +2940,8 @@ button.mapbox-gl-draw_point {
   .bslib-sidebar-layout > .sidebar {
     max-height: fit-content !important;
     height: auto !important;
-    /* Ensure background color on mobile overlay */
-    background-color: #0A3055 !important;
+    /* Match header/footer gradient on mobile */
+    background: linear-gradient(135deg, #0A3055 0%, #0F4C81 100%) !important;
   }
 
   .bslib-sidebar-layout > .sidebar.show {
