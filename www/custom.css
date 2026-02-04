@@ -281,11 +281,9 @@
     linear-gradient(135deg, #0A3055 0%, #0F4C81 100%) !important;
   border-radius: 0 !important;
   border: none !important;
-}
-
-/* Remove gap between sidebar and main content */
-.bslib-sidebar-layout {
-  --bslib-sidebar-border-radius: 0;
+  /* Extend to bottom edge */
+  margin-bottom: -1rem !important;
+  padding-bottom: 1rem !important;
 }
 
 /* Make textInput match selectInput height */
@@ -387,15 +385,18 @@
 /* Reduce whitespace between header and content */
 /* Target bslib spacing classes on body and containers */
 body.bslib-gap-spacing {
-  gap: 0.25rem !important;
+  gap: 0 !important;
 }
 
 .bslib-mb-spacing {
   margin-bottom: 0 !important;
 }
 
+/* Make sidebar layout extend to left edge */
 .bslib-sidebar-layout {
   margin-top: 0 !important;
+  margin-left: -1rem !important;
+  width: calc(100% + 1rem) !important;
   gap: 0 !important;
 }
 
@@ -403,7 +404,7 @@ body.bslib-gap-spacing {
 .bslib-sidebar-layout > main,
 .bslib-sidebar-layout > [role="main"],
 .bslib-sidebar-layout > :not(.sidebar) {
-  padding-top: 0.25rem !important;
+  padding-top: 0.5rem !important;
 }
 
 /* Responsive header */
