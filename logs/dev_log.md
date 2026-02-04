@@ -4,6 +4,52 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-04: Design Session - Region Expansion, Deep Linking, Content Pages
+
+### Summary
+Design session to plan three interconnected features for v0.19-v0.21. Created comprehensive design docs for each.
+
+### OCR Parser Fixes (feature/public-submissions branch)
+- Added `.webp` image support to batch test script
+- Fixed match history parser to handle variable OCR ordering (W-L-T sometimes appears after member number)
+- Batch testing now processes 6 screenshots successfully
+
+### Region Expansion Design
+Designed a nested geographic hierarchy for multi-region support:
+- **Structure**: Global → Country → State → Scene → Store
+- **Key decision**: Players don't belong to Scenes (no accounts), only Stores do
+- **Leaderboards**: Filtered views of global rating based on where players have competed
+- **Tournament tiers**: Local (Scene), Regional (State), National (Country)
+
+### Deep Linking Design
+Designed shareable URL system:
+- **Format**: `?player=atomshell`, `?deck=blue-flare`, `?scene=dfw`
+- **Slug resolution**: Exact match opens modal, multiple matches show search results
+- **Browser history**: Back button closes modals (pushState/popstate)
+- **Copy Link button**: In each modal for easy sharing
+
+### Content Pages Design
+Designed in-app content pages accessed via styled footer:
+- **About**: What is DigiLab, coverage, team
+- **FAQ**: Accordion sections for methodology, how-to, ratings
+- **For TOs**: Submit results, add stores, request regions
+- **Footer**: Styled bar matching header aesthetic (dark bg, circuit accents, cyan glow)
+
+### Google Analytics
+Discussed GA4 enhancement approach:
+- Current basic tracking is sufficient for Phase 1
+- User to explore existing GA4 reports first (geo, retention, engagement)
+- Custom events (tab views, modal opens) only after identifying gaps
+
+### Design Documents Created
+| Document | Path |
+|----------|------|
+| Region Expansion | `docs/plans/2026-02-04-region-expansion-design.md` |
+| Deep Linking | `docs/plans/2026-02-04-deep-linking-design.md` |
+| Content Pages | `docs/plans/2026-02-04-content-pages-design.md` |
+
+---
+
 ## 2026-02-03: v0.18.1 - Code Cleanup Refactor (R4 + R5)
 
 ### Summary
