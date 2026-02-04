@@ -48,7 +48,32 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.19 - Onboarding & Help
+## v0.19 - Public Submissions & OCR
+
+**Branch:** `feature/public-submissions`
+**Design:** `docs/plans/2026-02-03-public-submissions-design.md`
+
+| ID | Type | Description |
+|----|------|-------------|
+| PS1 | FEATURE | Public "Submit Results" tab - anyone can upload tournament screenshots |
+| PS2 | FEATURE | Google Cloud Vision OCR integration (httr2 direct calls) |
+| PS3 | FEATURE | Deck assignment during submission + edit UNKNOWN decks anywhere |
+| PS4 | FEATURE | Match history screenshot submission (round-by-round data) |
+| PS5 | FEATURE | Request new store/deck workflow with admin approval queue |
+| PS6 | FEATURE | Unified admin/public submission system |
+| PS7 | SCHEMA | Add `member_number` to players table |
+| PS8 | SCHEMA | New `matches` table for round-by-round data |
+| PS9 | SCHEMA | New `store_requests` and `deck_requests` tables |
+
+**Implementation Phases:**
+1. Core screenshot submission + OCR
+2. Requests & admin unification
+3. Match history
+4. Polish
+
+---
+
+## v0.20 - Onboarding & Help
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -58,11 +83,10 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.20 - Self-Service & Sustainability
+## v0.21 - Self-Service Extras
 
 | ID | Type | Description |
 |----|------|-------------|
-| F3 | FEATURE | Community-submitted suggestions for deck archetypes and stores (anonymous, approval queue for admins) |
 | I9 | FEATURE | Simple player merge tool - admin can merge duplicate players (e.g., "John Smith" and "J. Smith") |
 | F10 | FEATURE | Player achievement badges - auto-calculated, displayed in player modal, top 3-5 shown with "show all" expansion |
 
@@ -77,15 +101,15 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.21 - Multi-Region Foundation
+## v0.22 - Multi-Region Foundation
 
 | ID | Type | Description |
 |----|------|-------------|
-| R1 | FEATURE | Region/geography selector for filtering |
-| R2 | FEATURE | Stores, players, tournaments scoped by region |
-| R3 | FEATURE | Data visibility model - cross-region visibility with filtering |
-| R4 | FEATURE | Regional vs global leaderboards |
-| R5 | FEATURE | Admin permissions per region |
+| MR1 | FEATURE | Region/geography selector for filtering |
+| MR2 | FEATURE | Stores, players, tournaments scoped by region |
+| MR3 | FEATURE | Data visibility model - cross-region visibility with filtering |
+| MR4 | FEATURE | Regional vs global leaderboards |
+| MR5 | FEATURE | Admin permissions per region (regional moderators) |
 | A1 | FEATURE | Admin user login (per user accounts, audit trail) |
 | L1 | FEATURE | Limitless API exploration for online/webcam tournaments |
 
@@ -123,8 +147,6 @@ Items for future consideration, not scheduled:
 
 | ID | Type | Description | Notes |
 |----|------|-------------|-------|
-| F2 | FEATURE | Screenshot OCR → parse results | Bandai TCG+ only. Extracts: placement, username, member#, win points. Still manual: deck, decklist. Design: `docs/plans/2026-02-03-admin-ux-improvements-design.md` |
-| F2b | FEATURE | Public result submission with approval | Allow non-admins to submit results for admin review. Wait until admin bandwidth is bottleneck. |
 | F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification. Lightweight feedback channel. |
 | F8 | FEATURE | Embed widgets for stores | Let stores embed tournament history on their sites |
 | P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration |
@@ -132,7 +154,12 @@ Items for future consideration, not scheduled:
 | P3 | FEATURE | Expand to other Texas regions | After multi-region foundation works |
 | P4 | FEATURE | One Piece TCG support | Multi-game expansion |
 | P5 | FEATURE | Mobile-first data entry PWA | Consider platform rewrite if scaling demands it |
-| DL | FEATURE | "Claim your result to add decklist" | Lightweight way for players to add their decklist without accounts |
+
+**Moved to v0.19 (Public Submissions):**
+- ~~F2: Screenshot OCR~~ → PS1, PS2
+- ~~F2b: Public result submission~~ → PS1, PS6
+- ~~F3: Community-submitted deck/store suggestions~~ → PS5
+- ~~DL: Claim result to add decklist~~ → PS3 (edit UNKNOWN decks anywhere)
 
 ---
 
@@ -143,7 +170,7 @@ Items for future consideration, not scheduled:
 | Date range filtering on dashboard | Not needed - format filter is sufficient |
 | Detailed player profile views | Modals already cover this |
 | Detailed deck profile views | Modals already cover this |
-| Matchup analysis (deck A vs deck B) | No round-by-round data available |
+| Matchup analysis (deck A vs deck B) | Revisit after v0.19 - will have round-by-round data |
 | Event calendar page | Bandai TCG Plus already covers this |
 | Store directory page | Bandai TCG Plus already covers this |
 | Data export for users | Handle manually on request |
