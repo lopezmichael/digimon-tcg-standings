@@ -79,7 +79,7 @@ gcv_detect_text <- function(image_data, api_key = Sys.getenv("GOOGLE_CLOUD_VISIO
 #' Parse tournament standings from OCR text
 #'
 #' Extracts player data from Bandai TCG+ tournament rankings screenshot.
-#' Uses flexible parsing to handle various OCR output formats.
+#' OCR typically returns each table cell as a separate line.
 #'
 #' @param ocr_text Raw text from gcv_detect_text()
 #' @param total_rounds Total rounds in tournament (for calculating losses)
@@ -111,120 +111,125 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
 
   # Print first few lines for debugging
   if (verbose && length(lines) > 0) {
-    message("[PARSE] First 15 lines:")
-    for (i in seq_len(min(15, length(lines)))) {
+    message("[PARSE] First 20 lines:")
+    for (i in seq_len(min(20, length(lines)))) {
       message("[PARSE]   ", i, ": '", lines[i], "'")
     }
   }
 
   results <- list()
 
-  # Strategy: Find all member numbers first, then work backwards to find associated data
-  # Member number pattern: "Member Number 0000XXXXXX"
-  member_pattern <- "Member\\s*Number\\s*:?\\s*(\\d{10})"
+  # Header words to skip
+  headers <- c("ranking", "ranki", "user name", "username", "win", "omw", "gw",
+               "points", "digimon", "card game", "home", "my events", "event search",
+               "decks", "others", "ng")
 
-  # Find all member number lines
-  member_indices <- c()
-  member_numbers <- c()
+  # Find potential usernames: alphabetic text that's not a header or percentage
+  # Usernames in Bandai TCG+ are typically alphanumeric, starting with letter
+  username_indices <- c()
   for (i in seq_along(lines)) {
-    match <- regmatches(lines[i], regexec(member_pattern, lines[i], ignore.case = TRUE))[[1]]
-    if (length(match) > 1) {
-      member_indices <- c(member_indices, i)
-      member_numbers <- c(member_numbers, match[2])
+    line <- lines[i]
+    line_lower <- tolower(line)
+
+    # Skip if it's a header
+    if (line_lower %in% headers) next
+
+    # Skip if contains percentage
+    if (grepl("%", line)) next
+
+    # Skip if it's just numbers
+    if (grepl("^[\\d\\.:\\-]+$", line)) next
+
+    # Skip very short lines (likely OCR artifacts)
+    if (nchar(line) < 2) next
+
+    # Skip lines with special characters that aren't usernames
+    if (grepl("^[^A-Za-z]", line)) next
+
+    # Check if it looks like a username (starts with letter, alphanumeric with possible underscore/space)
+    if (grepl("^[A-Za-z][A-Za-z0-9_ ]*$", line)) {
+      username_indices <- c(username_indices, i)
+      if (verbose) message("[PARSE] Potential username at line ", i, ": '", line, "'")
     }
   }
 
-  if (verbose) message("[PARSE] Found ", length(member_indices), " member numbers")
+  if (verbose) message("[PARSE] Found ", length(username_indices), " potential usernames")
 
-  if (length(member_indices) == 0) {
-    # Try alternative: look for 10-digit numbers that might be member numbers
-    if (verbose) message("[PARSE] Trying alternative member number detection...")
-    for (i in seq_along(lines)) {
-      match <- regmatches(lines[i], regexec("\\b(\\d{10})\\b", lines[i]))[[1]]
-      if (length(match) > 1) {
-        member_indices <- c(member_indices, i)
-        member_numbers <- c(member_numbers, match[2])
-      }
-    }
-    if (verbose) message("[PARSE] Found ", length(member_indices), " 10-digit numbers")
-  }
+  # For each username, look FORWARD for member number and numbers for placement/points
+  for (j in seq_along(username_indices)) {
+    idx <- username_indices[j]
+    username <- lines[idx]
 
-  # For each member number, look for ranking data in preceding lines
-  for (j in seq_along(member_indices)) {
-    idx <- member_indices[j]
-    member_num <- member_numbers[j]
+    # Search forward up to 8 lines for member number
+    search_end <- min(length(lines), idx + 8)
 
-    # Look at the line before member number for username
-    # And look for placement and points nearby
-    search_start <- max(1, idx - 3)
-    search_lines <- lines[search_start:(idx - 1)]
-
+    member_num <- NA
     placement <- NA
-    username <- NA
     points <- NA
 
-    # Try to find placement (1, 2, 3, etc.) - usually a standalone number or at start
-    for (line in search_lines) {
-      # Check for standalone placement number
+    # Collect all numbers between username and member number
+    numbers_found <- c()
+
+    for (k in (idx + 1):search_end) {
+      line <- lines[k]
+
+      # Check for member number
+      member_match <- regmatches(line, regexec("Member\\s*Number\\s*:?\\s*(\\d{10})", line, ignore.case = TRUE))[[1]]
+      if (length(member_match) > 1) {
+        member_num <- member_match[2]
+        break  # Found member number, stop searching
+      }
+
+      # Check for standalone 10-digit number (member number without label)
+      if (grepl("^\\d{10}$", line)) {
+        member_num <- line
+        break
+      }
+
+      # Collect standalone small numbers (potential placement or points)
       if (grepl("^\\d{1,2}$", line)) {
-        placement <- as.integer(line)
+        numbers_found <- c(numbers_found, as.integer(line))
       }
-      # Check for username-like text (not a number, not a percentage)
-      if (grepl("^[A-Za-z][A-Za-z0-9_\\s]*$", line) && !grepl("%", line)) {
-        # Remove "Rank" or "Ranking" header text
-        if (!grepl("^Rank", line, ignore.case = TRUE) &&
-            !grepl("^User", line, ignore.case = TRUE) &&
-            !grepl("^Win", line, ignore.case = TRUE) &&
-            !grepl("^OMW", line, ignore.case = TRUE) &&
-            !grepl("^GW", line, ignore.case = TRUE)) {
-          username <- trimws(line)
-        }
-      }
+
+      # Stop if we hit another username
+      if (k %in% username_indices && k != idx) break
     }
 
-    # Try combined line format: "1 Username 12 62.5% 72.7%"
-    if (is.na(placement) || is.na(username)) {
-      for (line in search_lines) {
-        # Pattern: placement username points percentage percentage
-        match <- regmatches(line, regexec("^(\\d{1,2})\\s+([A-Za-z][A-Za-z0-9_]*)\\s+(\\d{1,2})\\s+", line))[[1]]
-        if (length(match) > 1) {
-          placement <- as.integer(match[2])
-          username <- match[3]
-          points <- as.integer(match[4])
+    # Also look BACKWARD 1-3 lines for placement number
+    search_start <- max(1, idx - 3)
+    for (k in (idx - 1):search_start) {
+      line <- lines[k]
+      if (grepl("^\\d{1,2}$", line)) {
+        val <- as.integer(line)
+        if (val >= 1 && val <= 32) {  # Reasonable placement range
+          placement <- val
           break
         }
       }
     }
 
-    # Look for points if not found yet - search for standalone small numbers (0-15)
-    if (is.na(points)) {
-      for (line in search_lines) {
-        if (grepl("^\\d{1,2}$", line)) {
-          val <- as.integer(line)
-          # Points are typically 0-15 for a 4-5 round tournament
-          if (val <= 15 && val != placement) {
-            points <- val
-          }
-        }
+    # Interpret the numbers found between username and member number
+    # Usually: first number after username is placement (if not found before), second is points
+    if (is.na(placement) && length(numbers_found) >= 1) {
+      # First number could be placement
+      if (numbers_found[1] >= 1 && numbers_found[1] <= 32) {
+        placement <- numbers_found[1]
+        numbers_found <- numbers_found[-1]
       }
     }
 
-    # Also check the line with member number for additional data
-    full_line <- lines[idx]
-    if (is.na(points)) {
-      # Look for points in the member number line context
-      nums <- as.integer(unlist(regmatches(full_line, gregexpr("\\b\\d{1,2}\\b", full_line))))
-      nums <- nums[!is.na(nums) & nums <= 15]
-      if (length(nums) > 0) points <- nums[1]
+    if (length(numbers_found) >= 1) {
+      # Next number is likely points (0-15 range for typical tournament)
+      points <- numbers_found[1]
     }
 
     if (verbose) {
-      message("[PARSE] Player ", j, ": placement=", placement, ", username=", username,
+      message("[PARSE] Player ", j, ": username='", username, "', placement=", placement,
               ", points=", points, ", member=", member_num)
     }
 
-    # Only add if we have at least username
-    if (!is.na(username) && username != "") {
+    # Only add if we found a member number (confirms this is a real player row)
+    if (!is.na(member_num)) {
       # Use position as placement if not found
       if (is.na(placement)) placement <- j
 
