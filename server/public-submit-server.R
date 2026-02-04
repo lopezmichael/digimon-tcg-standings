@@ -142,11 +142,49 @@ observeEvent(input$submit_process_ocr, {
   # Combine results from all screenshots
   combined <- do.call(rbind, all_results)
 
-  # Remove duplicates (same placement)
-  combined <- combined[!duplicated(combined$placement), ]
+  # Smart deduplication for overlapping screenshots
+  # Priority: member_number (unique identifier) > username + placement
+  if (nrow(combined) > 1) {
+    original_count <- nrow(combined)
+
+    # First, dedupe by member_number (most reliable - same player in multiple screenshots)
+    # Keep the first occurrence (usually has correct placement from their screenshot)
+    if (any(!is.na(combined$member_number) & combined$member_number != "")) {
+      # For rows with member numbers, dedupe by member_number
+      has_member <- !is.na(combined$member_number) & combined$member_number != ""
+      with_member <- combined[has_member, ]
+      without_member <- combined[!has_member, ]
+
+      # Keep first occurrence of each member_number
+      with_member <- with_member[!duplicated(with_member$member_number), ]
+
+      # For rows without member numbers, dedupe by username (case-insensitive)
+      if (nrow(without_member) > 0) {
+        without_member$username_lower <- tolower(without_member$username)
+        without_member <- without_member[!duplicated(without_member$username_lower), ]
+        without_member$username_lower <- NULL
+      }
+
+      combined <- rbind(with_member, without_member)
+    } else {
+      # No member numbers - dedupe by username only
+      combined$username_lower <- tolower(combined$username)
+      combined <- combined[!duplicated(combined$username_lower), ]
+      combined$username_lower <- NULL
+    }
+
+    deduped_count <- nrow(combined)
+    if (original_count != deduped_count) {
+      message("[SUBMIT] Deduplication: ", original_count, " -> ", deduped_count, " players")
+    }
+  }
 
   # Sort by placement
   combined <- combined[order(combined$placement), ]
+
+  # Re-assign placements sequentially if there are gaps (from deduplication)
+  # This handles cases where overlapping screenshots had different placement numbers
+  combined$placement <- seq_len(nrow(combined))
 
   # Add deck column (default to UNKNOWN)
   combined$deck_id <- NA_integer_

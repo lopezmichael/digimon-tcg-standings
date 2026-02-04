@@ -76,6 +76,72 @@ gcv_detect_text <- function(image_data, api_key = Sys.getenv("GOOGLE_CLOUD_VISIO
   })
 }
 
+#' Check if a string looks like status bar noise (time, battery, signal)
+#'
+#' Used during USERNAME detection phase to skip status bar lines.
+#' Note: This does NOT filter numbers during the forward-scan phase (after finding usernames)
+#' because the forward-scan is position-based and won't reach status bar lines.
+#'
+#' @param text String to check
+#' @return TRUE if it looks like status bar noise
+is_status_bar_noise <- function(text) {
+ # Time patterns: 12:17, 9:45 AM, 14:30
+  if (grepl("^\\d{1,2}:\\d{2}", text)) return(TRUE)
+
+  # Battery percentages with % symbol
+  if (grepl("^\\d{1,3}%$", text)) return(TRUE)
+
+  # Signal indicators that OCR might pick up
+  if (grepl("^[.oO]{2,5}$", text)) return(TRUE)  # Signal dots
+  if (grepl("^LTE$|^5G$|^4G$|^WiFi$", text, ignore.case = TRUE)) return(TRUE)
+
+  # Common status bar text
+  if (grepl("^AM$|^PM$", text)) return(TRUE)
+
+  FALSE
+}
+
+#' Check if a string looks like a store/business name
+#'
+#' @param text String to check
+#' @return TRUE if it looks like a store name
+is_store_name <- function(text) {
+  # Common store name patterns
+  store_keywords <- c("games", "cards", "hobby", "collectibles", "comics",
+                      "gaming", "tcg", "shop", "store", "arena", "lounge",
+                      "cafe", "bar", "grill", "pizza", "coffee")
+
+  text_lower <- tolower(text)
+
+  # Check for store keywords
+  for (keyword in store_keywords) {
+    if (grepl(keyword, text_lower)) return(TRUE)
+  }
+
+  # Multi-word names with "The" or ending in common suffixes
+ if (grepl("^The\\s+", text, ignore.case = TRUE)) return(TRUE)
+  if (grepl("'s$", text)) return(TRUE)  # "Tony's", "Joe's"
+
+  FALSE
+}
+
+#' Check if a string looks like event/tournament metadata
+#'
+#' @param text String to check
+#' @return TRUE if it looks like event metadata
+is_event_metadata <- function(text) {
+  # Bracketed date ranges: [Jan-Mar 2026]
+ if (grepl("^\\[.*\\]", text)) return(TRUE)
+
+  # Event type keywords
+  if (grepl("tournament|event|championship|regional|locals|cup", text, ignore.case = TRUE)) return(TRUE)
+
+  # Date patterns
+  if (grepl("\\d{4}", text) && grepl("jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec", text, ignore.case = TRUE)) return(TRUE)
+
+  FALSE
+}
+
 #' Parse tournament standings from OCR text
 #'
 #' Extracts player data from Bandai TCG+ tournament rankings screenshot.
@@ -122,7 +188,8 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
   # Header words and noise to skip
   headers <- c("ranking", "ranki", "user name", "username", "win", "omw", "gw",
                "points", "digimon", "card game", "home", "my events", "event search",
-               "decks", "others", "ng", "privacy policy", "o o o")
+               "decks", "others", "ng", "privacy policy", "o o o", "store events",
+               "match history", "results", "opponent", "round")
 
   # Find potential usernames: alphabetic text that's not a header or percentage
   # Usernames in Bandai TCG+ are typically alphanumeric, starting with letter
@@ -150,6 +217,24 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     if (grepl("^[^A-Za-z]", line)) next
     if (grepl("^B⭑", line)) next  # App logo
 
+    # NEW: Skip status bar noise (time, battery, signal)
+    if (is_status_bar_noise(line)) {
+      if (verbose) message("[PARSE] Skipping status bar noise: '", line, "'")
+      next
+    }
+
+    # NEW: Skip store/business names
+    if (is_store_name(line)) {
+      if (verbose) message("[PARSE] Skipping store name: '", line, "'")
+      next
+    }
+
+    # NEW: Skip event metadata
+    if (is_event_metadata(line)) {
+      if (verbose) message("[PARSE] Skipping event metadata: '", line, "'")
+      next
+    }
+
     # Check if it looks like a username (starts with letter, allows alphanumeric, underscore, space)
     if (grepl("^[A-Za-z][A-Za-z0-9_. ]*$", line) && nchar(line) >= 3) {
       # Additional check: must have at least 3 letters total to avoid noise
@@ -171,8 +256,9 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     idx <- username_indices[j]
     username <- lines[idx]
 
-    # Search forward up to 8 lines for member number
-    search_end <- min(length(lines), idx + 8)
+    # Search forward up to 12 lines for member number
+    # (increased from 8 to handle noise like headers between username and data)
+    search_end <- min(length(lines), idx + 12)
 
     member_num <- NA
     placement <- NA
@@ -197,11 +283,14 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
         break
       }
 
-      # Collect standalone small numbers (potential placement or points)
-      # SKIP common noise values: 50 (battery), 100 (battery full)
-      if (grepl("^\\d{1,2}$", line)) {
+      # Collect standalone numbers (potential placement or points)
+      # Now handles large tournaments (64, 128+ players)
+      if (grepl("^\\d{1,3}$", line)) {
         val <- as.integer(line)
-        if (!val %in% c(50, 100)) {  # Filter out battery percentage
+        # We're already scanning FORWARD from a username, so we're past the status bar
+        # This contextual position means these numbers are likely tournament data, not battery
+        # Only filter obvious non-data: values over 200 (no tournament that large)
+        if (val <= 200) {
           numbers_found <- c(numbers_found, val)
         }
       }
@@ -301,12 +390,22 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
 #' Parse match history from OCR text
 #'
 #' Extracts round-by-round match data from Bandai TCG+ match history screenshot.
+#' OCR format (each on separate lines):
+#'   Opponent username
+#'   Round number (1-digit)
+#'   Results (X-X-X format)
+#'   Points (0, 1, or 3)
+#'   Member Number: XXXXXXXXXX
 #'
 #' @param ocr_text Raw text from gcv_detect_text()
+#' @param verbose Print debug messages
 #' @return Data frame with columns: round, opponent_username, opponent_member_number,
 #'         games_won, games_lost, games_tied, match_points
-parse_match_history <- function(ocr_text) {
+parse_match_history <- function(ocr_text, verbose = TRUE) {
+  if (verbose) message("[MATCH] Starting to parse match history...")
+
   if (is.null(ocr_text) || ocr_text == "") {
+    if (verbose) message("[MATCH] No OCR text to parse")
     return(data.frame(
       round = integer(),
       opponent_username = character(),
@@ -317,74 +416,157 @@ parse_match_history <- function(ocr_text) {
       match_points = integer()
     ))
   }
+
+  if (verbose) message("[MATCH] OCR text length: ", nchar(ocr_text))
 
   lines <- strsplit(ocr_text, "\n")[[1]]
   lines <- trimws(lines)
   lines <- lines[lines != ""]
 
+  if (verbose) message("[MATCH] Found ", length(lines), " non-empty lines")
+
+  # Print all lines for debugging
+  if (verbose && length(lines) > 0) {
+    message("[MATCH] All lines:")
+    for (i in seq_len(length(lines))) {
+      message("[MATCH]   ", i, ": '", lines[i], "'")
+    }
+  }
+
   results <- list()
 
-  # Pattern for round row with results
-  # Format: Round# | Opponent | Results (W-L-T) | Points
-  round_pattern <- "^(\\d)\\s+"
-  result_pattern <- "(\\d)\\s*-\\s*(\\d)\\s*-\\s*(\\d)"
-  member_pattern <- "Member\\s*Number\\s*:?\\s*(\\d{10,})"
+  # Headers and noise to skip when looking for usernames
+  headers <- c("round", "opponent", "results", "points", "ranking", "match history",
+               "store events", "home", "my events", "event search", "decks", "others",
+               "3: win, 1: draw, 0: lose", "digimon", "card game", "g", "user name",
+               "username", "win", "omw", "gw", "privacy policy")
 
-  current_round <- NULL
-  current_opponent <- NULL
-  current_games <- NULL
-  current_points <- NULL
+  # Strategy: Find potential usernames, then scan FORWARD for round, results, points, member number
+  # This matches the OCR output order we observed
 
+  username_indices <- c()
   for (i in seq_along(lines)) {
     line <- lines[i]
+    line_lower <- tolower(line)
 
-    # Check for member number (comes after opponent name)
-    member_match <- regmatches(line, regexec(member_pattern, line, ignore.case = TRUE))[[1]]
-    if (length(member_match) > 1 && !is.null(current_opponent)) {
-      results[[length(results) + 1]] <- data.frame(
-        round = current_round,
-        opponent_username = current_opponent,
-        opponent_member_number = member_match[2],
-        games_won = current_games[1],
-        games_lost = current_games[2],
-        games_tied = current_games[3],
-        match_points = current_points,
-        stringsAsFactors = FALSE
-      )
-      current_opponent <- NULL
+    # Skip headers
+    if (line_lower %in% headers) next
+
+    # Skip if contains special patterns
+    if (grepl("Member\\s*Number", line, ignore.case = TRUE)) next
+    if (grepl("^\\d{1,2}$", line)) next  # Pure numbers (round, points)
+    if (grepl("^\\d+-\\d+-\\d+$", line)) next  # Results pattern
+    if (grepl("%", line)) next
+    if (grepl("\\[", line)) next  # Event names in brackets
+    if (grepl("☐", line)) next  # Checkbox characters
+    if (grepl("^B⭑", line)) next  # App logo
+    if (nchar(line) < 3) next
+
+    # Skip status bar noise (time, battery, signal)
+    if (is_status_bar_noise(line)) {
+      if (verbose) message("[MATCH] Skipping status bar noise: '", line, "'")
       next
     }
 
-    # Check for round row
-    round_match <- regmatches(line, regexec(round_pattern, line))[[1]]
-    if (length(round_match) > 1) {
-      current_round <- as.integer(round_match[2])
+    # Skip store/business names
+    if (is_store_name(line)) {
+      if (verbose) message("[MATCH] Skipping store name: '", line, "'")
+      next
+    }
 
-      # Extract results (W-L-T)
-      result_match <- regmatches(line, regexec(result_pattern, line))[[1]]
-      if (length(result_match) > 1) {
-        current_games <- as.integer(result_match[2:4])
-      }
+    # Skip event metadata
+    if (is_event_metadata(line)) {
+      if (verbose) message("[MATCH] Skipping event metadata: '", line, "'")
+      next
+    }
 
-      # Extract points (last number in line)
-      points_match <- regmatches(line, regexec("(\\d)\\s*$", line))[[1]]
-      if (length(points_match) > 1) {
-        current_points <- as.integer(points_match[2])
-      }
-
-      # Extract opponent name (between round and results)
-      # This is tricky - opponent name is in the middle
-      parts <- strsplit(line, "\\s{2,}")[[1]]
-      if (length(parts) >= 2) {
-        current_opponent <- trimws(parts[2])
-        # Remove any numbers that got captured
-        current_opponent <- gsub("^\\d+\\s*", "", current_opponent)
-        current_opponent <- gsub("\\s*\\d.*$", "", current_opponent)
+    # Check if it looks like a username
+    if (grepl("^[A-Za-z][A-Za-z0-9_. ]*$", line)) {
+      # Must have at least 3 letters
+      letter_count <- nchar(gsub("[^A-Za-z]", "", line))
+      if (letter_count >= 3) {
+        username_indices <- c(username_indices, i)
+        if (verbose) message("[MATCH] Potential opponent at line ", i, ": '", line, "'")
       }
     }
   }
 
+  if (verbose) message("[MATCH] Found ", length(username_indices), " potential opponents")
+
+  # For each username, scan forward for: round, results, points, member number
+  for (idx in username_indices) {
+    opponent <- lines[idx]
+
+    # Search forward up to 10 lines for match data
+    # (increased from 6 to handle noise between username and data)
+    search_end <- min(length(lines), idx + 10)
+
+    round_num <- NA
+    games_won <- NA
+    games_lost <- NA
+    games_tied <- NA
+    match_points <- NA
+    member_num <- NA
+
+    for (j in (idx + 1):search_end) {
+      check_line <- lines[j]
+
+      # Check for round number (single digit 1-9)
+      if (grepl("^[1-9]$", check_line) && is.na(round_num)) {
+        round_num <- as.integer(check_line)
+        if (verbose) message("[MATCH]   Round: ", round_num)
+        next
+      }
+
+      # Check for results pattern (X-X-X)
+      result_match <- regmatches(check_line, regexec("^(\\d)\\s*-\\s*(\\d)\\s*-\\s*(\\d)$", check_line))[[1]]
+      if (length(result_match) > 1 && is.na(games_won)) {
+        games_won <- as.integer(result_match[2])
+        games_lost <- as.integer(result_match[3])
+        games_tied <- as.integer(result_match[4])
+        if (verbose) message("[MATCH]   Results: ", games_won, "-", games_lost, "-", games_tied)
+        next
+      }
+
+      # Check for points (0, 1, or 3) - must come after results
+      if (grepl("^[013]$", check_line) && !is.na(games_won) && is.na(match_points)) {
+        match_points <- as.integer(check_line)
+        if (verbose) message("[MATCH]   Points: ", match_points)
+        next
+      }
+
+      # Check for member number
+      member_match <- regmatches(check_line, regexec("Member\\s*Number\\s*:?\\s*(\\d{10})", check_line, ignore.case = TRUE))[[1]]
+      if (length(member_match) > 1) {
+        member_num <- member_match[2]
+        if (verbose) message("[MATCH]   Member: ", member_num)
+        break  # Found member number, done with this opponent
+      }
+
+      # Stop if we hit another username (next opponent)
+      if (j %in% username_indices) break
+    }
+
+    # Only add if we found a member number (confirms this is a real match row)
+    if (!is.na(member_num)) {
+      results[[length(results) + 1]] <- data.frame(
+        round = if (is.na(round_num)) length(results) + 1 else round_num,
+        opponent_username = opponent,
+        opponent_member_number = member_num,
+        games_won = if (is.na(games_won)) 0 else games_won,
+        games_lost = if (is.na(games_lost)) 0 else games_lost,
+        games_tied = if (is.na(games_tied)) 0 else games_tied,
+        match_points = if (is.na(match_points)) 0 else match_points,
+        stringsAsFactors = FALSE
+      )
+      if (verbose) message("[MATCH] Added match #", length(results), ": ", opponent, " (Round ", round_num, ")")
+    }
+  }
+
+  if (verbose) message("[MATCH] Parsed ", length(results), " match results")
+
   if (length(results) == 0) {
+    if (verbose) message("[MATCH] No results extracted - patterns may not match OCR output")
     return(data.frame(
       round = integer(),
       opponent_username = character(),
@@ -396,5 +578,10 @@ parse_match_history <- function(ocr_text) {
     ))
   }
 
-  do.call(rbind, results)
+  # Sort by round number
+  result_df <- do.call(rbind, results)
+  result_df <- result_df[order(result_df$round), ]
+  rownames(result_df) <- NULL
+
+  result_df
 }
