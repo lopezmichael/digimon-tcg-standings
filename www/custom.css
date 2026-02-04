@@ -399,8 +399,8 @@ body.bslib-gap-spacing {
 /* Make sidebar layout extend to left edge */
 .bslib-sidebar-layout {
   margin-top: 0 !important;
-  margin-left: calc(-1rem - 2px) !important;
-  width: calc(100% + 1rem + 2px) !important;
+  margin-left: calc(-1rem - 1px) !important;
+  width: calc(100% + 1rem + 1px) !important;
   gap: 0 !important;
 }
 
