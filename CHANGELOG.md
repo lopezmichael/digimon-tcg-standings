@@ -7,17 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.19.0] - 2026-02-04 - Content Pages & UI Polish
+
 ### Added
+- **Content Pages**: Three new informational pages accessible via footer navigation
+  - **About**: Live stats, coverage info, "Track. Compete. Connect." tagline
+  - **FAQ**: Accordion sections with enhanced rating explanations
+  - **For Organizers**: Guides for submitting results, becoming a contributor
+- **Footer Navigation**: Styled bar matching header aesthetic with About/FAQ/For Organizers links
+- **Hot Deck Card Image**: Value box now displays deck card image like Top Deck
+- **Top Deck Icon**: Added trophy icon to Top Deck label
+- **Google Form Placeholders**: Contact form links throughout content pages
 - **Open Graph Meta Tags**: Link previews on Discord, Twitter, and other platforms now show proper DigiLab branding and description
 - **Branding Assets**: Created SVG logo, icon, and favicon for DigiLab
-  - `digilab-logo.svg` - 400x200 banner with text and digital circuit aesthetic
-  - `digilab-icon.svg` - 200x200 square icon with "DL" initials
-  - `favicon.svg` - 32x32 browser tab favicon
 - **Favicon**: Browser tab now shows DigiLab "D" icon
 - **Google Analytics**: Added GA4 tracking to monitor site usage and visitor demographics
 
+### Changed
+- **Seamless App Frame**: Header, sidebar, and footer now form cohesive visual frame
+  - Sidebar uses vertical gradient matching header/footer colors
+  - All edges flush with viewport (no gaps)
+  - Mobile-optimized spacing
+- **Dashboard Spacing**: Added margin between cards and grids for better visual separation
+- **Renamed "For TOs"**: Changed to "For Organizers" (clearer than acronym)
+
 ### Fixed
-- **Player Search Bug**: Fixed SQL error when searching players by name in Players tab (missing table join in subquery)
+- **Player Search Bug**: Fixed SQL error when searching players by name in Players tab
+- **Light Mode Styles**: Content pages now properly styled in both light and dark modes
+- **Mobile Sidebar**: Fixed gaps between header/sidebar and sidebar/footer on mobile
 
 ---
 

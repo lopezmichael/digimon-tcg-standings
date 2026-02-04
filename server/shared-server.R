@@ -86,6 +86,66 @@ observeEvent(input$nav_admin_players, {
   rv$current_nav <- "admin_players"
 })
 
+# Content pages (footer navigation)
+observeEvent(input$nav_about, {
+  nav_select("main_content", "about")
+  rv$current_nav <- "about"
+})
+
+observeEvent(input$nav_faq, {
+  nav_select("main_content", "faq")
+  rv$current_nav <- "faq"
+})
+
+observeEvent(input$nav_for_tos, {
+  nav_select("main_content", "for_tos")
+  rv$current_nav <- "for_tos"
+})
+
+# Cross-page navigation links (from content pages)
+observeEvent(input$about_to_for_tos, {
+  nav_select("main_content", "for_tos")
+  rv$current_nav <- "for_tos"
+})
+
+observeEvent(input$faq_to_for_tos, {
+  nav_select("main_content", "for_tos")
+  rv$current_nav <- "for_tos"
+})
+
+observeEvent(input$faq_to_about, {
+  nav_select("main_content", "about")
+  rv$current_nav <- "about"
+})
+
+# ---------------------------------------------------------------------------
+# About Page Stats
+# ---------------------------------------------------------------------------
+
+output$about_store_count <- renderText({
+  req(rv$db_con)
+  count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) FROM stores WHERE is_active = TRUE")[[1]]
+  as.character(count)
+})
+
+output$about_player_count <- renderText({
+  req(rv$db_con)
+  count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) FROM players WHERE is_active = TRUE")[[1]]
+  as.character(count)
+})
+
+output$about_tournament_count <- renderText({
+  req(rv$db_con)
+  count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) FROM tournaments")[[1]]
+  as.character(count)
+})
+
+output$about_result_count <- renderText({
+  req(rv$db_con)
+  count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) FROM results")[[1]]
+  as.character(count)
+})
+
 # ---------------------------------------------------------------------------
 # Authentication
 # ---------------------------------------------------------------------------

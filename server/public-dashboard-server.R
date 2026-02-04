@@ -231,6 +231,22 @@ output$hot_deck_trend <- renderUI({
   HTML(sprintf("<span class='vb-trend-up'>+%s%% share</span>", hd$delta))
 })
 
+# Hot Deck card image
+output$hot_deck_image <- renderUI({
+  hd <- hot_deck()
+  if (is.null(hd) || isTRUE(hd$insufficient_data) || isTRUE(hd$no_trending)) {
+    return(NULL)
+  }
+  if (is.null(hd$display_card_id) || is.na(hd$display_card_id) || nchar(hd$display_card_id) == 0) {
+    return(NULL)
+  }
+  img_url <- sprintf("https://images.digimoncard.io/images/cards/%s.jpg", hd$display_card_id)
+  tags$img(
+    src = img_url,
+    alt = hd$archetype_name
+  )
+})
+
 # Legacy output for backward compatibility (if needed elsewhere)
 output$most_popular_deck_image <- renderUI({
   deck <- most_popular_deck()
