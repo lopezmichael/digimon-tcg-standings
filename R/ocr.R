@@ -119,10 +119,10 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
 
   results <- list()
 
-  # Header words to skip
+  # Header words and noise to skip
   headers <- c("ranking", "ranki", "user name", "username", "win", "omw", "gw",
                "points", "digimon", "card game", "home", "my events", "event search",
-               "decks", "others", "ng")
+               "decks", "others", "ng", "privacy policy", "o o o")
 
   # Find potential usernames: alphabetic text that's not a header or percentage
   # Usernames in Bandai TCG+ are typically alphanumeric, starting with letter
@@ -131,8 +131,11 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     line <- lines[i]
     line_lower <- tolower(line)
 
-    # Skip if it's a header
+    # Skip if it's a header or noise
     if (line_lower %in% headers) next
+
+    # Skip "Member Number" lines - these are NOT usernames!
+    if (grepl("^Member\\s*Number", line, ignore.case = TRUE)) next
 
     # Skip if contains percentage
     if (grepl("%", line)) next
@@ -140,19 +143,18 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     # Skip if it's just numbers or time format
     if (grepl("^[\\d\\.:\\-]+$", line)) next
 
-    # Skip very short lines (likely OCR artifacts) - but allow 2+ char usernames
-    if (nchar(line) < 2) next
+    # Skip very short lines (likely OCR artifacts) - but allow 3+ char usernames
+    if (nchar(line) < 3) next
 
     # Skip common OCR noise patterns
     if (grepl("^[^A-Za-z]", line)) next
     if (grepl("^B⭑", line)) next  # App logo
 
     # Check if it looks like a username (starts with letter, allows alphanumeric, underscore, space)
-    # More permissive: allow most alphanumeric combinations
-    if (grepl("^[A-Za-z][A-Za-z0-9_. ]*$", line) && nchar(line) >= 2) {
-      # Additional check: must have at least 2 letters total to avoid single-letter noise
+    if (grepl("^[A-Za-z][A-Za-z0-9_. ]*$", line) && nchar(line) >= 3) {
+      # Additional check: must have at least 3 letters total to avoid noise
       letter_count <- nchar(gsub("[^A-Za-z]", "", line))
-      if (letter_count >= 2) {
+      if (letter_count >= 3) {
         username_indices <- c(username_indices, i)
         if (verbose) message("[PARSE] Potential username at line ", i, ": '", line, "'")
       }
@@ -204,48 +206,41 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
         }
       }
 
-      # Stop if we hit another username
+      # Stop if we hit another username (but not Member Number lines)
       if (k %in% username_indices && k != idx) break
     }
 
-    # Also look BACKWARD 1-3 lines for placement number
-    search_start <- max(1, idx - 3)
-    for (k in (idx - 1):search_start) {
-      line <- lines[k]
-      if (grepl("^\\d{1,2}$", line)) {
-        val <- as.integer(line)
-        # Skip noise values and look for reasonable placement
-        if (!val %in% c(50, 100) && val >= 1 && val <= 32) {
-          placement <- val
-          break
-        }
+    # Interpret the numbers found between username and member number
+    # OCR Pattern: username -> placement -> points -> percentages -> member number
+    # So numbers_found should be [placement, points] in that order
+    if (length(numbers_found) >= 2) {
+      # First number is placement (1-32 range), second is points (0-15 range)
+      potential_placement <- numbers_found[1]
+      potential_points <- numbers_found[2]
+
+      # Validate: placement should be reasonable (1-32), points typically 0-15
+      if (potential_placement >= 1 && potential_placement <= 32) {
+        placement <- potential_placement
+        points <- potential_points
+      } else {
+        # First number doesn't look like placement, maybe both are data
+        points <- potential_points
+      }
+    } else if (length(numbers_found) == 1) {
+      # Single number - is it placement or points?
+      val <- numbers_found[1]
+      # If it's close to expected placement and in valid range, treat as placement
+      if (val >= 1 && val <= 32 && abs(val - next_expected_placement) <= 3) {
+        placement <- val
+      } else {
+        # Otherwise treat as points
+        points <- val
       }
     }
 
-    # Interpret the numbers found between username and member number
-    # Pattern in OCR: username -> placement -> points -> percentages -> member number
-    # Numbers found are typically [placement, points] in that order
-    if (length(numbers_found) >= 2) {
-      # First number is placement, second is points
-      if (is.na(placement)) {
-        placement <- numbers_found[1]
-      }
-      points <- numbers_found[2]
-    } else if (length(numbers_found) == 1) {
-      # Single number - determine if it's placement or points
-      val <- numbers_found[1]
-      if (is.na(placement)) {
-        # If no placement found yet, and value is close to expected, use as placement
-        if (abs(val - next_expected_placement) <= 2) {
-          placement <- val
-        } else {
-          # Otherwise treat as points
-          points <- val
-        }
-      } else {
-        # Placement already found, this must be points
-        points <- val
-      }
+    # If no placement found, use expected placement
+    if (is.na(placement)) {
+      placement <- next_expected_placement
     }
 
     if (verbose) {
@@ -255,9 +250,6 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
 
     # Only add if we found a member number (confirms this is a real player row)
     if (!is.na(member_num)) {
-      # Use expected placement if not found
-      if (is.na(placement)) placement <- next_expected_placement
-
       # Default points to 0 if not found
       if (is.na(points)) points <- 0
 
