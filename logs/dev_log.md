@@ -4,6 +4,131 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-03: v0.19 Public Submissions Design
+
+### Summary
+
+Completed comprehensive design for community-driven data entry via screenshot uploads with OCR. This is a major feature that enables anyone to contribute tournament data, reducing admin bottleneck and supporting multi-region expansion.
+
+### Key Design Decisions
+
+**Trust Model:**
+- Screenshots = high trust (evidence-based, goes live immediately)
+- Manual entry = admin/verified users only
+- New store/deck requests = approval queue
+
+**Submission Types:**
+1. Tournament standings screenshot → OCR extracts placements, usernames, points
+2. Match history screenshot → Round-by-round opponent data
+3. Deck assignment → Anyone can fix UNKNOWN decks
+
+**OCR Technology:**
+- Chose direct httr2 calls to Google Cloud Vision API
+- Rejected `tesseract` R package (requires system libs not on Posit Connect Cloud)
+- Rejected `googleCloudVisionR` package (last updated 2020, unmaintained)
+- Free tier: 1,000 images/month
+
+**No User Accounts:**
+- Screenshots are self-documenting evidence
+- Player matching via Bandai member number (OCR'd from screenshots)
+- Decks editable by anyone (click-to-edit, click-to-confirm pattern)
+
+### Schema Changes Planned
+
+1. Add `member_number` to `players` table (nullable, unique)
+2. New `matches` table for round-by-round data
+3. New `store_requests` and `deck_requests` tables for approval queue
+
+### Branching Strategy
+
+Per v1.0 release strategy, all v0.19+ features developed on feature branches:
+- Branch: `feature/public-submissions`
+- Will merge to main only at v1.0 release
+
+### Google Cloud Vision API Setup
+
+See "Google Cloud Vision API Setup" section below for credentials setup instructions.
+
+### Files Created
+
+- `docs/plans/2026-02-03-public-submissions-design.md` - Full design document
+- Updated `ROADMAP.md` with new v0.19-v0.22 structure
+
+---
+
+## Google Cloud Vision API Setup
+
+Instructions for setting up OCR integration.
+
+### Step 1: Create Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Click "Select a project" → "New Project"
+3. Name it (e.g., "digilab-ocr") and create
+
+### Step 2: Enable Billing
+
+1. Go to [Billing](https://console.cloud.google.com/billing)
+2. Link a billing account to your project
+3. Note: Free tier includes 1,000 images/month
+
+### Step 3: Enable Vision API
+
+1. Go to [API Library](https://console.cloud.google.com/apis/library)
+2. Search for "Cloud Vision API"
+3. Click "Enable"
+
+### Step 4: Create API Key
+
+1. Go to [Credentials](https://console.cloud.google.com/apis/credentials)
+2. Click "+ CREATE CREDENTIALS" → "API key"
+3. Copy the key (you won't see it again)
+4. Optional: Restrict key to Cloud Vision API only (recommended)
+
+### Step 5: Configure in App
+
+Add to `.env` file:
+```
+GOOGLE_CLOUD_VISION_API_KEY=your_api_key_here
+```
+
+Add to Posit Connect Cloud environment variables in deployment settings.
+
+### Usage in R
+
+```r
+library(httr2)
+
+gcv_ocr <- function(image_path) {
+  api_key <- Sys.getenv("GOOGLE_CLOUD_VISION_API_KEY")
+  image_data <- base64enc::base64encode(image_path)
+
+  response <- request("https://vision.googleapis.com/v1/images:annotate") |>
+    req_url_query(key = api_key) |>
+    req_body_json(list(
+      requests = list(list(
+        image = list(content = image_data),
+        features = list(list(type = "TEXT_DETECTION"))
+      ))
+    )) |>
+    req_perform() |>
+    resp_body_json()
+
+  response$responses[[1]]$fullTextAnnotation$text
+}
+```
+
+### Cost Reference
+
+| Usage | Cost |
+|-------|------|
+| First 1,000 units/month | Free |
+| 1,001 - 5,000,000 units | $1.50 per 1,000 |
+
+For a regional tournament tracker, free tier is likely sufficient.
+
+---
+
 ## 2026-02-03: v0.18.1 - Code Cleanup Refactor (R4 + R5)
 
 ### Summary
