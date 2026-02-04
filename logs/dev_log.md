@@ -19,6 +19,11 @@ Implemented Phase 1 of the public submissions feature: core OCR integration and 
 | 3 | Create Submit Results UI | `views/submit-ui.R`, `app.R` |
 | 4 | Create Submit Results server logic | `server/public-submit-server.R` |
 | 5 | Test and debug OCR parsing | Multiple iterations on `R/ocr.R` |
+| 6 | Add match history parser | `R/ocr.R` - `parse_match_history()` |
+| 7 | Add defensive OCR filters | `R/ocr.R` - status bar, store names, event metadata |
+| 8 | Improve multi-screenshot deduplication | `server/public-submit-server.R` |
+| 9 | Create CLI test harness | `scripts/test_ocr.R` |
+| 10 | Create batch testing script | `scripts/batch_test_ocr.R` |
 
 ### OCR Implementation Details
 
@@ -27,22 +32,57 @@ Implemented Phase 1 of the public submissions feature: core OCR integration and 
 - Free tier: 1,000 images/month
 - Handles both file paths and raw bytes
 
-**Parsing Strategy:**
+**Parsing Strategy (Tournament Standings):**
 1. Find potential usernames (alphabetic text, not headers)
 2. Scan forward to find associated member number
 3. Extract placement and points from numbers between username and member number
 4. Calculate W-L-T from points (3 per win, 1 per tie)
+
+**Parsing Strategy (Match History):**
+1. Find potential opponent usernames
+2. Scan forward for: round number, results (X-X-X), points, member number
+3. Sort by round number
+
+**Defensive Filters Added:**
+- `is_status_bar_noise()` - Filters time (12:17), battery %, signal (LTE, 5G)
+- `is_store_name()` - Filters business names (Games, Cards, Hobby, etc.)
+- `is_event_metadata()` - Filters bracketed dates, event type keywords
+- Forward-scan approach naturally excludes status bar content (position-based safety)
 
 **Challenges Encountered:**
 - OCR returns each table cell as separate lines, not row-by-row
 - Battery percentage (50%) was being captured as data - added filter
 - "Member Number XXXXXXXXXX" was being detected as username - added exclusion
 - Placement numbers sometimes missing for first player - use sequential fallback
+- Large tournaments (64-128 players) - removed value-based filtering, use position-based instead
+- Noise lines between username and data - increased forward scan range (8→12 lines)
 
 **Known Limitations:**
 - Parsing is tuned to Bandai TCG+ app screenshot format
 - Different phone models/screen sizes may produce different OCR layouts
 - Users can manually edit parsed results before submitting
+
+### Testing Infrastructure
+
+**CLI Test Harness (`scripts/test_ocr.R`):**
+- `test_image(path)` - Full OCR flow for standings
+- `test_match_history(path)` - Full OCR flow for match history
+- `retest()` - Re-parse saved OCR text without API call
+- Saves OCR text to file for iterative parser development
+
+**Batch Testing (`scripts/batch_test_ocr.R`):**
+- Process all screenshots in `screenshots/standings/` and `screenshots/match_history/`
+- Generate `summary.csv` with results and warnings
+- Flag problematic screenshots automatically
+- `batch_retest()` - Re-parse all saved OCR text without API calls
+- `review_flagged()` - Interactive review of problem files
+
+### Multi-Screenshot Deduplication
+
+Improved from naive `!duplicated(placement)` to smart deduplication:
+1. Primary key: `member_number` (unique per player)
+2. Fallback: `username` (case-insensitive)
+3. Re-sequence placements after dedup to handle gaps
 
 ### Schema Changes
 
@@ -56,14 +96,14 @@ Note: DuckDB doesn't support `ALTER TABLE ADD COLUMN ... UNIQUE`, so uniqueness 
 ### Branch Status
 
 **Branch:** `feature/public-submissions`
-**Commits:** 10 commits ahead of origin
-**Status:** Phase 1 complete, needs more testing with varied screenshots
+**Commits:** 12 commits ahead of origin
+**Status:** Phase 1 complete, awaiting test screenshots from testing team
 
 ### Next Steps (Phase 2+)
 
 1. Create store_requests and deck_requests tables
 2. Build admin approval queue UI
-3. Add match history OCR parsing
+3. ~~Add match history OCR parsing~~ ✓ Complete
 4. Mobile optimization
 5. More robust error handling for varied screenshot formats
 
