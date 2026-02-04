@@ -449,22 +449,18 @@ body.bslib-gap-spacing {
    DASHBOARD CONTENT SPACING
    ============================================================================= */
 
-/* Add vertical spacing between major dashboard sections */
-.bslib-sidebar-layout > .main > .card,
-.bslib-sidebar-layout > main > .card,
-.bslib-sidebar-layout > :not(.sidebar) > .card {
+/* Add vertical spacing between cards and grids in main content */
+.main-content .card {
   margin-bottom: 1rem;
 }
 
-.bslib-sidebar-layout > .main > .bslib-grid,
-.bslib-sidebar-layout > main > .bslib-grid,
-.bslib-sidebar-layout > :not(.sidebar) > .bslib-grid {
+.main-content .bslib-grid {
   margin-bottom: 1rem;
 }
 
-/* Ensure layout_columns have spacing */
-.bslib-grid {
-  margin-bottom: 0.75rem;
+/* Also target layout_columns directly */
+.main-content .bslib-grid.bslib-mb-spacing {
+  margin-bottom: 1rem !important;
 }
 
 /* =============================================================================
