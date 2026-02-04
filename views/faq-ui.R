@@ -60,25 +60,33 @@ faq_ui <- div(
       title = "How is Competitive Rating calculated?",
       value = "competitive-rating",
       icon = bsicons::bs_icon("calculator"),
-      p("Your Competitive Rating uses an Elo-style system. After each tournament, your rating ",
-        "adjusts based on:"),
+      p("Your Competitive Rating uses an ", strong("Elo-style system"), " adapted for Swiss-style ",
+        "tournaments. Unlike traditional Elo that only considers wins/losses, our system uses ",
+        strong("implied results"), " based on final placements."),
+      p("After each tournament, your rating adjusts based on:"),
       tags$ul(
-        tags$li("Your placement relative to other players"),
-        tags$li("The ratings of players you placed above or below"),
-        tags$li("Tournament size")
+        tags$li("Your placement relative to ", em("every"), " other player in the tournament"),
+        tags$li("The current ratings of those players"),
+        tags$li("Whether you placed above or below where your rating predicted")
       ),
       div(class = "formula-box",
-          "New Rating = Old Rating + K x (Actual Score - Expected Score)"),
-      p("Where K is 32 for newer players (fewer than 10 tournaments) and 16 for established ",
-        "players. This means new players' ratings adjust faster."),
-      p("All players start at ", strong("1500"), " rating.")
+          "New Rating = Old Rating + K × (Actual Score - Expected Score)"),
+      p(strong("K-factor:"), " New players (fewer than 10 tournaments) use K=32, which means ",
+        "ratings adjust faster while the system learns your skill level. Established players ",
+        "use K=16 for more stable ratings."),
+      p(strong("Starting rating:"), " All players begin at 1500."),
+      p(strong("Why implied results?"), " In Swiss tournaments, you don't play everyone. If you ",
+        "place 3rd and another player places 7th, we treat that as a \"win\" for you against them, ",
+        "even if you never actually played. This gives a more complete picture of tournament performance.")
     ),
     accordion_panel(
       title = "What is Achievement Score?",
       value = "achievement-score",
       icon = bsicons::bs_icon("trophy"),
-      p("Achievement Score rewards consistent participation and strong finishes. You earn ",
-        "points based on your placement:"),
+      p("Achievement Score is a ", strong("cumulative points system"), " that rewards both ",
+        "participation and strong finishes. Unlike Competitive Rating (which can go up or down), ",
+        "Achievement Score only grows over time."),
+      p(strong("Base points by placement:")),
       tags$table(
         class = "points-table",
         tags$thead(
@@ -90,19 +98,34 @@ faq_ui <- div(
           tags$tr(tags$td("3rd - 4th"), tags$td("5")),
           tags$tr(tags$td("5th - 8th"), tags$td("3")),
           tags$tr(tags$td("9th - 16th"), tags$td("1")),
-          tags$tr(tags$td("Participation"), tags$td("1"))
+          tags$tr(tags$td("17th+"), tags$td("1"))
         )
       ),
-      p("Larger tournaments (16+ players) award bonus points.")
+      p(strong("Tournament size bonus:"), " Larger tournaments (16+ players) award 50% bonus ",
+        "points, reflecting the increased difficulty of placing well against more competition."),
+      p(strong("What it measures:"), " Achievement Score reflects your overall engagement with ",
+        "the competitive scene. A player with a lower Competitive Rating but high Achievement Score ",
+        "is someone who shows up consistently and contributes to the community.")
     ),
     accordion_panel(
       title = "How does Store Rating work?",
       value = "store-rating",
       icon = bsicons::bs_icon("shop"),
-      p("Store Rating reflects the competitive level of a store's player base. It's calculated as ",
-        "a weighted average of ratings from players who compete there, with more weight given to ",
-        "recent and frequent attendees."),
-      p("A higher Store Rating means the store tends to attract stronger competition.")
+      p("Store Rating measures the ", strong("competitive strength"), " of a store's player base. ",
+        "It helps answer the question: \"How tough is the competition at this store?\""),
+      p(strong("How it's calculated:")),
+      tags$ul(
+        tags$li("We take the Competitive Ratings of all players who have competed at a store"),
+        tags$li("Recent attendees are weighted more heavily than players who haven't been in a while"),
+        tags$li("Frequent attendees have slightly more influence than one-time visitors")
+      ),
+      p(strong("What it means:")),
+      tags$ul(
+        tags$li(strong("Higher Store Rating"), " = Tougher competition, more experienced players"),
+        tags$li(strong("Lower Store Rating"), " = More beginner-friendly, good for new players")
+      ),
+      p("Store Rating isn't a quality judgment - some players prefer casual environments while ",
+        "others seek the most competitive fields. Use it to find stores that match your goals.")
     ),
     accordion_panel(
       title = "Why did my rating go down even though I won matches?",
@@ -140,7 +163,7 @@ faq_ui <- div(
         tags$li("The tournament was an unofficial or casual event")
       ),
       p("If you're a tournament organizer, check out the ",
-        actionLink("faq_to_for_tos", "For TOs page"), " to learn how to submit results.")
+        actionLink("faq_to_for_tos", "For Organizers page"), " to learn how to submit results.")
     ),
     accordion_panel(
       title = "How often is data updated?",
@@ -198,13 +221,29 @@ faq_ui <- div(
       title = "I found a bug! How do I report it?",
       value = "bugs",
       icon = bsicons::bs_icon("bug"),
-      p("Thank you for helping improve DigiLab! You can report bugs by:"),
+      p("Thank you for helping improve DigiLab! We appreciate bug reports."),
+      p(strong("What to include:")),
       tags$ul(
-        tags$li("Opening an issue on GitHub (preferred for technical bugs)"),
-        tags$li("Reaching out via the contact links on the About page")
+        tags$li("What you were trying to do"),
+        tags$li("What you expected to happen"),
+        tags$li("What actually happened"),
+        tags$li("Screenshots if possible")
       ),
-      p("Please include as much detail as possible: what you were doing, what you expected, ",
-        "and what actually happened.")
+      div(
+        class = "contact-links",
+        tags$a(
+          class = "contact-link",
+          href = "https://forms.google.com/digilab-contact",
+          target = "_blank",
+          bsicons::bs_icon("envelope"), "Report via Form"
+        ),
+        tags$a(
+          class = "contact-link",
+          href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=Bug%20Report",
+          target = "_blank",
+          bsicons::bs_icon("github"), "Report via GitHub"
+        )
+      )
     )
   )
 )

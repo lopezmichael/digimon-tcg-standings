@@ -7,7 +7,7 @@ for_tos_ui <- div(
   # Header
   div(
     class = "content-page-header",
-    h1(class = "content-page-title", "For Tournament Organizers"),
+    h1(class = "content-page-title", "For Organizers"),
     p(class = "content-page-subtitle", "Help grow your local Digimon TCG scene")
   ),
 
@@ -48,6 +48,12 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
+          href = "https://forms.google.com/digilab-submit",
+          target = "_blank",
+          bsicons::bs_icon("envelope"), "Submit via Form"
+        ),
+        tags$a(
+          class = "contact-link",
           href = "https://github.com/lopezmichael/digimon-tcg-standings/issues",
           target = "_blank",
           bsicons::bs_icon("github"), "Submit via GitHub"
@@ -68,9 +74,26 @@ for_tos_ui <- div(
       p(strong("Optional but helpful:")),
       tags$ul(
         tags$li("Deck archetypes played (if known)"),
-        tags$li("Match history screenshots (for detailed results)"),
+        tags$li("Match history screenshots (for detailed win/loss records)"),
         tags$li("Format (Standard, Limit 1, etc.)")
-      )
+      ),
+      p(class = "info-note",
+        bsicons::bs_icon("info-circle"),
+        " Don't worry if you don't have all the information! We can add deck archetypes later ",
+        "as players self-report or as the community helps identify them.")
+    ),
+    accordion_panel(
+      title = "Submitting match history",
+      value = "submit-matchups",
+      icon = bsicons::bs_icon("list-ol"),
+      p("In addition to final standings, you can submit ", strong("individual round results"),
+        " to provide more detailed data:"),
+      tags$ul(
+        tags$li("Screenshot each player's match history from Bandai TCG+"),
+        tags$li("This shows their round-by-round opponents and results"),
+        tags$li("Helps calculate more accurate ratings and head-to-head records")
+      ),
+      p("Match history is optional but valuable for competitive analysis. Even partial data helps!")
     )
   ),
 
@@ -103,9 +126,15 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
+          href = "https://forms.google.com/digilab-contact",
+          target = "_blank",
+          bsicons::bs_icon("envelope"), "Request via Form"
+        ),
+        tags$a(
+          class = "contact-link",
           href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=New%20Store%20Request",
           target = "_blank",
-          bsicons::bs_icon("shop"), "Request Store Addition"
+          bsicons::bs_icon("github"), "Request via GitHub"
         )
       )
     ),
@@ -155,9 +184,15 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
+          href = "https://forms.google.com/digilab-contact",
+          target = "_blank",
+          bsicons::bs_icon("envelope"), "Request via Form"
+        ),
+        tags$a(
+          class = "contact-link",
           href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=New%20Region%20Request",
           target = "_blank",
-          bsicons::bs_icon("globe-americas"), "Request New Region"
+          bsicons::bs_icon("github"), "Request via GitHub"
         )
       )
     ),
@@ -173,6 +208,58 @@ for_tos_ui <- div(
         tags$li(strong("Activity"), " - At least 2-3 stores with regular events")
       ),
       p("Examples: \"DFW Digimon\", \"Houston TCG\", \"Austin Tamers\"")
+    )
+  ),
+
+  # Become a Contributor
+  h2(class = "faq-category", bsicons::bs_icon("person-badge"), "Become a Contributor"),
+  accordion(
+    id = "tos_contributor",
+    open = FALSE,
+    accordion_panel(
+      title = "What is a contributor?",
+      value = "contributor-info",
+      icon = bsicons::bs_icon("star"),
+      p("Contributors are trusted community members who can directly enter tournament data ",
+        "into DigiLab, rather than submitting screenshots for manual processing."),
+      p("As a contributor, you can:"),
+      tags$ul(
+        tags$li("Enter tournament results directly after events"),
+        tags$li("Add and edit deck archetype assignments"),
+        tags$li("Update player information and fix errors"),
+        tags$li("Help maintain data quality for your local scene")
+      )
+    ),
+    accordion_panel(
+      title = "How do I become a contributor?",
+      value = "become-contributor",
+      icon = bsicons::bs_icon("person-plus"),
+      p("We're looking for active tournament organizers and community members who regularly ",
+        "attend events. To become a contributor:"),
+      tags$ol(
+        class = "steps-list",
+        tags$li(
+          strong("Build a track record"),
+          p("Submit a few tournaments via screenshot first so we can verify data quality.")
+        ),
+        tags$li(
+          strong("Express interest"),
+          p("Let us know you'd like contributor access when submitting results.")
+        ),
+        tags$li(
+          strong("Get set up"),
+          p("We'll provide you with access credentials and a quick orientation on the data entry process.")
+        )
+      ),
+      div(
+        class = "contact-links",
+        tags$a(
+          class = "contact-link",
+          href = "https://forms.google.com/digilab-contact",
+          target = "_blank",
+          bsicons::bs_icon("envelope"), "Request Contributor Access"
+        )
+      )
     )
   ),
 
@@ -212,9 +299,15 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
+          href = "https://forms.google.com/digilab-contact",
+          target = "_blank",
+          bsicons::bs_icon("envelope"), "Report via Form"
+        ),
+        tags$a(
+          class = "contact-link",
           href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=Data%20Error%20Report",
           target = "_blank",
-          bsicons::bs_icon("bug"), "Report an Error"
+          bsicons::bs_icon("github"), "Report via GitHub"
         )
       )
     )
@@ -229,6 +322,12 @@ for_tos_ui <- div(
     p("If you have questions about submitting results or getting involved, don't hesitate to reach out."),
     div(
       class = "contact-links",
+      tags$a(
+        class = "contact-link",
+        href = "https://forms.google.com/digilab-contact",
+        target = "_blank",
+        bsicons::bs_icon("envelope"), "Contact Form"
+      ),
       tags$a(
         class = "contact-link",
         href = "https://github.com/lopezmichael/digimon-tcg-standings",

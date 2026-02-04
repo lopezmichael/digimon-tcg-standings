@@ -3806,6 +3806,10 @@ button.mapbox-gl-draw_point {
   transform: translateY(-1px);
 }
 
+.contact-links--centered {
+  justify-content: center;
+}
+
 /* For TOs - step lists - Light mode */
 .steps-list {
   counter-reset: steps;
@@ -3837,6 +3841,26 @@ button.mapbox-gl-draw_point {
   font-weight: 600;
   color: #0F4C81;
   font-size: 0.85rem;
+}
+
+/* Info notes - Light mode */
+.info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  background: rgba(10, 48, 85, 0.05);
+  border-left: 3px solid #0F4C81;
+  border-radius: 0 6px 6px 0;
+  color: #0A3055;
+  font-size: 0.9rem;
+}
+
+.info-note .bi {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: #0F4C81;
 }
 
 /* Mobile adjustments for content pages */
@@ -4000,6 +4024,16 @@ button.mapbox-gl-draw_point {
 [data-bs-theme="dark"] .steps-list li::before {
   background: rgba(34, 211, 238, 0.15);
   border-color: rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+}
+
+[data-bs-theme="dark"] .info-note {
+  background: rgba(34, 211, 238, 0.1);
+  border-left-color: #22d3ee;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-bs-theme="dark"] .info-note .bi {
   color: #22d3ee;
 }
 

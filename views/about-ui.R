@@ -17,7 +17,7 @@ class = "content-page",
     p(class = "about-tagline", "Track. Compete. Connect."),
     p(class = "about-description",
       "DigiLab is a community-built tool for tracking local Digimon TCG tournament results, ",
-      "player performance, and regional meta trends. Built by players, for players."
+      "player performance, and regional meta trends."
     )
   ),
 
@@ -54,7 +54,7 @@ class = "content-page",
        bsicons::bs_icon("geo-alt"), "Current Coverage"),
     p("DigiLab currently covers the ", strong("Dallas-Fort Worth"), " Digimon TCG community. ",
       "We're looking to expand to more regions - see the ",
-      actionLink("about_to_for_tos", "For TOs page"), " to learn how to get your area added."),
+      actionLink("about_to_for_tos", "For Organizers page"), " to learn how to get your area added."),
 
     # Live stats (populated by server)
     div(
@@ -87,10 +87,10 @@ class = "content-page",
     class = "content-section",
     h2(class = "content-section-title",
        bsicons::bs_icon("code-slash"), "Built By"),
-    p("DigiLab was created by a DFW Digimon TCG player who wanted better tools for tracking ",
+    p("DigiLab was created by a North Texas Digimon TCG player who wanted better tools for tracking ",
       "local tournament performance. The project is open source and community-driven."),
     div(
-      class = "contact-links",
+      class = "contact-links contact-links--centered",
       tags$a(
         class = "contact-link",
         href = "https://github.com/lopezmichael/digimon-tcg-standings",
@@ -102,6 +102,12 @@ class = "content-page",
         href = "https://ko-fi.com/digilab",
         target = "_blank",
         bsicons::bs_icon("cup-hot"), "Support on Ko-fi"
+      ),
+      tags$a(
+        class = "contact-link",
+        href = "https://forms.google.com/digilab-contact",
+        target = "_blank",
+        bsicons::bs_icon("envelope"), "Contact Form"
       )
     )
   ),

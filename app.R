@@ -477,7 +477,7 @@ ui <- page_fillable(
       span(class = "footer-divider", "//"),
       actionLink("nav_faq", "FAQ", class = "footer-link"),
       span(class = "footer-divider", "//"),
-      actionLink("nav_for_tos", "For TOs", class = "footer-link")
+      actionLink("nav_for_tos", "For Organizers", class = "footer-link")
     ),
     tags$div(
       class = "footer-meta",
