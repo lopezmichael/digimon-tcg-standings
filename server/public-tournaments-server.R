@@ -147,8 +147,7 @@ output$tournament_detail_modal <- renderUI({
       bsicons::bs_icon("trophy"),
       tags$a(
         href = "#",
-        class = "text-primary text-decoration-none",
-        style = "cursor: pointer;",
+        class = "text-primary text-decoration-none clickable-row",
         onclick = sprintf("Shiny.setInputValue('modal_store_clicked', %d, {priority: 'event'}); return false;", tournament$store_id),
         tournament$store_name
       ),

@@ -643,8 +643,7 @@ output$stores_filter_active_banner <- renderUI({
   n_stores <- length(rv$selected_store_ids)
 
   div(
-    class = "alert alert-success d-flex align-items-center mb-3",
-    style = "background-color: rgba(22, 163, 74, 0.1); border-color: #16A34A; color: #166534;",
+    class = "alert alert-success d-flex align-items-center mb-3 store-filter-badge--success",
     bsicons::bs_icon("check-circle-fill"),
     span(
       class = "ms-2",
@@ -693,8 +692,7 @@ output$region_filter_indicator <- renderUI({
   }
 
   div(
-    class = "alert alert-info d-flex justify-content-between align-items-center mb-3",
-    style = "background-color: rgba(15, 76, 129, 0.1); border-color: #0F4C81; color: #0F4C81;",
+    class = "alert alert-info d-flex justify-content-between align-items-center mb-3 store-filter-badge--info",
     div(
       bsicons::bs_icon("funnel-fill"),
       sprintf(" Filtered by region: %s", store_list)

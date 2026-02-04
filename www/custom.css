@@ -1243,6 +1243,16 @@ body.bslib-gap-spacing {
   font-weight: 600 !important;
 }
 
+/* Clickable table rows */
+.clickable-row {
+  cursor: pointer;
+}
+
+/* Help icon cursor */
+.help-icon {
+  cursor: help;
+}
+
 /* =============================================================================
    CARD IMAGE
    ============================================================================= */
@@ -1366,6 +1376,11 @@ body.bslib-gap-spacing {
 
 [data-bs-theme="dark"] .card-map .card-body::before {
   border-color: rgba(0, 200, 255, 0.15);
+}
+
+/* Map container with no padding */
+.map-container-flush {
+  padding: 0;
 }
 
 /* =============================================================================
@@ -2059,6 +2074,35 @@ button.mapbox-gl-draw_point {
 }
 
 /* =============================================================================
+   STORE FILTER BADGES
+   ============================================================================= */
+
+/* Success variant - green (stores in region) */
+.store-filter-badge--success {
+  background-color: rgba(22, 163, 74, 0.1);
+  border-color: #16A34A;
+  color: #166534;
+}
+
+/* Info variant - blue (reset filter) */
+.store-filter-badge--info {
+  background-color: rgba(15, 76, 129, 0.1);
+  border-color: #0F4C81;
+  color: #0F4C81;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] .store-filter-badge--success {
+  background-color: rgba(22, 163, 74, 0.2);
+  color: #4ADE80;
+}
+
+[data-bs-theme="dark"] .store-filter-badge--info {
+  background-color: rgba(15, 76, 129, 0.2);
+  color: #60A5FA;
+}
+
+/* =============================================================================
    DASHBOARD FILTERS - Responsive Grid Layout
    ============================================================================= */
 
@@ -2255,6 +2299,22 @@ button.mapbox-gl-draw_point {
     width: 40px;
     height: 56px;
   }
+}
+
+/* Top deck image (dashboard) */
+.top-deck-image {
+  height: 85px;
+  width: auto;
+  border-radius: 6px;
+  object-fit: contain;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Deck modal image (meta tab) */
+.deck-modal-image {
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
 }
 
 /* =============================================================================
@@ -2476,6 +2536,107 @@ button.mapbox-gl-draw_point {
     linear-gradient(135deg, rgba(0, 200, 255, 0.12) 0%, rgba(0, 200, 255, 0.03) 100%) !important;
 }
 
+/* Card search grid - for inline results display */
+.card-search-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.card-search-item {
+  background: #f8f9fa;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.card-search-item:hover {
+  border-color: #0F4C81;
+  transform: translateY(-2px);
+}
+
+.card-search-thumbnail {
+  width: 100%;
+  max-width: 80px;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.card-search-text-id {
+  font-weight: bold;
+  font-size: 11px;
+  margin-top: 4px;
+  color: #0F4C81;
+}
+
+.card-search-text-name {
+  font-size: 9px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-search-text-color {
+  font-size: 8px;
+  color: #999;
+}
+
+.card-search-no-image {
+  display: none;
+  height: 60px;
+  background: #eee;
+  border-radius: 4px;
+  line-height: 60px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.card-search-pagination {
+  padding: 2px 6px;
+}
+
+.card-preview-container {
+  min-height: 150px;
+  max-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.card-search-results-min {
+  min-height: 60px;
+}
+
+/* Dark mode card search */
+[data-bs-theme="dark"] .card-search-item {
+  background: #2D3748;
+  border-color: #4A5568;
+}
+
+[data-bs-theme="dark"] .card-search-item:hover {
+  border-color: #00C8FF;
+}
+
+[data-bs-theme="dark"] .card-search-text-id {
+  color: #00C8FF;
+}
+
+[data-bs-theme="dark"] .card-search-text-name {
+  color: #A0AEC0;
+}
+
+[data-bs-theme="dark"] .card-search-text-color {
+  color: #718096;
+}
+
 /* =============================================================================
    QUICK ADD FORMS (Enter Results page)
    Uses .card-search-results-container for the container styling
@@ -2506,6 +2667,17 @@ button.mapbox-gl-draw_point {
 
 [data-bs-theme="dark"] .btn-quick-add {
   background: linear-gradient(135deg, #1565A8 0%, #2A7AB8 100%);
+}
+
+/* Result action buttons (edit/remove in results list) */
+.result-action-btn {
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 /* =============================================================================

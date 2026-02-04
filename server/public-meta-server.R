@@ -178,8 +178,7 @@ output$deck_detail_modal <- renderUI({
           class = "flex-shrink-0",
           tags$img(
             src = card_img_url,
-            class = "rounded shadow",
-            style = "width: 120px; height: auto;",
+            class = "rounded shadow deck-modal-image",
             alt = archetype$archetype_name
           )
         )
@@ -242,8 +241,7 @@ output$deck_detail_modal <- renderUI({
                 tags$td(
                   tags$a(
                     href = "#",
-                    class = "text-primary text-decoration-none",
-                    style = "cursor: pointer;",
+                    class = "text-primary text-decoration-none clickable-row",
                     onclick = sprintf("Shiny.setInputValue('modal_player_clicked', %d, {priority: 'event'}); return false;", row$player_id),
                     row$Player
                   )

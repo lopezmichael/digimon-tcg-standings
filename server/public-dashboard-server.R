@@ -240,7 +240,7 @@ output$most_popular_deck_image <- renderUI({
   img_url <- sprintf("https://images.digimoncard.io/images/cards/%s.jpg", deck$display_card_id)
   tags$img(
     src = img_url,
-    style = "height: 85px; width: auto; border-radius: 6px; object-fit: contain; box-shadow: 0 2px 8px rgba(0,0,0,0.2);",
+    class = "top-deck-image",
     alt = deck$archetype_name
   )
 })

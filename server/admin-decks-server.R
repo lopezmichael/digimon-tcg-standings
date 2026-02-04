@@ -82,18 +82,16 @@ render_card_search_page <- function() {
           div(
             class = "d-flex align-items-center gap-1",
             actionButton("card_search_prev", bsicons::bs_icon("chevron-left"),
-                         class = paste("btn-sm btn-outline-secondary", if (page == 1) "disabled" else ""),
-                         style = "padding: 2px 6px;"),
+                         class = paste("btn-sm btn-outline-secondary card-search-pagination", if (page == 1) "disabled" else "")),
             span(class = "small mx-1", sprintf("%d/%d", page, total_pages)),
             actionButton("card_search_next", bsicons::bs_icon("chevron-right"),
-                         class = paste("btn-sm btn-outline-secondary", if (page == total_pages) "disabled" else ""),
-                         style = "padding: 2px 6px;")
+                         class = paste("btn-sm btn-outline-secondary card-search-pagination", if (page == total_pages) "disabled" else ""))
           )
         }
       ),
       # Card grid
       div(
-        style = "display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px;",
+        class = "card-search-grid",
         lapply(1:nrow(page_cards), function(i) {
           card_data <- page_cards[i, ]
           # Calculate absolute index for button ID
@@ -110,16 +108,14 @@ render_card_search_page <- function() {
             inputId = paste0("card_select_", abs_idx),
             label = tagList(
               tags$img(src = img_url,
-                       style = "width: 100%; max-width: 80px; height: auto; border-radius: 4px; display: block; margin: 0 auto;",
+                       class = "card-search-thumbnail",
                        onerror = "this.style.display='none'; this.nextElementSibling.style.display='block';"),
-              tags$div(style = "display: none; height: 60px; background: #eee; border-radius: 4px; line-height: 60px; text-align: center; font-size: 10px;", "No image"),
-              tags$div(style = "font-weight: bold; font-size: 11px; margin-top: 4px; color: #0F4C81;", card_num),
-              tags$div(style = "font-size: 9px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
-                       title = card_name, substr(card_name, 1, 15)),
-              if (nchar(card_color) > 0) tags$div(style = "font-size: 8px; color: #999;", card_color)
+              tags$div(class = "card-search-no-image", "No image"),
+              tags$div(class = "card-search-text-id", card_num),
+              tags$div(class = "card-search-text-name", title = card_name, substr(card_name, 1, 15)),
+              if (nchar(card_color) > 0) tags$div(class = "card-search-text-color", card_color)
             ),
-            class = "card-search-btn p-2",
-            style = "background: #f8f9fa; border: 2px solid #ddd; border-radius: 6px; width: 100%; text-align: center;"
+            class = "card-search-btn card-search-item p-2"
           )
         })
       )
@@ -163,7 +159,7 @@ output$selected_card_preview <- renderUI({
 
   div(
     class = "text-center",
-    tags$img(src = img_url, style = "max-width: 120px; border-radius: 6px;",
+    tags$img(src = img_url, class = "deck-modal-image",
              onerror = "this.onerror=null; this.src=''; this.alt='Image not found'; this.style.height='60px'; this.style.background='#ddd';"),
     div(class = "mt-1 small text-muted", paste("Selected:", card_id))
   )

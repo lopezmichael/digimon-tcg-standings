@@ -634,15 +634,13 @@ output$current_results <- renderReactable({
             class = "d-flex gap-1",
             htmltools::tags$button(
               onclick = sprintf("Shiny.setInputValue('edit_result_id', %d, {priority: 'event'})", value),
-              class = "btn btn-sm btn-outline-primary p-0",
-              style = "width: 24px; height: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;",
+              class = "btn btn-sm btn-outline-primary p-0 result-action-btn",
               title = "Edit",
               shiny::icon("pencil")
             ),
             htmltools::tags$button(
               onclick = sprintf("Shiny.setInputValue('delete_result_id', %d, {priority: 'event'})", value),
-              class = "btn btn-sm btn-outline-danger p-0",
-              style = "width: 24px; height: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;",
+              class = "btn btn-sm btn-outline-danger p-0 result-action-btn",
               title = "Delete",
               shiny::icon("xmark")
             )

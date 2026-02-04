@@ -40,8 +40,7 @@ admin_decks_ui <- tagList(
               class = "text-center",
               div(
                 id = "card_preview_container",
-                class = "rounded p-2",
-                style = "min-height: 150px; max-height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden;",
+                class = "rounded p-2 card-preview-container",
                 uiOutput("selected_card_preview")
               )
             ),
@@ -62,9 +61,8 @@ admin_decks_ui <- tagList(
                   class = "form-label d-flex align-items-center gap-1",
                   "Selected Card ID",
                   tags$span(
-                    class = "text-muted",
+                    class = "text-muted help-icon",
                     title = "Click a card from search results to auto-fill, or enter a card ID manually",
-                    style = "cursor: help;",
                     bsicons::bs_icon("info-circle", size = "0.9rem")
                   )
                 ),
@@ -74,8 +72,7 @@ admin_decks_ui <- tagList(
           ),
           # Search results in dedicated box below - digital scanner container
           div(
-            class = "card-search-results-container p-2 mt-2",
-            style = "min-height: 60px;",
+            class = "card-search-results-container p-2 mt-2 card-search-results-min",
             tags$label(class = "form-label small text-muted", "Search Results"),
             uiOutput("card_search_results")
           ),
