@@ -552,6 +552,7 @@ server <- function(input, output, session) {
   source("server/public-tournaments-server.R", local = TRUE)
   source("server/public-players-server.R", local = TRUE)
   source("server/public-dashboard-server.R", local = TRUE)
+  source("server/public-submit-server.R", local = TRUE)
 
   # ---------------------------------------------------------------------------
   # Rating Calculations (reactive)
