@@ -77,17 +77,24 @@ dashboard_ui <- tagList(
           div(class = "vb-subtitle", "unique")
         )
       ),
-      # Box 3: Hot Deck (trending)
+      # Box 3: Hot Deck (trending with card image)
       div(
         class = "value-box-digital vb-hotdeck",
         div(class = "vb-digital-grid"),
         div(
-          class = "vb-content",
-          div(class = "vb-label",
-              bsicons::bs_icon("fire", class = "vb-label-icon"),
-              "HOT DECK"),
-          div(class = "vb-value", uiOutput("hot_deck_name", inline = TRUE)),
-          div(class = "vb-subtitle", uiOutput("hot_deck_trend", inline = TRUE))
+          class = "vb-content-with-image",
+          div(
+            class = "vb-image-showcase",
+            uiOutput("hot_deck_image")
+          ),
+          div(
+            class = "vb-content",
+            div(class = "vb-label",
+                bsicons::bs_icon("fire", class = "vb-label-icon"),
+                "HOT DECK"),
+            div(class = "vb-value vb-value-deck", uiOutput("hot_deck_name", inline = TRUE)),
+            div(class = "vb-subtitle", uiOutput("hot_deck_trend", inline = TRUE))
+          )
         )
       ),
       # Box 4: Top Deck (most popular with card image)
@@ -102,7 +109,9 @@ dashboard_ui <- tagList(
           ),
           div(
             class = "vb-content",
-            div(class = "vb-label", "TOP DECK"),
+            div(class = "vb-label",
+                bsicons::bs_icon("trophy", class = "vb-label-icon"),
+                "TOP DECK"),
             div(class = "vb-value vb-value-deck", textOutput("most_popular_deck_val", inline = TRUE)),
             div(class = "vb-subtitle", uiOutput("top_deck_meta_share", inline = TRUE))
           )
