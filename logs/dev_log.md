@@ -4,6 +4,71 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-04: Content Pages Implementation & UI Polish
+
+### Summary
+Implemented content pages feature (About, FAQ, For Organizers) with footer navigation, plus significant UI improvements to create a seamless app frame.
+
+### Content Pages (feature/content-pages branch)
+Created three new content pages accessible via footer navigation:
+
+**About Page** (`views/about-ui.R`)
+- Live stats from database (stores, players, tournaments, results)
+- "Track. Compete. Connect." tagline
+- Current coverage section highlighting North Texas
+- Built By section with centered GitHub/Ko-fi/Contact links
+
+**FAQ Page** (`views/faq-ui.R`)
+- Accordion-based collapsible sections
+- Enhanced rating explanations (Competitive Rating with implied results, Achievement Score with tournament bonuses, Store Rating meaning)
+- Bug report section with GitHub and Google Form links
+
+**For Organizers Page** (`views/for-tos-ui.R`)
+- Renamed from "For TOs" (user didn't like acronym)
+- Step-by-step guides for submitting results
+- New sections: submitting match history, becoming a contributor
+- Info notes about deck info being optional initially
+- Google Form placeholder links throughout
+
+### Footer Navigation
+- Styled bar matching header aesthetic (blue gradient, grid pattern)
+- Positioned outside `layout_sidebar` to span full viewport width
+- Links: About // FAQ // For Organizers
+- Version number and copyright
+
+### Seamless App Frame (Sidebar Styling)
+Major CSS work to create cohesive "frame" around content:
+- **Sidebar gradient**: Changed to vertical (180deg) so bottom color matches footer's left edge
+- **Edge alignment**: `margin-left: calc(-1rem - 1px)` to extend sidebar to left edge
+- **Right edge**: Extended main content to right edge with `margin-right: -1rem`
+- **Gap removal**: Eliminated gaps between header/sidebar/footer
+- **Mobile fixes**: Adjusted margins for mobile view
+
+### Dashboard Improvements
+- **Hot Deck value box**: Added card image showcase (matching Top Deck style)
+- **Top Deck value box**: Added trophy icon to label
+- **Content spacing**: Added margin between cards and grids for better visual separation
+
+### CSS Changes
+- Added `contact-links--centered` modifier class
+- Added `.info-note` styling for tip callouts
+- Added dashboard content spacing rules
+- Light/dark mode support for all new elements
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `app.R` | Footer, APP_VERSION, nav panels |
+| `views/about-ui.R` | New file |
+| `views/faq-ui.R` | New file |
+| `views/for-tos-ui.R` | New file |
+| `server/shared-server.R` | Navigation handlers, About stats |
+| `server/public-dashboard-server.R` | hot_deck_image output |
+| `views/dashboard-ui.R` | Hot Deck image, Top Deck icon |
+| `www/custom.css` | ~600 lines added for footer, content pages, sidebar frame |
+
+---
+
 ## 2026-02-04: Design Session - Region Expansion, Deep Linking, Content Pages
 
 ### Summary

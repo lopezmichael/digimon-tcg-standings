@@ -391,6 +391,6 @@ See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
-**v0.18.1** - Code Cleanup Refactor (reactive values documented, ARCHITECTURE.md created)
+**v0.19.0** - Content Pages & UI Polish (About, FAQ, For Organizers pages, seamless app frame)
 
 See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.
