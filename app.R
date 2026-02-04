@@ -232,6 +232,7 @@ source("views/stores-ui.R", local = TRUE)
 source("views/players-ui.R", local = TRUE)
 source("views/meta-ui.R", local = TRUE)
 source("views/tournaments-ui.R", local = TRUE)
+source("views/submit-ui.R", local = TRUE)
 source("views/admin-results-ui.R", local = TRUE)
 source("views/admin-tournaments-ui.R", local = TRUE)
 source("views/admin-decks-ui.R", local = TRUE)
@@ -407,6 +408,9 @@ ui <- page_fillable(
         actionLink("nav_stores",
                    tagList(bsicons::bs_icon("geo-alt"), " Stores"),
                    class = "nav-link-sidebar"),
+        actionLink("nav_submit",
+                   tagList(bsicons::bs_icon("cloud-upload"), " Submit"),
+                   class = "nav-link-sidebar"),
 
         # Admin Section (conditionally shown, ordered by frequency of use)
         conditionalPanel(
@@ -447,6 +451,7 @@ ui <- page_fillable(
         nav_panel_hidden(value = "players", players_ui),
         nav_panel_hidden(value = "meta", meta_ui),
         nav_panel_hidden(value = "tournaments", tournaments_ui),
+        nav_panel_hidden(value = "submit", submit_ui),
         nav_panel_hidden(value = "admin_results", admin_results_ui),
         nav_panel_hidden(value = "admin_tournaments", admin_tournaments_ui),
         nav_panel_hidden(value = "admin_decks", admin_decks_ui),

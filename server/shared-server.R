@@ -56,6 +56,11 @@ observeEvent(input$nav_tournaments, {
   rv$current_nav <- "tournaments"
 })
 
+observeEvent(input$nav_submit, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+})
+
 observeEvent(input$nav_admin_results, {
   nav_select("main_content", "admin_results")
   rv$current_nav <- "admin_results"
