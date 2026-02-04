@@ -292,6 +292,100 @@ dbGetQuery(rv$db_con, paste0("SELECT * FROM players WHERE player_id = ", player_
 
 ---
 
+## CSS Architecture
+
+### File Organization
+
+All custom styles are in `www/custom.css` (~3,500 lines), organized into clearly labeled sections:
+
+```
+/* =============================================================================
+   SECTION NAME
+   ============================================================================= */
+```
+
+**Major Sections:**
+| Section | Purpose |
+|---------|---------|
+| APP HEADER | Top header bar with logo, title, BETA badge |
+| SIDEBAR NAVIGATION | Left nav menu styling |
+| DASHBOARD TITLE STRIP | Filter controls row on dashboard |
+| PAGE TITLE STRIPS | Filter controls for other pages |
+| VALUE BOXES | Digital-themed stat boxes |
+| CARDS / FEATURE CARDS | Card container styling |
+| TABLES | Reactable table overrides |
+| MODAL STAT BOXES | Stats display in modals |
+| PLACEMENT COLORS | Gold/silver/bronze for 1st/2nd/3rd |
+| DECK COLOR UTILITIES | Color badges for deck types |
+| ADMIN DECK MANAGEMENT | Card search grid, preview containers |
+| MOBILE UI IMPROVEMENTS | Responsive breakpoints |
+| APP-WIDE LOADING SCREEN | "Opening Digital Gate..." overlay |
+| DIGITAL EMPTY STATES | Scanner aesthetic for empty data |
+
+### Naming Conventions
+
+**Component-based naming:**
+```css
+/* Component */
+.card-search-grid { }
+.card-search-item { }
+.card-search-thumbnail { }
+
+/* State modifiers with -- */
+.store-filter-badge--success { }
+.store-filter-badge--info { }
+
+/* Utility classes */
+.clickable-row { cursor: pointer; }
+.help-icon { cursor: help; }
+.map-container-flush { padding: 0; }
+```
+
+**Color classes for decks:**
+```css
+.deck-badge-red { }
+.deck-badge-blue { }
+.deck-badge-yellow { }
+.deck-badge-green { }
+.deck-badge-black { }
+.deck-badge-purple { }
+.deck-badge-white { }
+```
+
+### When to Use CSS Classes vs Inline Styles
+
+**Use CSS classes for:**
+- Reusable styles (buttons, badges, containers)
+- Complex styles (multiple properties)
+- Responsive styles (media queries needed)
+- Themed elements (colors, shadows, animations)
+
+**Keep inline styles for:**
+- JavaScript-toggled visibility (`style = if (condition) "" else "display: none;"`)
+- Dynamic values from R (`style = sprintf("background-color: %s;", color)`)
+- One-off positioning tweaks
+
+**Examples in R code:**
+```r
+# Good - use CSS class
+div(class = "clickable-row", ...)
+tags$img(class = "deck-modal-image", src = url)
+
+# Acceptable - dynamic/conditional inline
+div(style = if (show) "" else "display: none;", ...)
+span(style = sprintf("color: %s;", deck_color), deck_name)
+```
+
+### Adding New Styles
+
+1. Find the appropriate section in `www/custom.css`
+2. Add styles with clear comments if non-obvious
+3. Use existing naming patterns (component-based, `--` for modifiers)
+4. Test in both light and dark mode
+5. Test on mobile viewport
+
+---
+
 ## Quick Reference
 
 ### File Locations

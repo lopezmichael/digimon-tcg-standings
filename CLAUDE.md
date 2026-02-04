@@ -374,8 +374,18 @@ python scripts/sync_cards.py --by-set
 - **Tables:** Use `reactable` (not `tableOutput`)
 - **Charts:** Use `highcharter` with `hc_theme_atom_switch()` for theming
 - **Maps:** Use `atom_mapgl()` from atomtemplates
-- **CSS:** Custom styles in `www/custom.css`, brand config in `_brand.yml`
 - **Layout:** Use `layout_columns` from bslib for consistent layouts
+
+### CSS Guidelines
+
+- **Location:** All custom styles in `www/custom.css`, brand config in `_brand.yml`
+- **Organization:** CSS file has 45+ labeled sections - find the right section before adding
+- **Prefer CSS classes over inline styles** - only use inline for JS visibility toggles or dynamic R values
+- **Naming:** Component-based (`card-search-grid`), modifiers with `--` (`badge--success`)
+- **Existing utilities:** `clickable-row`, `help-icon`, `deck-badge-{color}`, `place-1st/2nd/3rd`
+- **Test both light/dark mode and mobile** when adding styles
+
+See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
