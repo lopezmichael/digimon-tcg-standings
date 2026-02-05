@@ -81,7 +81,7 @@ submit_ui <- tagList(
           card_body(
             fileInput("submit_screenshots", "Upload Screenshot(s)",
                       multiple = TRUE,
-                      accept = c("image/png", "image/jpeg", "image/jpg"),
+                      accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
                       width = "100%"),
             tags$small(class = "text-muted d-block mb-2",
                        "Upload screenshots from Bandai TCG+ app showing tournament rankings"),
@@ -111,17 +111,75 @@ submit_ui <- tagList(
       div(
         class = "p-3",
 
-        # Info card
-        card(
-          card_body(
-            class = "text-center py-4",
-            bsicons::bs_icon("info-circle", size = "2rem", class = "text-muted mb-2"),
-            h5("Coming Soon"),
-            p(class = "text-muted mb-0",
-              "Match history submission will be available in a future update. ",
-              "For now, you can submit tournament standings above.")
+        # Info box
+        div(
+          class = "alert alert-info d-flex align-items-center mb-3",
+          bsicons::bs_icon("info-circle", class = "me-2"),
+          div(
+            tags$strong("Add your round-by-round match data"),
+            tags$br(),
+            tags$small("Upload a screenshot of your match history from a tournament that already exists in the system.")
           )
-        )
+        ),
+
+        # Tournament Selection Card
+        card(
+          card_header("Select Tournament"),
+          card_body(
+            layout_columns(
+              col_widths = c(6, 6),
+              selectInput("match_store", "Store",
+                          choices = c("All stores" = ""),
+                          width = "100%"),
+              selectInput("match_tournament", "Tournament *",
+                          choices = c("Select a tournament..." = ""),
+                          width = "100%")
+            ),
+            uiOutput("match_tournament_info")
+          )
+        ),
+
+        # Your Player Info Card
+        card(
+          card_header("Your Player Info"),
+          card_body(
+            p(class = "text-muted small mb-2",
+              "Enter your info so we can link this match history to your player record."),
+            layout_columns(
+              col_widths = c(6, 6),
+              textInput("match_player_username", "Your Username *",
+                        placeholder = "e.g., HappyCat", width = "100%"),
+              textInput("match_player_member", "Your Member Number",
+                        placeholder = "e.g., 0000123456", width = "100%")
+            )
+          )
+        ),
+
+        # Screenshot Upload Card
+        card(
+          card_header("Match History Screenshot"),
+          card_body(
+            fileInput("match_screenshots", "Upload Screenshot",
+                      multiple = FALSE,
+                      accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
+                      width = "100%"),
+            tags$small(class = "text-muted d-block mb-2",
+                       "Upload a screenshot from Bandai TCG+ showing your match history for this tournament"),
+            uiOutput("match_screenshot_preview"),
+            div(
+              class = "mt-3",
+              actionButton("match_process_ocr", "Process Screenshot",
+                           class = "btn-primary",
+                           icon = icon("magic"))
+            )
+          )
+        ),
+
+        # Match History Preview (shown after OCR)
+        uiOutput("match_results_preview"),
+
+        # Submit Button (shown after OCR)
+        uiOutput("match_final_button")
       )
     )
   )

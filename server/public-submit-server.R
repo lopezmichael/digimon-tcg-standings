@@ -496,3 +496,354 @@ observeEvent(input$submit_store_request, {
   )
   removeModal()
 })
+
+# =============================================================================
+# MATCH HISTORY TAB
+# =============================================================================
+
+# Initialize match history reactive values
+rv$match_ocr_results <- NULL
+rv$match_uploaded_file <- NULL
+
+# Populate store dropdown for match history (includes "All stores" option)
+observe({
+  req(rv$db_con)
+  stores <- dbGetQuery(rv$db_con, "
+    SELECT store_id, name FROM stores
+    WHERE is_active = TRUE
+    ORDER BY name
+  ")
+  choices <- setNames(stores$store_id, stores$name)
+  updateSelectInput(session, "match_store",
+                    choices = c("All stores" = "", choices))
+})
+
+# Populate tournament dropdown based on store selection
+observe({
+  req(rv$db_con)
+
+  store_filter <- if (!is.null(input$match_store) && input$match_store != "") {
+    paste0(" AND t.store_id = ", as.integer(input$match_store))
+  } else {
+    ""
+  }
+
+  tournaments <- dbGetQuery(rv$db_con, paste0("
+    SELECT t.tournament_id, t.event_date, t.event_type, s.name as store_name
+    FROM tournaments t
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE 1=1 ", store_filter, "
+    ORDER BY t.event_date DESC
+    LIMIT 50
+  "))
+
+  if (nrow(tournaments) > 0) {
+    labels <- paste0(tournaments$store_name, " - ",
+                     format(as.Date(tournaments$event_date), "%b %d, %Y"),
+                     " (", tournaments$event_type, ")")
+    choices <- setNames(tournaments$tournament_id, labels)
+    updateSelectInput(session, "match_tournament",
+                      choices = c("Select a tournament..." = "", choices))
+  } else {
+    updateSelectInput(session, "match_tournament",
+                      choices = c("No tournaments found" = ""))
+  }
+})
+
+# Show tournament info when selected
+output$match_tournament_info <- renderUI({
+  req(input$match_tournament)
+  req(input$match_tournament != "")
+  req(rv$db_con)
+
+  tournament <- dbGetQuery(rv$db_con, "
+    SELECT t.*, s.name as store_name
+    FROM tournaments t
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE t.tournament_id = ?
+  ", params = list(as.integer(input$match_tournament)))
+
+  if (nrow(tournament) == 0) return(NULL)
+
+  t <- tournament[1, ]
+  div(
+    class = "mt-2 p-2 rounded",
+    style = "background: rgba(15, 76, 129, 0.1);",
+    tags$small(
+      strong(t$store_name), " | ",
+      format(as.Date(t$event_date), "%B %d, %Y"), " | ",
+      t$event_type, " | ",
+      t$player_count, " players | ",
+      t$rounds, " rounds"
+    )
+  )
+})
+
+# Preview uploaded match history screenshot
+output$match_screenshot_preview <- renderUI({
+  req(input$match_screenshots)
+
+  file <- input$match_screenshots
+  if (is.null(file)) return(NULL)
+
+  rv$match_uploaded_file <- file
+
+  div(
+    class = "border rounded p-2 d-flex align-items-center gap-2 mt-2",
+    bsicons::bs_icon("image"),
+    span(file$name),
+    tags$small(class = "text-muted", paste0("(", round(file$size / 1024), " KB)"))
+  )
+})
+
+# Process match history OCR
+observeEvent(input$match_process_ocr, {
+  req(rv$match_uploaded_file)
+  req(input$match_tournament)
+  req(input$match_tournament != "")
+
+  file <- rv$match_uploaded_file
+
+  showNotification("Processing match history with OCR...", type = "message", duration = NULL, id = "match_ocr_processing")
+
+  message("[MATCH SUBMIT] Processing file: ", file$name)
+  message("[MATCH SUBMIT] File path: ", file$datapath)
+
+  # Call OCR
+  ocr_text <- tryCatch({
+    gcv_detect_text(file$datapath, verbose = TRUE)
+  }, error = function(e) {
+    message("[MATCH SUBMIT] OCR error: ", e$message)
+    NULL
+  })
+
+  if (is.null(ocr_text) || ocr_text == "") {
+    removeNotification("match_ocr_processing")
+    showNotification("Could not extract text from screenshot. Check that GOOGLE_CLOUD_VISION_API_KEY is set.", type = "error")
+    return()
+  }
+
+  message("[MATCH SUBMIT] OCR text length: ", nchar(ocr_text))
+
+  # Parse match history
+  parsed <- tryCatch({
+    parse_match_history(ocr_text, verbose = TRUE)
+  }, error = function(e) {
+    message("[MATCH SUBMIT] Parse error: ", e$message)
+    data.frame()
+  })
+
+  removeNotification("match_ocr_processing")
+
+  if (nrow(parsed) == 0) {
+    showNotification("Could not extract match data from screenshot. Please try a clearer image.", type = "error")
+    return()
+  }
+
+  rv$match_ocr_results <- parsed
+  showNotification(paste("Extracted", nrow(parsed), "matches"), type = "message")
+})
+
+# Render match history preview table
+output$match_results_preview <- renderUI({
+  req(rv$match_ocr_results)
+
+  results <- rv$match_ocr_results
+
+  card(
+    class = "mt-3",
+    card_header(
+      class = "d-flex justify-content-between align-items-center",
+      span("Review Match History"),
+      span(class = "badge bg-primary", paste(nrow(results), "matches"))
+    ),
+    card_body(
+      tags$table(
+        class = "table table-sm table-striped",
+        tags$thead(
+          tags$tr(
+            tags$th("Round"),
+            tags$th("Opponent"),
+            tags$th("Member #"),
+            tags$th("Games (W-L-T)"),
+            tags$th("Points")
+          )
+        ),
+        tags$tbody(
+          lapply(seq_len(nrow(results)), function(i) {
+            row <- results[i, ]
+            tags$tr(
+              tags$td(row$round),
+              tags$td(row$opponent_username),
+              tags$td(
+                tags$code(
+                  if (!is.null(row$opponent_member_number) && !is.na(row$opponent_member_number) && nchar(row$opponent_member_number) >= 4) {
+                    substr(row$opponent_member_number, nchar(row$opponent_member_number) - 3, nchar(row$opponent_member_number))
+                  } else {
+                    "-"
+                  }
+                )
+              ),
+              tags$td(paste0(row$games_won, "-", row$games_lost, "-", row$games_tied)),
+              tags$td(row$match_points)
+            )
+          })
+        )
+      ),
+      tags$small(class = "text-muted",
+                 "Review the extracted match data. Opponents will be matched to existing players or created as new.")
+    )
+  )
+})
+
+# Match history submit button
+output$match_final_button <- renderUI({
+  req(rv$match_ocr_results)
+
+  div(
+    class = "mt-3 d-flex justify-content-end gap-2",
+    actionButton("match_cancel", "Cancel", class = "btn-outline-secondary"),
+    actionButton("match_submit", "Submit Match History",
+                 class = "btn-primary", icon = icon("check"))
+  )
+})
+
+# Handle match history submission
+observeEvent(input$match_submit, {
+  req(rv$match_ocr_results)
+  req(rv$db_con)
+  req(input$match_tournament)
+  req(input$match_player_username)
+
+  if (trimws(input$match_player_username) == "") {
+    showNotification("Please enter your username", type = "error")
+    return()
+  }
+
+  results <- rv$match_ocr_results
+  tournament_id <- as.integer(input$match_tournament)
+  submitter_username <- trimws(input$match_player_username)
+  submitter_member <- if (!is.null(input$match_player_member) && trimws(input$match_player_member) != "") {
+    trimws(input$match_player_member)
+  } else {
+    NA_character_
+  }
+
+  tryCatch({
+    # Ensure matches table exists
+    dbExecute(rv$db_con, "
+      CREATE TABLE IF NOT EXISTS matches (
+        match_id INTEGER PRIMARY KEY,
+        tournament_id INTEGER NOT NULL,
+        round_number INTEGER NOT NULL,
+        player_id INTEGER NOT NULL,
+        opponent_id INTEGER NOT NULL,
+        games_won INTEGER NOT NULL DEFAULT 0,
+        games_lost INTEGER NOT NULL DEFAULT 0,
+        games_tied INTEGER NOT NULL DEFAULT 0,
+        match_points INTEGER NOT NULL DEFAULT 0,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(tournament_id, round_number, player_id)
+      )
+    ")
+
+    # Find or create submitting player
+    player <- dbGetQuery(rv$db_con, "
+      SELECT player_id FROM players
+      WHERE (member_number IS NOT NULL AND member_number = ?) OR LOWER(display_name) = LOWER(?)
+      LIMIT 1
+    ", params = list(submitter_member, submitter_username))
+
+    if (nrow(player) == 0) {
+      dbExecute(rv$db_con, "
+        INSERT INTO players (display_name, member_number)
+        VALUES (?, ?)
+      ", params = list(submitter_username, submitter_member))
+      player_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
+    } else {
+      player_id <- player$player_id[1]
+      if (!is.na(submitter_member)) {
+        dbExecute(rv$db_con, "
+          UPDATE players SET member_number = ?
+          WHERE player_id = ? AND member_number IS NULL
+        ", params = list(submitter_member, player_id))
+      }
+    }
+
+    # Insert each match
+    matches_inserted <- 0
+    for (i in seq_len(nrow(results))) {
+      row <- results[i, ]
+
+      # Find or create opponent
+      opponent_member <- if (!is.null(row$opponent_member_number) && !is.na(row$opponent_member_number) && row$opponent_member_number != "") {
+        row$opponent_member_number
+      } else {
+        NA_character_
+      }
+
+      opponent <- dbGetQuery(rv$db_con, "
+        SELECT player_id FROM players
+        WHERE (member_number IS NOT NULL AND member_number = ?) OR LOWER(display_name) = LOWER(?)
+        LIMIT 1
+      ", params = list(opponent_member, row$opponent_username))
+
+      if (nrow(opponent) == 0) {
+        dbExecute(rv$db_con, "
+          INSERT INTO players (display_name, member_number)
+          VALUES (?, ?)
+        ", params = list(row$opponent_username, opponent_member))
+        opponent_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
+      } else {
+        opponent_id <- opponent$player_id[1]
+        if (!is.na(opponent_member)) {
+          dbExecute(rv$db_con, "
+            UPDATE players SET member_number = ?
+            WHERE player_id = ? AND member_number IS NULL
+          ", params = list(opponent_member, opponent_id))
+        }
+      }
+
+      # Insert match (ignore if duplicate)
+      tryCatch({
+        dbExecute(rv$db_con, "
+          INSERT INTO matches (tournament_id, round_number, player_id, opponent_id, games_won, games_lost, games_tied, match_points)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ", params = list(
+          tournament_id,
+          as.integer(row$round),
+          player_id,
+          opponent_id,
+          as.integer(row$games_won),
+          as.integer(row$games_lost),
+          as.integer(row$games_tied),
+          as.integer(row$match_points)
+        ))
+        matches_inserted <- matches_inserted + 1
+      }, error = function(e) {
+        message("[MATCH SUBMIT] Skipping duplicate match round ", row$round)
+      })
+    }
+
+    # Clear form
+    rv$match_ocr_results <- NULL
+    rv$match_uploaded_file <- NULL
+    updateSelectInput(session, "match_tournament", selected = "")
+    updateTextInput(session, "match_player_username", value = "")
+    updateTextInput(session, "match_player_member", value = "")
+
+    showNotification(
+      paste("Match history submitted!", matches_inserted, "matches recorded."),
+      type = "message"
+    )
+
+  }, error = function(e) {
+    showNotification(paste("Error submitting match history:", e$message), type = "error")
+  })
+})
+
+# Handle match history cancel
+observeEvent(input$match_cancel, {
+  rv$match_ocr_results <- NULL
+  rv$match_uploaded_file <- NULL
+})

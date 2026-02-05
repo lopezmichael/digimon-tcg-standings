@@ -186,6 +186,31 @@ CREATE INDEX IF NOT EXISTS idx_results_archetype ON results(archetype_id);
 CREATE INDEX IF NOT EXISTS idx_results_placement ON results(placement);
 
 -- =============================================================================
+-- MATCHES TABLE
+-- Tracks round-by-round match data from match history screenshots
+-- Note: If both players submit match history, we'll have two rows for the
+-- same match (from each perspective). This is intentional for simplicity.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS matches (
+    match_id INTEGER PRIMARY KEY,
+    tournament_id INTEGER NOT NULL,    -- References tournaments(tournament_id)
+    round_number INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,        -- Player who submitted this record
+    opponent_id INTEGER NOT NULL,      -- Their opponent
+    games_won INTEGER NOT NULL DEFAULT 0,
+    games_lost INTEGER NOT NULL DEFAULT 0,
+    games_tied INTEGER NOT NULL DEFAULT 0,
+    match_points INTEGER NOT NULL DEFAULT 0,  -- 3=win, 1=draw, 0=loss
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tournament_id, round_number, player_id)
+);
+
+-- Create indexes for match queries
+CREATE INDEX IF NOT EXISTS idx_matches_tournament ON matches(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_matches_player ON matches(player_id);
+CREATE INDEX IF NOT EXISTS idx_matches_opponent ON matches(opponent_id);
+
+-- =============================================================================
 -- DATA INGESTION LOG TABLE
 -- Tracks API calls and data imports for debugging
 -- =============================================================================
