@@ -252,9 +252,26 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
   next_expected_placement <- 1
 
   # For each username, look FORWARD for member number and numbers for placement/points
+  # Also look BACKWARD for placement number that might precede the username
   for (j in seq_along(username_indices)) {
     idx <- username_indices[j]
     username <- lines[idx]
+
+    # Search BACKWARD up to 2 lines for placement number
+    # Only accept if it's immediately before username and looks like a ranking (1-32)
+    placement_from_backward <- NA
+    if (idx > 1) {
+      prev_line <- lines[idx - 1]
+      # Only accept standalone 1-2 digit numbers in valid placement range
+      # Exclude numbers that look like percentages or other data (33+)
+      if (grepl("^\\d{1,2}$", prev_line)) {
+        val <- as.integer(prev_line)
+        # More restrictive: only 1-32 and should be close to expected placement
+        if (val >= 1 && val <= 32 && abs(val - next_expected_placement) <= 5) {
+          placement_from_backward <- val
+        }
+      }
+    }
 
     # Search forward up to 12 lines for member number
     # (increased from 8 to handle noise like headers between username and data)
@@ -263,63 +280,83 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     member_num <- NA
     placement <- NA
     points <- NA
+    member_num_idx <- NA
 
     # Collect all numbers between username and member number
-    numbers_found <- c()
+    numbers_before_member <- c()
+    numbers_after_member <- c()
 
     for (k in (idx + 1):search_end) {
       line <- lines[k]
 
       # Check for member number
       member_match <- regmatches(line, regexec("Member\\s*Number\\s*:?\\s*(\\d{10})", line, ignore.case = TRUE))[[1]]
-      if (length(member_match) > 1) {
+      if (length(member_match) > 1 && is.na(member_num)) {
         member_num <- member_match[2]
-        break  # Found member number, stop searching
+        member_num_idx <- k
+        next  # Continue scanning for numbers AFTER member number
       }
 
       # Check for standalone 10-digit number (member number without label)
-      if (grepl("^\\d{10}$", line)) {
+      if (grepl("^\\d{10}$", line) && is.na(member_num)) {
         member_num <- line
-        break
+        member_num_idx <- k
+        next  # Continue scanning for numbers AFTER member number
       }
+
+      # Stop if we hit another username (but not Member Number lines)
+      if (k %in% username_indices && k != idx) break
 
       # Collect standalone numbers (potential placement or points)
       # Now handles large tournaments (64, 128+ players)
       if (grepl("^\\d{1,3}$", line)) {
         val <- as.integer(line)
-        # We're already scanning FORWARD from a username, so we're past the status bar
-        # This contextual position means these numbers are likely tournament data, not battery
         # Only filter obvious non-data: values over 200 (no tournament that large)
         if (val <= 200) {
-          numbers_found <- c(numbers_found, val)
+          if (is.na(member_num)) {
+            numbers_before_member <- c(numbers_before_member, val)
+          } else {
+            numbers_after_member <- c(numbers_after_member, val)
+            # Only collect first 2 numbers after member (points and maybe OMW-related)
+            if (length(numbers_after_member) >= 2) break
+          }
         }
       }
-
-      # Stop if we hit another username (but not Member Number lines)
-      if (k %in% username_indices && k != idx) break
     }
 
-    # Interpret the numbers found between username and member number
-    # OCR Pattern: username -> placement -> points -> percentages -> member number
-    # So numbers_found should be [placement, points] in that order
+    # Combine numbers found (before takes precedence for placement, after for points)
+    numbers_found <- numbers_before_member
+
+    # Interpret the numbers found
+    # OCR Pattern varies:
+    #   Pattern A: username -> placement -> points -> percentages -> member number
+    #   Pattern B: username -> member number -> points -> percentages
+    # So we check numbers_before_member first, then numbers_after_member
+
     if (length(numbers_found) >= 2) {
-      # First number is placement (1-32 range), second is points (0-15 range)
+      # Found multiple numbers before member number
+      # First number might be placement (1-64 range), second might be points (0-15 range)
       potential_placement <- numbers_found[1]
       potential_points <- numbers_found[2]
 
-      # Validate: placement should be reasonable (1-32), points typically 0-15
-      if (potential_placement >= 1 && potential_placement <= 32) {
+      # Validate placement: should be 1-64 AND close to expected (within 5)
+      # This filters out percentages like "50" or "83" that aren't placements
+      if (potential_placement >= 1 && potential_placement <= 64 &&
+          abs(potential_placement - next_expected_placement) <= 5) {
         placement <- potential_placement
         points <- potential_points
+      } else if (potential_placement <= 15) {
+        # First number looks like points, not placement (small value)
+        points <- potential_placement
       } else {
-        # First number doesn't look like placement, maybe both are data
+        # First number is noise (e.g., percentage), use second as points
         points <- potential_points
       }
     } else if (length(numbers_found) == 1) {
-      # Single number - is it placement or points?
+      # Single number before member - is it placement or points?
       val <- numbers_found[1]
       # If it's close to expected placement and in valid range, treat as placement
-      if (val >= 1 && val <= 32 && abs(val - next_expected_placement) <= 3) {
+      if (val >= 1 && val <= 64 && abs(val - next_expected_placement) <= 3) {
         placement <- val
       } else {
         # Otherwise treat as points
@@ -327,7 +364,24 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
       }
     }
 
-    # If no placement found, use expected placement
+    # If we didn't find points before member number, check after
+    if (is.na(points) && length(numbers_after_member) > 0) {
+      # First number after member number is likely points
+      potential_points <- numbers_after_member[1]
+      # Points should be 0-15 for typical tournament (up to 5 rounds * 3 points)
+      if (potential_points <= 15) {
+        points <- potential_points
+        if (verbose) message("[PARSE] Found points AFTER member number: ", points)
+      }
+    }
+
+    # If no placement found from forward scan, try backward scan result
+    if (is.na(placement) && !is.na(placement_from_backward)) {
+      placement <- placement_from_backward
+      if (verbose) message("[PARSE] Found placement from backward scan: ", placement)
+    }
+
+    # If still no placement found, use expected placement
     if (is.na(placement)) {
       placement <- next_expected_placement
     }
@@ -439,7 +493,7 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
   headers <- c("round", "opponent", "results", "points", "ranking", "match history",
                "store events", "home", "my events", "event search", "decks", "others",
                "3: win, 1: draw, 0: lose", "digimon", "card game", "g", "user name",
-               "username", "win", "omw", "gw", "privacy policy")
+               "username", "win", "omw", "gw", "privacy policy", "results points")
 
   # Strategy: Find potential usernames, then scan FORWARD for round, results, points, member number
   # This matches the OCR output order we observed
@@ -539,12 +593,38 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
         next
       }
 
-      # Check for member number (don't break - results might come after)
-      member_match <- regmatches(check_line, regexec("Member\\s*Number\\s*:?\\s*(\\d{10})", check_line, ignore.case = TRUE))[[1]]
+      # Check for member number (may have results on same line)
+      # Accept 8-10 digit member numbers (OCR sometimes truncates)
+      # Pattern: "Member Number: 00000091 2-1-0 3" (member + results + points on same line)
+      member_match <- regmatches(check_line, regexec("Member\\s*Number\\s*:?\\s*(\\d{8,10})", check_line, ignore.case = TRUE))[[1]]
       if (length(member_match) > 1 && is.na(member_num)) {
         member_num <- member_match[2]
         if (verbose) message("[MATCH]   Member: ", member_num)
-        next  # Continue scanning - results might come after member number
+
+        # Check if there's more on the same line (results and/or points)
+        # Remove the member number part to get the remainder
+        rest_of_line <- sub("Member\\s*Number\\s*:?\\s*\\d{8,10}\\s*", "", check_line, ignore.case = TRUE)
+        if (nchar(rest_of_line) > 0) {
+          if (verbose) message("[MATCH]   Same line remainder: '", rest_of_line, "'")
+
+          # Try to extract results (X-X-X) from remainder
+          inline_result <- regmatches(rest_of_line, regexec("(\\d)\\s*-\\s*(\\d)\\s*-\\s*(\\d)", rest_of_line))[[1]]
+          if (length(inline_result) > 1 && is.na(games_won)) {
+            games_won <- as.integer(inline_result[2])
+            games_lost <- as.integer(inline_result[3])
+            games_tied <- as.integer(inline_result[4])
+            if (verbose) message("[MATCH]   Inline results: ", games_won, "-", games_lost, "-", games_tied)
+          }
+
+          # Try to extract points (0, 1, or 3) from remainder - look for standalone digit
+          inline_points <- regmatches(rest_of_line, regexec("\\s([013])\\s*$", rest_of_line))[[1]]
+          if (length(inline_points) > 1 && is.na(match_points)) {
+            match_points <- as.integer(inline_points[2])
+            if (verbose) message("[MATCH]   Inline points: ", match_points)
+          }
+        }
+
+        next  # Continue scanning - more data might come after
       }
     }
 
