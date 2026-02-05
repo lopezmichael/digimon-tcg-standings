@@ -69,8 +69,21 @@ observeEvent(input$submit_process_ocr, {
   files <- rv$submit_uploaded_files
   total_rounds <- input$submit_rounds
 
-  # Show processing indicator
-  showNotification("Processing screenshots with OCR...", type = "message", duration = NULL, id = "ocr_processing")
+  # Show processing modal with spinner
+  showModal(modalDialog(
+    div(
+      class = "text-center py-4",
+      div(class = "spinner-border text-primary mb-3", role = "status",
+          span(class = "visually-hidden", "Processing...")),
+      h5("Processing Screenshots"),
+      p(class = "text-muted mb-0", id = "ocr_status_text", "Sending to OCR service..."),
+      tags$small(class = "text-muted", paste(nrow(files), "file(s) to process"))
+    ),
+    title = NULL,
+    footer = NULL,
+    easyClose = FALSE,
+    size = "s"
+  ))
 
   all_results <- list()
   ocr_errors <- c()
@@ -121,7 +134,7 @@ observeEvent(input$submit_process_ocr, {
     }
   }
 
-  removeNotification("ocr_processing")
+  removeModal()
 
   if (length(all_results) == 0) {
     error_detail <- if (length(ocr_errors) > 0) {
@@ -189,8 +202,58 @@ observeEvent(input$submit_process_ocr, {
   # Add deck column (default to UNKNOWN)
   combined$deck_id <- NA_integer_
 
+  # Pre-match players against database
+  combined$matched_player_id <- NA_integer_
+ combined$match_status <- "new"  # "matched", "possible", "new"
+  combined$matched_player_name <- NA_character_
+
+  if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+    for (i in seq_len(nrow(combined))) {
+      member_num <- combined$member_number[i]
+      username <- combined$username[i]
+
+      # First try to match by member number (most reliable)
+      if (!is.null(member_num) && !is.na(member_num) && nchar(member_num) > 0) {
+        player_by_member <- dbGetQuery(rv$db_con, "
+          SELECT player_id, display_name FROM players
+          WHERE member_number = ?
+          LIMIT 1
+        ", params = list(member_num))
+
+        if (nrow(player_by_member) > 0) {
+          combined$matched_player_id[i] <- player_by_member$player_id[1]
+          combined$matched_player_name[i] <- player_by_member$display_name[1]
+          combined$match_status[i] <- "matched"
+          next
+        }
+      }
+
+      # Try to match by username (case-insensitive)
+      if (!is.null(username) && !is.na(username) && nchar(username) > 0) {
+        player_by_name <- dbGetQuery(rv$db_con, "
+          SELECT player_id, display_name, member_number FROM players
+          WHERE LOWER(display_name) = LOWER(?)
+          LIMIT 1
+        ", params = list(username))
+
+        if (nrow(player_by_name) > 0) {
+          combined$matched_player_id[i] <- player_by_name$player_id[1]
+          combined$matched_player_name[i] <- player_by_name$display_name[1]
+          # If they have a member number in DB but we got a different one, it's suspicious
+          if (!is.na(player_by_name$member_number[1]) && !is.na(member_num) &&
+              player_by_name$member_number[1] != member_num) {
+            combined$match_status[i] <- "possible"  # Name match but different member #
+          } else {
+            combined$match_status[i] <- "possible"  # Name match, should confirm
+          }
+        }
+      }
+    }
+  }
+
   rv$submit_ocr_results <- combined
 
+  removeModal()
   showNotification(paste("Extracted", nrow(combined), "player results"), type = "message")
 })
 
@@ -199,6 +262,7 @@ output$submit_results_preview <- renderUI({
   req(rv$submit_ocr_results)
 
   results <- rv$submit_ocr_results
+  total_rounds <- input$submit_rounds
 
   # Get deck choices
   decks <- if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
@@ -213,12 +277,21 @@ output$submit_results_preview <- renderUI({
 
   deck_choices <- c("UNKNOWN" = "", setNames(decks$archetype_id, decks$archetype_name))
 
+  # Count match statuses
+  matched_count <- sum(results$match_status == "matched", na.rm = TRUE)
+  possible_count <- sum(results$match_status == "possible", na.rm = TRUE)
+  new_count <- sum(results$match_status == "new", na.rm = TRUE)
+
   card(
     class = "mt-3",
     card_header(
       class = "d-flex justify-content-between align-items-center",
       span("Review & Edit Results"),
-      span(class = "badge bg-primary", paste(nrow(results), "players"))
+      div(
+        span(class = "badge bg-success me-1", title = "Matched by member #", paste0(matched_count, " matched")),
+        span(class = "badge bg-warning me-1", title = "Possible match by name", paste0(possible_count, " possible")),
+        span(class = "badge bg-secondary", title = "New players", paste0(new_count, " new"))
+      )
     ),
     card_body(
       # Summary bar
@@ -230,47 +303,91 @@ output$submit_results_preview <- renderUI({
           div(strong("Store: "), textOutput("submit_preview_store", inline = TRUE)),
           div(strong("Date: "), textOutput("submit_preview_date", inline = TRUE)),
           div(strong("Format: "), textOutput("submit_preview_format", inline = TRUE)),
-          div(strong("Rounds: "), input$submit_rounds)
+          div(strong("Rounds: "), total_rounds)
         )
+      ),
+
+      # Legend
+      div(
+        class = "mb-2 small",
+        span(class = "text-success me-3", bsicons::bs_icon("check-circle-fill"), " Matched by member #"),
+        span(class = "text-warning me-3", bsicons::bs_icon("question-circle-fill"), " Possible match"),
+        span(class = "text-secondary", bsicons::bs_icon("person-plus"), " New player")
       ),
 
       # Editable results table
       tags$table(
-        class = "table table-sm table-striped",
+        class = "table table-sm",
         tags$thead(
           tags$tr(
-            tags$th("#", style = "width: 50px;"),
+            tags$th("#", style = "width: 40px;"),
+            tags$th("Status", style = "width: 60px;"),
             tags$th("Player"),
-            tags$th("Member #"),
-            tags$th("Points"),
-            tags$th("W-L-T"),
+            tags$th("Member #", style = "width: 120px;"),
+            tags$th("Points", style = "width: 70px;"),
+            tags$th("W-L-T", style = "width: 80px;"),
             tags$th("Deck")
           )
         ),
         tags$tbody(
           lapply(seq_len(nrow(results)), function(i) {
             row <- results[i, ]
+
+            # Determine match status display
+            match_icon <- switch(row$match_status,
+              "matched" = tags$span(class = "text-success", title = paste("Matched:", row$matched_player_name),
+                                    bsicons::bs_icon("check-circle-fill")),
+              "possible" = tags$span(class = "text-warning", title = paste("Possible:", row$matched_player_name),
+                                     bsicons::bs_icon("question-circle-fill")),
+              tags$span(class = "text-secondary", title = "New player",
+                        bsicons::bs_icon("person-plus"))
+            )
+
+            # Calculate W-L-T from points for display
+            pts <- if (!is.na(row$points)) row$points else 0
+            wins <- pts %/% 3
+            ties <- pts %% 3
+            losses <- max(0, total_rounds - wins - ties)
+            wlt_display <- paste0(wins, "-", losses, "-", ties)
+
             tags$tr(
               tags$td(row$placement),
               tags$td(
-                textInput(paste0("submit_player_", i), NULL,
-                          value = row$username, width = "150px")
+                match_icon,
+                # Add reject button for matched/possible
+                if (row$match_status %in% c("matched", "possible")) {
+                  actionLink(paste0("reject_match_", i),
+                             bsicons::bs_icon("x-circle"),
+                             class = "text-danger ms-1 small",
+                             title = "Reject match (create as new player)")
+                }
               ),
               tags$td(
-                tags$code(
-                  if (!is.null(row$member_number) && !is.na(row$member_number) && nchar(row$member_number) >= 4) {
-                    substr(row$member_number, nchar(row$member_number) - 3, nchar(row$member_number))
-                  } else {
-                    "-"
-                  }
-                )
+                textInput(paste0("submit_player_", i), NULL,
+                          value = row$username, width = "100%"),
+                if (row$match_status %in% c("matched", "possible")) {
+                  tags$small(class = "text-muted", paste("→", row$matched_player_name))
+                }
               ),
-              tags$td(row$points),
-              tags$td(paste0(row$wins, "-", row$losses, "-", row$ties)),
+              tags$td(
+                textInput(paste0("submit_member_", i), NULL,
+                          value = if (!is.na(row$member_number)) row$member_number else "",
+                          width = "100%",
+                          placeholder = "0000...")
+              ),
+              tags$td(
+                numericInput(paste0("submit_points_", i), NULL,
+                             value = if (!is.na(row$points)) row$points else 0,
+                             min = 0, max = 99, width = "100%")
+              ),
+              tags$td(
+                tags$span(class = "form-control-plaintext small", wlt_display),
+                tags$small(class = "text-muted d-block", "(from points)")
+              ),
               tags$td(
                 selectInput(paste0("submit_deck_", i), NULL,
                             choices = deck_choices,
-                            width = "150px")
+                            width = "100%")
               )
             )
           })
@@ -278,9 +395,26 @@ output$submit_results_preview <- renderUI({
       ),
 
       tags$small(class = "text-muted",
-                 "You can edit player names and assign decks. Member numbers are from screenshots.")
+                 "Edit any field as needed. W-L-T is calculated from points. Click ",
+                 bsicons::bs_icon("x-circle"), " to reject a match and create as new player.")
     )
   )
+})
+
+# Handle reject match buttons
+observe({
+  req(rv$submit_ocr_results)
+  results <- rv$submit_ocr_results
+
+  lapply(seq_len(nrow(results)), function(i) {
+    observeEvent(input[[paste0("reject_match_", i)]], {
+      # Update the match status to "new" (rejected)
+      rv$submit_ocr_results$match_status[i] <- "new"
+      rv$submit_ocr_results$matched_player_id[i] <- NA_integer_
+      rv$submit_ocr_results$matched_player_name[i] <- NA_character_
+      showNotification(paste("Match rejected for player", i, "- will create as new"), type = "message")
+    }, ignoreInit = TRUE, once = TRUE)
+  })
 })
 
 # Preview text outputs
@@ -372,6 +506,8 @@ observeEvent(input$submit_tournament, {
     # Get new tournament ID
     tournament_id <- dbGetQuery(rv$db_con, "SELECT MAX(tournament_id) as id FROM tournaments")$id
 
+    total_rounds <- input$submit_rounds
+
     # Insert each result
     for (i in seq_len(nrow(results))) {
       row <- results[i, ]
@@ -380,43 +516,65 @@ observeEvent(input$submit_tournament, {
       username <- input[[paste0("submit_player_", i)]]
       if (is.null(username) || username == "") username <- row$username
 
-      # Get selected deck
-      deck_input <- input[[paste0("submit_deck_", i)]]
-      deck_id <- if (!is.null(deck_input) && deck_input != "") as.integer(deck_input) else NA_integer_
-
-      # Get member number from OCR results
-      member_number <- if (!is.null(row$member_number) && !is.na(row$member_number) && row$member_number != "") {
-        row$member_number
+      # Get edited member number from input
+      member_input <- input[[paste0("submit_member_", i)]]
+      member_number <- if (!is.null(member_input) && trimws(member_input) != "") {
+        trimws(member_input)
       } else {
         NA_character_
       }
 
-      # Find or create player
-      player <- dbGetQuery(rv$db_con, "
-        SELECT player_id FROM players
-        WHERE (member_number IS NOT NULL AND member_number = ?) OR LOWER(display_name) = LOWER(?)
-        LIMIT 1
-      ", params = list(member_number, username))
+      # Get edited points and recalculate W-L-T
+      points_input <- input[[paste0("submit_points_", i)]]
+      points <- if (!is.null(points_input) && !is.na(points_input)) as.integer(points_input) else 0
+      wins <- points %/% 3
+      ties <- points %% 3
+      losses <- max(0, total_rounds - wins - ties)
 
-      if (nrow(player) == 0) {
-        # Create new player
-        dbExecute(rv$db_con, "
-          INSERT INTO players (display_name, member_number)
-          VALUES (?, ?)
-        ", params = list(username, member_number))
-        player_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
-      } else {
-        player_id <- player$player_id[1]
-        # Update member_number if we have it and they don't
+      # Get selected deck
+      deck_input <- input[[paste0("submit_deck_", i)]]
+      deck_id <- if (!is.null(deck_input) && deck_input != "") as.integer(deck_input) else NA_integer_
+
+      # Determine player_id based on match status
+      player_id <- NULL
+
+      # If matched and not rejected, use the pre-matched player
+      if (!is.na(row$matched_player_id) && row$match_status %in% c("matched", "possible")) {
+        player_id <- row$matched_player_id
+        # Update member_number if we have a new one
         if (!is.na(member_number)) {
           dbExecute(rv$db_con, "
             UPDATE players SET member_number = ?
             WHERE player_id = ? AND member_number IS NULL
           ", params = list(member_number, player_id))
         }
+      } else {
+        # Find or create player (match was rejected or no match found)
+        player <- dbGetQuery(rv$db_con, "
+          SELECT player_id FROM players
+          WHERE (member_number IS NOT NULL AND member_number = ?) OR LOWER(display_name) = LOWER(?)
+          LIMIT 1
+        ", params = list(member_number, username))
+
+        if (nrow(player) == 0) {
+          # Create new player
+          dbExecute(rv$db_con, "
+            INSERT INTO players (display_name, member_number)
+            VALUES (?, ?)
+          ", params = list(username, member_number))
+          player_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
+        } else {
+          player_id <- player$player_id[1]
+          # Update member_number if we have it and they don't
+          if (!is.na(member_number)) {
+            dbExecute(rv$db_con, "
+              UPDATE players SET member_number = ?
+              WHERE player_id = ? AND member_number IS NULL
+            ", params = list(member_number, player_id))
+          }
+        }
       }
 
-      # Insert result
       # Get UNKNOWN archetype_id if no deck selected
       if (is.na(deck_id)) {
         unknown <- dbGetQuery(rv$db_con, "SELECT archetype_id FROM deck_archetypes WHERE archetype_name = 'UNKNOWN'")
@@ -428,7 +586,7 @@ observeEvent(input$submit_tournament, {
         VALUES (?, ?, ?, ?, ?, ?, ?)
       ", params = list(
         tournament_id, player_id, deck_id,
-        row$placement, row$wins, row$losses, row$ties
+        row$placement, wins, losses, ties
       ))
     }
 
