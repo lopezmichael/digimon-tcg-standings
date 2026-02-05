@@ -91,6 +91,7 @@ admin_results_ui <- tagList(
                 tags$label(class = "form-label small text-muted",
                            bsicons::bs_icon("person-plus"), " Add New Player"),
                 textInput("quick_player_name", NULL, placeholder = "Enter player name..."),
+                textInput("quick_player_member", NULL, placeholder = "Member # (optional, e.g., 0000123456)"),
                 div(
                   class = "d-flex gap-2 mt-2",
                   actionButton("quick_add_player_submit", "Add Player",

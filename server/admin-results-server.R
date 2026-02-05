@@ -334,24 +334,30 @@ observeEvent(input$show_quick_add_player, {
 observeEvent(input$quick_add_player_cancel, {
   shinyjs::hide("quick_add_player_form")
   updateTextInput(session, "quick_player_name", value = "")
+  updateTextInput(session, "quick_player_member", value = "")
 })
 
 # Submit quick add player
 observeEvent(input$quick_add_player_submit, {
   req(rv$db_con)
   name <- trimws(input$quick_player_name)
+  member_number <- trimws(input$quick_player_member %||% "")
 
   if (nchar(name) == 0) {
     showNotification("Please enter a player name", type = "error")
     return()
   }
 
+  # Convert empty string to NA for database
+
+  member_number <- if (nchar(member_number) == 0) NA_character_ else member_number
+
   tryCatch({
     max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
     player_id <- max_id + 1
 
-    dbExecute(rv$db_con, "INSERT INTO players (player_id, display_name) VALUES (?, ?)",
-              params = list(player_id, name))
+    dbExecute(rv$db_con, "INSERT INTO players (player_id, display_name, member_number) VALUES (?, ?, ?)",
+              params = list(player_id, name, member_number))
 
     showNotification(sprintf("Added player: %s", name), type = "message")
 
@@ -362,6 +368,7 @@ observeEvent(input$quick_add_player_submit, {
     # Hide form and clear
     shinyjs::hide("quick_add_player_form")
     updateTextInput(session, "quick_player_name", value = "")
+    updateTextInput(session, "quick_player_member", value = "")
 
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1

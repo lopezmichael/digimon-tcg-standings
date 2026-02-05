@@ -10,11 +10,11 @@ submit_ui <- tagList(
       div(
         class = "title-strip-context",
         bsicons::bs_icon("cloud-upload", class = "title-strip-icon"),
-        tags$span(class = "title-strip-text", "Submit Results")
+        tags$span(class = "title-strip-text", "Upload Results")
       ),
       div(
         class = "title-strip-controls",
-        span(class = "small text-muted", "Help grow the tournament database")
+        span(class = "small text-muted", "Upload screenshots to add tournament data")
       )
     )
   ),

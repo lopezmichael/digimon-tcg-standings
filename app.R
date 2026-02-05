@@ -415,7 +415,7 @@ ui <- page_fillable(
                    tagList(bsicons::bs_icon("geo-alt"), " Stores"),
                    class = "nav-link-sidebar"),
         actionLink("nav_submit",
-                   tagList(bsicons::bs_icon("cloud-upload"), " Submit"),
+                   tagList(bsicons::bs_icon("cloud-upload"), " Upload Results"),
                    class = "nav-link-sidebar"),
 
         # Admin Section (conditionally shown, ordered by frequency of use)
