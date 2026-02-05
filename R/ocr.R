@@ -213,8 +213,10 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     # Skip very short lines (likely OCR artifacts) - but allow 3+ char usernames
     if (nchar(line) < 3) next
 
-    # Skip common OCR noise patterns
-    if (grepl("^[^A-Za-z]", line)) next
+    # Skip common OCR noise patterns - but allow combined "10 Sinone" format
+    # where a placement number precedes the username
+    if (grepl("^[^A-Za-z0-9]", line)) next
+    if (grepl("^\\d", line) && !grepl("^\\d{1,2}\\s+[A-Za-z]", line)) next
     if (grepl("^B⭑", line)) next  # App logo
 
     # NEW: Skip status bar noise (time, battery, signal)
@@ -243,6 +245,18 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
         username_indices <- c(username_indices, i)
         if (verbose) message("[PARSE] Potential username at line ", i, ": '", line, "'")
       }
+    } else {
+      # Check for combined placement + username format: "10 Sinone", "13 Shaggy"
+      # OCR sometimes puts the rank number on the same line as the username
+      combined_match <- regmatches(line, regexec("^(\\d{1,2})\\s+([A-Za-z][A-Za-z0-9_. ]*)$", line))[[1]]
+      if (length(combined_match) > 2) {
+        potential_username <- combined_match[3]
+        letter_count <- nchar(gsub("[^A-Za-z]", "", potential_username))
+        if (letter_count >= 3) {
+          username_indices <- c(username_indices, i)
+          if (verbose) message("[PARSE] Potential combined placement+username at line ", i, ": '", line, "'")
+        }
+      }
     }
   }
 
@@ -255,7 +269,18 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
   # Also look BACKWARD for placement number that might precede the username
   for (j in seq_along(username_indices)) {
     idx <- username_indices[j]
-    username <- lines[idx]
+    raw_line <- lines[idx]
+
+    # Check if this is a combined "placement username" format (e.g., "10 Sinone")
+    combined_match <- regmatches(raw_line, regexec("^(\\d{1,2})\\s+([A-Za-z][A-Za-z0-9_. ]*)$", raw_line))[[1]]
+    if (length(combined_match) > 2) {
+      placement_from_combined <- as.integer(combined_match[2])
+      username <- combined_match[3]
+      if (verbose) message("[PARSE] Split combined line: placement=", placement_from_combined, ", username='", username, "'")
+    } else {
+      placement_from_combined <- NA
+      username <- raw_line
+    }
 
     # Search BACKWARD up to 2 lines for placement number
     # Only accept if it's immediately before username and looks like a ranking (1-32)
@@ -355,12 +380,18 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     } else if (length(numbers_found) == 1) {
       # Single number before member - is it placement or points?
       val <- numbers_found[1]
-      # If it's close to expected placement and in valid range, treat as placement
-      if (val >= 1 && val <= 64 && abs(val - next_expected_placement) <= 3) {
+      # Heuristic: Points are typically 0-15 (5 rounds * 3 max)
+      # If the value is in typical points range, prefer treating as points
+      # Placements will be assigned sequentially anyway
+      if (val <= 15) {
+        # Likely points - common values: 0, 3, 6, 9, 12, 15
+        points <- val
+      } else if (val >= 1 && val <= 64 && abs(val - next_expected_placement) <= 2) {
+        # Larger number close to expected placement - treat as placement
         placement <- val
       } else {
-        # Otherwise treat as points
-        points <- val
+        # Default to points for small-ish values, otherwise ignore (noise)
+        if (val <= 20) points <- val
       }
     }
 
@@ -552,9 +583,9 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
   for (idx in username_indices) {
     opponent <- lines[idx]
 
-    # Search forward up to 10 lines for match data
-    # (increased from 6 to handle noise between username and data)
-    search_end <- min(length(lines), idx + 10)
+    # Search forward up to 15 lines for match data
+    # (increased from 10 to handle noise like headers between username and member number)
+    search_end <- min(length(lines), idx + 15)
 
     round_num <- NA
     games_won <- NA
@@ -563,6 +594,7 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
     match_points <- NA
     member_num <- NA
 
+    prev_line <- ""
     for (j in (idx + 1):search_end) {
       check_line <- lines[j]
 
@@ -570,9 +602,14 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
       if (j %in% username_indices) break
 
       # Check for round number (single digit 1-9)
-      if (grepl("^[1-9]$", check_line) && is.na(round_num)) {
+      # Skip if previous line was "Points" or "Ranking" - those are header values, not round numbers
+      # Also skip if we already have results - round comes BEFORE results, not after
+      prev_lower <- tolower(prev_line)
+      is_after_header <- prev_lower %in% c("points", "ranking", "results")
+      if (grepl("^[1-9]$", check_line) && is.na(round_num) && !is_after_header && is.na(games_won)) {
         round_num <- as.integer(check_line)
         if (verbose) message("[MATCH]   Round: ", round_num)
+        prev_line <- check_line
         next
       }
 
@@ -583,6 +620,7 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
         games_lost <- as.integer(result_match[3])
         games_tied <- as.integer(result_match[4])
         if (verbose) message("[MATCH]   Results: ", games_won, "-", games_lost, "-", games_tied)
+        prev_line <- check_line
         next
       }
 
@@ -590,6 +628,7 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
       if (grepl("^[013]$", check_line) && !is.na(games_won) && is.na(match_points)) {
         match_points <- as.integer(check_line)
         if (verbose) message("[MATCH]   Points: ", match_points)
+        prev_line <- check_line
         next
       }
 
@@ -600,6 +639,7 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
       if (length(member_match) > 1 && is.na(member_num)) {
         member_num <- member_match[2]
         if (verbose) message("[MATCH]   Member: ", member_num)
+        prev_line <- check_line
 
         # Check if there's more on the same line (results and/or points)
         # Remove the member number part to get the remainder
@@ -624,8 +664,11 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
           }
         }
 
+        prev_line <- check_line
         next  # Continue scanning - more data might come after
       }
+
+      prev_line <- check_line
     }
 
     # Only add if we found a member number (confirms this is a real match row)
