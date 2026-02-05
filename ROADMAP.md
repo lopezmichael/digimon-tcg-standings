@@ -2,88 +2,118 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.18.1
+**Current Version:** v0.19.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
 ---
 
-## v0.18 - Server Extraction Refactor ✓
-
-**COMPLETED** - Internal codebase refactor (no user-facing changes)
-
-| ID | Type | Description |
-|----|------|-------------|
-| R1 | REFACTOR | Extract public page server logic from monolithic `app.R` into modular `server/public-*.R` files |
-| R2 | REFACTOR | Standardize naming convention: `public-*` for public tabs, `admin-*` for admin tabs |
-| R3 | REFACTOR | Reduce `app.R` from 3,178 to 566 lines (~82% reduction) |
-
-**Files Created:**
-- `server/public-dashboard-server.R` (889 lines)
-- `server/public-stores-server.R` (851 lines)
-- `server/public-players-server.R` (364 lines)
-- `server/public-meta-server.R` (305 lines)
-- `server/public-tournaments-server.R` (237 lines)
-
----
-
-## v0.18.1 - Code Cleanup Refactor ✓
-
-**COMPLETED** - Internal codebase cleanup (no user-facing changes)
-
-| ID | Type | Description | Status |
-|----|------|-------------|--------|
-| R4 | REFACTOR | Reactive value cleanup - document, group, and standardize naming convention for `rv` (32 values) | ✓ |
-| R5 | REFACTOR | CSS cleanup - consolidate `custom.css`, remove inline styles from R code, organize by component | ✓ |
-
-**R4 Deliverables:**
-- `ARCHITECTURE.md` - Technical reference for server modules, reactive values, patterns
-- Reactive values reorganized into 6 categories (Core, Navigation, Modal State, Form/Wizard, Refresh Triggers, Delete Permission)
-- Renamed `selected_store_detail` → `selected_store_id`, `selected_online_store_detail` → `selected_online_store_id`
-
-**R5 Deliverables:**
-- Extracted 21 inline styles from R code to named CSS classes
-- Added 12 new CSS classes to `www/custom.css`
-- Design document: `docs/plans/2026-02-03-css-cleanup-design.md`
-
----
-
-## v0.19 - Public Submissions & OCR
+## v0.20 - Public Submissions & OCR
 
 **Branch:** `feature/public-submissions`
 **Design:** `docs/plans/2026-02-03-public-submissions-design.md`
+**Status:** Phase 1 complete, Phases 2-4 in progress
 
-| ID | Type | Description |
-|----|------|-------------|
-| PS1 | FEATURE | Public "Submit Results" tab - anyone can upload tournament screenshots |
-| PS2 | FEATURE | Google Cloud Vision OCR integration (httr2 direct calls) |
-| PS3 | FEATURE | Deck assignment during submission + edit UNKNOWN decks anywhere |
-| PS4 | FEATURE | Match history screenshot submission (round-by-round data) |
-| PS5 | FEATURE | Request new store/deck workflow with admin approval queue |
-| PS6 | FEATURE | Unified admin/public submission system |
-| PS7 | SCHEMA | Add `member_number` to players table |
-| PS8 | SCHEMA | New `matches` table for round-by-round data |
-| PS9 | SCHEMA | New `store_requests` and `deck_requests` tables |
+| ID | Type | Description | Status |
+|----|------|-------------|--------|
+| PS1 | FEATURE | Public "Submit Results" tab - anyone can upload tournament screenshots | Phase 1 ✓ |
+| PS2 | FEATURE | Google Cloud Vision OCR integration (httr2 direct calls) | Phase 1 ✓ |
+| PS3 | FEATURE | Deck assignment during submission + edit UNKNOWN decks anywhere | Phase 4 |
+| PS4 | FEATURE | Match history screenshot submission (round-by-round data) | Phase 3 |
+| PS5 | FEATURE | Request new store/deck workflow with admin approval queue | Phase 2 |
+| PS6 | FEATURE | Unified admin/public submission system | Phase 2 |
+| PS7 | SCHEMA | Add `member_number` to players table | ✓ |
+| PS8 | SCHEMA | New `matches` table for round-by-round data | Phase 3 |
+| PS9 | SCHEMA | New `store_requests` and `deck_requests` tables | Phase 2 |
 
 **Implementation Phases:**
-1. Core screenshot submission + OCR
+1. Core screenshot submission + OCR ✓
 2. Requests & admin unification
 3. Match history
 4. Polish
 
 ---
 
-## v0.20 - Onboarding & Help
+## v0.21 - Deep Linking
+
+**Design:** `docs/plans/2026-02-04-deep-linking-design.md`
+
+| ID | Type | Description |
+|----|------|-------------|
+| DL1 | FEATURE | Shareable URLs for entities (`?player=atomshell`, `?deck=blue-flare`, `?store=sci-fi-factory`) |
+| DL2 | FEATURE | Tab navigation via URL (`?tab=meta`, `?tab=players`) |
+| DL3 | FEATURE | Scene/region in URL (`?scene=dfw`) |
+| DL4 | FEATURE | Browser back button closes modals (pushState/popstate) |
+| DL5 | FEATURE | "Copy Link" button in all modals |
+| DL6 | SCHEMA | Add `slug` column to stores, deck_archetypes tables |
+
+**Technical Notes:**
+- Uses `parseQueryString(session$clientData$url_search)` for reading URLs
+- Uses JavaScript `history.pushState()` for updating URLs without reload
+- Slug resolution: exact match opens modal, multiple matches show search results
+
+---
+
+## v0.22 - User Accounts & Permissions
+
+**Design:** `docs/plans/2026-02-05-user-accounts-design.md` (to be created)
+
+| ID | Type | Description |
+|----|------|-------------|
+| UA1 | FEATURE | Discord OAuth login ("Login with Discord") |
+| UA2 | FEATURE | Users table with Discord ID, username, role, scene assignment |
+| UA3 | FEATURE | Permission levels: Viewer (default, no login), Scene Admin, Super Admin |
+| UA4 | FEATURE | Scene Admin can manage data for their assigned scene only |
+| UA5 | FEATURE | Super Admin can manage all data, users, and scenes |
+| UA6 | FEATURE | Admin invite links (Super Admin generates link, recipient becomes Scene Admin) |
+| UA7 | FEATURE | Direct user promotion (Super Admin promotes existing users) |
+| UA8 | UI | Permission-scoped admin tabs (hidden unless logged in with appropriate role) |
+
+**Technical Notes:**
+- Discord OAuth is free and widely used in TCG communities
+- localStorage for scene preference (no login required for viewers)
+- Session management via secure cookies
+- First Super Admin seeded via database during deployment
+
+---
+
+## v0.23 - Multi-Region & Online Scene
+
+**Design:** `docs/plans/2026-02-04-region-expansion-design.md`
+
+| ID | Type | Description |
+|----|------|-------------|
+| MR1 | FEATURE | Scenes table with hierarchy (Global → Country → State → Metro) |
+| MR2 | FEATURE | Scene selector in header + first-visit modal |
+| MR3 | FEATURE | All tabs filter by selected scene |
+| MR4 | FEATURE | "Online" as special top-level scene for webcam/Discord tournaments |
+| MR5 | FEATURE | Leaderboards filtered by scene (players who competed there) |
+| MR6 | FEATURE | "All Scenes" / Global toggle for cross-region viewing |
+| MR7 | SCHEMA | Add `scene_id` to stores table |
+| MR8 | SCHEMA | Add `tier` to tournaments table (local, regional, national, international) |
+| L1 | FEATURE | Limitless API exploration for online tournament data |
+
+**Key Design Decisions:**
+- Players don't belong to scenes (no accounts required for viewers)
+- Stores belong to scenes; players appear on leaderboards based on where they've competed
+- Rating is global; leaderboards are filtered views
+- Scene Admins can only manage their assigned scene's data
+
+---
+
+## v0.24 - Onboarding & Help
 
 | ID | Type | Description |
 |----|------|-------------|
 | F7 | FEATURE | Contextual help - "Click a row for details" hint text above clickable tables |
-| F7b | FEATURE | Info icons on Rating/Score column headers → link to website methodology page |
+| F7b | FEATURE | Info icons on Rating/Score column headers → link to FAQ methodology section |
 | F7c | FEATURE | Light hints on admin pages explaining how to use each function |
+| OH1 | FEATURE | First-visit scene selection modal (stored in localStorage) |
+| OH2 | FEATURE | Guided tour for new users (optional, dismissible) |
 
 ---
 
-## v0.21 - Self-Service Extras
+## v0.25 - Self-Service Extras
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -101,26 +131,6 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.22 - Multi-Region Foundation
-
-| ID | Type | Description |
-|----|------|-------------|
-| MR1 | FEATURE | Region/geography selector for filtering |
-| MR2 | FEATURE | Stores, players, tournaments scoped by region |
-| MR3 | FEATURE | Data visibility model - cross-region visibility with filtering |
-| MR4 | FEATURE | Regional vs global leaderboards |
-| MR5 | FEATURE | Admin permissions per region (regional moderators) |
-| A1 | FEATURE | Admin user login (per user accounts, audit trail) |
-| L1 | FEATURE | Limitless API exploration for online/webcam tournaments |
-
-**Design Notes (to explore in design session):**
-- Custom links with auto-set region/radius (e.g., `?region=houston` or `?radius=50`)
-- Ask user location on load → auto-filter to nearby (50mi radius)
-- "My Region" vs "Everyone" toggle
-- Online tournaments via Limitless could be its own "region" or view
-
----
-
 ## v1.0 - Public Launch
 
 | ID | Type | Description |
@@ -128,16 +138,15 @@ This document outlines the planned features, improvements, and bug fixes for the
 | W1 | FEATURE | Website landing page - about the tool, who it's for, geographic scope, how to use |
 | W2 | FEATURE | Methodology pages - simple rating overview + detailed formula breakdown |
 | W3 | FEATURE | Weekly Meta Report page - auto-generated from tournament data |
-| W4 | FEATURE | "For Tournament Organizers" guide - how to submit results, get involved |
-| W5 | FEATURE | App iframe integration |
 | I7 | IMPROVEMENT | Replace header cards icon with Digivice SVG |
 | M1 | IMPROVEMENT | Mobile table column prioritization - determine which columns to show/hide on small screens |
 | X1 | IMPROVEMENT | Remove BETA badge |
+| DC1 | COMMUNITY | Discord server for community coordination, admin requests, feedback |
 
 **Website Requirements:**
 - Digital Digimon aesthetic matching the app
 - Static site (GitHub Pages or similar)
-- Custom domain (TBD)
+- Custom domain already set up (digilab.cards)
 
 ---
 
@@ -147,19 +156,14 @@ Items for future consideration, not scheduled:
 
 | ID | Type | Description | Notes |
 |----|------|-------------|-------|
-| F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification. Lightweight feedback channel. |
+| F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification |
 | F8 | FEATURE | Embed widgets for stores | Let stores embed tournament history on their sites |
-| P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration |
-| P2 | FEATURE | Discord bot for result reporting | |
+| P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration in v0.23 |
+| P2 | FEATURE | Discord bot for result reporting | Could integrate with user accounts system |
 | P3 | FEATURE | Expand to other Texas regions | After multi-region foundation works |
 | P4 | FEATURE | One Piece TCG support | Multi-game expansion |
 | P5 | FEATURE | Mobile-first data entry PWA | Consider platform rewrite if scaling demands it |
-
-**Moved to v0.19 (Public Submissions):**
-- ~~F2: Screenshot OCR~~ → PS1, PS2
-- ~~F2b: Public result submission~~ → PS1, PS6
-- ~~F3: Community-submitted deck/store suggestions~~ → PS5
-- ~~DL: Claim result to add decklist~~ → PS3 (edit UNKNOWN decks anywhere)
+| RA1 | FEATURE | Regional Admin role | Middle tier between Scene Admin and Super Admin, if needed |
 
 ---
 
@@ -170,7 +174,7 @@ Items for future consideration, not scheduled:
 | Date range filtering on dashboard | Not needed - format filter is sufficient |
 | Detailed player profile views | Modals already cover this |
 | Detailed deck profile views | Modals already cover this |
-| Matchup analysis (deck A vs deck B) | Revisit after v0.19 - will have round-by-round data |
+| Matchup analysis (deck A vs deck B) | Revisit after v0.20 - will have round-by-round data |
 | Event calendar page | Bandai TCG Plus already covers this |
 | Store directory page | Bandai TCG Plus already covers this |
 | Data export for users | Handle manually on request |
@@ -180,55 +184,58 @@ Items for future consideration, not scheduled:
 
 ## Completed
 
+### v0.19.0 - Content Pages & UI Polish
+- About, FAQ, For Organizers content pages
+- Footer navigation with digital styling
+- Seamless app frame (header/sidebar/footer)
+- Hot Deck card image, Top Deck trophy icon
+- Open Graph meta tags, favicon, GA4 tracking
+
+### v0.18.1 - Code Cleanup Refactor
+- Reactive value cleanup and documentation
+- CSS cleanup - extracted 21 inline styles to classes
+- ARCHITECTURE.md technical reference
+
+### v0.18.0 - Server Extraction Refactor
+- Extracted public page server logic into modular files
+- Reduced `app.R` from 3,178 to 566 lines (~82% reduction)
+- Standardized naming: `public-*` and `admin-*` prefixes
+
 ### v0.17.0 - Admin UX Improvements
-- A2: Edit Results modal from Edit Tournaments page
-- A3: Blank date field with required validation
-- A4: Duplicate tournament flow navigates to Edit Tournaments
-- Bug fixes: date observer, reactable columns, input widths, decklist URL handling
+- Edit Results modal from Edit Tournaments page
+- Required date field validation
+- Duplicate tournament flow improvements
 
 ### v0.16.1 - DigiLab Rebranding
 - Custom domain: digilab.cards
 - Google Analytics (GA4)
-- Open Graph meta tags for link previews
-- Branding assets (logo, icon, favicon)
-- Player search SQL bug fix
+- Open Graph meta tags, branding assets
 
 ### v0.16.0 - UX Improvements & Modal Enhancements
-- I2: 'None' option in admin dropdowns (clear/reset selection)
-- I4: Manage Tournaments admin tab (full edit + delete)
-- I5: Database auto-refresh for admins (all tables)
-- F1: Overview click → modal + tab switch
-- I12: Modal updates (Meta %, Conv %, Store Rating, cross-modal links, consistent naming)
-- I13: Meta chart series sorted by deck color
-- Sidebar sync fix for programmatic navigation
+- Manage Tournaments admin tab
+- Overview click navigation
+- Cross-modal navigation
+- Database auto-refresh for admins
 
 ### v0.15.0 - Bug Fixes & Quick Polish
-- Modal selection bug fixed (JS onClick with row data)
-- Blue deck badge changed to "U" (black remains "B")
-- Default 32 rows for main tables
-- GitHub and Ko-fi links in header
-- Players Tab: added Record (colored W-L-T), Main Deck columns
-- Meta Tab: added Meta %, Conv % columns, removed Avg Place
-- Top Decks reduced to 6 for cleaner grid layouts
+- Modal selection bug fix
+- GitHub and Ko-fi links
+- Meta %, Conv %, Record columns
 
 ### v0.14.0 - Rating System
-- Competitive Rating (Elo-style with implied results)
+- Competitive Rating (Elo-style)
 - Achievement Score (points-based)
 - Store Rating (weighted blend)
-- Ratings displayed in Overview, Players, and Stores tabs
 
 ### v0.13.0 - Mobile UI Polish
 - Responsive value boxes
 - Smart filter layouts
-- Reduced header/content spacing
 - Mobile-optimized navigation
 
 ### v0.12.0 - Desktop Design Overhaul
 - Digital Digimon aesthetic
 - App-wide loading screen
-- Digital empty states
 - Modal stat boxes
-- Header with BETA badge and animations
 
 *See CHANGELOG.md for full version history.*
 

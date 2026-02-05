@@ -86,109 +86,63 @@ The architecture doc contains:
 - Modal patterns (Bootstrap vs Shiny modals)
 - Database patterns (connection handling, refresh triggers)
 
-## Outstanding TODO Items
+## Current Work
 
-### UI Polish (Current Priority)
-- [x] ~~Fix menu bar "menu" text and white space issues~~ - Renamed to "Digimon TCG Tracker", added Digimon TCG logo to sidebar
-- [x] ~~Comprehensive mobile view review and fixes~~ - Mobile UI polish complete (v0.13.0)
-- [x] ~~Correct button alignment throughout the app~~ - Fixed filter/reset button alignment on all pages
-- [x] ~~Improve header design and add Digimon TCG logo~~ - Header now has cards icon (placeholder), BETA badge, circuit line accent, and pulse animation
-- [ ] Add links to GitHub repo and "Buy Me a Coffee"
-- [x] ~~Replace individual chart spinners with app-wide loading screen~~ - Digital "Opening Digital Gate..." loading screen with themed messages
-- [ ] Replace header cards icon with actual Digivice SVG icon (placeholder for now)
+### Active Branch: `feature/public-submissions`
 
-### From UI Refactor Design (docs/plans/2026-01-28-ui-refactor-design.md)
-- [x] ~~Fix &times; delete button bug~~ - Uses icon("xmark") now
-- [x] ~~Improve notification styling~~ - Custom notifications with icons and colors
-- [x] ~~Desktop: Filter section single-row layouts~~ - All filter pages use layout_columns
-- [x] ~~Desktop: Add Results page two-column + inline W/L/T~~ - Implemented
-- [x] ~~Desktop: Duplicate Tournament modal buttons alignment~~ - Fixed with flexbox
-- [x] ~~Desktop/Mobile: Sidebar "Menu" header simplification~~ - Removed "Menu", added Digimon TCG logo
-- [x] ~~Desktop: Overview value boxes resizing~~ - Smaller titles, larger numbers/icons
-- [x] ~~Desktop: Overview charts polish~~ - Removed x-axis labels, capped y-axis at 100%
-- [x] ~~Desktop: Format auto-select~~ - Defaults to most recent format
-- [x] ~~Desktop: Players page Rating column~~ - Added weighted rating calculation
-- [x] ~~Desktop: Tournaments auto-sort~~ - Defaults to date descending
-- [x] ~~Desktop: Overview value boxes with card backgrounds~~ - Redesigned with digital Digimon aesthetic (grid pattern, circuit accents, color-coded borders). See docs/plans/2026-01-30-value-box-redesign-design.md
-- [x] ~~Desktop: Enter Tournament Details constrained width~~ - Tournament summary bar with digital styling
-- [x] ~~Desktop: Manage Decks Card ID input width~~ - Info icon moved to label, search button properly aligned
-- [x] ~~Mobile: Navigation menu height optimization~~ - Reduced header/content spacing via bslib class overrides
-- [x] ~~Mobile: Overview 2x2 value box grid~~ - Implemented via bslib breakpoints()
-- [x] ~~Mobile: Filter sections vertical stacking~~ - Dashboard 2-row, other pages 3-row layout
-- [ ] Mobile: Table column prioritization (Future)
-- [ ] Mobile: Enter Tournament center button (Future)
-- [ ] Mobile: Add Results compact layout (Future)
+Working on **v0.20 - Public Submissions & OCR**. Phase 1 (core OCR) is complete.
 
-### Desktop & Mobile Design - COMPLETE ✓
-The UI design overhaul is now complete (v0.13.0). Key features implemented:
+See `ROADMAP.md` for the full version plan through v1.0.
 
-**Desktop (v0.12.0):**
-- Digital Digimon aesthetic throughout (grid patterns, circuit accents, cyan glow effects)
-- App-wide loading screen with "Opening Digital Gate..." sequence
-- Digital empty states with scanner aesthetic
-- Modal stat boxes with grid overlay and section headers
-- Placement colors (gold/silver/bronze for 1st/2nd/3rd)
-- Header with icon pulse animation, BETA badge, circuit line accent
-- Online Tournament Organizers section with connection node animations
-- Card search scanner effect with corner accents
-- Map card with "Location Scanner" styling
-- Title strip filter inputs with light backgrounds and native HTML selects
+### Upcoming Versions
 
-**Mobile (v0.13.0):**
-- Responsive value boxes via bslib breakpoints() (full width → 2x2 → 4-column)
-- Smart filter layouts: Dashboard 2-row, other pages 3-row (via CSS :has())
-- Reduced header/content spacing targeting bslib-gap-spacing classes
-- BETA badge hidden on mobile to prevent overlap
-- App title shortened to "Digimon TCG Tracker"
+| Version | Focus | Design Doc |
+|---------|-------|------------|
+| v0.20 | Public Submissions & OCR | `docs/plans/2026-02-03-public-submissions-design.md` |
+| v0.21 | Deep Linking | `docs/plans/2026-02-04-deep-linking-design.md` |
+| v0.22 | User Accounts & Permissions | `docs/plans/2026-02-05-user-accounts-design.md` |
+| v0.23 | Multi-Region & Online Scene | `docs/plans/2026-02-04-region-expansion-design.md` |
+| v0.24 | Onboarding & Help | - |
+| v0.25 | Self-Service Extras | - |
+| v1.0 | Public Launch | - |
 
-**Next Phase: User experience & onboarding improvements**
+### Key Architectural Decisions (Upcoming)
 
-### User Experience & Onboarding (Future)
-- [ ] Tool introduction / onboarding flow for new users
-- [ ] "About This Tool" section explaining what the tool is, how to use it, and geographic coverage
-- [ ] Contextual help throughout the app (info icons, tooltips, or help text for each tab/feature)
+**User Accounts (v0.22):**
+- Discord OAuth for authentication (free, TCG community already uses Discord)
+- Permission levels: Viewer (default, no login), Scene Admin, Super Admin
+- Scene Admins can only manage their assigned scene's data
+- localStorage for viewer preferences (scene selection, dark mode)
 
-### Multi-Region / Geography Expansion (Future)
-Currently the tool is focused on the North Texas / DFW playerbase. Rethink how geography works to support broader adoption:
-- [ ] Allow users from other regions/states to add their own results
-- [ ] Region/geography selector for users to filter data to their area
-- [ ] Consider how stores, players, and tournaments are scoped by region
-- [ ] Think through data isolation vs. cross-region visibility (can a Houston player see DFW data?)
-- [ ] User-defined regions or predefined metro areas?
-- [ ] How does the map experience change with multiple regions?
-- [ ] Regional leaderboards vs. global leaderboards
-- [ ] Admin permissions per region (who can add data for which areas?)
+**Multi-Region (v0.23):**
+- Scenes hierarchy: Global → Country → State → Metro
+- "Online" as a special top-level scene for webcam tournaments
+- Players don't belong to scenes; they appear on leaderboards based on where they've competed
+- Rating is global; leaderboards are filtered views
 
-### Rating System Implementation (Current Priority)
-See `docs/plans/2026-02-01-rating-system-design.md` for full design document.
+### Completed Features
 
-**Phase 1 - Core Implementation: COMPLETE**
-- [x] ~~Implement Competitive Rating (Elo-style with implied results)~~ - `R/ratings.R`
-- [x] ~~Implement Achievement Score (points-based)~~ - `R/ratings.R`
-- [x] ~~Implement Store Rating (weighted blend)~~ - `R/ratings.R`
-- [x] ~~Add ratings to Overview > Top Players table~~ - Rating + Achv columns
-- [x] ~~Add Store Rating to Overview > Recent Tournaments table~~
-- [x] ~~Add ratings to Players tab table~~ - Rating + Achv columns
-- [x] ~~Add Store Rating to Stores tab table~~
+**UI/UX (v0.12-v0.13):**
+- Digital Digimon aesthetic throughout
+- Responsive mobile design
+- App-wide loading screen
+- Modal stat boxes and cross-modal navigation
 
-**Phase 2 - UI/UX (Future Session):**
-- [ ] Achievement Score decay - keep cumulative or add decay?
-- [ ] UI display - separate tabs, combined player profile, or both?
-- [ ] Separate leaderboards for each rating type?
-- [ ] Badge visibility - public or private to player?
-- [ ] Methodology explanation tab/page for users
+**Rating System (v0.14):**
+- Competitive Rating (Elo-style)
+- Achievement Score (points-based)
+- Store Rating (weighted blend)
 
-### Future Features
-- [ ] Limitless TCG API integration for online tournament data
-- [ ] Matchup analysis (deck A vs deck B win rates)
-- [ ] Discord bot for result reporting
-- [ ] Expand to other Texas regions (Houston, Austin, San Antonio)
-- [ ] One Piece TCG support (multi-game expansion)
-- [ ] Community-submitted archetype suggestions with approval workflow
-- [ ] Mobile-first data entry PWA
-- [ ] Player profile views (detailed)
-- [ ] Deck profile views (detailed)
-- [ ] Date range filtering on dashboard
+**Content Pages (v0.19):**
+- About, FAQ, For Organizers pages
+- Footer navigation
+- Open Graph meta tags, GA4 tracking
+
+### Minor Outstanding Items
+
+- [ ] Replace header cards icon with Digivice SVG (v1.0)
+- [ ] Mobile table column prioritization (v1.0)
+- [ ] Achievement Score decay decision (future)
 
 ## Key Logs and Documentation
 
@@ -205,12 +159,15 @@ Semantic versioning log of all features, fixes, and changes. Update when releasi
 ### Design Documents
 **Location:** `docs/plans/`
 
-Contains design documents for features before implementation. Current plans:
+Contains design documents for features before implementation. Key active plans:
+- `2026-02-05-user-accounts-design.md` - Discord OAuth, permissions, admin workflow (to be created)
+- `2026-02-04-region-expansion-design.md` - Scenes hierarchy, multi-region support
+- `2026-02-04-deep-linking-design.md` - Shareable URLs, browser history
+- `2026-02-04-content-pages-design.md` - About, FAQ, For Organizers pages
+- `2026-02-03-public-submissions-design.md` - Screenshot OCR, public result submission
 - `2026-02-01-rating-system-design.md` - Competitive Rating, Achievement Score, Store Rating methodology
-- `2026-01-28-ui-refactor-design.md` - UI refactor and polish plan
-- `2026-01-27-admin-enhancement-design.md` - Admin page enhancements
-- `2026-01-27-card-cache-design.md` - Card caching solution
-- `2026-01-27-tournament-deletion-design.md` - Tournament deletion feature
+
+Historical/completed plans in the same folder.
 
 ## Important Technical Notes
 
@@ -291,7 +248,7 @@ git checkout -b fix/fix-name
 
 **Review before merge:** Feature branches require review before merging to main. Use PRs or get explicit user approval.
 
-**v1.0 Release Strategy:** All new features from v0.19 onward should be developed in feature branches and NOT merged to main until v1.0 release. This keeps main stable with the current working version while new features are developed and tested.
+**v1.0 Release Strategy:** All new features from v0.20 onward should be developed in feature branches and merged incrementally as they're completed and tested. Main should stay stable with released versions.
 
 **Exception:** Documentation-only changes, bug fixes, and minor config tweaks can go directly to main.
 

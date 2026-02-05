@@ -1,21 +1,34 @@
 # DigiLab
 
-A regional tournament tracking application for the Dallas-Fort Worth Digimon Trading Card Game community. Track player performance, store activity, deck meta, and local tournament results.
+A regional tournament tracking application for the Digimon Trading Card Game community. Track player performance, store activity, deck meta, and local tournament results.
 
 **Live App:** https://digilab.cards/
 
+**Current Version:** v0.19.0
+
 ## Features
 
-- **Interactive Dashboard**: Value boxes, charts, and tables showing tournament activity at a glance
-- **Store Directory**: Interactive map of DFW stores with draw-to-filter region selection
-- **Tournament Tracking**: Record and browse local tournament results with full standings
-- **Player Profiles**: Track individual player performance, favorite decks, and tournament history
-- **Meta Analysis**: Deck archetype breakdown with win rates, conversion rates, and trends
-- **Admin Panel**: Easy data entry with single and bulk result modes, deck management, and store management
+### For Players
+- **Player Ratings**: Elo-style competitive rating system with achievement scores
+- **Tournament History**: Track your results, favorite decks, and performance trends
+- **Meta Analysis**: See what decks are winning and their conversion rates
+- **Store Directory**: Interactive map of local game stores with tournament schedules
 
-## Screenshots
+### For Tournament Organizers
+- **Easy Data Entry**: Submit tournament results via screenshot upload with OCR
+- **Tournament Management**: Edit tournaments, results, and player data
+- **Store Management**: Add and manage store information
 
-The app features a responsive design optimized for both desktop and mobile. Screenshots available in the live deployment.
+### Dashboard & Analytics
+- **Interactive Dashboard**: Value boxes, charts, and tables showing tournament activity
+- **Meta Share Trends**: Track deck popularity over time with stacked area charts
+- **Color Distribution**: See the breakdown of deck colors in the meta
+- **Top Decks**: Visual grid showing the most successful archetypes with card images
+
+### Design
+- **Digital Digimon Aesthetic**: Custom UI with grid patterns, circuit accents, and cyan glow effects
+- **Responsive Design**: Optimized for both desktop and mobile devices
+- **Dark/Light Mode**: Full theme support with consistent styling
 
 ## Tech Stack
 
@@ -26,7 +39,8 @@ The app features a responsive design optimized for both desktop and mobile. Scre
 | Charts | Highcharter |
 | Maps | mapgl (Mapbox GL JS) |
 | Tables | reactable |
-| Card Data | DigimonCard.io API |
+| OCR | Google Cloud Vision API |
+| Card Data | DigimonCard.io API (cached locally) |
 | Hosting | Posit Connect Cloud |
 
 ## Installation
@@ -35,6 +49,7 @@ The app features a responsive design optimized for both desktop and mobile. Scre
 
 - R 4.3+
 - Mapbox access token (for map features)
+- Google Cloud Vision API key (for OCR features)
 
 ### Required R Packages
 
@@ -45,7 +60,7 @@ install.packages(c(
   # Database
   "DBI", "duckdb",
   # API/Data
-  "httr", "jsonlite",
+  "httr2", "jsonlite", "base64enc",
   # Visualization
   "reactable", "highcharter", "mapgl", "sf",
   # Fonts
@@ -75,6 +90,7 @@ cp .env.example .env
 ```
 MOTHERDUCK_TOKEN=your_motherduck_token_here
 MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
+GOOGLE_CLOUD_VISION_API_KEY=your_google_cloud_vision_key_here
 ```
 
 4. Initialize the database and seed data:
@@ -99,99 +115,68 @@ shiny::runApp()
 
 ```
 digimon-tcg-standings/
+├── app.R                    # Main Shiny application
 ├── R/
 │   ├── db_connection.R      # Database connection module
-│   └── digimoncard_api.R    # DigimonCard.io API integration
-├── server/
-│   ├── shared-server.R            # Database, navigation, auth helpers
-│   ├── public-dashboard-server.R  # Dashboard/Overview tab
-│   ├── public-players-server.R    # Players tab
-│   ├── public-meta-server.R       # Meta analysis tab
-│   ├── public-tournaments-server.R # Tournaments tab
-│   ├── public-stores-server.R     # Stores tab with map
-│   ├── admin-results-server.R     # Tournament entry wizard
-│   ├── admin-tournaments-server.R # Tournament management
-│   ├── admin-decks-server.R       # Deck archetype CRUD
-│   ├── admin-stores-server.R      # Store management
-│   ├── admin-players-server.R     # Player management
-│   └── admin-formats-server.R     # Format management
-├── views/
+│   ├── digimoncard_api.R    # DigimonCard.io API integration
+│   ├── ratings.R            # Rating system calculations
+│   └── ocr.R                # Google Cloud Vision OCR integration
+├── server/                  # Server logic modules
+│   ├── shared-server.R      # Database, navigation, auth helpers
+│   ├── public-*.R           # Public page server logic
+│   └── admin-*.R            # Admin page server logic
+├── views/                   # UI components
 │   ├── dashboard-ui.R       # Dashboard with charts and stats
-│   ├── stores-ui.R          # Store directory with map
-│   ├── players-ui.R         # Player standings
-│   ├── meta-ui.R            # Meta analysis
-│   ├── tournaments-ui.R     # Tournament history
-│   ├── admin-results-ui.R   # Tournament entry form
-│   ├── admin-decks-ui.R     # Deck archetype management
-│   └── admin-stores-ui.R    # Store management
-├── scripts/
-│   ├── init_database.R      # Schema initialization
-│   ├── seed_stores.R        # DFW store data
-│   ├── seed_archetypes.R    # Deck archetype data
-│   ├── seed_formats.R       # Format/set data
-│   ├── seed_mock_data.R     # Test data generator
-│   ├── sync_cards.py        # Sync cards from DigimonCard.io API
-│   ├── sync_to_motherduck.py# Push local DB to cloud
-│   └── sync_from_motherduck.py # Pull cloud DB to local
+│   ├── about-ui.R           # About page
+│   ├── faq-ui.R             # FAQ page
+│   └── ...                  # Other UI modules
+├── scripts/                 # Database and sync scripts
 ├── db/
 │   └── schema.sql           # Database schema
 ├── docs/
-│   ├── card-sync.md         # Card sync documentation
-│   └── solutions/           # Technical solutions & fixes
+│   ├── plans/               # Design documents
+│   └── solutions/           # Technical solutions
 ├── www/
-│   └── custom.css           # Custom styles
-├── data/
-│   └── local.duckdb         # Local database (gitignored)
-├── logs/
-│   └── dev_log.md           # Development decisions
-├── .github/
-│   └── workflows/
-│       └── sync-cards.yml   # Monthly card sync automation
-├── app.R                    # Main Shiny application
-├── _brand.yml               # Atom brand configuration
-├── .env                     # Environment variables (gitignored)
-├── .env.example             # Environment template
+│   └── custom.css           # Custom styles (~2000 lines)
+├── _brand.yml               # Brand configuration
 ├── CHANGELOG.md             # Version history
-├── LICENSE                  # MIT License
-└── README.md
+├── ROADMAP.md               # Future features and milestones
+└── ARCHITECTURE.md          # Technical architecture reference
 ```
 
 ## Database Schema
 
-### Tables
-- `stores` - Local game store information
-- `players` - Player profiles
+### Core Tables
+- `stores` - Local game store information (name, address, coordinates, schedule)
+- `players` - Player profiles with optional Bandai member numbers
 - `deck_archetypes` - Community deck names and display cards
-- `archetype_cards` - Card-to-archetype mappings
-- `tournaments` - Tournament events
-- `results` - Player tournament results
+- `tournaments` - Tournament events with format, type, and metadata
+- `results` - Player tournament results (placement, record, deck, decklist URL)
 - `formats` - Game formats/sets (BT19, EX08, etc.)
-- `cards` - Card database from DigimonCard.io
-- `ingestion_log` - Data import tracking
+- `cards` - Card database from DigimonCard.io (4,200+ cards)
 
 ### Views
 - `player_standings` - Aggregated player statistics
 - `archetype_meta` - Deck performance metrics
 - `store_activity` - Store tournament summary
 
-## Deployment to Posit Connect Cloud
+## Rating System
 
-1. Ensure all required packages are listed in your app
-2. Set environment variables in Posit Connect:
-   - `MOTHERDUCK_TOKEN`
-   - `MAPBOX_ACCESS_TOKEN`
-3. Deploy via rsconnect:
-```r
-rsconnect::deployApp()
-```
+DigiLab uses a three-part rating system:
+
+| Rating | Description |
+|--------|-------------|
+| **Competitive Rating** | Elo-style skill rating (1200-2000+ scale) based on tournament placements and opponent strength |
+| **Achievement Score** | Points-based engagement metric rewarding participation, top finishes, and variety |
+| **Store Rating** | Venue quality score (0-100) based on player strength, attendance, and activity |
+
+See `docs/plans/2026-02-01-rating-system-design.md` for full methodology.
 
 ## Python Scripts
 
-The project includes Python scripts for database synchronization:
+### Card Sync
 
-### Card Sync (`scripts/sync_cards.py`)
-
-Syncs card data from DigimonCard.io API to the database.
+Syncs card data from DigimonCard.io API:
 
 ```bash
 # Regular update (fast - only new cards)
@@ -199,12 +184,6 @@ python scripts/sync_cards.py --by-set --incremental
 
 # Full re-sync
 python scripts/sync_cards.py --by-set
-
-# Check for new set prefixes
-python scripts/sync_cards.py --discover
-
-# Sync specific set
-python scripts/sync_cards.py --set BT-25 --by-set
 ```
 
 See [docs/card-sync.md](docs/card-sync.md) for full documentation.
@@ -219,62 +198,27 @@ python scripts/sync_to_motherduck.py
 python scripts/sync_from_motherduck.py --yes
 ```
 
-### Prerequisites
-
-```bash
-pip install duckdb python-dotenv requests
-```
-
-## Data Sources
-
-- **DigimonCard.io API**: Card data and images (4,200+ cards synced)
-- **Manual Entry**: Tournament results from Bandai TCG+ app
-- **Limitless TCG API**: Online tournament data (future)
-
-## Current Data
-
-### Stores (13 DFW locations)
-Common Ground Games, Cloud Collectibles, The Card Haven, Game Nerdz (Mesquite, Allen, Wylie), Andyseous Odyssey, Boardwalk Games, Lone Star Pack Breaks, Eclipse Cards and Hobby, Evolution Games, Primal Cards & Collectables, Tony's DTX Cards, and more
-
-### Archetypes (25+ meta decks)
-Deck archetypes are community-maintained and updated as the meta evolves. Includes current competitive decks across all colors.
-
-### Cards (4,200+ cards)
-Full card database synced from DigimonCard.io, covering BT-01 through BT-24, EX-01 through EX-11, starter decks, and promo cards. Automated monthly sync via GitHub Actions.
-
 ## Roadmap
 
-### Desktop Design - COMPLETE ✓
-- [x] ~~Fix menu bar and sidebar~~ - Renamed to "Digimon Locals Meta Tracker", added Digimon TCG logo
-- [x] ~~Correct button/filter alignment~~ - Fixed on all pages
-- [x] ~~Improve value boxes~~ - Digital Digimon aesthetic with grid patterns and circuit accents
-- [x] ~~Add Rating column to Players~~ - Elo-style competitive rating + achievement score
-- [x] ~~App-wide loading screen~~ - "Opening Digital Gate..." sequence with themed messages
-- [x] ~~Title strip filter styling~~ - Consistent dropdowns across all pages with readable text
+See [ROADMAP.md](ROADMAP.md) for the full development roadmap.
 
-### Mobile Responsiveness (Next Priority)
-- [ ] Comprehensive mobile view review and fixes
-- [ ] Navigation menu height optimization
-- [ ] Table column prioritization for small screens
-- [ ] Touch-friendly input sizing
-
-### Future Enhancements
-- [ ] Add links to GitHub repo and "Buy Me a Coffee"
-- [ ] Replace header cards icon with actual Digivice SVG
-
-### Future Features
-- [ ] Limitless TCG API integration for online tournament data
-- [ ] Matchup analysis (deck A vs deck B win rates)
-- [x] ~~Full Elo-style player rating system~~ - Implemented with competitive rating, achievement score, and store rating
-- [ ] Discord bot for result reporting
-- [ ] Expand to other Texas regions (Houston, Austin, San Antonio)
-- [ ] One Piece TCG support (multi-game expansion)
-- [ ] Community-submitted archetype suggestions with approval workflow
-- [ ] Mobile-first data entry PWA
+**Upcoming:**
+- v0.20: Public Submissions & OCR (in progress)
+- v0.21: Deep Linking (shareable URLs)
+- v0.22: User Accounts & Permissions
+- v0.23: Multi-Region & Online Scene support
+- v1.0: Public Launch
 
 ## Contributing
 
 Contributions welcome! Please open an issue or submit a pull request.
+
+For development guidelines, see [CLAUDE.md](CLAUDE.md).
+
+## Support
+
+- **Issues:** [GitHub Issues](https://github.com/lopezmichael/digimon-tcg-standings/issues)
+- **Support:** [Ko-fi](https://ko-fi.com/digilab)
 
 ## License
 
@@ -284,5 +228,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - [DigimonCard.io](https://digimoncard.io) for card data API
 - [DigimonMeta](https://digimonmeta.com) and [Digital Gate Open](https://digitalgateopen.com) for meta research
-- [atomtemplates](https://lopezmichael.dev) for the Shiny design system
+- [atomtemplates](https://github.com/lopezmichael/atomtemplates) for the Shiny design system
 - The DFW Digimon TCG community for being the inspiration for DigiLab
