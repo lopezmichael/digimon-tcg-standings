@@ -7,6 +7,8 @@ source("R/ocr.R")
 # Initialize submit-related reactive values
 rv$submit_ocr_results <- NULL
 rv$submit_uploaded_files <- NULL
+rv$submit_parsed_count <- 0
+rv$submit_total_players <- 0
 
 # Populate store dropdown
 observe({
@@ -68,6 +70,7 @@ observeEvent(input$submit_process_ocr, {
 
   files <- rv$submit_uploaded_files
   total_rounds <- input$submit_rounds
+  total_players <- input$submit_players
 
   # Validate required fields first
   if (is.null(input$submit_store) || input$submit_store == "") {
@@ -84,6 +87,10 @@ observeEvent(input$submit_process_ocr, {
   }
   if (is.null(input$submit_format) || input$submit_format == "") {
     showNotification("Please select a format", type = "error")
+    return()
+  }
+  if (is.null(total_players) || total_players < 2) {
+    showNotification("Please enter the total number of players", type = "error")
     return()
   }
 
@@ -205,7 +212,39 @@ observeEvent(input$submit_process_ocr, {
   # Sort by placement
   combined <- combined[order(combined$placement), ]
 
-  # Re-assign placements sequentially
+  # Track how many were parsed from OCR
+  parsed_count <- nrow(combined)
+
+  # Ensure we have exactly total_players rows
+  # Create empty rows for any missing placements
+  if (nrow(combined) < total_players) {
+    # Create blank rows for missing placements
+    existing_placements <- combined$placement
+    for (p in seq_len(total_players)) {
+      if (!(p %in% existing_placements)) {
+        blank_row <- data.frame(
+          placement = p,
+          username = "",
+          member_number = "",
+          points = 0,
+          wins = 0,
+          losses = total_rounds,
+          ties = 0,
+          stringsAsFactors = FALSE
+        )
+        combined <- rbind(combined, blank_row)
+      }
+    }
+  } else if (nrow(combined) > total_players) {
+    # More players than declared - truncate to declared count
+    # (keep the top N by placement)
+    combined <- combined[combined$placement <= total_players, ]
+  }
+
+  # Re-sort by placement after adding blank rows
+  combined <- combined[order(combined$placement), ]
+
+  # Re-assign placements sequentially (1 to N)
   combined$placement <- seq_len(nrow(combined))
 
   # Add deck column
@@ -255,6 +294,8 @@ observeEvent(input$submit_process_ocr, {
   }
 
   rv$submit_ocr_results <- combined
+  rv$submit_parsed_count <- parsed_count
+  rv$submit_total_players <- total_players
 
   # Switch to step 2
   shinyjs::hide("submit_wizard_step1")
@@ -262,7 +303,25 @@ observeEvent(input$submit_process_ocr, {
   shinyjs::removeClass("submit_step1_indicator", "active")
   shinyjs::addClass("submit_step2_indicator", "active")
 
-  showNotification(paste("Extracted", nrow(combined), "player results"), type = "message")
+  # Show appropriate notification based on parsed vs expected
+  if (parsed_count == total_players) {
+    showNotification(
+      paste("All", total_players, "players found"),
+      type = "message"
+    )
+  } else if (parsed_count < total_players) {
+    showNotification(
+      paste("Parsed", parsed_count, "of", total_players, "players - fill in remaining manually"),
+      type = "warning",
+      duration = 8
+    )
+  } else {
+    showNotification(
+      paste("Found", parsed_count, "players, showing top", total_players),
+      type = "warning",
+      duration = 8
+    )
+  }
 })
 
 # Back button - return to step 1
@@ -285,6 +344,19 @@ output$submit_summary_banner <- renderUI({
     if (nrow(store) > 0) store_name <- store$name[1]
   }
 
+  # Parsing status
+  parsed_count <- rv$submit_parsed_count
+  total_players <- rv$submit_total_players
+  parsing_status <- if (parsed_count == total_players) {
+    div(class = "summary-item text-success",
+        bsicons::bs_icon("check-circle-fill"),
+        span(paste("All", total_players, "players found")))
+  } else {
+    div(class = "summary-item text-warning",
+        bsicons::bs_icon("exclamation-triangle-fill"),
+        span(paste("Parsed", parsed_count, "of", total_players, "players")))
+  }
+
   div(
     class = "tournament-summary-bar mb-3",
     div(
@@ -299,8 +371,12 @@ output$submit_summary_banner <- renderUI({
           bsicons::bs_icon("tag"),
           span(input$submit_format)),
       div(class = "summary-item",
+          bsicons::bs_icon("people"),
+          span(total_players, " players")),
+      div(class = "summary-item",
           bsicons::bs_icon("flag"),
-          span(input$submit_rounds, " rounds"))
+          span(input$submit_rounds, " rounds")),
+      parsing_status
     )
   )
 })
@@ -607,6 +683,8 @@ observeEvent(input$submit_tournament, {
     # Reset form
     rv$submit_ocr_results <- NULL
     rv$submit_uploaded_files <- NULL
+    rv$submit_parsed_count <- 0
+    rv$submit_total_players <- 0
 
     # Switch back to step 1
     shinyjs::hide("submit_wizard_step2")
@@ -619,6 +697,7 @@ observeEvent(input$submit_tournament, {
     updateDateInput(session, "submit_date", value = NA)
     updateSelectInput(session, "submit_event_type", selected = "")
     updateSelectInput(session, "submit_format", selected = "")
+    updateNumericInput(session, "submit_players", value = 8)
     shinyjs::reset("submit_screenshots")
 
     showNotification(
@@ -667,6 +746,8 @@ observeEvent(input$submit_request_store, {
 # Initialize match history reactive values
 rv$match_ocr_results <- NULL
 rv$match_uploaded_file <- NULL
+rv$match_parsed_count <- 0
+rv$match_total_rounds <- 0
 
 # Populate store dropdown for match history
 observe({
@@ -785,6 +866,17 @@ observeEvent(input$match_process_ocr, {
     shinyjs::addClass("match_member_hint", "d-none")
   }
 
+  # Get the round count from the selected tournament
+  tournament <- dbGetQuery(rv$db_con, "
+    SELECT rounds FROM tournaments WHERE tournament_id = ?
+  ", params = list(as.integer(input$match_tournament)))
+
+  total_rounds <- if (nrow(tournament) > 0 && !is.na(tournament$rounds[1])) {
+    tournament$rounds[1]
+  } else {
+    4  # Default if not found
+  }
+
   file <- rv$match_uploaded_file
 
   # Show processing modal
@@ -830,13 +922,62 @@ observeEvent(input$match_process_ocr, {
 
   removeModal()
 
-  if (nrow(parsed) == 0) {
-    showNotification("Could not extract match data from screenshot. Please try a clearer image.", type = "error")
-    return()
+  # Track how many rounds were parsed
+  parsed_count <- nrow(parsed)
+
+  # Ensure we have exactly total_rounds rows
+  if (parsed_count < total_rounds) {
+    # Create blank rows for missing rounds
+    existing_rounds <- if (parsed_count > 0) parsed$round else integer()
+    for (r in seq_len(total_rounds)) {
+      if (!(r %in% existing_rounds)) {
+        blank_row <- data.frame(
+          round = r,
+          opponent_username = "",
+          opponent_member_number = "",
+          games_won = 0,
+          games_lost = 0,
+          games_tied = 0,
+          match_points = 0,
+          stringsAsFactors = FALSE
+        )
+        parsed <- rbind(parsed, blank_row)
+      }
+    }
+    # Sort by round
+    parsed <- parsed[order(parsed$round), ]
+  } else if (parsed_count > total_rounds) {
+    # More rounds than expected - truncate
+    parsed <- parsed[parsed$round <= total_rounds, ]
   }
 
+  # Store results and counts
   rv$match_ocr_results <- parsed
-  showNotification(paste("Extracted", nrow(parsed), "matches"), type = "message")
+  rv$match_parsed_count <- parsed_count
+  rv$match_total_rounds <- total_rounds
+
+  # Show appropriate notification
+  if (parsed_count == 0) {
+    showNotification(
+      paste("No matches found - fill in all", total_rounds, "rounds manually"),
+      type = "warning",
+      duration = 8
+    )
+  } else if (parsed_count == total_rounds) {
+    showNotification(paste("All", total_rounds, "rounds found"), type = "message")
+  } else if (parsed_count < total_rounds) {
+    showNotification(
+      paste("Parsed", parsed_count, "of", total_rounds, "rounds - fill in remaining manually"),
+      type = "warning",
+      duration = 8
+    )
+  } else {
+    showNotification(
+      paste("Found", parsed_count, "rounds, showing", total_rounds),
+      type = "warning",
+      duration = 8
+    )
+  }
 })
 
 # Render match history preview table with editable fields
@@ -844,20 +985,30 @@ output$match_results_preview <- renderUI({
   req(rv$match_ocr_results)
 
   results <- rv$match_ocr_results
+  parsed_count <- rv$match_parsed_count
+  total_rounds <- rv$match_total_rounds
+
+  # Create status badge
+  status_badge <- if (parsed_count == total_rounds) {
+    span(class = "badge bg-success", paste("All", total_rounds, "rounds found"))
+  } else {
+    span(class = "badge bg-warning text-dark", paste("Parsed", parsed_count, "of", total_rounds, "rounds"))
+  }
 
   card(
     class = "mt-3",
     card_header(
       class = "d-flex justify-content-between align-items-center",
       span("Review & Edit Match History"),
-      span(class = "badge bg-primary", paste(nrow(results), "matches"))
+      status_badge
     ),
     card_body(
       # Instructions
       div(
         class = "alert alert-info d-flex mb-3",
         bsicons::bs_icon("pencil-square", class = "me-2 flex-shrink-0"),
-        tags$small("Review and edit the extracted data. Correct any OCR errors before submitting.")
+        tags$small("Review and edit the extracted data. Correct any OCR errors before submitting.",
+                   if (parsed_count < total_rounds) " Fill in missing rounds manually." else "")
       ),
 
       # Header row
@@ -1064,6 +1215,8 @@ observeEvent(input$match_submit, {
     # Clear form
     rv$match_ocr_results <- NULL
     rv$match_uploaded_file <- NULL
+    rv$match_parsed_count <- 0
+    rv$match_total_rounds <- 0
     updateSelectInput(session, "match_tournament", selected = "")
     updateTextInput(session, "match_player_username", value = "")
     updateTextInput(session, "match_player_member", value = "")
@@ -1083,5 +1236,7 @@ observeEvent(input$match_submit, {
 observeEvent(input$match_cancel, {
   rv$match_ocr_results <- NULL
   rv$match_uploaded_file <- NULL
+  rv$match_parsed_count <- 0
+  rv$match_total_rounds <- 0
   shinyjs::reset("match_screenshots")
 })

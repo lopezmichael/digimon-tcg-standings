@@ -70,7 +70,7 @@ submit_ui <- tagList(
                 dateInput("submit_date", "Date", value = NA)
               ),
               layout_columns(
-                col_widths = c(4, 4, 4),
+                col_widths = c(3, 3, 3, 3),
                 selectInput("submit_event_type", "Event Type",
                             choices = c("Select..." = "",
                                         "Locals" = "locals",
@@ -82,6 +82,7 @@ submit_ui <- tagList(
                 selectInput("submit_format", "Format",
                             choices = c("Loading..." = ""),
                             selectize = FALSE),
+                numericInput("submit_players", "Total Players", value = 8, min = 2, max = 256),
                 numericInput("submit_rounds", "Total Rounds", value = 4, min = 1, max = 15)
               )
             )
