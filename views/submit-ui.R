@@ -30,6 +30,7 @@ submit_ui <- tagList(
 
       div(
         class = "p-3",
+        style = "overflow: visible;",
 
         # Wizard step indicator
         div(
@@ -51,16 +52,19 @@ submit_ui <- tagList(
         # Step 1: Tournament Details + Screenshot Upload
         div(
           id = "submit_wizard_step1",
+          style = "overflow: visible;",
 
           # Tournament Details Card
           card(
             class = "upload-card",
             card_header("Tournament Details"),
             card_body(
+              style = "overflow: visible;",
               layout_columns(
                 col_widths = c(6, 6),
                 # Left column - Store
                 div(
+                  style = "overflow: visible;",
                   selectInput("submit_store", "Store",
                               choices = c("Loading..." = ""),
                               width = "100%"),
@@ -74,17 +78,24 @@ submit_ui <- tagList(
               ),
               layout_columns(
                 col_widths = c(4, 4, 4),
-                selectInput("submit_event_type", "Event Type",
-                            choices = c("Select..." = "",
-                                        "Locals" = "locals",
-                                        "Evo Cup" = "evo_cup",
-                                        "Store Championship" = "store_championship",
-                                        "Regional" = "regional",
-                                        "Online" = "online"),
-                            width = "100%"),
-                selectInput("submit_format", "Format",
-                            choices = c("Loading..." = ""),
-                            width = "100%"),
+                style = "overflow: visible;",
+                div(
+                  style = "overflow: visible;",
+                  selectInput("submit_event_type", "Event Type",
+                              choices = c("Select..." = "",
+                                          "Locals" = "locals",
+                                          "Evo Cup" = "evo_cup",
+                                          "Store Championship" = "store_championship",
+                                          "Regional" = "regional",
+                                          "Online" = "online"),
+                              width = "100%")
+                ),
+                div(
+                  style = "overflow: visible;",
+                  selectInput("submit_format", "Format",
+                              choices = c("Loading..." = ""),
+                              width = "100%")
+                ),
                 numericInput("submit_rounds", "Total Rounds", value = 4, min = 1, max = 15, width = "100%")
               )
             )
@@ -93,10 +104,7 @@ submit_ui <- tagList(
           # Screenshot Upload Card
           card(
             class = "upload-card mt-3",
-            card_header(
-              class = "d-flex justify-content-between align-items-center",
-              span("Upload Screenshots")
-            ),
+            card_header("Upload Screenshots"),
             card_body(
               # Info callout
               div(
@@ -105,28 +113,17 @@ submit_ui <- tagList(
                 div(
                   tags$strong("Bandai TCG+ App Screenshots Only"),
                   tags$br(),
-                  tags$small("Upload screenshots showing tournament rankings from the Bandai TCG+ app. ",
-                             "You can upload multiple screenshots if needed (e.g., for scrolling through a long results list), ",
-                             "but they must all be from the same tournament.")
+                  tags$small("You can upload multiple screenshots if the standings span multiple screens.")
                 )
               ),
 
-              # Custom styled file upload area
+              # Simple file upload
               div(
-                class = "upload-dropzone",
-                id = "submit_dropzone",
-                fileInput("submit_screenshots", NULL,
+                class = "upload-file-input",
+                fileInput("submit_screenshots", "Select Files",
                           multiple = TRUE,
                           accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
-                          width = "100%",
-                          placeholder = "No files selected",
-                          buttonLabel = "Browse Files"),
-                div(
-                  class = "upload-dropzone-text",
-                  bsicons::bs_icon("cloud-arrow-up", size = "2em", class = "text-muted mb-2"),
-                  div(class = "text-muted", "Drag and drop or click to browse"),
-                  div(class = "text-muted small", "PNG, JPG, or WebP images")
-                )
+                          width = "100%")
               ),
 
               # Screenshot preview
@@ -134,7 +131,7 @@ submit_ui <- tagList(
 
               # Process button
               div(
-                class = "mt-3 d-flex justify-content-end",
+                class = "mt-3",
                 actionButton("submit_process_ocr", "Process Screenshots",
                              class = "btn-primary btn-lg",
                              icon = icon("arrow-right"))
@@ -147,6 +144,7 @@ submit_ui <- tagList(
         shinyjs::hidden(
           div(
             id = "submit_wizard_step2",
+            style = "overflow: visible;",
 
             # Summary banner
             uiOutput("submit_summary_banner"),
@@ -167,12 +165,11 @@ submit_ui <- tagList(
             # Match summary badges - prominent
             uiOutput("submit_match_summary"),
 
-            # Results table
+            # Results card
             card(
               class = "mt-3",
               card_header("Player Results"),
               card_body(
-                class = "p-0",
                 uiOutput("submit_results_table")
               )
             ),
@@ -197,6 +194,7 @@ submit_ui <- tagList(
 
       div(
         class = "p-3",
+        style = "overflow: visible;",
 
         # Info box - updated with Bandai TCG+ mention
         div(
@@ -216,14 +214,22 @@ submit_ui <- tagList(
           class = "upload-card",
           card_header("Select Tournament"),
           card_body(
+            style = "overflow: visible;",
             layout_columns(
               col_widths = c(6, 6),
-              selectInput("match_store", "Store",
-                          choices = c("All stores" = ""),
-                          width = "100%"),
-              selectInput("match_tournament", "Tournament",
-                          choices = c("Select a tournament..." = ""),
-                          width = "100%")
+              style = "overflow: visible;",
+              div(
+                style = "overflow: visible;",
+                selectInput("match_store", "Store",
+                            choices = c("All stores" = ""),
+                            width = "100%")
+              ),
+              div(
+                style = "overflow: visible;",
+                selectInput("match_tournament", "Tournament",
+                            choices = c("Select a tournament..." = ""),
+                            width = "100%")
+              )
             ),
             uiOutput("match_tournament_info")
           )
@@ -257,27 +263,18 @@ submit_ui <- tagList(
           class = "upload-card mt-3",
           card_header("Match History Screenshot"),
           card_body(
-            # Custom styled file upload area
+            # Simple file upload
             div(
-              class = "upload-dropzone",
-              id = "match_dropzone",
-              fileInput("match_screenshots", NULL,
+              class = "upload-file-input",
+              fileInput("match_screenshots", "Select File",
                         multiple = FALSE,
                         accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
-                        width = "100%",
-                        placeholder = "No file selected",
-                        buttonLabel = "Browse Files"),
-              div(
-                class = "upload-dropzone-text",
-                bsicons::bs_icon("cloud-arrow-up", size = "2em", class = "text-muted mb-2"),
-                div(class = "text-muted", "Upload from Bandai TCG+ app"),
-                div(class = "text-muted small", "PNG, JPG, or WebP image")
-              )
+                        width = "100%")
             ),
 
             uiOutput("match_screenshot_preview"),
             div(
-              class = "mt-3 d-flex justify-content-end",
+              class = "mt-3",
               actionButton("match_process_ocr", "Process Screenshot",
                            class = "btn-primary",
                            icon = icon("magic"))

@@ -338,7 +338,16 @@ output$submit_match_summary <- renderUI({
   )
 })
 
-# Render results table
+# Helper function for ordinal placement (1st, 2nd, 3rd, etc.)
+ordinal <- function(n) {
+  suffix <- c("th", "st", "nd", "rd", rep("th", 6))
+  if (n %% 100 >= 11 && n %% 100 <= 13) {
+    return(paste0(n, "th"))
+  }
+  return(paste0(n, suffix[(n %% 10) + 1]))
+}
+
+# Render results table using layout_columns
 output$submit_results_table <- renderUI({
   req(rv$submit_ocr_results)
 
@@ -357,87 +366,91 @@ output$submit_results_table <- renderUI({
 
   deck_choices <- c("Unknown" = "", setNames(decks$archetype_id, decks$archetype_name))
 
-  div(
-    class = "results-table-container",
-    tags$table(
-      class = "table table-sm table-hover mb-0 upload-results-table",
-      tags$thead(
-        tags$tr(
-          tags$th("#", class = "col-place"),
-          tags$th("Player", class = "col-player"),
-          tags$th("Member #", class = "col-member"),
-          tags$th("Pts", class = "col-points"),
-          tags$th("Deck", class = "col-deck")
+  tagList(
+    # Header row
+    layout_columns(
+      col_widths = c(1, 4, 2, 2, 3),
+      class = "results-header-row",
+      div("#"),
+      div("Player"),
+      div("Member #"),
+      div("Pts"),
+      div("Deck")
+    ),
+
+    # Data rows
+    lapply(seq_len(nrow(results)), function(i) {
+      row <- results[i, ]
+
+      # Placement class for coloring
+      place_class <- if (row$placement == 1) "place-1st"
+                     else if (row$placement == 2) "place-2nd"
+                     else if (row$placement == 3) "place-3rd"
+                     else ""
+
+      # Match indicator
+      match_indicator <- switch(row$match_status,
+        "matched" = div(
+          class = "player-match-indicator matched",
+          bsicons::bs_icon("check-circle-fill"),
+          span(class = "match-label", "Linked to:"),
+          span(class = "match-name", row$matched_player_name),
+          actionLink(paste0("reject_match_", i),
+                     bsicons::bs_icon("x-circle"),
+                     class = "reject-btn",
+                     title = "Reject match")
+        ),
+        "possible" = div(
+          class = "player-match-indicator possible",
+          bsicons::bs_icon("question-circle-fill"),
+          span(class = "match-label", "Possible:"),
+          span(class = "match-name", row$matched_player_name),
+          actionLink(paste0("reject_match_", i),
+                     bsicons::bs_icon("x-circle"),
+                     class = "reject-btn",
+                     title = "Reject match")
+        ),
+        div(
+          class = "player-match-indicator new",
+          bsicons::bs_icon("person-plus-fill"),
+          span(class = "match-label", "New player")
         )
-      ),
-      tags$tbody(
-        lapply(seq_len(nrow(results)), function(i) {
-          row <- results[i, ]
-
-          # Status class for row styling
-          status_class <- paste0("status-", row$match_status)
-
-          # Match indicator
-          match_indicator <- switch(row$match_status,
-            "matched" = div(
-              class = "player-match-indicator matched",
-              bsicons::bs_icon("check-circle-fill"),
-              span(class = "match-label", "Linked to:"),
-              span(class = "match-name", row$matched_player_name),
-              actionLink(paste0("reject_match_", i),
-                         bsicons::bs_icon("x-circle"),
-                         class = "reject-btn",
-                         title = "Reject match")
-            ),
-            "possible" = div(
-              class = "player-match-indicator possible",
-              bsicons::bs_icon("question-circle-fill"),
-              span(class = "match-label", "Possible:"),
-              span(class = "match-name", row$matched_player_name),
-              actionLink(paste0("reject_match_", i),
-                         bsicons::bs_icon("x-circle"),
-                         class = "reject-btn",
-                         title = "Reject match")
-            ),
-            div(
-              class = "player-match-indicator new",
-              bsicons::bs_icon("person-plus-fill"),
-              span(class = "match-label", "New player")
-            )
-          )
-
-          tags$tr(
-            class = status_class,
-            tags$td(class = "col-place", row$placement),
-            tags$td(
-              class = "col-player",
-              textInput(paste0("submit_player_", i), NULL,
-                        value = row$username, width = "100%"),
-              match_indicator
-            ),
-            tags$td(
-              class = "col-member",
-              textInput(paste0("submit_member_", i), NULL,
-                        value = if (!is.na(row$member_number)) row$member_number else "",
-                        width = "100%",
-                        placeholder = "0000...")
-            ),
-            tags$td(
-              class = "col-points",
-              numericInput(paste0("submit_points_", i), NULL,
-                           value = if (!is.na(row$points)) row$points else 0,
-                           min = 0, max = 99, width = "100%")
-            ),
-            tags$td(
-              class = "col-deck",
-              selectInput(paste0("submit_deck_", i), NULL,
-                          choices = deck_choices,
-                          width = "100%")
-            )
-          )
-        })
       )
-    )
+
+      layout_columns(
+        col_widths = c(1, 4, 2, 2, 3),
+        class = "upload-result-row",
+        # Placement
+        div(
+          span(class = paste("placement-badge", place_class), ordinal(row$placement))
+        ),
+        # Player + match indicator
+        div(
+          textInput(paste0("submit_player_", i), NULL,
+                    value = row$username, width = "100%"),
+          match_indicator
+        ),
+        # Member number
+        div(
+          textInput(paste0("submit_member_", i), NULL,
+                    value = if (!is.na(row$member_number)) row$member_number else "",
+                    width = "100%",
+                    placeholder = "0000...")
+        ),
+        # Points
+        div(
+          numericInput(paste0("submit_points_", i), NULL,
+                       value = if (!is.na(row$points)) row$points else 0,
+                       min = 0, max = 99, width = "100%")
+        ),
+        # Deck
+        div(
+          selectInput(paste0("submit_deck_", i), NULL,
+                      choices = deck_choices,
+                      width = "100%")
+        )
+      )
+    })
   )
 })
 
@@ -827,7 +840,7 @@ observeEvent(input$match_process_ocr, {
   showNotification(paste("Extracted", nrow(parsed), "matches"), type = "message")
 })
 
-# Render match history preview table
+# Render match history preview table with editable fields
 output$match_results_preview <- renderUI({
   req(rv$match_ocr_results)
 
@@ -837,44 +850,66 @@ output$match_results_preview <- renderUI({
     class = "mt-3",
     card_header(
       class = "d-flex justify-content-between align-items-center",
-      span("Review Match History"),
+      span("Review & Edit Match History"),
       span(class = "badge bg-primary", paste(nrow(results), "matches"))
     ),
     card_body(
-      tags$table(
-        class = "table table-sm table-striped",
-        tags$thead(
-          tags$tr(
-            tags$th("Round"),
-            tags$th("Opponent"),
-            tags$th("Member #"),
-            tags$th("Games (W-L-T)"),
-            tags$th("Points")
-          )
-        ),
-        tags$tbody(
-          lapply(seq_len(nrow(results)), function(i) {
-            row <- results[i, ]
-            tags$tr(
-              tags$td(row$round),
-              tags$td(row$opponent_username),
-              tags$td(
-                tags$code(
-                  if (!is.null(row$opponent_member_number) && !is.na(row$opponent_member_number) && nchar(row$opponent_member_number) >= 4) {
-                    substr(row$opponent_member_number, nchar(row$opponent_member_number) - 3, nchar(row$opponent_member_number))
-                  } else {
-                    "-"
-                  }
-                )
-              ),
-              tags$td(paste0(row$games_won, "-", row$games_lost, "-", row$games_tied)),
-              tags$td(row$match_points)
-            )
-          })
-        )
+      # Instructions
+      div(
+        class = "alert alert-info d-flex mb-3",
+        bsicons::bs_icon("pencil-square", class = "me-2 flex-shrink-0"),
+        tags$small("Review and edit the extracted data. Correct any OCR errors before submitting.")
       ),
-      tags$small(class = "text-muted",
-                 "Review the extracted match data. Opponents will be matched to existing players or created as new.")
+
+      # Header row
+      layout_columns(
+        col_widths = c(1, 4, 3, 2, 2),
+        class = "results-header-row",
+        div("Rd"),
+        div("Opponent"),
+        div("Member #"),
+        div("W-L-T"),
+        div("Pts")
+      ),
+
+      # Editable rows
+      lapply(seq_len(nrow(results)), function(i) {
+        row <- results[i, ]
+
+        layout_columns(
+          col_widths = c(1, 4, 3, 2, 2),
+          class = "upload-result-row",
+          # Round number (read-only display)
+          div(
+            span(class = "placement-badge", row$round)
+          ),
+          # Opponent username (editable)
+          div(
+            textInput(paste0("match_opponent_", i), NULL,
+                      value = row$opponent_username, width = "100%")
+          ),
+          # Opponent member number (editable)
+          div(
+            textInput(paste0("match_member_", i), NULL,
+                      value = if (!is.na(row$opponent_member_number)) row$opponent_member_number else "",
+                      width = "100%",
+                      placeholder = "0000...")
+          ),
+          # Games W-L-T (editable as text to allow "2-0-0" format)
+          div(
+            textInput(paste0("match_games_", i), NULL,
+                      value = paste0(row$games_won, "-", row$games_lost, "-", row$games_tied),
+                      width = "100%",
+                      placeholder = "W-L-T")
+          ),
+          # Match points (editable)
+          div(
+            numericInput(paste0("match_points_", i), NULL,
+                         value = as.integer(row$match_points),
+                         min = 0, max = 9, width = "100%")
+          )
+        )
+      })
     )
   )
 })
@@ -951,28 +986,53 @@ observeEvent(input$match_submit, {
       ", params = list(submitter_member, player_id))
     }
 
-    # Insert each match
+    # Insert each match - read from editable inputs
     matches_inserted <- 0
     for (i in seq_len(nrow(results))) {
       row <- results[i, ]
 
-      opponent_member <- if (!is.null(row$opponent_member_number) && !is.na(row$opponent_member_number) && row$opponent_member_number != "") {
-        row$opponent_member_number
+      # Get edited values from inputs
+      opponent_username <- input[[paste0("match_opponent_", i)]]
+      if (is.null(opponent_username) || opponent_username == "") opponent_username <- row$opponent_username
+
+      opponent_member_input <- input[[paste0("match_member_", i)]]
+      opponent_member <- if (!is.null(opponent_member_input) && trimws(opponent_member_input) != "") {
+        trimws(opponent_member_input)
       } else {
         NA_character_
+      }
+
+      # Parse games W-L-T from input
+      games_input <- input[[paste0("match_games_", i)]]
+      games_won <- row$games_won
+      games_lost <- row$games_lost
+      games_tied <- row$games_tied
+      if (!is.null(games_input) && grepl("^\\d+-\\d+-\\d+$", games_input)) {
+        parts <- strsplit(games_input, "-")[[1]]
+        games_won <- as.integer(parts[1])
+        games_lost <- as.integer(parts[2])
+        games_tied <- as.integer(parts[3])
+      }
+
+      # Get match points from input
+      match_points_input <- input[[paste0("match_points_", i)]]
+      match_points <- if (!is.null(match_points_input) && !is.na(match_points_input)) {
+        as.integer(match_points_input)
+      } else {
+        as.integer(row$match_points)
       }
 
       opponent <- dbGetQuery(rv$db_con, "
         SELECT player_id FROM players
         WHERE (member_number IS NOT NULL AND member_number = ?) OR LOWER(display_name) = LOWER(?)
         LIMIT 1
-      ", params = list(opponent_member, row$opponent_username))
+      ", params = list(opponent_member, opponent_username))
 
       if (nrow(opponent) == 0) {
         dbExecute(rv$db_con, "
           INSERT INTO players (display_name, member_number)
           VALUES (?, ?)
-        ", params = list(row$opponent_username, opponent_member))
+        ", params = list(opponent_username, opponent_member))
         opponent_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
       } else {
         opponent_id <- opponent$player_id[1]
@@ -993,10 +1053,10 @@ observeEvent(input$match_submit, {
           as.integer(row$round),
           player_id,
           opponent_id,
-          as.integer(row$games_won),
-          as.integer(row$games_lost),
-          as.integer(row$games_tied),
-          as.integer(row$match_points)
+          games_won,
+          games_lost,
+          games_tied,
+          match_points
         ))
         matches_inserted <- matches_inserted + 1
       }, error = function(e) {
