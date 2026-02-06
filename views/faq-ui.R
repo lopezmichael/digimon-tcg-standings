@@ -44,7 +44,7 @@ faq_ui <- div(
       value = "columns",
       icon = bsicons::bs_icon("table"),
       p(strong("Rating"), " - Your competitive rating (Elo-style score)"),
-      p(strong("Achv"), " - Achievement score (points from placements)"),
+      p(strong("Score"), " - Achievement score (points from placements)"),
       p(strong("Record"), " - Your win-loss-tie record"),
       p(strong("Meta %"), " - How often a deck appears in tournaments"),
       p(strong("Conv %"), " - Conversion rate (top finishes / total appearances)")
@@ -148,8 +148,10 @@ faq_ui <- div(
       title = "Where does the data come from?",
       value = "data-source",
       icon = bsicons::bs_icon("cloud-download"),
-      p("Tournament results are submitted by tournament organizers and community members. ",
-        "We use screenshots from the Bandai TCG+ app to verify placements and player information."),
+      p("Anyone can upload tournament results via the ",
+        actionLink("faq_to_upload", "Upload Results"),
+        " tab. Upload screenshots from the Bandai TCG+ app, and our OCR system automatically ",
+        "extracts placements, usernames, and match data."),
       p("Card data and images come from the community-maintained DigimonCard.io API.")
     ),
     accordion_panel(
@@ -158,19 +160,21 @@ faq_ui <- div(
       icon = bsicons::bs_icon("question-circle"),
       p("There are a few possible reasons:"),
       tags$ul(
-        tags$li("The tournament organizer hasn't submitted the results yet"),
+        tags$li("Nobody has uploaded the results yet"),
         tags$li("The store isn't registered in our system"),
         tags$li("The tournament was an unofficial or casual event")
       ),
-      p("If you're a tournament organizer, check out the ",
-        actionLink("faq_to_for_tos", "For Organizers page"), " to learn how to submit results.")
+      p("You can upload results yourself! Go to the ",
+        actionLink("faq_to_upload2", "Upload Results"),
+        " tab and upload screenshots from Bandai TCG+. See the ",
+        actionLink("faq_to_for_tos", "For Organizers page"), " for a step-by-step guide.")
     ),
     accordion_panel(
       title = "How often is data updated?",
       value = "update-frequency",
       icon = bsicons::bs_icon("arrow-repeat"),
-      p("Results are added as tournament organizers submit them, typically within a few days of ",
-        "each event. Ratings and statistics are recalculated automatically when new results are added."),
+      p("Results uploaded via the Upload Results tab go live ", strong("immediately"), ". ",
+        "Ratings and statistics are recalculated automatically when new results are added."),
       p("Card data is synced monthly from DigimonCard.io to include new releases.")
     ),
     accordion_panel(

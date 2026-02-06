@@ -17,81 +17,92 @@ for_tos_ui <- div(
   p("Here's how you can get involved:"),
 
   # Submit Tournament Results
-  h2(class = "faq-category", bsicons::bs_icon("cloud-upload"), "Submit Tournament Results"),
+  h2(class = "faq-category", bsicons::bs_icon("cloud-upload"), "Upload Tournament Results"),
   accordion(
     id = "tos_submit",
     open = TRUE,
     accordion_panel(
-      title = "How to submit results",
+      title = "How to upload results",
       value = "submit-results",
       icon = bsicons::bs_icon("list-check"),
-      p("Currently, results are submitted manually. Here's the process:"),
+      p("Anyone can upload tournament results directly through the app. Our OCR system ",
+        "reads your Bandai TCG+ screenshots and extracts the data automatically."),
       tags$ol(
         class = "steps-list",
         tags$li(
-          strong("Take screenshots from Bandai TCG+"),
-          p("After your tournament ends, take screenshots of the final standings from the ",
-            "Bandai TCG+ app. Make sure placements, usernames, and member numbers are visible.")
+          strong("Go to the Upload Results tab"),
+          p("Open the ", actionLink("tos_to_upload", "Upload Results"),
+            " page from the sidebar.")
         ),
         tags$li(
-          strong("Gather tournament details"),
-          p("Note the store name, date, format (Standard/Limit 1/etc.), and total number of ",
-            "rounds played.")
+          strong("Fill in tournament details"),
+          p("Select the store, date, event type, format, total players, and number of rounds.")
         ),
         tags$li(
-          strong("Submit via contact"),
-          p("For now, send your screenshots and details to us through the contact links below. ",
-            "We're working on a self-service submission feature!")
+          strong("Upload your screenshots"),
+          p("Take screenshots of the final standings from the Bandai TCG+ app. Make sure ",
+            "placements, usernames, and member numbers are visible. You can upload multiple ",
+            "screenshots if standings span more than one screen.")
+        ),
+        tags$li(
+          strong("Review the extracted data"),
+          p("Our OCR system reads the screenshots and extracts player info automatically. ",
+            "Review the results, fix any OCR errors, and assign deck archetypes if known.")
+        ),
+        tags$li(
+          strong("Confirm and submit"),
+          p("Results go live immediately after submission. Ratings and statistics update automatically.")
         )
       ),
       div(
         class = "contact-links",
-        tags$a(
-          class = "contact-link",
-          href = "https://forms.google.com/digilab-submit",
-          target = "_blank",
-          bsicons::bs_icon("envelope"), "Submit via Form"
-        ),
-        tags$a(
-          class = "contact-link",
-          href = "https://github.com/lopezmichael/digimon-tcg-standings/issues",
-          target = "_blank",
-          bsicons::bs_icon("github"), "Submit via GitHub"
-        )
+        actionLink("tos_to_upload_btn", tagList(bsicons::bs_icon("cloud-upload"), " Go to Upload Results"),
+                   class = "contact-link")
       )
     ),
     accordion_panel(
-      title = "What information do we need?",
+      title = "What you'll need",
       value = "submit-info",
       icon = bsicons::bs_icon("info-circle"),
-      p(strong("Required:")),
+      p(strong("Have ready before uploading:")),
       tags$ul(
-        tags$li("Screenshot of final standings (showing placements, usernames, member numbers)"),
-        tags$li("Store name"),
+        tags$li("Screenshots of final standings from Bandai TCG+ (PNG, JPEG, or WebP)"),
+        tags$li("The store where the tournament was held"),
         tags$li("Tournament date"),
-        tags$li("Number of rounds")
+        tags$li("Total number of players and rounds")
       ),
-      p(strong("Optional but helpful:")),
+      p(strong("Optional:")),
       tags$ul(
-        tags$li("Deck archetypes played (if known)"),
-        tags$li("Match history screenshots (for detailed win/loss records)"),
-        tags$li("Format (Standard, Limit 1, etc.)")
+        tags$li("Deck archetypes played (can be assigned during review or added later)"),
+        tags$li("Match history screenshots (for round-by-round records)")
       ),
       p(class = "info-note",
         bsicons::bs_icon("info-circle"),
-        " Don't worry if you don't have all the information! We can add deck archetypes later ",
-        "as players self-report or as the community helps identify them.")
+        " Don't worry if you don't know every deck! Decks default to UNKNOWN and can be updated ",
+        "later by anyone in the community. You can also request new deck archetypes if one is missing ",
+        "from the dropdown.")
     ),
     accordion_panel(
-      title = "Submitting match history",
+      title = "Uploading match history",
       value = "submit-matchups",
       icon = bsicons::bs_icon("list-ol"),
-      p("In addition to final standings, you can submit ", strong("individual round results"),
-        " to provide more detailed data:"),
-      tags$ul(
-        tags$li("Screenshot each player's match history from Bandai TCG+"),
-        tags$li("This shows their round-by-round opponents and results"),
-        tags$li("Helps calculate more accurate ratings and head-to-head records")
+      p("You can also upload ", strong("round-by-round match history"), " for more detailed data. ",
+        "Use the Match History tab on the ", actionLink("tos_to_upload2", "Upload Results"), " page:"),
+      tags$ol(
+        class = "steps-list",
+        tags$li(
+          strong("Select an existing tournament"),
+          p("Filter by store and pick the tournament you want to add match data to.")
+        ),
+        tags$li(
+          strong("Enter your player info"),
+          p("Your username and member number so we can link the data to your record.")
+        ),
+        tags$li(
+          strong("Upload match history screenshots"),
+          p("Screenshot the match history screen from Bandai TCG+ showing each round's ",
+            "opponent and result.")
+        )
       ),
       p("Match history is optional but valuable for competitive analysis. Even partial data helps!")
     )
@@ -220,15 +231,16 @@ for_tos_ui <- div(
       title = "What is a contributor?",
       value = "contributor-info",
       icon = bsicons::bs_icon("star"),
-      p("Contributors are trusted community members who can directly enter tournament data ",
-        "into DigiLab, rather than submitting screenshots for manual processing."),
-      p("As a contributor, you can:"),
+      p("Most users won't need contributor access - anyone can upload tournament results via ",
+        "screenshots. Contributors are trusted community members with additional admin capabilities."),
+      p(strong("Admin contributors"), " can:"),
       tags$ul(
-        tags$li("Enter tournament results directly after events"),
-        tags$li("Add and edit deck archetype assignments"),
-        tags$li("Update player information and fix errors"),
-        tags$li("Help maintain data quality for your local scene")
-      )
+        tags$li("Enter tournament results manually (without screenshots)"),
+        tags$li("Edit existing tournaments and results"),
+        tags$li("Manage player records and deck archetypes"),
+        tags$li("Approve or reject deck archetype requests from the community")
+      ),
+      p(strong("Super Admin contributors"), " additionally manage stores and format settings.")
     ),
     accordion_panel(
       title = "How do I become a contributor?",
@@ -240,15 +252,16 @@ for_tos_ui <- div(
         class = "steps-list",
         tags$li(
           strong("Build a track record"),
-          p("Submit a few tournaments via screenshot first so we can verify data quality.")
+          p("Upload a few tournaments via the ", actionLink("tos_to_upload3", "Upload Results"),
+            " page so we can verify data quality.")
         ),
         tags$li(
           strong("Express interest"),
-          p("Let us know you'd like contributor access when submitting results.")
+          p("Let us know you'd like contributor access when uploading results.")
         ),
         tags$li(
           strong("Get set up"),
-          p("We'll provide you with access credentials and a quick orientation on the data entry process.")
+          p("We'll provide you with admin credentials and a quick orientation on the admin tools.")
         )
       ),
       div(

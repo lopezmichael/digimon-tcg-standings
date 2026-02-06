@@ -2980,48 +2980,26 @@ button.mapbox-gl-draw_point {
    MOBILE UI IMPROVEMENTS
    ============================================================================= */
 
-/* 4a. Mobile Navigation Menu - auto-height, not full screen */
-@media (max-width: 991px) {
-  .bslib-sidebar-layout > .sidebar {
-    max-height: fit-content !important;
-    height: auto !important;
-    /* Match header/footer gradient on mobile */
-    background: linear-gradient(180deg, #0A3055 0%, #0F4C81 100%) !important;
-    /* Reset desktop margins for mobile */
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0.5rem !important;
+/* 4a. Mobile Navigation - hide sidebar, show bottom tab bar */
+@media (max-width: 768px) {
+  /* Completely hide sidebar and its toggle on mobile */
+  .bslib-sidebar-layout > .sidebar,
+  .bslib-sidebar-layout > .collapse-toggle {
+    display: none !important;
   }
 
-  .bslib-sidebar-layout > .sidebar.show {
-    max-height: 80vh !important;
-    overflow-y: auto;
-  }
-
-  /* Remove gap between header and sidebar on mobile */
+  /* Main content takes full width with no sidebar offset */
   .bslib-sidebar-layout {
+    --_sidebar-width: 0px !important;
     margin-top: -2px !important;
   }
 
-  /* Smaller sidebar title on mobile */
-  .bslib-sidebar-layout > .sidebar > .sidebar-title {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    font-size: 0.7rem;
-  }
-
-  /* Tighter nav links on mobile */
-  .nav-link-sidebar {
-    padding: 0.5rem 0.6rem;
-    font-size: 0.85rem;
-  }
-
-  /* Smaller section labels */
-  .nav-section-label {
-    padding-top: 0.5rem;
-    padding-bottom: 0.25rem;
-    font-size: 0.65rem;
+  /* Add bottom padding so content isn't hidden behind tab bar */
+  .bslib-sidebar-layout > .main,
+  .bslib-sidebar-layout > main,
+  .bslib-sidebar-layout > [role="main"],
+  .bslib-sidebar-layout > :not(.sidebar):not(.collapse-toggle) {
+    padding-bottom: 70px !important;
   }
 }
 
@@ -4530,6 +4508,24 @@ button.mapbox-gl-draw_point {
   font-size: 0.85rem;
 }
 
+/* Placement + match status container */
+.upload-result-placement {
+  overflow: visible;
+  position: relative;
+}
+
+/* Desktop: position match indicator above inputs, inline with placement badge */
+@media (min-width: 769px) {
+  .upload-result-placement .player-match-indicator {
+    position: absolute;
+    top: -1.8rem;
+    left: 100%;
+    margin-left: 1.5rem;
+    width: max-content;
+    margin-top: 0;
+  }
+}
+
 /* Player match indicator - improved clarity */
 .player-match-indicator {
   display: flex;
@@ -4753,5 +4749,347 @@ div.player-match-indicator.new {
 
 [data-bs-theme="dark"] .upload-results-table tr.status-possible {
   background: rgba(59, 130, 246, 0.08);
+}
+
+/* 8a. Mobile Upload Results - Step 1 (Upload) */
+@media (max-width: 768px) {
+  #submit_wizard_step1 .card-body {
+    padding: 0.75rem;
+  }
+
+  /* Stack form layout columns vertically */
+  .submit-form-inputs .bslib-grid {
+    display: block !important;
+  }
+
+  .submit-form-inputs .bslib-grid > div {
+    width: 100% !important;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Full-width dropzone on mobile */
+  .upload-dropzone {
+    width: 100%;
+  }
+
+  .upload-file-input {
+    max-width: 100%;
+  }
+
+  .uploaded-file-item {
+    max-width: 100%;
+  }
+
+  /* Stack dropzone and tips vertically on both tabs */
+  .d-flex.align-items-start.gap-3:has(.upload-dropzone) {
+    flex-direction: column;
+  }
+
+  /* Center process button on mobile */
+  #submit_wizard_step1 .d-flex.justify-content-end {
+    justify-content: center !important;
+  }
+
+  /* Smaller screenshot thumbnails on mobile */
+  .screenshot-thumb {
+    width: 90px;
+  }
+
+  .screenshot-thumb img {
+    height: 60px;
+  }
+
+  /* Match History tab: stack form columns */
+  .nav-panel .bslib-grid {
+    display: block !important;
+  }
+
+  .nav-panel .bslib-grid > div {
+    width: 100% !important;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Match History: center process button */
+  .nav-panel .d-flex.justify-content-end {
+    justify-content: center !important;
+  }
+}
+
+/* 8b. Mobile Upload Results - Step 2 (Review) & Match History Review */
+@media (max-width: 768px) {
+  #submit_wizard_step2 .card-body {
+    padding: 0.75rem;
+  }
+
+  /* Hide column headers on mobile - fields are stacked so headers are meaningless */
+  .results-header-row {
+    display: none !important;
+  }
+
+  /* Match summary badges - compact to fit one row */
+  .match-summary-badges {
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+
+  .match-badge {
+    padding: 0.5rem 0.6rem;
+    gap: 0.35rem;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .match-badge .badge-count {
+    font-size: 1rem;
+  }
+
+  .match-badge .badge-label {
+    font-size: 0.75rem;
+  }
+
+  /* Result rows: stack fields but keep placement + indicator together */
+  .upload-result-row .bslib-grid {
+    display: block !important;
+  }
+
+  .upload-result-row .bslib-grid > div {
+    width: 100% !important;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Placement + match indicator: inline on same row */
+  .upload-result-placement {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    width: auto !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  .upload-result-placement .player-match-indicator {
+    margin-top: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 50px);
+  }
+
+  /* Truncate long matched player names on mobile */
+  .upload-result-placement .player-match-indicator .match-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .upload-result-row input,
+  .upload-result-row select {
+    font-size: 0.8rem;
+  }
+
+  /* Stack back/submit buttons */
+  #submit_wizard_step2 .d-flex.justify-content-between {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  #submit_wizard_step2 .d-flex.justify-content-between .btn {
+    width: 100%;
+  }
+
+  /* Touch-friendly confirmation checkbox */
+  #submit_wizard_step2 .form-check {
+    padding: 0.5rem 0;
+  }
+
+  #submit_wizard_step2 .form-check-input {
+    width: 1.25em;
+    height: 1.25em;
+  }
+
+  /* Match History review: stack buttons */
+  .nav-panel .d-flex.justify-content-end.gap-2 {
+    flex-direction: column;
+  }
+
+  .nav-panel .d-flex.justify-content-end.gap-2 .btn {
+    width: 100%;
+  }
+}
+
+/* 8c. Mobile Upload Results - Extra small screens */
+@media (max-width: 576px) {
+  .upload-result-row {
+    padding: 0.35rem 0;
+  }
+
+  .upload-result-row input,
+  .upload-result-row select {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.35rem;
+  }
+
+  .screenshot-thumb {
+    width: 70px;
+  }
+
+  .screenshot-thumb img {
+    height: 48px;
+  }
+
+  .screenshot-thumbnails {
+    gap: 0.5rem;
+  }
+
+  /* Even more compact match badges on small screens */
+  .match-badge {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .match-badge .badge-count {
+    font-size: 0.9rem;
+  }
+
+  .match-badge .badge-label {
+    font-size: 0.7rem;
+  }
+}
+
+/* =============================================================================
+   MOBILE BOTTOM TAB BAR
+   ============================================================================= */
+
+/* Hidden on desktop */
+.mobile-tab-bar {
+  display: none;
+}
+
+
+@media (max-width: 768px) {
+  /* Bottom tab bar */
+  .mobile-tab-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: linear-gradient(135deg, #0A3055 0%, #0F4C81 100%);
+    border-top: 1px solid rgba(0, 200, 255, 0.15);
+    padding: 0.35rem 0;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .mobile-tab-bar .shiny-bound-input {
+    text-decoration: none;
+  }
+
+  .mobile-tab-bar .tab-bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.65rem;
+    padding: 0.25rem 0.3rem;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  .mobile-tab-bar .tab-bar-item .bi {
+    font-size: 1.2rem;
+  }
+
+  .mobile-tab-bar .tab-bar-item.active {
+    color: #F7941D;
+  }
+
+  .mobile-tab-bar .tab-bar-item:hover {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .tab-bar-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.3px;
+  }
+
+  /* Footer padding above tab bar */
+  .app-footer {
+    padding-bottom: 70px;
+  }
+}
+
+/* Admin modal navigation links - hidden on desktop, shown on mobile */
+.admin-modal-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .admin-modal-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .admin-modal-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+    background: rgba(10, 48, 85, 0.06);
+    border: 1px solid rgba(10, 48, 85, 0.08);
+    transition: all 0.2s ease;
+  }
+
+  .admin-modal-link:hover {
+    background: rgba(10, 48, 85, 0.12);
+    border-color: rgba(247, 148, 29, 0.3);
+    color: #0F4C81;
+    transform: translateX(2px);
+  }
+
+  [data-bs-theme="dark"] .admin-modal-link {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  [data-bs-theme="dark"] .admin-modal-link:hover {
+    background: rgba(247, 148, 29, 0.12);
+    border-color: rgba(247, 148, 29, 0.3);
+    color: #F7941D;
+  }
+
+  .admin-modal-link .bi {
+    font-size: 1.1rem;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .admin-modal-link:hover .bi {
+    opacity: 1;
+    color: #F7941D;
+  }
+
+  .admin-modal-section {
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    opacity: 0.45;
+    padding: 0.15rem 0.85rem;
+    font-weight: 600;
+  }
+}
+
+/* Dark mode bottom tab bar */
+[data-bs-theme="dark"] .mobile-tab-bar {
+  background: linear-gradient(135deg, #0A1F33 0%, #0A3055 100%);
+  border-top-color: rgba(0, 200, 255, 0.2);
 }
 

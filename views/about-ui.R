@@ -42,8 +42,8 @@ class = "content-page",
     class = "content-section",
     h2(class = "content-section-title",
        bsicons::bs_icon("people"), "Who is it For?"),
-    p(strong("Players"), " - Track your results, see your rating, understand your local meta"),
-    p(strong("Tournament Organizers"), " - Get your events featured and help grow your community"),
+    p(strong("Players"), " - Track your results, upload tournament data, and see your rating"),
+    p(strong("Tournament Organizers"), " - Upload event results directly or get contributor access for your community"),
     p(strong("Community Members"), " - Follow the scene even when you can't make it to every event")
   ),
 

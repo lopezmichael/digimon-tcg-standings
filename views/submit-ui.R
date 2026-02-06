@@ -168,6 +168,14 @@ submit_ui <- tagList(
               )
             ),
 
+            # Confirmation checkbox
+            div(
+              class = "mt-3",
+              checkboxInput("submit_confirm",
+                            "I confirm this data is accurate",
+                            value = FALSE)
+            ),
+
             # Navigation buttons
             div(
               class = "d-flex justify-content-between mt-3",

@@ -590,15 +590,16 @@ output$submit_results_table <- renderUI({
       layout_columns(
         col_widths = c(1, 4, 2, 2, 3),
         class = "upload-result-row",
-        # Placement
+        # Placement + match status
         div(
-          span(class = paste("placement-badge", place_class), ordinal(row$placement))
+          class = "upload-result-placement",
+          span(class = paste("placement-badge", place_class), ordinal(row$placement)),
+          match_indicator
         ),
-        # Player + match indicator
+        # Player name
         div(
           textInput(paste0("submit_player_", i), NULL,
-                    value = row$username),
-          match_indicator
+                    value = row$username)
         ),
         # Member number
         div(
@@ -773,6 +774,12 @@ observeEvent(input$submit_tournament, {
   req(rv$submit_ocr_results)
   req(rv$db_con)
 
+  # Validate confirmation checkbox
+  if (!isTRUE(input$submit_confirm)) {
+    showNotification("Please confirm the data is accurate before submitting.", type = "warning")
+    return()
+  }
+
   # Validate required fields
   if (is.null(input$submit_store) || input$submit_store == "") {
     showNotification("Please select a store", type = "error")
@@ -935,6 +942,7 @@ observeEvent(input$submit_tournament, {
     updateSelectInput(session, "submit_event_type", selected = "")
     updateSelectInput(session, "submit_format", selected = "")
     updateNumericInput(session, "submit_players", value = 8)
+    updateCheckboxInput(session, "submit_confirm", value = FALSE)
     shinyjs::reset("submit_screenshots")
 
     showNotification(

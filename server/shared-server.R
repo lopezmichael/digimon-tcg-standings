@@ -61,6 +61,38 @@ observeEvent(input$nav_submit, {
   rv$current_nav <- "submit"
 })
 
+# Mobile bottom tab bar navigation
+observeEvent(input$mob_dashboard, {
+  nav_select("main_content", "dashboard")
+  rv$current_nav <- "dashboard"
+  session$sendCustomMessage("updateSidebarNav", "nav_dashboard")
+})
+observeEvent(input$mob_players, {
+  nav_select("main_content", "players")
+  rv$current_nav <- "players"
+  session$sendCustomMessage("updateSidebarNav", "nav_players")
+})
+observeEvent(input$mob_meta, {
+  nav_select("main_content", "meta")
+  rv$current_nav <- "meta"
+  session$sendCustomMessage("updateSidebarNav", "nav_meta")
+})
+observeEvent(input$mob_tournaments, {
+  nav_select("main_content", "tournaments")
+  rv$current_nav <- "tournaments"
+  session$sendCustomMessage("updateSidebarNav", "nav_tournaments")
+})
+observeEvent(input$mob_stores, {
+  nav_select("main_content", "stores")
+  rv$current_nav <- "stores"
+  session$sendCustomMessage("updateSidebarNav", "nav_stores")
+})
+observeEvent(input$mob_submit, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
+})
+
 observeEvent(input$nav_admin_results, {
   nav_select("main_content", "admin_results")
   rv$current_nav <- "admin_results"
@@ -89,6 +121,38 @@ observeEvent(input$nav_admin_formats, {
 observeEvent(input$nav_admin_players, {
   nav_select("main_content", "admin_players")
   rv$current_nav <- "admin_players"
+})
+
+# Admin modal navigation (for mobile access)
+observeEvent(input$modal_admin_results, {
+  removeModal()
+  nav_select("main_content", "admin_results")
+  rv$current_nav <- "admin_results"
+})
+observeEvent(input$modal_admin_tournaments, {
+  removeModal()
+  nav_select("main_content", "admin_tournaments")
+  rv$current_nav <- "admin_tournaments"
+})
+observeEvent(input$modal_admin_players, {
+  removeModal()
+  nav_select("main_content", "admin_players")
+  rv$current_nav <- "admin_players"
+})
+observeEvent(input$modal_admin_decks, {
+  removeModal()
+  nav_select("main_content", "admin_decks")
+  rv$current_nav <- "admin_decks"
+})
+observeEvent(input$modal_admin_stores, {
+  removeModal()
+  nav_select("main_content", "admin_stores")
+  rv$current_nav <- "admin_stores"
+})
+observeEvent(input$modal_admin_formats, {
+  removeModal()
+  nav_select("main_content", "admin_formats")
+  rv$current_nav <- "admin_formats"
 })
 
 # Content pages (footer navigation)
@@ -121,6 +185,34 @@ observeEvent(input$faq_to_for_tos, {
 observeEvent(input$faq_to_about, {
   nav_select("main_content", "about")
   rv$current_nav <- "about"
+})
+
+# FAQ → Upload Results
+observeEvent(input$faq_to_upload, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+})
+observeEvent(input$faq_to_upload2, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+})
+
+# For Organizers → Upload Results (multiple links on the page)
+observeEvent(input$tos_to_upload, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+})
+observeEvent(input$tos_to_upload_btn, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+})
+observeEvent(input$tos_to_upload2, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+})
+observeEvent(input$tos_to_upload3, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
 })
 
 # ---------------------------------------------------------------------------
@@ -168,11 +260,47 @@ outputOptions(output, "has_active_tournament", suspendWhenHidden = FALSE)
 # Login modal
 observeEvent(input$admin_login_link, {
   if (rv$is_admin) {
-    # Already logged in - offer logout
+    # Already logged in - show admin nav + logout
     role_label <- if (rv$is_superadmin) "super admin" else "admin"
+
+    # Build admin nav links
+    admin_links <- tagList(
+      actionLink("modal_admin_results",
+                 tagList(bsicons::bs_icon("pencil-square"), " Enter Results"),
+                 class = "admin-modal-link"),
+      actionLink("modal_admin_tournaments",
+                 tagList(bsicons::bs_icon("trophy"), " Edit Tournaments"),
+                 class = "admin-modal-link"),
+      actionLink("modal_admin_players",
+                 tagList(bsicons::bs_icon("people"), " Edit Players"),
+                 class = "admin-modal-link"),
+      actionLink("modal_admin_decks",
+                 tagList(bsicons::bs_icon("collection"), " Edit Decks"),
+                 class = "admin-modal-link")
+    )
+
+    # Add super admin links if applicable
+    superadmin_links <- NULL
+    if (rv$is_superadmin) {
+      superadmin_links <- tagList(
+        tags$hr(class = "my-2"),
+        tags$div(class = "admin-modal-section", "Super Admin"),
+        actionLink("modal_admin_stores",
+                   tagList(bsicons::bs_icon("shop"), " Edit Stores"),
+                   class = "admin-modal-link"),
+        actionLink("modal_admin_formats",
+                   tagList(bsicons::bs_icon("calendar3"), " Edit Formats"),
+                   class = "admin-modal-link")
+      )
+    }
+
     showModal(modalDialog(
-      title = "Admin Session",
-      paste0("You are currently logged in as ", role_label, "."),
+      title = paste0("Admin (", role_label, ")"),
+      div(
+        class = "admin-modal-nav",
+        admin_links,
+        superadmin_links
+      ),
       footer = tagList(
         actionButton("logout_btn", "Logout", class = "btn-warning"),
         modalButton("Close")

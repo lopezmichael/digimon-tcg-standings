@@ -295,10 +295,33 @@ ui <- page_fillable(
         $(this).addClass('active');
       });
 
-      // Custom handler to update sidebar when programmatically navigating
+      // Bottom tab bar - click handler
+      $(document).on('click', '.tab-bar-item', function() {
+        $('.tab-bar-item').removeClass('active');
+        $(this).addClass('active');
+      });
+
+      // Map sidebar nav IDs to bottom bar IDs
+      var navToTab = {
+        'nav_dashboard': 'mob_dashboard',
+        'nav_players': 'mob_players',
+        'nav_meta': 'mob_meta',
+        'nav_tournaments': 'mob_tournaments',
+        'nav_stores': 'mob_stores'
+      };
+
+      // Custom handler to update sidebar and bottom bar when programmatically navigating
       Shiny.addCustomMessageHandler('updateSidebarNav', function(navId) {
+        // Update sidebar
         $('.nav-link-sidebar').removeClass('active');
         $('#' + navId).addClass('active');
+
+        // Update bottom tab bar
+        $('.tab-bar-item').removeClass('active');
+        var tabId = navToTab[navId];
+        if (tabId) {
+          $('#' + tabId + ' .tab-bar-item').addClass('active');
+        }
       });
 
       // Loading screen message cycling
@@ -327,6 +350,9 @@ ui <- page_fillable(
 
       // Inject loading overlay into body on document ready (avoids prependContent warning)
       $(document).ready(function() {
+        // Set initial active tab on mobile bar
+        $('#mob_dashboard .tab-bar-item').addClass('active');
+
         var loadingHTML = '<div class=\"app-loading-overlay\">' +
           '<div class=\"loading-scanline\"></div>' +
           '<div class=\"loading-gate\"><div class=\"loading-gate-center\"></div></div>' +
@@ -500,6 +526,43 @@ ui <- page_fillable(
       class = "footer-meta",
       paste0("v", APP_VERSION, " | \u00A9 2026 DigiLab")
     )
+  ),
+
+  # Mobile bottom tab bar (hidden on desktop via CSS)
+  div(
+    id = "mobile_tab_bar",
+    class = "mobile-tab-bar",
+
+    actionLink("mob_dashboard", div(
+      class = "tab-bar-item",
+      bsicons::bs_icon("graph-up"),
+      span(class = "tab-bar-label", "Overview")
+    )),
+    actionLink("mob_players", div(
+      class = "tab-bar-item",
+      bsicons::bs_icon("people"),
+      span(class = "tab-bar-label", "Players")
+    )),
+    actionLink("mob_meta", div(
+      class = "tab-bar-item",
+      bsicons::bs_icon("stack"),
+      span(class = "tab-bar-label", "Meta")
+    )),
+    actionLink("mob_tournaments", div(
+      class = "tab-bar-item",
+      bsicons::bs_icon("trophy"),
+      span(class = "tab-bar-label", "Tournaments")
+    )),
+    actionLink("mob_stores", div(
+      class = "tab-bar-item",
+      bsicons::bs_icon("geo-alt"),
+      span(class = "tab-bar-label", "Stores")
+    )),
+    actionLink("mob_submit", div(
+      class = "tab-bar-item",
+      bsicons::bs_icon("cloud-upload"),
+      span(class = "tab-bar-label", "Upload")
+    ))
   )
 )
 
