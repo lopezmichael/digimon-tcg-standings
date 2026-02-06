@@ -262,13 +262,13 @@ Before committing, always verify code works:
 **R Installation Path (Windows):**
 ```bash
 # R is installed at:
-"/c/Program Files/R/R-4.5.0/bin/Rscript.exe"
+"/c/Program Files/R/R-4.5.1/bin/Rscript.exe"
 
 # Run syntax check
-"/c/Program Files/R/R-4.5.0/bin/Rscript.exe" -e "source('app.R')"
+"/c/Program Files/R/R-4.5.1/bin/Rscript.exe" -e "source('app.R')"
 
 # Run lintr (if available)
-"/c/Program Files/R/R-4.5.0/bin/Rscript.exe" -e "lintr::lint('app.R')"
+"/c/Program Files/R/R-4.5.1/bin/Rscript.exe" -e "lintr::lint('app.R')"
 ```
 
 **Manual verification:** If R can't be run from bash, ask the user to:
