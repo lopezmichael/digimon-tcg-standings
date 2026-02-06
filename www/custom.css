@@ -4175,6 +4175,29 @@ button.mapbox-gl-draw_point {
   padding: 0.25rem 0.75rem;
 }
 
+/* Submit form inputs - prevent overflow on smaller screens */
+.submit-form-inputs .bslib-grid-item {
+  min-width: 0 !important;
+  max-width: 100%;
+}
+
+.submit-form-inputs .shiny-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+.submit-form-inputs .selectize-control,
+.submit-form-inputs .selectize-input,
+.submit-form-inputs select,
+.submit-form-inputs input[type="number"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
 /* Upload tips - inline help text */
 .upload-tips {
   flex: 1;

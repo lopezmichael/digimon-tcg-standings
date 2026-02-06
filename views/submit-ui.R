@@ -61,7 +61,7 @@ submit_ui <- tagList(
             card_body(
               # Tournament Details Section
               div(
-                class = "mb-4",
+                class = "mb-4 submit-form-inputs",
                 tags$label(class = "form-label fw-semibold text-muted small", "TOURNAMENT DETAILS"),
                 layout_columns(
                   col_widths = c(6, 6),
