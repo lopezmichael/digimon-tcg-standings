@@ -133,6 +133,25 @@ CREATE TABLE IF NOT EXISTS archetype_cards (
 CREATE INDEX IF NOT EXISTS idx_archetype_cards_card_id ON archetype_cards(card_id);
 
 -- =============================================================================
+-- DECK REQUESTS TABLE
+-- Tracks pending deck archetype requests from public submissions
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS deck_requests (
+    request_id INTEGER PRIMARY KEY,
+    deck_name TEXT NOT NULL,
+    primary_color TEXT NOT NULL,
+    secondary_color TEXT,
+    display_card_id TEXT,
+    status TEXT DEFAULT 'pending',  -- pending, approved, rejected
+    approved_archetype_id INTEGER,  -- Links to created deck after approval
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP
+);
+
+-- Create index for pending requests lookup
+CREATE INDEX IF NOT EXISTS idx_deck_requests_status ON deck_requests(status);
+
+-- =============================================================================
 -- TOURNAMENTS TABLE
 -- Tracks individual tournament events
 -- =============================================================================
@@ -167,6 +186,7 @@ CREATE TABLE IF NOT EXISTS results (
     tournament_id INTEGER NOT NULL,  -- References tournaments(tournament_id)
     player_id INTEGER NOT NULL,      -- References players(player_id)
     archetype_id INTEGER,            -- References deck_archetypes(archetype_id)
+    pending_deck_request_id INTEGER, -- Links to pending deck request (for auto-update on approval)
     placement INTEGER,
     wins INTEGER DEFAULT 0,
     losses INTEGER DEFAULT 0,
@@ -184,6 +204,7 @@ CREATE INDEX IF NOT EXISTS idx_results_tournament ON results(tournament_id);
 CREATE INDEX IF NOT EXISTS idx_results_player ON results(player_id);
 CREATE INDEX IF NOT EXISTS idx_results_archetype ON results(archetype_id);
 CREATE INDEX IF NOT EXISTS idx_results_placement ON results(placement);
+CREATE INDEX IF NOT EXISTS idx_results_pending_deck ON results(pending_deck_request_id);
 
 -- =============================================================================
 -- MATCHES TABLE

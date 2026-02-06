@@ -29,11 +29,15 @@ MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
 # Tables in order (respects foreign key dependencies)
 TABLES = [
     "stores",
+    "formats",
+    "cards",
     "players",
     "deck_archetypes",
+    "deck_requests",
     "archetype_cards",
     "tournaments",
     "results",
+    "matches",
     "ingestion_log"
 ]
 

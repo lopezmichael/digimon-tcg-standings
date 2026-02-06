@@ -505,3 +505,286 @@ observeEvent(input$confirm_delete_archetype, {
     showNotification(paste("Error:", e$message), type = "error")
   })
 })
+
+# =============================================================================
+# Pending Deck Requests Section
+# =============================================================================
+
+# Initialize refresh trigger
+rv$deck_requests_refresh <- NULL
+rv$editing_deck_request_id <- NULL
+
+# Render pending deck requests section
+output$deck_requests_section <- renderUI({
+  req(rv$db_con)
+
+  # Trigger refresh after approve/reject
+  rv$deck_requests_refresh
+
+  pending <- tryCatch({
+    dbGetQuery(rv$db_con, "
+      SELECT request_id, deck_name, primary_color, secondary_color, display_card_id, submitted_at
+      FROM deck_requests
+      WHERE status = 'pending'
+      ORDER BY submitted_at DESC
+    ")
+  }, error = function(e) {
+    data.frame()
+  })
+
+  if (nrow(pending) == 0) {
+    return(NULL)  # Don't show section if no pending requests
+  }
+
+  # Collapsible card with pending requests
+  card(
+    class = "mb-3 border-warning",
+    card_header(
+      class = "bg-warning-subtle d-flex justify-content-between align-items-center",
+      div(
+        bsicons::bs_icon("exclamation-triangle-fill", class = "text-warning me-2"),
+        tags$strong(sprintf("Pending Deck Requests (%d)", nrow(pending)))
+      ),
+      tags$small(class = "text-muted", "Review and approve new deck submissions")
+    ),
+    card_body(
+      class = "p-2",
+      lapply(seq_len(nrow(pending)), function(i) {
+        req <- pending[i, ]
+        color_display <- if (!is.na(req$secondary_color) && req$secondary_color != "") {
+          paste(req$primary_color, "/", req$secondary_color)
+        } else {
+          req$primary_color
+        }
+
+        div(
+          class = "d-flex justify-content-between align-items-center p-2 border-bottom",
+          div(
+            tags$strong(req$deck_name),
+            tags$span(class = "text-muted ms-2", paste0("(", color_display, ")")),
+            if (!is.na(req$display_card_id) && req$display_card_id != "") {
+              tags$span(class = "badge bg-secondary ms-2", req$display_card_id)
+            },
+            tags$br(),
+            tags$small(class = "text-muted", paste("Requested:", format(as.Date(req$submitted_at), "%b %d, %Y")))
+          ),
+          div(
+            class = "d-flex gap-2",
+            actionButton(paste0("approve_deck_", req$request_id), "Approve",
+                         class = "btn-sm btn-success"),
+            actionButton(paste0("edit_approve_deck_", req$request_id), "Edit & Approve",
+                         class = "btn-sm btn-outline-primary"),
+            actionButton(paste0("reject_deck_", req$request_id), "Reject",
+                         class = "btn-sm btn-outline-danger")
+          )
+        )
+      })
+    )
+  )
+})
+
+# Handle approve buttons dynamically
+observe({
+  req(rv$db_con)
+  rv$deck_requests_refresh
+
+  pending <- tryCatch({
+    dbGetQuery(rv$db_con, "SELECT request_id FROM deck_requests WHERE status = 'pending'")
+  }, error = function(e) data.frame(request_id = integer()))
+
+  if (nrow(pending) > 0) {
+    lapply(pending$request_id, function(req_id) {
+      observeEvent(input[[paste0("approve_deck_", req_id)]], {
+        approve_deck_request(req_id, session, rv)
+      }, ignoreInit = TRUE, once = TRUE)
+    })
+  }
+})
+
+# Handle edit & approve buttons dynamically
+observe({
+  req(rv$db_con)
+  rv$deck_requests_refresh
+
+  pending <- tryCatch({
+    dbGetQuery(rv$db_con, "SELECT request_id FROM deck_requests WHERE status = 'pending'")
+  }, error = function(e) data.frame(request_id = integer()))
+
+  if (nrow(pending) > 0) {
+    lapply(pending$request_id, function(req_id) {
+      observeEvent(input[[paste0("edit_approve_deck_", req_id)]], {
+        req_data <- dbGetQuery(rv$db_con, "SELECT * FROM deck_requests WHERE request_id = ?",
+                               params = list(req_id))
+        if (nrow(req_data) == 0) return()
+        req_data <- req_data[1, ]
+
+        rv$editing_deck_request_id <- req_id
+
+        showModal(modalDialog(
+          title = "Edit & Approve Deck Request",
+          textInput("edit_deck_request_name", "Deck Name", value = req_data$deck_name),
+          layout_columns(
+            col_widths = c(6, 6),
+            selectInput("edit_deck_request_color", "Primary Color",
+                        choices = c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White"),
+                        selected = req_data$primary_color,
+                        selectize = FALSE),
+            selectInput("edit_deck_request_color2", "Secondary Color",
+                        choices = c("None" = "", "Red", "Blue", "Yellow", "Green", "Purple", "Black", "White"),
+                        selected = if (!is.na(req_data$secondary_color)) req_data$secondary_color else "",
+                        selectize = FALSE)
+          ),
+          textInput("edit_deck_request_card_id", "Card ID",
+                    value = if (!is.na(req_data$display_card_id)) req_data$display_card_id else ""),
+          footer = tagList(
+            modalButton("Cancel"),
+            actionButton("confirm_edit_approve_deck", "Approve", class = "btn-success")
+          ),
+          size = "m",
+          easyClose = TRUE
+        ))
+      }, ignoreInit = TRUE, once = TRUE)
+    })
+  }
+})
+
+# Handle confirm edit & approve
+observeEvent(input$confirm_edit_approve_deck, {
+  req(rv$db_con, rv$is_admin, rv$editing_deck_request_id)
+
+  req_id <- rv$editing_deck_request_id
+  deck_name <- trimws(input$edit_deck_request_name)
+  primary_color <- input$edit_deck_request_color
+  secondary_color <- if (!is.null(input$edit_deck_request_color2) && input$edit_deck_request_color2 != "") {
+    input$edit_deck_request_color2
+  } else {
+    NA_character_
+  }
+  card_id <- if (!is.null(input$edit_deck_request_card_id) && trimws(input$edit_deck_request_card_id) != "") {
+    trimws(input$edit_deck_request_card_id)
+  } else {
+    NA_character_
+  }
+
+  create_deck_from_request(req_id, deck_name, primary_color, secondary_color, card_id, session, rv)
+  removeModal()
+  rv$editing_deck_request_id <- NULL
+})
+
+# Handle reject buttons dynamically
+observe({
+  req(rv$db_con)
+  rv$deck_requests_refresh
+
+  pending <- tryCatch({
+    dbGetQuery(rv$db_con, "SELECT request_id FROM deck_requests WHERE status = 'pending'")
+  }, error = function(e) data.frame(request_id = integer()))
+
+  if (nrow(pending) > 0) {
+    lapply(pending$request_id, function(req_id) {
+      observeEvent(input[[paste0("reject_deck_", req_id)]], {
+        reject_deck_request(req_id, session, rv)
+      }, ignoreInit = TRUE, once = TRUE)
+    })
+  }
+})
+
+# Helper function to approve a deck request (uses original values)
+approve_deck_request <- function(req_id, session, rv) {
+  req_data <- dbGetQuery(rv$db_con, "SELECT * FROM deck_requests WHERE request_id = ?",
+                         params = list(req_id))
+  if (nrow(req_data) == 0) {
+    showNotification("Request not found", type = "error")
+    return()
+  }
+  req_data <- req_data[1, ]
+
+  create_deck_from_request(
+    req_id,
+    req_data$deck_name,
+    req_data$primary_color,
+    req_data$secondary_color,
+    req_data$display_card_id,
+    session, rv
+  )
+}
+
+# Helper function to create deck and update request/results
+create_deck_from_request <- function(req_id, deck_name, primary_color, secondary_color, card_id, session, rv) {
+  # Check if deck already exists
+  existing <- dbGetQuery(rv$db_con, "
+    SELECT archetype_id FROM deck_archetypes WHERE LOWER(archetype_name) = LOWER(?)
+  ", params = list(deck_name))
+
+  if (nrow(existing) > 0) {
+    showNotification(paste0("Deck '", deck_name, "' already exists"), type = "warning")
+    return()
+  }
+
+  tryCatch({
+    # Create new archetype
+    max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(archetype_id), 0) as max_id FROM deck_archetypes")$max_id
+    new_archetype_id <- max_id + 1
+
+    dbExecute(rv$db_con, "
+      INSERT INTO deck_archetypes (archetype_id, archetype_name, primary_color, secondary_color, display_card_id)
+      VALUES (?, ?, ?, ?, ?)
+    ", params = list(new_archetype_id, deck_name, primary_color, secondary_color, card_id))
+
+    # Update the deck request
+    dbExecute(rv$db_con, "
+      UPDATE deck_requests
+      SET status = 'approved', approved_archetype_id = ?, reviewed_at = CURRENT_TIMESTAMP
+      WHERE request_id = ?
+    ", params = list(new_archetype_id, req_id))
+
+    # Auto-update any results that used this pending request
+    updated_count <- dbExecute(rv$db_con, "
+      UPDATE results
+      SET archetype_id = ?, pending_deck_request_id = NULL
+      WHERE pending_deck_request_id = ?
+    ", params = list(new_archetype_id, req_id))
+
+    msg <- sprintf("Approved '%s'", deck_name)
+    if (updated_count > 0) {
+      msg <- paste0(msg, sprintf(" and updated %d result(s)", updated_count))
+    }
+    showNotification(msg, type = "message")
+
+    # Refresh
+    rv$deck_requests_refresh <- Sys.time()
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+    # Update archetype dropdown
+    updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
+
+  }, error = function(e) {
+    showNotification(paste("Error approving deck:", e$message), type = "error")
+  })
+}
+
+# Helper function to reject a deck request
+reject_deck_request <- function(req_id, session, rv) {
+  tryCatch({
+    req_data <- dbGetQuery(rv$db_con, "SELECT deck_name FROM deck_requests WHERE request_id = ?",
+                           params = list(req_id))
+
+    dbExecute(rv$db_con, "
+      UPDATE deck_requests SET status = 'rejected', reviewed_at = CURRENT_TIMESTAMP WHERE request_id = ?
+    ", params = list(req_id))
+
+    # Update any results that used this pending request to use UNKNOWN
+    unknown_id <- dbGetQuery(rv$db_con, "SELECT archetype_id FROM deck_archetypes WHERE archetype_name = 'UNKNOWN'")
+    if (nrow(unknown_id) > 0) {
+      dbExecute(rv$db_con, "
+        UPDATE results SET archetype_id = ?, pending_deck_request_id = NULL WHERE pending_deck_request_id = ?
+      ", params = list(unknown_id$archetype_id[1], req_id))
+    }
+
+    showNotification(sprintf("Rejected request for '%s'", req_data$deck_name[1]), type = "message")
+    rv$deck_requests_refresh <- Sys.time()
+
+  }, error = function(e) {
+    showNotification(paste("Error rejecting request:", e$message), type = "error")
+  })
+}

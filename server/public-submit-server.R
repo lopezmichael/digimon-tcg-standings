@@ -9,6 +9,8 @@ rv$submit_ocr_results <- NULL
 rv$submit_uploaded_files <- NULL
 rv$submit_parsed_count <- 0
 rv$submit_total_players <- 0
+rv$deck_request_row <- NULL
+rv$submit_refresh_trigger <- NULL
 
 # Populate store dropdown
 observe({
@@ -450,6 +452,9 @@ ordinal <- function(n) {
 output$submit_results_table <- renderUI({
   req(rv$submit_ocr_results)
 
+  # Re-render when deck requests change
+ rv$submit_refresh_trigger
+
   results <- rv$submit_ocr_results
 
   # Get deck choices
@@ -463,7 +468,35 @@ output$submit_results_table <- renderUI({
     data.frame(archetype_id = integer(), archetype_name = character())
   }
 
-  deck_choices <- c("Unknown" = "", setNames(decks$archetype_id, decks$archetype_name))
+  # Get pending deck requests
+  pending_requests <- if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+    dbGetQuery(rv$db_con, "
+      SELECT request_id, deck_name FROM deck_requests
+      WHERE status = 'pending'
+      ORDER BY deck_name
+    ")
+  } else {
+    data.frame(request_id = integer(), deck_name = character())
+  }
+
+  # Build deck choices with request option and pending requests
+  deck_choices <- c("Unknown" = "")
+
+  # Add request new deck option at top
+
+  deck_choices <- c(deck_choices, "\U2795 Request new deck..." = "__REQUEST_NEW__")
+
+  # Add pending requests (if any)
+  if (nrow(pending_requests) > 0) {
+    pending_choices <- setNames(
+      paste0("pending_", pending_requests$request_id),
+      paste0("Pending: ", pending_requests$deck_name)
+    )
+    deck_choices <- c(deck_choices, pending_choices)
+  }
+
+  # Add separator and existing decks
+  deck_choices <- c(deck_choices, setNames(decks$archetype_id, decks$archetype_name))
 
   tagList(
     # Header row
@@ -567,6 +600,135 @@ observe({
   })
 })
 
+# Track which row triggered the deck request modal
+rv$deck_request_row <- NULL
+
+# Handle deck dropdown selections - detect "Request new deck" option
+observe({
+  req(rv$submit_ocr_results)
+  results <- rv$submit_ocr_results
+
+  lapply(seq_len(nrow(results)), function(i) {
+    observeEvent(input[[paste0("submit_deck_", i)]], {
+      if (isTRUE(input[[paste0("submit_deck_", i)]] == "__REQUEST_NEW__")) {
+        rv$deck_request_row <- i
+        showModal(modalDialog(
+          title = "Request New Deck",
+          div(
+            class = "deck-request-form",
+            textInput("deck_request_name", "Deck Name", placeholder = "e.g., Blue Flare"),
+            layout_columns(
+              col_widths = c(6, 6),
+              selectInput("deck_request_color", "Primary Color",
+                          choices = c("Select..." = "",
+                                      "Red" = "Red", "Blue" = "Blue",
+                                      "Yellow" = "Yellow", "Green" = "Green",
+                                      "Purple" = "Purple", "Black" = "Black",
+                                      "White" = "White"),
+                          selectize = FALSE),
+              selectInput("deck_request_color2", "Secondary Color (optional)",
+                          choices = c("None" = "",
+                                      "Red" = "Red", "Blue" = "Blue",
+                                      "Yellow" = "Yellow", "Green" = "Green",
+                                      "Purple" = "Purple", "Black" = "Black",
+                                      "White" = "White"),
+                          selectize = FALSE)
+            ),
+            textInput("deck_request_card_id", "Card ID (optional)",
+                      placeholder = "e.g., BT12-031")
+          ),
+          footer = tagList(
+            modalButton("Cancel"),
+            actionButton("deck_request_submit", "Submit Request", class = "btn-primary")
+          ),
+          size = "m",
+          easyClose = TRUE
+        ))
+        # Reset dropdown to Unknown while modal is open
+        updateSelectInput(session, paste0("submit_deck_", i), selected = "")
+      }
+    }, ignoreInit = TRUE)
+  })
+})
+
+# Handle deck request form submission
+observeEvent(input$deck_request_submit, {
+  req(rv$db_con)
+
+  # Validate required fields
+  if (is.null(input$deck_request_name) || trimws(input$deck_request_name) == "") {
+    showNotification("Please enter a deck name", type = "error")
+    return()
+  }
+  if (is.null(input$deck_request_color) || input$deck_request_color == "") {
+    showNotification("Please select a primary color", type = "error")
+    return()
+  }
+
+  deck_name <- trimws(input$deck_request_name)
+  primary_color <- input$deck_request_color
+  secondary_color <- if (!is.null(input$deck_request_color2) && input$deck_request_color2 != "") {
+    input$deck_request_color2
+  } else {
+    NA_character_
+  }
+  card_id <- if (!is.null(input$deck_request_card_id) && trimws(input$deck_request_card_id) != "") {
+    trimws(input$deck_request_card_id)
+  } else {
+    NA_character_
+  }
+
+  # Check if deck with this name already exists
+  existing <- dbGetQuery(rv$db_con, "
+    SELECT archetype_id FROM deck_archetypes
+    WHERE LOWER(archetype_name) = LOWER(?)
+  ", params = list(deck_name))
+
+  if (nrow(existing) > 0) {
+    showNotification(paste0("A deck named '", deck_name, "' already exists. Please select it from the dropdown."), type = "warning")
+    removeModal()
+    return()
+  }
+
+  # Check if there's already a pending request with this name
+  pending <- dbGetQuery(rv$db_con, "
+    SELECT request_id FROM deck_requests
+    WHERE LOWER(deck_name) = LOWER(?) AND status = 'pending'
+  ", params = list(deck_name))
+
+  if (nrow(pending) > 0) {
+    showNotification(paste0("A request for '", deck_name, "' is already pending. You can select it from the dropdown."), type = "warning")
+    removeModal()
+    return()
+  }
+
+  # Insert the deck request
+  dbExecute(rv$db_con, "
+    INSERT INTO deck_requests (deck_name, primary_color, secondary_color, display_card_id, status)
+    VALUES (?, ?, ?, ?, 'pending')
+  ", params = list(deck_name, primary_color, secondary_color, card_id))
+
+  # Get the new request ID
+  new_request <- dbGetQuery(rv$db_con, "SELECT MAX(request_id) as id FROM deck_requests")
+  request_id <- new_request$id
+
+  # Update the dropdown to select the new pending request
+  if (!is.null(rv$deck_request_row)) {
+    updateSelectInput(session, paste0("submit_deck_", rv$deck_request_row),
+                      selected = paste0("pending_", request_id))
+  }
+
+  showNotification(
+    paste0("Deck request submitted: '", deck_name, "'. An admin will review it shortly."),
+    type = "message"
+  )
+
+  removeModal()
+
+  # Trigger refresh of results table to show new pending deck in all dropdowns
+  rv$submit_refresh_trigger <- Sys.time()
+})
+
 # Handle final submission
 observeEvent(input$submit_tournament, {
   req(rv$submit_ocr_results)
@@ -647,7 +809,20 @@ observeEvent(input$submit_tournament, {
       losses <- max(0, total_rounds - wins - ties)
 
       deck_input <- input[[paste0("submit_deck_", i)]]
-      deck_id <- if (!is.null(deck_input) && deck_input != "") as.integer(deck_input) else NA_integer_
+      deck_id <- NA_integer_
+      pending_deck_request_id <- NA_integer_
+
+      if (!is.null(deck_input) && deck_input != "" && deck_input != "__REQUEST_NEW__") {
+        # Check if this is a pending deck request selection
+        if (grepl("^pending_", deck_input)) {
+          # Extract the request_id from "pending_123" format
+          pending_deck_request_id <- as.integer(sub("^pending_", "", deck_input))
+          # Use UNKNOWN archetype for now
+        } else {
+          # Regular deck selection
+          deck_id <- as.integer(deck_input)
+        }
+      }
 
       # Determine player_id
       player_id <- NULL
@@ -691,10 +866,10 @@ observeEvent(input$submit_tournament, {
       }
 
       dbExecute(rv$db_con, "
-        INSERT INTO results (tournament_id, player_id, archetype_id, placement, wins, losses, ties)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO results (tournament_id, player_id, archetype_id, pending_deck_request_id, placement, wins, losses, ties)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ", params = list(
-        tournament_id, player_id, deck_id,
+        tournament_id, player_id, deck_id, pending_deck_request_id,
         row$placement, wins, losses, ties
       ))
     }

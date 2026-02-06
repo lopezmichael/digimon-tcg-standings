@@ -3,6 +3,10 @@
 
 admin_decks_ui <- tagList(
   h2("Edit Deck Archetypes"),
+
+  # Pending deck requests section (collapsible)
+  uiOutput("deck_requests_section"),
+
   div(
     class = "admin-panel",
     layout_columns(
