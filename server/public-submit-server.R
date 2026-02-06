@@ -47,20 +47,34 @@ output$submit_screenshot_preview <- renderUI({
   # Store file info for later
   rv$submit_uploaded_files <- files
 
-  tagList(
-    div(
-      class = "uploaded-files-list mt-3",
-      h6(class = "text-muted mb-2", paste(nrow(files), "file(s) selected:")),
-      lapply(seq_len(nrow(files)), function(i) {
+  # Create image thumbnails
+  div(
+    class = "screenshot-thumbnails",
+    lapply(seq_len(nrow(files)), function(i) {
+      # Read file and encode as base64 for inline display
+      file_path <- files$datapath[i]
+      file_ext <- tolower(tools::file_ext(files$name[i]))
+      mime_type <- switch(file_ext,
+        "png" = "image/png",
+        "jpg" = "image/jpeg",
+        "jpeg" = "image/jpeg",
+        "webp" = "image/webp",
+        "image/png"
+      )
+
+      # Encode image as base64
+      img_data <- base64enc::base64encode(file_path)
+      img_src <- paste0("data:", mime_type, ";base64,", img_data)
+
+      div(
+        class = "screenshot-thumb",
+        tags$img(src = img_src, alt = files$name[i]),
         div(
-          class = "uploaded-file-item d-flex align-items-center gap-2 p-2 border rounded mb-2",
-          bsicons::bs_icon("file-image", class = "text-primary"),
-          span(files$name[i]),
-          tags$small(class = "text-muted ms-auto",
-                     paste0(round(files$size[i] / 1024), " KB"))
+          class = "screenshot-thumb-label",
+          span(class = "filename", files$name[i])
         )
-      })
-    )
+      )
+    })
   )
 })
 
@@ -260,8 +274,12 @@ observeEvent(input$submit_process_ocr, {
       member_num <- combined$member_number[i]
       username <- combined$username[i]
 
-      # First try to match by member number
-      if (!is.null(member_num) && !is.na(member_num) && nchar(member_num) > 0) {
+      # Check if this is a GUEST ID (not a real member number - used for manually added players)
+      is_guest_id <- !is.null(member_num) && !is.na(member_num) &&
+                     grepl("^GUEST\\d+$", member_num, ignore.case = TRUE)
+
+      # First try to match by member number (skip if GUEST ID - those aren't real)
+      if (!is_guest_id && !is.null(member_num) && !is.na(member_num) && nchar(member_num) > 0) {
         player_by_member <- dbGetQuery(rv$db_con, "
           SELECT player_id, display_name FROM players
           WHERE member_number = ?
@@ -274,6 +292,11 @@ observeEvent(input$submit_process_ocr, {
           combined$match_status[i] <- "matched"
           next
         }
+      }
+
+      # Clear GUEST IDs so they don't get stored (they're not real member numbers)
+      if (is_guest_id) {
+        combined$member_number[i] <- ""
       }
 
       # Try to match by username
@@ -832,11 +855,30 @@ output$match_screenshot_preview <- renderUI({
 
   rv$match_uploaded_file <- file
 
+  # Read file and encode as base64 for inline display
+  file_ext <- tolower(tools::file_ext(file$name))
+  mime_type <- switch(file_ext,
+    "png" = "image/png",
+    "jpg" = "image/jpeg",
+    "jpeg" = "image/jpeg",
+    "webp" = "image/webp",
+    "image/png"
+  )
+
+  # Encode image as base64
+  img_data <- base64enc::base64encode(file$datapath)
+  img_src <- paste0("data:", mime_type, ";base64,", img_data)
+
   div(
-    class = "uploaded-file-item d-flex align-items-center gap-2 p-2 border rounded mt-3",
-    bsicons::bs_icon("file-image", class = "text-primary"),
-    span(file$name),
-    tags$small(class = "text-muted ms-auto", paste0(round(file$size / 1024), " KB"))
+    class = "screenshot-thumbnails",
+    div(
+      class = "screenshot-thumb",
+      tags$img(src = img_src, alt = file$name),
+      div(
+        class = "screenshot-thumb-label",
+        span(class = "filename", file$name)
+      )
+    )
   )
 })
 
