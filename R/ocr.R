@@ -237,8 +237,8 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
       next
     }
 
-    # Check if it looks like a username (starts with letter, allows alphanumeric, underscore, space)
-    if (grepl("^[A-Za-z][A-Za-z0-9_. ]*$", line) && nchar(line) >= 3) {
+    # Check if it looks like a username (starts with letter, allows alphanumeric, underscore, space, apostrophe)
+    if (grepl("^[A-Za-z][A-Za-z0-9_.' ]*$", line) && nchar(line) >= 3) {
       # Additional check: must have at least 3 letters total to avoid noise
       letter_count <- nchar(gsub("[^A-Za-z]", "", line))
       if (letter_count >= 3) {
@@ -568,8 +568,8 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
       next
     }
 
-    # Check if it looks like a username
-    if (grepl("^[A-Za-z][A-Za-z0-9_. ]*$", line)) {
+    # Check if it looks like a username (allows apostrophes for names like "Dragoon's Ghost")
+    if (grepl("^[A-Za-z][A-Za-z0-9_.' ]*$", line)) {
       # Must have at least 3 letters
       letter_count <- nchar(gsub("[^A-Za-z]", "", line))
       if (letter_count >= 3) {
