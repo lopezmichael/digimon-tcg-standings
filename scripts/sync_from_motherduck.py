@@ -36,9 +36,11 @@ TABLES = [
     "players",
     "formats",
     "deck_archetypes",
+    "deck_requests",
     "archetype_cards",
     "tournaments",
     "results",
+    "matches",
     "ingestion_log"
 ]
 
@@ -81,6 +83,21 @@ def get_cloud_table_counts(conn):
         except Exception:
             counts[table] = 0
     return counts
+
+
+def get_table_columns(conn, db_name, table_name):
+    """Get column names for a table"""
+    try:
+        # Use DESCRIBE which works with MotherDuck
+        result = conn.execute(f"DESCRIBE {db_name}.{table_name}").fetchall()
+        return [row[0] for row in result]
+    except Exception as e:
+        # Fallback: try SELECT with LIMIT 0 and get column names
+        try:
+            result = conn.execute(f"SELECT * FROM {db_name}.{table_name} LIMIT 0")
+            return [desc[0] for desc in result.description]
+        except Exception:
+            return []
 
 
 def main():
@@ -197,8 +214,15 @@ def main():
                 print(f"    {table}: skipped (empty)")
                 continue
 
-            # Copy data from cloud to local
-            conn.execute(f"INSERT INTO local_db.{table} SELECT * FROM {MOTHERDUCK_DB}.{table}")
+            # Get columns from cloud table (source of truth for what data exists)
+            cloud_cols = get_table_columns(conn, MOTHERDUCK_DB, table)
+            if not cloud_cols:
+                print(f"    {table}: ERROR - could not get columns")
+                continue
+
+            # Copy data from cloud to local, only selecting columns that exist in cloud
+            cols_str = ", ".join(cloud_cols)
+            conn.execute(f"INSERT INTO local_db.{table} ({cols_str}) SELECT {cols_str} FROM {MOTHERDUCK_DB}.{table}")
 
             print(f"    {table}: synced {count} rows")
             synced_rows += count
