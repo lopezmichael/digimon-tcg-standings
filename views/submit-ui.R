@@ -1,5 +1,5 @@
 # views/submit-ui.R
-# Public Submit Results tab UI
+# Public Upload Results tab UI
 
 submit_ui <- tagList(
   # Title strip
@@ -14,7 +14,7 @@ submit_ui <- tagList(
       ),
       div(
         class = "title-strip-controls",
-        span(class = "small text-muted", "Upload screenshots to add tournament data")
+        span(class = "small text-muted", "Upload Bandai TCG+ screenshots to add tournament data")
       )
     )
   ),
@@ -31,75 +31,162 @@ submit_ui <- tagList(
       div(
         class = "p-3",
 
-        # Tournament Details Card
-        card(
-          card_header("Tournament Details"),
-          card_body(
-            layout_columns(
-              col_widths = c(6, 6),
-              # Left column
-              div(
-                selectInput("submit_store", "Store *",
+        # Wizard step indicator
+        div(
+          class = "wizard-steps d-flex gap-3 mb-4",
+          div(
+            id = "submit_step1_indicator",
+            class = "wizard-step active",
+            span(class = "step-number", "1"),
+            span(class = "step-label", "Upload Screenshots")
+          ),
+          div(
+            id = "submit_step2_indicator",
+            class = "wizard-step",
+            span(class = "step-number", "2"),
+            span(class = "step-label", "Review & Submit")
+          )
+        ),
+
+        # Step 1: Tournament Details + Screenshot Upload
+        div(
+          id = "submit_wizard_step1",
+
+          # Tournament Details Card
+          card(
+            class = "upload-card",
+            card_header("Tournament Details"),
+            card_body(
+              layout_columns(
+                col_widths = c(6, 6),
+                # Left column - Store
+                div(
+                  selectInput("submit_store", "Store",
+                              choices = c("Loading..." = ""),
+                              width = "100%"),
+                  actionLink("submit_request_store", "Store not listed? Request it",
+                             class = "small text-primary")
+                ),
+                # Right column - Date
+                div(
+                  dateInput("submit_date", "Date", value = NA, width = "100%")
+                )
+              ),
+              layout_columns(
+                col_widths = c(4, 4, 4),
+                selectInput("submit_event_type", "Event Type",
+                            choices = c("Select..." = "",
+                                        "Locals" = "locals",
+                                        "Evo Cup" = "evo_cup",
+                                        "Store Championship" = "store_championship",
+                                        "Regional" = "regional",
+                                        "Online" = "online"),
+                            width = "100%"),
+                selectInput("submit_format", "Format",
                             choices = c("Loading..." = ""),
                             width = "100%"),
-                actionLink("submit_request_store", "Store not listed? Request new store",
-                           class = "small text-muted")
-              ),
-              # Right column
+                numericInput("submit_rounds", "Total Rounds", value = 4, min = 1, max = 15, width = "100%")
+              )
+            )
+          ),
+
+          # Screenshot Upload Card
+          card(
+            class = "upload-card mt-3",
+            card_header(
+              class = "d-flex justify-content-between align-items-center",
+              span("Upload Screenshots")
+            ),
+            card_body(
+              # Info callout
               div(
-                dateInput("submit_date", "Date *", value = NA, width = "100%"),
-                tags$small(class = "text-muted", "Required")
+                class = "alert alert-info d-flex mb-3",
+                bsicons::bs_icon("info-circle", class = "me-2 flex-shrink-0", size = "1.2em"),
+                div(
+                  tags$strong("Bandai TCG+ App Screenshots Only"),
+                  tags$br(),
+                  tags$small("Upload screenshots showing tournament rankings from the Bandai TCG+ app. ",
+                             "You can upload multiple screenshots if needed (e.g., for scrolling through a long results list), ",
+                             "but they must all be from the same tournament.")
+                )
+              ),
+
+              # Custom styled file upload area
+              div(
+                class = "upload-dropzone",
+                id = "submit_dropzone",
+                fileInput("submit_screenshots", NULL,
+                          multiple = TRUE,
+                          accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
+                          width = "100%",
+                          placeholder = "No files selected",
+                          buttonLabel = "Browse Files"),
+                div(
+                  class = "upload-dropzone-text",
+                  bsicons::bs_icon("cloud-arrow-up", size = "2em", class = "text-muted mb-2"),
+                  div(class = "text-muted", "Drag and drop or click to browse"),
+                  div(class = "text-muted small", "PNG, JPG, or WebP images")
+                )
+              ),
+
+              # Screenshot preview
+              uiOutput("submit_screenshot_preview"),
+
+              # Process button
+              div(
+                class = "mt-3 d-flex justify-content-end",
+                actionButton("submit_process_ocr", "Process Screenshots",
+                             class = "btn-primary btn-lg",
+                             icon = icon("arrow-right"))
+              )
+            )
+          )
+        ),
+
+        # Step 2: Review & Edit Results (hidden initially)
+        shinyjs::hidden(
+          div(
+            id = "submit_wizard_step2",
+
+            # Summary banner
+            uiOutput("submit_summary_banner"),
+
+            # Instructions callout - prominent at top
+            div(
+              class = "alert alert-primary d-flex mb-3",
+              bsicons::bs_icon("pencil-square", class = "me-2 flex-shrink-0", size = "1.2em"),
+              div(
+                tags$strong("Review and edit the extracted data"),
+                tags$br(),
+                tags$small("Check that player names and points are correct. ",
+                           "Select a deck archetype for each player if known (optional). ",
+                           "Click ", bsicons::bs_icon("x-circle"), " to reject a matched player and create them as new.")
               )
             ),
-            layout_columns(
-              col_widths = c(4, 4, 4),
-              selectInput("submit_event_type", "Event Type *",
-                          choices = c("Select..." = "",
-                                      "Locals" = "locals",
-                                      "Evo Cup" = "evo_cup",
-                                      "Store Championship" = "store_championship",
-                                      "Regional" = "regional",
-                                      "Online" = "online"),
-                          width = "100%"),
-              selectInput("submit_format", "Format *",
-                          choices = c("Loading..." = ""),
-                          width = "100%"),
-              numericInput("submit_rounds", "Total Rounds *", value = 4, min = 1, max = 15, width = "100%")
-            )
-          )
-        ),
 
-        # Screenshot Upload Card
-        card(
-          card_header(
-            class = "d-flex justify-content-between align-items-center",
-            span("Tournament Screenshots"),
-            actionButton("submit_add_screenshot", "Add Another",
-                         class = "btn-sm btn-outline-primary",
-                         icon = icon("plus"))
-          ),
-          card_body(
-            fileInput("submit_screenshots", "Upload Screenshot(s)",
-                      multiple = TRUE,
-                      accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
-                      width = "100%"),
-            tags$small(class = "text-muted d-block mb-2",
-                       "Upload screenshots from Bandai TCG+ app showing tournament rankings"),
-            uiOutput("submit_screenshot_preview"),
-            div(
+            # Match summary badges - prominent
+            uiOutput("submit_match_summary"),
+
+            # Results table
+            card(
               class = "mt-3",
-              actionButton("submit_process_ocr", "Process Screenshots",
-                           class = "btn-primary",
-                           icon = icon("magic"))
+              card_header("Player Results"),
+              card_body(
+                class = "p-0",
+                uiOutput("submit_results_table")
+              )
+            ),
+
+            # Navigation buttons
+            div(
+              class = "d-flex justify-content-between mt-3",
+              actionButton("submit_back", "Back", class = "btn-secondary",
+                           icon = icon("arrow-left")),
+              actionButton("submit_tournament", "Submit Tournament",
+                           class = "btn-primary btn-lg", icon = icon("check"))
             )
           )
-        ),
-
-        # Results Preview (shown after OCR)
-        uiOutput("submit_results_preview"),
-
-        # Submit Button (shown after OCR)
-        uiOutput("submit_final_button")
+        )
       )
     ),
 
@@ -111,19 +198,22 @@ submit_ui <- tagList(
       div(
         class = "p-3",
 
-        # Info box
+        # Info box - updated with Bandai TCG+ mention
         div(
-          class = "alert alert-info d-flex align-items-center mb-3",
-          bsicons::bs_icon("info-circle", class = "me-2"),
+          class = "alert alert-info d-flex align-items-start mb-3",
+          bsicons::bs_icon("info-circle", class = "me-2 flex-shrink-0", size = "1.2em"),
           div(
             tags$strong("Add your round-by-round match data"),
             tags$br(),
-            tags$small("Upload a screenshot of your match history from a tournament that already exists in the system.")
+            tags$small("Upload a screenshot of your match history from the ",
+                       tags$strong("Bandai TCG+ app"),
+                       " for a tournament that already exists in the system.")
           )
         ),
 
         # Tournament Selection Card
         card(
+          class = "upload-card",
           card_header("Select Tournament"),
           card_body(
             layout_columns(
@@ -131,7 +221,7 @@ submit_ui <- tagList(
               selectInput("match_store", "Store",
                           choices = c("All stores" = ""),
                           width = "100%"),
-              selectInput("match_tournament", "Tournament *",
+              selectInput("match_tournament", "Tournament",
                           choices = c("Select a tournament..." = ""),
                           width = "100%")
             ),
@@ -141,33 +231,53 @@ submit_ui <- tagList(
 
         # Your Player Info Card
         card(
+          class = "upload-card mt-3",
           card_header("Your Player Info"),
           card_body(
             p(class = "text-muted small mb-2",
               "Enter your info so we can link this match history to your player record."),
             layout_columns(
               col_widths = c(6, 6),
-              textInput("match_player_username", "Your Username *",
-                        placeholder = "e.g., HappyCat", width = "100%"),
-              textInput("match_player_member", "Your Member Number",
-                        placeholder = "e.g., 0000123456", width = "100%")
+              div(
+                textInput("match_player_username", "Your Username",
+                          placeholder = "e.g., HappyCat", width = "100%"),
+                div(id = "match_username_hint", class = "form-text text-danger d-none", "Required")
+              ),
+              div(
+                textInput("match_player_member", "Your Member Number",
+                          placeholder = "e.g., 0000123456", width = "100%"),
+                div(id = "match_member_hint", class = "form-text text-danger d-none", "Required")
+              )
             )
           )
         ),
 
         # Screenshot Upload Card
         card(
+          class = "upload-card mt-3",
           card_header("Match History Screenshot"),
           card_body(
-            fileInput("match_screenshots", "Upload Screenshot",
-                      multiple = FALSE,
-                      accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
-                      width = "100%"),
-            tags$small(class = "text-muted d-block mb-2",
-                       "Upload a screenshot from Bandai TCG+ showing your match history for this tournament"),
+            # Custom styled file upload area
+            div(
+              class = "upload-dropzone",
+              id = "match_dropzone",
+              fileInput("match_screenshots", NULL,
+                        multiple = FALSE,
+                        accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
+                        width = "100%",
+                        placeholder = "No file selected",
+                        buttonLabel = "Browse Files"),
+              div(
+                class = "upload-dropzone-text",
+                bsicons::bs_icon("cloud-arrow-up", size = "2em", class = "text-muted mb-2"),
+                div(class = "text-muted", "Upload from Bandai TCG+ app"),
+                div(class = "text-muted small", "PNG, JPG, or WebP image")
+              )
+            ),
+
             uiOutput("match_screenshot_preview"),
             div(
-              class = "mt-3",
+              class = "mt-3 d-flex justify-content-end",
               actionButton("match_process_ocr", "Process Screenshot",
                            class = "btn-primary",
                            icon = icon("magic"))

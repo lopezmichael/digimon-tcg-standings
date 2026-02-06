@@ -4097,3 +4097,345 @@ button.mapbox-gl-draw_point {
   color: #22d3ee;
 }
 
+/* =============================================================================
+   UPLOAD RESULTS PAGE
+   ============================================================================= */
+
+/* Upload card - allow dropdowns to overflow */
+.upload-card {
+  overflow: visible !important;
+}
+
+.upload-card .card-body {
+  overflow: visible !important;
+}
+
+/* Upload dropzone styling */
+.upload-dropzone {
+  position: relative;
+  border: 2px dashed rgba(15, 76, 129, 0.3);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  background: rgba(15, 76, 129, 0.03);
+  transition: all 0.2s ease;
+}
+
+.upload-dropzone:hover {
+  border-color: rgba(15, 76, 129, 0.5);
+  background: rgba(15, 76, 129, 0.06);
+}
+
+.upload-dropzone-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* Hide the ugly default file input, show custom styling */
+.upload-dropzone .form-group {
+  margin-bottom: 0;
+}
+
+.upload-dropzone .shiny-input-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-dropzone input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Uploaded file item styling */
+.uploaded-file-item {
+  background: rgba(15, 76, 129, 0.05);
+  border-color: rgba(15, 76, 129, 0.2) !important;
+}
+
+/* Processing spinner - blue theme */
+.processing-spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  border: 4px solid rgba(15, 76, 129, 0.2);
+  border-top-color: #0F4C81;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Match summary badges - prominent display */
+.match-summary-badges {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.match-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.match-badge .badge-count {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.match-badge .badge-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.match-badge--matched {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #16a34a;
+}
+
+.match-badge--matched .bi {
+  color: #22c55e;
+}
+
+.match-badge--possible {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #2563eb;
+}
+
+.match-badge--possible .bi {
+  color: #3b82f6;
+}
+
+.match-badge--new {
+  background: rgba(107, 114, 128, 0.15);
+  border: 1px solid rgba(107, 114, 128, 0.3);
+  color: #4b5563;
+}
+
+.match-badge--new .bi {
+  color: #6b7280;
+}
+
+/* Upload results table */
+.upload-results-table {
+  font-size: 0.9rem;
+}
+
+.upload-results-table th {
+  font-weight: 600;
+  border-bottom: 2px solid rgba(15, 76, 129, 0.2);
+  white-space: nowrap;
+}
+
+.upload-results-table .col-place {
+  width: 40px;
+  text-align: center;
+}
+
+.upload-results-table .col-player {
+  min-width: 180px;
+}
+
+.upload-results-table .col-member {
+  width: 100px;
+}
+
+.upload-results-table .col-points {
+  width: 60px;
+}
+
+.upload-results-table .col-deck {
+  min-width: 150px;
+}
+
+/* Compact inputs in table */
+.upload-results-table input[type="text"],
+.upload-results-table input[type="number"],
+.upload-results-table select {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Player match indicator - improved clarity */
+.player-match-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+}
+
+.player-match-indicator .bi {
+  font-size: 0.8rem;
+}
+
+.player-match-indicator .match-label {
+  opacity: 0.7;
+}
+
+.player-match-indicator .match-name {
+  font-weight: 600;
+}
+
+.player-match-indicator.matched {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.player-match-indicator.possible {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.player-match-indicator.new {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.player-match-indicator .reject-btn {
+  margin-left: auto;
+  color: #dc2626;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.player-match-indicator .reject-btn:hover {
+  opacity: 1;
+}
+
+/* Row status styling */
+.upload-results-table tr.status-matched {
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.upload-results-table tr.status-possible {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.upload-results-table tr.status-new {
+  background: transparent;
+}
+
+/* Tournament summary bar */
+.tournament-summary-bar {
+  background: linear-gradient(135deg, rgba(15, 76, 129, 0.1), rgba(15, 76, 129, 0.05));
+  border: 1px solid rgba(15, 76, 129, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.summary-bar-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #0F4C81;
+  font-weight: 500;
+}
+
+.summary-item .bi {
+  opacity: 0.7;
+}
+
+/* Dark mode upload styles */
+[data-bs-theme="dark"] .upload-dropzone {
+  border-color: rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.03);
+}
+
+[data-bs-theme="dark"] .upload-dropzone:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.06);
+}
+
+[data-bs-theme="dark"] .uploaded-file-item {
+  background: rgba(34, 211, 238, 0.05);
+  border-color: rgba(34, 211, 238, 0.2) !important;
+}
+
+[data-bs-theme="dark"] .processing-spinner {
+  border-color: rgba(34, 211, 238, 0.2);
+  border-top-color: #22d3ee;
+}
+
+[data-bs-theme="dark"] .match-badge--matched {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+
+[data-bs-theme="dark"] .match-badge--possible {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+[data-bs-theme="dark"] .match-badge--new {
+  background: rgba(156, 163, 175, 0.2);
+  border-color: rgba(156, 163, 175, 0.4);
+  color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .player-match-indicator.matched {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+[data-bs-theme="dark"] .player-match-indicator.possible {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+[data-bs-theme="dark"] .player-match-indicator.new {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .tournament-summary-bar {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(34, 211, 238, 0.05));
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+[data-bs-theme="dark"] .summary-item {
+  color: #22d3ee;
+}
+
+[data-bs-theme="dark"] .upload-results-table th {
+  border-bottom-color: rgba(34, 211, 238, 0.2);
+}
+
+[data-bs-theme="dark"] .upload-results-table tr.status-matched {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+[data-bs-theme="dark"] .upload-results-table tr.status-possible {
+  background: rgba(59, 130, 246, 0.08);
+}
+
