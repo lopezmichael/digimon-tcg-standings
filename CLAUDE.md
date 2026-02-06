@@ -90,7 +90,10 @@ The architecture doc contains:
 
 ### Active Branch: `feature/public-submissions`
 
-Working on **v0.20 - Public Submissions & OCR**. Phase 1 (core OCR) is complete.
+Working on **v0.20 - Public Submissions & OCR**. Core functionality complete:
+- Phase 1 (OCR integration): Complete
+- Phase 2 (submission flow): Complete - tournament standings upload, player pre-matching, editable preview
+- Phase 3 (UI polish): In progress - awaiting user feedback
 
 See `ROADMAP.md` for the full version plan through v1.0.
 

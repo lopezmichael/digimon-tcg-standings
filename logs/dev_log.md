@@ -4,6 +4,92 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-05: Public Submissions v0.20 - OCR Upload & Player Matching
+
+### Summary
+Implemented full public submission flow with OCR processing, player pre-matching, and editable results preview. This allows users to upload tournament screenshots and have the data extracted and matched against existing database records.
+
+### OCR Parser Improvements
+Fixed issues discovered during testing:
+- **Combined format handling**: Fixed parsing of "10 Sinone" format where OCR puts placement on same line as username
+- **Match history round detection**: Skip numbers that appear after header text, increased search window from 10 to 15 lines
+- **WebP support**: Added `.webp` image format support to file uploads
+
+### Match History Tab Implementation
+Fully implemented the Match History submission flow (was previously just a placeholder):
+- Tournament selector filtered by store
+- Player info inputs (username, member number)
+- Screenshot upload with OCR processing
+- Results preview with round-by-round data
+- Submit to database
+
+### Database Schema
+Added `matches` table for storing round-by-round match data:
+```sql
+CREATE TABLE IF NOT EXISTS matches (
+    match_id INTEGER PRIMARY KEY,
+    tournament_id INTEGER NOT NULL,
+    round_number INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    opponent_id INTEGER NOT NULL,
+    games_won INTEGER NOT NULL DEFAULT 0,
+    games_lost INTEGER NOT NULL DEFAULT 0,
+    games_tied INTEGER NOT NULL DEFAULT 0,
+    match_points INTEGER NOT NULL DEFAULT 0,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tournament_id, round_number, player_id)
+);
+```
+
+### Naming Clarification
+Renamed "Submit" to "Upload Results" throughout the app to differentiate from admin manual entry:
+- **Upload Results** (public): Screenshot-based OCR entry
+- **Enter Results** (admin): Manual one-by-one entry
+
+### Player Pre-Matching
+After OCR parsing, players are now automatically matched against the database:
+- **Primary match**: By member_number (exact match = "matched" status)
+- **Fallback match**: By username (exact match = "possible" status)
+- **No match**: Marked as "new" player to be created
+
+### Editable Results Preview
+Users can now correct OCR errors before submission:
+- Member number field is editable
+- Points field is editable (recalculates W-L-T)
+- Reject match button to undo auto-matching
+- Visual status badges (Matched/Possible/New)
+
+### Processing UX
+Added spinner modal during OCR processing:
+- Shows "Processing Screenshots" with Bootstrap spinner
+- Modal blocks interaction until complete
+- Provides clear feedback that work is happening
+
+### W-L-T Auto-Calculation
+Points are converted to W-L-T using tournament round count:
+- `wins = points ÷ 3`
+- `ties = points % 3`
+- `losses = rounds - wins - ties`
+
+### Files Changed
+| File | Changes |
+|------|---------|
+| `db/schema.sql` | Added matches table |
+| `views/submit-ui.R` | Renamed to Upload Results, full Match History tab |
+| `server/public-submit-server.R` | Player matching, editable fields, processing modal |
+| `app.R` | Changed sidebar link text |
+| `views/admin-results-ui.R` | Added member_number to quick-add form |
+| `server/admin-results-server.R` | Handle member_number in quick-add |
+| `R/ocr.R` | Combined format and match history parsing fixes |
+
+### Commits
+- `fabf125` - fix(ocr): improve combined format and match history parsing
+- `9259f38` - feat(submit): add match history submission and WebP support
+- `b0b446e` - refactor: rename Submit to Upload Results, add member number to admin
+- `247102a` - feat(upload): add player matching, editable fields, and processing UI
+
+---
+
 ## 2026-02-04: Content Pages Implementation & UI Polish
 
 ### Summary

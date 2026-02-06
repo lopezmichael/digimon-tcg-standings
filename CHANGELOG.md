@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Public Upload Results**: Screenshot-based tournament submission with OCR
+  - Upload tournament standings screenshots from Bandai TCG+ app
+  - Google Cloud Vision OCR extracts player data
+  - Player pre-matching against database (by member number, then username)
+  - Editable results preview (member number, points)
+  - Match status badges (Matched/Possible/New)
+  - Processing spinner modal during OCR
+  - WebP image format support
+- **Match History Submission**: Upload round-by-round match data
+  - Tournament selector with store filter
+  - Player info inputs for linking to existing records
+  - Matches table in database for round-by-round data
+- **Admin Quick-Add Player**: Member number field added to inline player creation
+
+### Changed
+- **Submit → Upload Results**: Renamed sidebar link to clarify difference from admin manual entry
+- **OCR Parser**: Improved combined format handling and match history round detection
+
 ---
 
 ## [0.19.0] - 2026-02-04 - Content Pages & UI Polish
