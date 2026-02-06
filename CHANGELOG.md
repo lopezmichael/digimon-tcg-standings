@@ -27,9 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Player info inputs (username, member number) for linking to existing records
   - Round count pulled from selected tournament
   - Matches table in database for round-by-round data
+- **Deck Request Queue**: Public users can request new deck archetypes
+  - "Request new deck..." option in deck dropdown during submission
+  - Modal form for deck name, colors, and optional card ID
+  - Pending requests visible in all deck dropdowns
+  - Admin review section in Edit Decks tab (Approve/Edit & Approve/Reject)
+  - Auto-links results to approved decks
+- **Duplicate Tournament Warning**: Alert when store/date already has a tournament
 - **Admin Quick-Add Player**: Member number field added to inline player creation
 - **Database Schema**: `member_number` column added to players table
 - **Database Schema**: `matches` table for round-by-round match data
+- **Database Schema**: `deck_requests` table for pending deck submissions
+- **Database Schema**: `pending_deck_request_id` column in results table
 
 ### Changed
 - **Submit → Upload Results**: Renamed sidebar link to clarify difference from admin manual entry
@@ -44,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Server module: `server/public-submit-server.R`
 - UI module: `views/submit-ui.R`
 - Design document: `docs/plans/2026-02-03-public-submissions-design.md`
+- Migration script: `scripts/migrate_v0.20.0.R` for schema changes
+- Sync script fix: `sync_from_motherduck.py` handles schema column differences
 
 ---
 

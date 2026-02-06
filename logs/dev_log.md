@@ -4,6 +4,58 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-06: Deck Request Queue & Database Sync
+
+### Summary
+Added deck request queue for public submissions and synced schema changes to MotherDuck. Users can now request new deck archetypes during submission, which go to admin review.
+
+### Deck Request Queue Design
+Implemented "Option B" from brainstorming - adding a dropdown option rather than a separate link:
+- "➕ Request new deck..." option at top of deck dropdown
+- Opens modal for deck name, primary/secondary color, optional card ID
+- Pending requests appear in all dropdowns as "Pending: [deck name]"
+- Admin sees pending requests section at top of Edit Decks tab
+
+### Admin Review Workflow
+- **Approve**: Creates archetype with original values, auto-links results
+- **Edit & Approve**: Opens modal to modify before creating
+- **Reject**: Marks rejected, sets results to UNKNOWN archetype
+
+### Technical Challenges
+
+**Dynamic Button Handlers**: Initial implementation used `observeEvent` inside `observe()` with `once=TRUE`, but this doesn't work for dynamically rendered buttons. Fixed by using `onclick` handlers with `Shiny.setInputValue()`:
+```r
+# Instead of dynamic observeEvent (unreliable)
+tags$button(
+  onclick = sprintf("Shiny.setInputValue('deck_request_approve_click', %d, {priority: 'event'})", req_id),
+  "Approve"
+)
+```
+
+**DuckDB Auto-Increment**: Unlike SQLite, DuckDB INTEGER PRIMARY KEY doesn't auto-increment. Must manually generate IDs:
+```r
+max_id <- dbGetQuery(con, "SELECT COALESCE(MAX(request_id), 0) FROM deck_requests")$max_id
+new_id <- max_id + 1
+```
+
+**MotherDuck Sync Schema Mismatch**: `sync_from_motherduck.py` failed when local schema had more columns than cloud (e.g., `member_number`). Fixed by explicitly selecting only cloud columns:
+```python
+cloud_cols = get_table_columns(conn, MOTHERDUCK_DB, table)
+cols_str = ", ".join(cloud_cols)
+conn.execute(f"INSERT INTO local_db.{table} ({cols_str}) SELECT {cols_str} FROM cloud.{table}")
+```
+
+### Database Schema Changes
+- `deck_requests` table for pending submissions
+- `pending_deck_request_id` column in results for auto-linking
+- Migration script: `scripts/migrate_v0.20.0.R`
+
+### UX Improvements
+- Duplicate tournament warning when store/date already exists
+- Input width fix for modal dropdowns (CSS min-width: 0)
+
+---
+
 ## 2026-02-05: Public Submissions v0.20 - OCR Upload & Player Matching
 
 ### Summary
