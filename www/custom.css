@@ -4102,13 +4102,16 @@ button.mapbox-gl-draw_point {
    ============================================================================= */
 
 /* Fix dropdown overflow in upload page cards - very aggressive */
+/* Target all possible containers that might clip dropdown menus */
 .upload-card,
 .upload-card > *,
 .upload-card .card-body,
 .upload-card .card-body > *,
+#submit_wizard_step1,
 #submit_wizard_step1 .card,
 #submit_wizard_step1 .card > *,
 #submit_wizard_step1 .card-body,
+#submit_wizard_step2,
 #submit_wizard_step2 .card,
 #submit_wizard_step2 .card > *,
 #submit_wizard_step2 .card-body,
@@ -4118,10 +4121,56 @@ button.mapbox-gl-draw_point {
   overflow: visible !important;
 }
 
+/* Fix navset_card_tab structure - these elements clip dropdown menus */
+#submit_tabs,
+#submit_tabs > *,
+#submit_tabs .tab-content,
+#submit_tabs .tab-pane,
+#submit_tabs .bslib-card,
+#submit_tabs .card,
+#submit_tabs .card-body,
+.navset-card-tab,
+.navset-card-tab > *,
+.navset-card-tab .tab-content,
+.navset-card-tab .tab-pane {
+  overflow: visible !important;
+}
+
 /* Also fix bslib card internals */
 .bslib-card,
 .bslib-card > .card-body {
   overflow: visible !important;
+}
+
+/* Native select dropdowns - ensure proper z-index */
+#submit_wizard_step1 select,
+#submit_wizard_step2 select,
+#submit_tabs select {
+  position: relative;
+  z-index: 10;
+}
+
+/* Fix input width overflow in submit wizard step 1 (Tournament Details) */
+#submit_wizard_step1 .bslib-grid-item,
+#submit_wizard_step1 > div {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+#submit_wizard_step1 .shiny-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+#submit_wizard_step1 select,
+#submit_wizard_step1 input[type="text"],
+#submit_wizard_step1 input[type="number"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
 }
 
 /* Simpler file upload styling */
@@ -4162,14 +4211,25 @@ button.mapbox-gl-draw_point {
 }
 
 /* Fix input width overflow in upload results - critical! */
+/* Following pattern from docs/solutions/shiny-input-width-fix.md */
 .upload-result-row .bslib-grid-item,
 .upload-result-row > div {
   min-width: 0 !important;
-  max-width: 100%;
+  max-width: 100% !important;
   overflow: visible;
 }
 
 .upload-result-row .shiny-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Also fix the actual input elements */
+.upload-result-row input[type="text"],
+.upload-result-row input[type="number"],
+.upload-result-row .form-control {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
@@ -4189,6 +4249,7 @@ button.mapbox-gl-draw_point {
 .results-header-row .bslib-grid-item,
 .results-header-row > div {
   min-width: 0 !important;
+  max-width: 100% !important;
 }
 
 /* Placement badge */
@@ -4308,10 +4369,13 @@ button.mapbox-gl-draw_point {
   color: #16a34a !important;
 }
 
-.match-badge--matched .bi,
+/* Target SVG icons (bsicons outputs inline SVGs), spans, and all children */
+.match-badge--matched svg,
 .match-badge--matched .badge-count,
-.match-badge--matched .badge-label {
+.match-badge--matched .badge-label,
+.match-badge--matched > * {
   color: #16a34a !important;
+  fill: #16a34a !important;
 }
 
 .match-badge--possible {
@@ -4320,10 +4384,12 @@ button.mapbox-gl-draw_point {
   color: #2563eb !important;
 }
 
-.match-badge--possible .bi,
+.match-badge--possible svg,
 .match-badge--possible .badge-count,
-.match-badge--possible .badge-label {
+.match-badge--possible .badge-label,
+.match-badge--possible > * {
   color: #2563eb !important;
+  fill: #2563eb !important;
 }
 
 .match-badge--new {
@@ -4332,10 +4398,12 @@ button.mapbox-gl-draw_point {
   color: #4b5563 !important;
 }
 
-.match-badge--new .bi,
+.match-badge--new svg,
 .match-badge--new .badge-count,
-.match-badge--new .badge-label {
+.match-badge--new .badge-label,
+.match-badge--new > * {
   color: #6b7280 !important;
+  fill: #6b7280 !important;
 }
 
 /* Upload results table */
@@ -4389,8 +4457,10 @@ button.mapbox-gl-draw_point {
   margin-top: 0.25rem;
 }
 
-.player-match-indicator .bi {
+.player-match-indicator svg {
   font-size: 0.8rem;
+  width: 1em;
+  height: 1em;
 }
 
 .player-match-indicator .match-label {
@@ -4408,10 +4478,12 @@ div.player-match-indicator.matched {
   color: #16a34a !important;
 }
 
-.player-match-indicator.matched .bi,
+.player-match-indicator.matched svg,
 .player-match-indicator.matched .match-label,
-.player-match-indicator.matched .match-name {
+.player-match-indicator.matched .match-name,
+.player-match-indicator.matched > * {
   color: #16a34a !important;
+  fill: #16a34a !important;
 }
 
 /* Possible status - BLUE */
@@ -4421,10 +4493,12 @@ div.player-match-indicator.possible {
   color: #2563eb !important;
 }
 
-.player-match-indicator.possible .bi,
+.player-match-indicator.possible svg,
 .player-match-indicator.possible .match-label,
-.player-match-indicator.possible .match-name {
+.player-match-indicator.possible .match-name,
+.player-match-indicator.possible > * {
   color: #2563eb !important;
+  fill: #2563eb !important;
 }
 
 /* New player status - GRAY */
@@ -4434,9 +4508,11 @@ div.player-match-indicator.new {
   color: #6b7280 !important;
 }
 
-.player-match-indicator.new .bi,
-.player-match-indicator.new .match-label {
+.player-match-indicator.new svg,
+.player-match-indicator.new .match-label,
+.player-match-indicator.new > * {
   color: #6b7280 !important;
+  fill: #6b7280 !important;
 }
 
 .player-match-indicator .reject-btn {
@@ -4517,10 +4593,12 @@ div.player-match-indicator.new {
   color: #4ade80 !important;
 }
 
-[data-bs-theme="dark"] .match-badge--matched .bi,
+[data-bs-theme="dark"] .match-badge--matched svg,
 [data-bs-theme="dark"] .match-badge--matched .badge-count,
-[data-bs-theme="dark"] .match-badge--matched .badge-label {
+[data-bs-theme="dark"] .match-badge--matched .badge-label,
+[data-bs-theme="dark"] .match-badge--matched > * {
   color: #4ade80 !important;
+  fill: #4ade80 !important;
 }
 
 [data-bs-theme="dark"] .match-badge--possible {
@@ -4529,10 +4607,12 @@ div.player-match-indicator.new {
   color: #60a5fa !important;
 }
 
-[data-bs-theme="dark"] .match-badge--possible .bi,
+[data-bs-theme="dark"] .match-badge--possible svg,
 [data-bs-theme="dark"] .match-badge--possible .badge-count,
-[data-bs-theme="dark"] .match-badge--possible .badge-label {
+[data-bs-theme="dark"] .match-badge--possible .badge-label,
+[data-bs-theme="dark"] .match-badge--possible > * {
   color: #60a5fa !important;
+  fill: #60a5fa !important;
 }
 
 [data-bs-theme="dark"] .match-badge--new {
@@ -4541,10 +4621,12 @@ div.player-match-indicator.new {
   color: #9ca3af !important;
 }
 
-[data-bs-theme="dark"] .match-badge--new .bi,
+[data-bs-theme="dark"] .match-badge--new svg,
 [data-bs-theme="dark"] .match-badge--new .badge-count,
-[data-bs-theme="dark"] .match-badge--new .badge-label {
+[data-bs-theme="dark"] .match-badge--new .badge-label,
+[data-bs-theme="dark"] .match-badge--new > * {
   color: #9ca3af !important;
+  fill: #9ca3af !important;
 }
 
 [data-bs-theme="dark"] .player-match-indicator.matched,
@@ -4553,10 +4635,12 @@ div.player-match-indicator.new {
   color: #4ade80 !important;
 }
 
-[data-bs-theme="dark"] .player-match-indicator.matched .bi,
+[data-bs-theme="dark"] .player-match-indicator.matched svg,
 [data-bs-theme="dark"] .player-match-indicator.matched .match-label,
-[data-bs-theme="dark"] .player-match-indicator.matched .match-name {
+[data-bs-theme="dark"] .player-match-indicator.matched .match-name,
+[data-bs-theme="dark"] .player-match-indicator.matched > * {
   color: #4ade80 !important;
+  fill: #4ade80 !important;
 }
 
 [data-bs-theme="dark"] .player-match-indicator.possible,
@@ -4565,10 +4649,12 @@ div.player-match-indicator.new {
   color: #60a5fa !important;
 }
 
-[data-bs-theme="dark"] .player-match-indicator.possible .bi,
+[data-bs-theme="dark"] .player-match-indicator.possible svg,
 [data-bs-theme="dark"] .player-match-indicator.possible .match-label,
-[data-bs-theme="dark"] .player-match-indicator.possible .match-name {
+[data-bs-theme="dark"] .player-match-indicator.possible .match-name,
+[data-bs-theme="dark"] .player-match-indicator.possible > * {
   color: #60a5fa !important;
+  fill: #60a5fa !important;
 }
 
 [data-bs-theme="dark"] .player-match-indicator.new,
@@ -4577,9 +4663,11 @@ div.player-match-indicator.new {
   color: #9ca3af !important;
 }
 
-[data-bs-theme="dark"] .player-match-indicator.new .bi,
-[data-bs-theme="dark"] .player-match-indicator.new .match-label {
+[data-bs-theme="dark"] .player-match-indicator.new svg,
+[data-bs-theme="dark"] .player-match-indicator.new .match-label,
+[data-bs-theme="dark"] .player-match-indicator.new > * {
   color: #9ca3af !important;
+  fill: #9ca3af !important;
 }
 
 [data-bs-theme="dark"] .tournament-summary-bar {

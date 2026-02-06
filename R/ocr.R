@@ -314,16 +314,19 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     for (k in (idx + 1):search_end) {
       line <- lines[k]
 
-      # Check for member number
-      member_match <- regmatches(line, regexec("Member\\s*Number\\s*:?\\s*(\\d{10})", line, ignore.case = TRUE))[[1]]
+      # Check for member number - supports both 10-digit format and GUEST##### format
+      # Standard format: Member Number: 0000123456
+      # Guest format: Member Number: GUEST99999 (manually added players without Bandai TCG+ accounts)
+      member_match <- regmatches(line, regexec("Member\\s*Number\\s*:?\\s*(\\d{10}|GUEST\\d{5})", line, ignore.case = TRUE))[[1]]
       if (length(member_match) > 1 && is.na(member_num)) {
         member_num <- member_match[2]
         member_num_idx <- k
         next  # Continue scanning for numbers AFTER member number
       }
 
-      # Check for standalone 10-digit number (member number without label)
-      if (grepl("^\\d{10}$", line) && is.na(member_num)) {
+      # Check for standalone member number (without label)
+      # Supports: 10-digit numbers OR GUEST##### format
+      if ((grepl("^\\d{10}$", line) || grepl("^GUEST\\d{5}$", line, ignore.case = TRUE)) && is.na(member_num)) {
         member_num <- line
         member_num_idx <- k
         next  # Continue scanning for numbers AFTER member number
@@ -633,9 +636,10 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
       }
 
       # Check for member number (may have results on same line)
-      # Accept 8-10 digit member numbers (OCR sometimes truncates)
+      # Accept 8-10 digit member numbers (OCR sometimes truncates) OR GUEST##### format
       # Pattern: "Member Number: 00000091 2-1-0 3" (member + results + points on same line)
-      member_match <- regmatches(check_line, regexec("Member\\s*Number\\s*:?\\s*(\\d{8,10})", check_line, ignore.case = TRUE))[[1]]
+      # Guest format: "Member Number: GUEST99999" (manually added players)
+      member_match <- regmatches(check_line, regexec("Member\\s*Number\\s*:?\\s*(\\d{8,10}|GUEST\\d{5})", check_line, ignore.case = TRUE))[[1]]
       if (length(member_match) > 1 && is.na(member_num)) {
         member_num <- member_match[2]
         if (verbose) message("[MATCH]   Member: ", member_num)
@@ -643,7 +647,7 @@ parse_match_history <- function(ocr_text, verbose = TRUE) {
 
         # Check if there's more on the same line (results and/or points)
         # Remove the member number part to get the remainder
-        rest_of_line <- sub("Member\\s*Number\\s*:?\\s*\\d{8,10}\\s*", "", check_line, ignore.case = TRUE)
+        rest_of_line <- sub("Member\\s*Number\\s*:?\\s*(\\d{8,10}|GUEST\\d{5})\\s*", "", check_line, ignore.case = TRUE)
         if (nchar(rest_of_line) > 0) {
           if (verbose) message("[MATCH]   Same line remainder: '", rest_of_line, "'")
 
