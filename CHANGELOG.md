@@ -7,23 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Admin / Super Admin Tiers**: Two-tier password system for admin access
-  - Admin password: Access to Enter Results, Edit Tournaments, Edit Players, Edit Decks
-  - Super Admin password: Additional access to Edit Stores and Edit Formats
-  - Single login modal, role determined by which password is entered
-  - Server-side `req()` guards enforce superadmin-only access on stores/formats
-
-### Changed
-- **Sidebar Width**: Increased from 220px to 230px to prevent tab name wrapping on desktop
-
-### Technical
-- Synced `renv.lock`: added `dotenv`, `httr2`; updated `duckdb` to 1.4.4, R to 4.5.1
-- Updated R version references in `CLAUDE.md`
-
 ---
 
-## [0.20.0] - 2026-02-06 - Public Submissions & OCR
+## [0.20.0] - 2026-02-06 - Public Submissions, OCR & Mobile Navigation
 
 ### Added
 - **Public Upload Results Tab**: Screenshot-based tournament submission with OCR
@@ -36,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Image thumbnail previews for uploaded screenshots (base64 encoded)
   - Pre-declared player count prevents data fabrication
   - WebP image format support alongside PNG/JPEG
+  - Confirmation checkbox before final submission
 - **Match History Submission**: Upload round-by-round match data
   - Tournament selector with store filter
   - Player info inputs (username, member number) for linking to existing records
@@ -47,6 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pending requests visible in all deck dropdowns
   - Admin review section in Edit Decks tab (Approve/Edit & Approve/Reject)
   - Auto-links results to approved decks
+- **Mobile Bottom Tab Bar**: Native mobile navigation replacing sidebar
+  - 6-tab bottom bar: Overview, Players, Meta, Tournaments, Stores, Upload
+  - Sidebar and toggle arrow completely hidden on mobile (≤768px)
+  - Active state syncs between sidebar and bottom bar via JS handlers
+  - Desktop sidebar unchanged
+- **Admin Modal Navigation**: Admin page links in modal for mobile access
+  - Tapping Admin header button shows styled card-link navigation (mobile only)
+  - Desktop modal unchanged (status + logout only)
+- **Admin / Super Admin Tiers**: Two-tier password system for admin access
+  - Admin password: Access to Enter Results, Edit Tournaments, Edit Players, Edit Decks
+  - Super Admin password: Additional access to Edit Stores and Edit Formats
+  - Single login modal, role determined by which password is entered
+  - Server-side `req()` guards enforce superadmin-only access on stores/formats
 - **Duplicate Tournament Warning**: Alert when store/date already has a tournament
 - **Admin Quick-Add Player**: Member number field added to inline player creation
 - **Database Schema**: `member_number` column added to players table
@@ -56,11 +56,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Submit → Upload Results**: Renamed sidebar link to clarify difference from admin manual entry
+- **For Organizers Page**: Rewritten to reflect new self-service OCR upload flow
+- **FAQ Page**: Updated data source info, update frequency, "Achv" → "Score" label
+- **About Page**: Updated player/TO descriptions for self-service uploads
 - **OCR Parser Improvements**:
   - Apostrophe support in usernames (e.g., "Dragoon's Ghost")
   - GUEST##### IDs ignored (not stored, not matched)
   - Combined format handling for multi-screenshot tournaments
 - **Upload UI Redesign**: Combined cards with sections, compact dropzone, inline tips
+- **Mobile Upload Results**: Responsive layout for review/submit page
+  - Match indicator positioned next to placement badge on mobile
+  - Column headers hidden (stacked layout makes them redundant)
+  - Touch-friendly inputs and buttons
+- **Sidebar Width**: Increased from 220px to 230px to prevent tab name wrapping
 
 ### Technical
 - OCR module: `R/ocr.R` with Google Cloud Vision integration
@@ -69,6 +77,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Design document: `docs/plans/2026-02-03-public-submissions-design.md`
 - Migration script: `scripts/migrate_v0.20.0.R` for schema changes
 - Sync script fix: `sync_from_motherduck.py` handles schema column differences
+- Cross-page navigation links (FAQ/For Organizers → Upload Results)
+- Mobile bottom bar server observers with sidebar sync
+- Synced `renv.lock`: added `dotenv`, `httr2`; updated `duckdb` to 1.4.4, R to 4.5.1
 
 ---
 

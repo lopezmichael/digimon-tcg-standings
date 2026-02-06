@@ -4,6 +4,45 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-06: Mobile Navigation & Pre-Merge Polish
+
+### Summary
+Added mobile bottom tab bar, polished submission flow, and updated content pages before merging `feature/public-submissions` to main.
+
+### Mobile Bottom Tab Bar
+Replaced the bslib sidebar on mobile with a fixed bottom tab bar (Instagram/Twitter style):
+- 6 tabs: Overview, Players, Meta, Tournaments, Stores, Upload
+- Sidebar and toggle arrow hidden via `display: none !important` at ≤768px
+- `bslib-sidebar-layout` `--_sidebar-width` set to 0px on mobile
+- Active state syncs via extended `updateSidebarNav` JS handler with `navToTab` mapping
+- Initially tried a floating action button (FAB) for Upload, but user preferred it as a 6th tab
+
+### Admin Modal for Mobile
+Since sidebar is hidden on mobile, admin tabs needed an alternative access point:
+- When logged in, the Admin header button opens a modal with styled card-link navigation
+- Links use `removeModal()` before navigating to avoid stacking
+- Styled with background cards, orange hover accents, `translateX(2px)` shift — mobile only via media query
+- Desktop modal remains unchanged (status + logout only)
+
+### Content Page Updates
+- **For Organizers**: Rewrote to reflect self-service OCR upload (was referencing manual submission)
+- **FAQ**: Updated data source to mention OCR upload, "Achv" → "Score", update frequency to "immediately"
+- **About**: Updated player/TO descriptions for self-service flow
+- Added cross-page `actionLink` navigation (FAQ → Upload, For Organizers → Upload)
+
+### Submission Polish
+- Added confirmation checkbox before final submit (`input$submit_confirm` validation)
+- Moved match indicator next to placement badge on mobile (absolute positioning on desktop to avoid regression)
+- Comprehensive mobile responsive CSS for Upload Results page
+
+### Mobile Whitespace Issue (Deferred)
+Investigated gap between header and content on mobile. Root cause: bslib's `page_fillable()` applies `padding: 1rem` to the body. Header uses `margin: -1rem` to counteract, but sidebar layout only offsets left/right. CSS overrides on `body.bslib-page-fill` didn't take effect — likely bslib's inline styles or JS-applied styles winning specificity. Will revisit — may need `page_fillable(padding=0)` or custom JS.
+
+### Mobile Value Box Grid (Deferred)
+Attempted 2x2 grid for stat cards on mobile. bslib uses `<bslib-layout-columns>` custom element with `col-widths-sm` attributes. CSS `grid-template-columns` override didn't work — the custom element likely applies grid via JS/shadow DOM. Will need to either use `page_fillable` args or wrap in custom div. Card images set to ghost watermark style (25% opacity, positioned right) for when grid is fixed.
+
+---
+
 ## 2026-02-06: Admin / Super Admin Tiers & renv Sync
 
 ### Summary

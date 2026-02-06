@@ -24,7 +24,7 @@ library(highcharter)
 library(brand.yml)
 
 # App version (update with each release)
-APP_VERSION <- "0.19.0"
+APP_VERSION <- "0.20.0"
 
 # Load modules
 source("R/db_connection.R")
