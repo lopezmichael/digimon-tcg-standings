@@ -38,6 +38,44 @@ observe({
                     choices = c("Select format..." = "", choices))
 })
 
+# Check for existing tournament when store and date are selected
+output$submit_duplicate_warning <- renderUI({
+  req(rv$db_con)
+  req(input$submit_store, input$submit_store != "")
+  req(input$submit_date, !is.na(input$submit_date))
+
+  # Check for existing tournaments on this store/date
+  existing <- dbGetQuery(rv$db_con, "
+    SELECT t.tournament_id, t.event_type, t.player_count, s.name as store_name
+    FROM tournaments t
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE t.store_id = ? AND t.event_date = ?
+  ", params = list(as.integer(input$submit_store), as.character(input$submit_date)))
+
+  if (nrow(existing) == 0) {
+    return(NULL)
+  }
+
+  # Show warning with details about existing tournament(s)
+  div(
+    class = "alert alert-warning d-flex align-items-start gap-2 mt-2",
+    bsicons::bs_icon("exclamation-triangle-fill", class = "flex-shrink-0 mt-1"),
+    div(
+      tags$strong("Tournament already exists for this store and date:"),
+      tags$ul(
+        class = "mb-0 mt-1",
+        lapply(seq_len(nrow(existing)), function(i) {
+          t <- existing[i, ]
+          tags$li(sprintf("%s - %s (%d players)",
+                          t$event_type, t$store_name, t$player_count))
+        })
+      ),
+      tags$small(class = "text-muted d-block mt-1",
+                 "If you're submitting a different event type (e.g., Local vs Regional), you can proceed.")
+    )
+  )
+})
+
 # Preview uploaded screenshots
 output$submit_screenshot_preview <- renderUI({
   req(input$submit_screenshots)

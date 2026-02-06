@@ -89,7 +89,10 @@ submit_ui <- tagList(
                               selectize = FALSE),
                   numericInput("submit_players", "Total Players", value = 8, min = 2, max = 256),
                   numericInput("submit_rounds", "Total Rounds", value = 4, min = 1, max = 15)
-                )
+                ),
+
+                # Warning if tournament already exists for this store/date
+                uiOutput("submit_duplicate_warning")
               ),
 
               # Divider
