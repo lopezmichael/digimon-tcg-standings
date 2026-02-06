@@ -351,6 +351,6 @@ See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
-**v0.19.0** - Content Pages & UI Polish (About, FAQ, For Organizers pages, seamless app frame)
+**v0.20.0** - Public Submissions & OCR (Screenshot-based tournament submission with Google Cloud Vision OCR)
 
 See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.

@@ -2348,6 +2348,57 @@ Since we already handle referential integrity at the application level (checking
 
 ---
 
+## 2026-02-06: v0.20.0 Public Submissions & OCR Release
+
+### Overview
+Released the public submissions feature allowing anyone to upload tournament results via screenshots. The Google Cloud Vision OCR extracts player data automatically, with pre-matching against the database.
+
+### Completed
+- [x] Public "Upload Results" tab with two-step wizard flow
+- [x] Google Cloud Vision OCR integration via httr2 direct API calls
+- [x] Player pre-matching (by member number first, then username fuzzy match)
+- [x] Match status badges (Matched/Possible/New) with color coding
+- [x] Match history submission with tournament selector
+- [x] Image thumbnail previews (base64 encoded inline)
+- [x] Pre-declared player count to prevent data fabrication
+- [x] GUEST##### ID handling (ignored, not stored)
+- [x] UI redesign: combined cards, compact dropzone, inline tips
+- [x] Input width fix for tournament details form
+- [x] Apostrophe support in OCR username parsing
+
+### Technical Decisions
+
+**OCR Integration Approach**
+- Direct httr2 calls to Google Cloud Vision API (no R packages)
+- Stores API key in environment variable (GCP_VISION_API_KEY)
+- OCR text parsed line-by-line with regex patterns for usernames, member numbers, and points
+
+**Player Pre-Matching Strategy**
+- First priority: exact member number match
+- Second priority: fuzzy username match (>80% similarity using stringdist)
+- Results tagged as "matched", "possible", or "new" for user review
+
+**GUEST ID Handling**
+- Bandai TCG+ uses GUEST##### format for manually-added players
+- Decision: ignore these entirely (not real player IDs)
+- Not stored in database, not used for matching
+
+**Pre-Declared Player Count**
+- User declares total player count before OCR
+- System creates exactly N rows (blank rows for OCR misses)
+- Prevents fabrication of extra players
+
+### Files Modified
+- `R/ocr.R` - OCR parsing logic
+- `server/public-submit-server.R` - Submission server logic
+- `views/submit-ui.R` - Upload UI
+- `www/custom.css` - Upload styling
+
+### Branch
+`feature/public-submissions` - ready for merge to main
+
+---
+
 ## 2026-01-30: Value Box Redesign - Digital Digimon Aesthetic
 
 ### Overview

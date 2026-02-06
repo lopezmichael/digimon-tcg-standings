@@ -75,7 +75,7 @@ submit_ui <- tagList(
                   dateInput("submit_date", "Date", value = NA)
                 ),
                 layout_columns(
-                  col_widths = c(3, 3, 3, 3),
+                  col_widths = c(4, 4, 2, 2),
                   selectInput("submit_event_type", "Event Type",
                               choices = c("Select..." = "",
                                           "Locals" = "locals",

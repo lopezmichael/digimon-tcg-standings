@@ -2,35 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.19.0
+**Current Version:** v0.20.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.20 - Public Submissions & OCR
-
-**Branch:** `feature/public-submissions`
-**Design:** `docs/plans/2026-02-03-public-submissions-design.md`
-**Status:** Phase 1 complete, Phases 2-4 in progress
-
-| ID | Type | Description | Status |
-|----|------|-------------|--------|
-| PS1 | FEATURE | Public "Submit Results" tab - anyone can upload tournament screenshots | Phase 1 ✓ |
-| PS2 | FEATURE | Google Cloud Vision OCR integration (httr2 direct calls) | Phase 1 ✓ |
-| PS3 | FEATURE | Deck assignment during submission + edit UNKNOWN decks anywhere | Phase 4 |
-| PS4 | FEATURE | Match history screenshot submission (round-by-round data) | Phase 3 |
-| PS5 | FEATURE | Request new store/deck workflow with admin approval queue | Phase 2 |
-| PS6 | FEATURE | Unified admin/public submission system | Phase 2 |
-| PS7 | SCHEMA | Add `member_number` to players table | ✓ |
-| PS8 | SCHEMA | New `matches` table for round-by-round data | Phase 3 |
-| PS9 | SCHEMA | New `store_requests` and `deck_requests` tables | Phase 2 |
-
-**Implementation Phases:**
-1. Core screenshot submission + OCR ✓
-2. Requests & admin unification
-3. Match history
-4. Polish
 
 ---
 
@@ -183,6 +157,16 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.20.0 - Public Submissions & OCR
+- Public "Upload Results" tab with screenshot-based submission
+- Google Cloud Vision OCR integration for automatic data extraction
+- Player pre-matching by member number and username
+- Match history submission with tournament selector
+- Image thumbnail previews for uploads
+- Pre-declared player count validation
+- GUEST ID handling (ignored)
+- UI redesign with combined cards and compact layout
 
 ### v0.19.0 - Content Pages & UI Polish
 - About, FAQ, For Organizers content pages

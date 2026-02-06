@@ -7,24 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.20.0] - 2026-02-06 - Public Submissions & OCR
+
 ### Added
-- **Public Upload Results**: Screenshot-based tournament submission with OCR
-  - Upload tournament standings screenshots from Bandai TCG+ app
-  - Google Cloud Vision OCR extracts player data
+- **Public Upload Results Tab**: Screenshot-based tournament submission with OCR
+  - Upload Bandai TCG+ standings screenshots for automatic data extraction
+  - Google Cloud Vision OCR integration (httr2 direct API calls)
   - Player pre-matching against database (by member number, then username)
-  - Editable results preview (member number, points)
-  - Match status badges (Matched/Possible/New)
-  - Processing spinner modal during OCR
-  - WebP image format support
+  - Editable results preview with inline editing (names, points, decks)
+  - Match status badges (Matched/Possible/New) with color coding
+  - Processing spinner modal during OCR with status updates
+  - Image thumbnail previews for uploaded screenshots (base64 encoded)
+  - Pre-declared player count prevents data fabrication
+  - WebP image format support alongside PNG/JPEG
 - **Match History Submission**: Upload round-by-round match data
   - Tournament selector with store filter
-  - Player info inputs for linking to existing records
+  - Player info inputs (username, member number) for linking to existing records
+  - Round count pulled from selected tournament
   - Matches table in database for round-by-round data
 - **Admin Quick-Add Player**: Member number field added to inline player creation
+- **Database Schema**: `member_number` column added to players table
+- **Database Schema**: `matches` table for round-by-round match data
 
 ### Changed
 - **Submit → Upload Results**: Renamed sidebar link to clarify difference from admin manual entry
-- **OCR Parser**: Improved combined format handling and match history round detection
+- **OCR Parser Improvements**:
+  - Apostrophe support in usernames (e.g., "Dragoon's Ghost")
+  - GUEST##### IDs ignored (not stored, not matched)
+  - Combined format handling for multi-screenshot tournaments
+- **Upload UI Redesign**: Combined cards with sections, compact dropzone, inline tips
+
+### Technical
+- OCR module: `R/ocr.R` with Google Cloud Vision integration
+- Server module: `server/public-submit-server.R`
+- UI module: `views/submit-ui.R`
+- Design document: `docs/plans/2026-02-03-public-submissions-design.md`
 
 ---
 
