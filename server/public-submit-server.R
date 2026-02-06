@@ -619,6 +619,7 @@ observe({
             textInput("deck_request_name", "Deck Name", placeholder = "e.g., Blue Flare"),
             layout_columns(
               col_widths = c(6, 6),
+              class = "deck-request-colors",
               selectInput("deck_request_color", "Primary Color",
                           choices = c("Select..." = "",
                                       "Red" = "Red", "Blue" = "Blue",
@@ -702,15 +703,15 @@ observeEvent(input$deck_request_submit, {
     return()
   }
 
+  # Get next request_id
+ max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(request_id), 0) as max_id FROM deck_requests")$max_id
+  request_id <- max_id + 1
+
   # Insert the deck request
   dbExecute(rv$db_con, "
-    INSERT INTO deck_requests (deck_name, primary_color, secondary_color, display_card_id, status)
-    VALUES (?, ?, ?, ?, 'pending')
-  ", params = list(deck_name, primary_color, secondary_color, card_id))
-
-  # Get the new request ID
-  new_request <- dbGetQuery(rv$db_con, "SELECT MAX(request_id) as id FROM deck_requests")
-  request_id <- new_request$id
+    INSERT INTO deck_requests (request_id, deck_name, primary_color, secondary_color, display_card_id, status)
+    VALUES (?, ?, ?, ?, ?, 'pending')
+  ", params = list(request_id, deck_name, primary_color, secondary_color, card_id))
 
   # Update the dropdown to select the new pending request
   if (!is.null(rv$deck_request_row)) {

@@ -2785,6 +2785,25 @@ button.mapbox-gl-draw_point {
   min-width: 0;
 }
 
+/* Deck request modal color dropdowns */
+.deck-request-colors .bslib-grid-item {
+  min-width: 0 !important;
+  max-width: 100%;
+}
+
+.deck-request-colors .shiny-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+.deck-request-colors .form-control,
+.deck-request-colors select {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
 /* =============================================================================
    ADMIN EDIT MODE
    ============================================================================= */
