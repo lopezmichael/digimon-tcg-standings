@@ -4142,7 +4142,7 @@ button.mapbox-gl-draw_point {
 
 /* Upload dropzone - compact file input area */
 .upload-dropzone {
-  width: 220px;
+  width: 320px;
   padding: 0.5rem;
   border: 2px dashed rgba(15, 76, 129, 0.3);
   border-radius: 8px;
