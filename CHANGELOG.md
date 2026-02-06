@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Admin / Super Admin Tiers**: Two-tier password system for admin access
+  - Admin password: Access to Enter Results, Edit Tournaments, Edit Players, Edit Decks
+  - Super Admin password: Additional access to Edit Stores and Edit Formats
+  - Single login modal, role determined by which password is entered
+  - Server-side `req()` guards enforce superadmin-only access on stores/formats
+
+### Changed
+- **Sidebar Width**: Increased from 220px to 230px to prevent tab name wrapping on desktop
+
+### Technical
+- Synced `renv.lock`: added `dotenv`, `httr2`; updated `duckdb` to 1.4.4, R to 4.5.1
+- Updated R version references in `CLAUDE.md`
+
 ---
 
 ## [0.20.0] - 2026-02-06 - Public Submissions & OCR

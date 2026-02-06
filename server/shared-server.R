@@ -155,9 +155,12 @@ output$about_result_count <- renderText({
 # Authentication
 # ---------------------------------------------------------------------------
 
-# Output for conditional panel
+# Output for conditional panels
 output$is_admin <- reactive({ rv$is_admin })
 outputOptions(output, "is_admin", suspendWhenHidden = FALSE)
+
+output$is_superadmin <- reactive({ rv$is_superadmin })
+outputOptions(output, "is_superadmin", suspendWhenHidden = FALSE)
 
 output$has_active_tournament <- reactive({ !is.null(rv$active_tournament_id) })
 outputOptions(output, "has_active_tournament", suspendWhenHidden = FALSE)
@@ -166,15 +169,16 @@ outputOptions(output, "has_active_tournament", suspendWhenHidden = FALSE)
 observeEvent(input$admin_login_link, {
   if (rv$is_admin) {
     # Already logged in - offer logout
+    role_label <- if (rv$is_superadmin) "super admin" else "admin"
     showModal(modalDialog(
       title = "Admin Session",
-      "You are currently logged in as admin.",
+      paste0("You are currently logged in as ", role_label, "."),
       footer = tagList(
         actionButton("logout_btn", "Logout", class = "btn-warning"),
         modalButton("Close")
       )
     ))
-  } else if (is.null(ADMIN_PASSWORD)) {
+  } else if (is.null(ADMIN_PASSWORD) && is.null(SUPERADMIN_PASSWORD)) {
     # Admin login disabled
     showModal(modalDialog(
       title = "Admin Login Disabled",
@@ -196,27 +200,37 @@ observeEvent(input$admin_login_link, {
 
 # Handle login
 observeEvent(input$login_btn, {
-  if (!is.null(ADMIN_PASSWORD) && input$admin_password == ADMIN_PASSWORD) {
+  pw <- input$admin_password
+
+  if (!is.null(SUPERADMIN_PASSWORD) && pw == SUPERADMIN_PASSWORD) {
     rv$is_admin <- TRUE
+    rv$is_superadmin <- TRUE
+    removeModal()
+    showNotification("Logged in as super admin", type = "message")
+  } else if (!is.null(ADMIN_PASSWORD) && pw == ADMIN_PASSWORD) {
+    rv$is_admin <- TRUE
+    rv$is_superadmin <- FALSE
     removeModal()
     showNotification("Logged in as admin", type = "message")
-
-    # Update dropdowns with data
-    updateSelectInput(session, "tournament_store",
-                      choices = get_store_choices(rv$db_con, include_none = TRUE))
-    updateSelectizeInput(session, "result_deck",
-                      choices = get_archetype_choices(rv$db_con))
-    updateSelectizeInput(session, "result_player",
-                         choices = get_player_choices(rv$db_con),
-                         server = TRUE)
   } else {
     showNotification("Invalid password", type = "error")
+    return()
   }
+
+  # Update dropdowns with data
+  updateSelectInput(session, "tournament_store",
+                    choices = get_store_choices(rv$db_con, include_none = TRUE))
+  updateSelectizeInput(session, "result_deck",
+                    choices = get_archetype_choices(rv$db_con))
+  updateSelectizeInput(session, "result_player",
+                       choices = get_player_choices(rv$db_con),
+                       server = TRUE)
 })
 
 # Handle logout
 observeEvent(input$logout_btn, {
   rv$is_admin <- FALSE
+  rv$is_superadmin <- FALSE
   rv$active_tournament_id <- NULL
   removeModal()
   showNotification("Logged out", type = "message")

@@ -4,7 +4,7 @@
 
 # Add store
 observeEvent(input$add_store, {
-  req(rv$is_admin, rv$db_con)
+  req(rv$is_superadmin, rv$db_con)
 
   # Check if this is an online store
   is_online <- isTRUE(input$store_is_online)
@@ -237,7 +237,7 @@ observeEvent(input$admin_store_list__reactable__selected, {
 
 # Update store
 observeEvent(input$update_store, {
-  req(rv$is_admin, rv$db_con)
+  req(rv$is_superadmin, rv$db_con)
   req(input$editing_store_id)
 
   store_id <- as.integer(input$editing_store_id)
@@ -385,7 +385,7 @@ observe({
 
 # Delete button click - show modal
 observeEvent(input$delete_store, {
-  req(rv$is_admin, input$editing_store_id)
+  req(rv$is_superadmin, input$editing_store_id)
 
   store_id <- as.integer(input$editing_store_id)
   store <- dbGetQuery(rv$db_con, "SELECT name FROM stores WHERE store_id = ?",
@@ -409,7 +409,7 @@ observeEvent(input$delete_store, {
 
 # Confirm delete
 observeEvent(input$confirm_delete_store, {
-  req(rv$is_admin, rv$db_con, input$editing_store_id)
+  req(rv$is_superadmin, rv$db_con, input$editing_store_id)
   store_id <- as.integer(input$editing_store_id)
 
   tryCatch({

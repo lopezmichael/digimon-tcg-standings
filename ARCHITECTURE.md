@@ -45,7 +45,7 @@ server/
 | Prefix | Purpose | Example |
 |--------|---------|---------|
 | `public-*` | Public-facing tabs (no auth required) | `public-players-server.R` |
-| `admin-*` | Admin tabs (requires `rv$is_admin`) | `admin-decks-server.R` |
+| `admin-*` | Admin tabs (requires `rv$is_admin` or `rv$is_superadmin`) | `admin-decks-server.R` |
 | `shared-*` | Shared utilities used by multiple modules | `shared-server.R` |
 
 ### Adding a New Server Module
@@ -82,7 +82,8 @@ All reactive values are initialized in `app.R`. **Never create new reactive valu
 | Name | Type | Description |
 |------|------|-------------|
 | `db_con` | connection | DuckDB database connection |
-| `is_admin` | logical | Whether user is authenticated as admin |
+| `is_admin` | logical | Whether user is authenticated as admin or superadmin |
+| `is_superadmin` | logical | Whether user is authenticated as superadmin (Edit Stores, Edit Formats) |
 
 ### Navigation
 
@@ -414,8 +415,11 @@ rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 # Show Bootstrap modal
 shinyjs::runjs("$('#modal_id').modal('show');")
 
-# Check admin
+# Check admin (Enter Results, Edit Tournaments, Edit Players, Edit Decks)
 req(rv$is_admin)
+
+# Check superadmin (Edit Stores, Edit Formats)
+req(rv$is_superadmin)
 
 # Check DB connection
 req(rv$db_con)

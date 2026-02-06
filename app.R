@@ -214,6 +214,12 @@ if (ADMIN_PASSWORD == "") {
   ADMIN_PASSWORD <- NULL
 }
 
+# Super admin password - optional, grants access to Edit Stores and Edit Formats
+SUPERADMIN_PASSWORD <- Sys.getenv("SUPERADMIN_PASSWORD")
+if (SUPERADMIN_PASSWORD == "") {
+  SUPERADMIN_PASSWORD <- NULL
+}
+
 # Event type choices
 EVENT_TYPES <- c(
   "Locals" = "locals",
@@ -380,7 +386,7 @@ ui <- page_fillable(
     sidebar = sidebar(
       id = "main_sidebar",
       title = NULL,  # Remove the "Menu" title
-      width = 220,
+      width = 230,
       bg = "#0A3055",
       open = "desktop",  # Closed on mobile by default
 
@@ -433,7 +439,13 @@ ui <- page_fillable(
                      class = "nav-link-sidebar"),
           actionLink("nav_admin_decks",
                      tagList(bsicons::bs_icon("collection"), " Edit Decks"),
-                     class = "nav-link-sidebar"),
+                     class = "nav-link-sidebar")
+        ),
+
+        # Super Admin Section (superadmin only)
+        conditionalPanel(
+          condition = "output.is_superadmin",
+          tags$div(class = "nav-section-label", "Super Admin"),
           actionLink("nav_admin_stores",
                      tagList(bsicons::bs_icon("shop"), " Edit Stores"),
                      class = "nav-link-sidebar"),
@@ -506,6 +518,7 @@ server <- function(input, output, session) {
     # === CORE ===
     db_con = NULL,
     is_admin = FALSE,
+    is_superadmin = FALSE,
 
     # === NAVIGATION ===
     current_nav = "dashboard",

@@ -79,7 +79,7 @@ observeEvent(input$admin_format_list__reactable__selected, {
 
 # Add format
 observeEvent(input$add_format, {
-  req(rv$is_admin, rv$db_con)
+  req(rv$is_superadmin, rv$db_con)
 
   format_id <- trimws(input$format_id)
   set_name <- trimws(input$format_set_name)
@@ -123,7 +123,7 @@ observeEvent(input$add_format, {
 
 # Update format
 observeEvent(input$update_format, {
-  req(rv$is_admin, rv$db_con, input$editing_format_id)
+  req(rv$is_superadmin, rv$db_con, input$editing_format_id)
 
   original_id <- input$editing_format_id
   format_id <- trimws(input$format_id)
@@ -210,7 +210,7 @@ observe({
 
 # Delete button click - show modal
 observeEvent(input$delete_format, {
-  req(rv$is_admin, input$editing_format_id)
+  req(rv$is_superadmin, input$editing_format_id)
 
   format <- dbGetQuery(rv$db_con, "SELECT set_name, display_name FROM formats WHERE format_id = ?",
                        params = list(input$editing_format_id))
@@ -233,7 +233,7 @@ observeEvent(input$delete_format, {
 
 # Confirm delete format
 observeEvent(input$confirm_delete_format, {
-  req(rv$is_admin, rv$db_con, input$editing_format_id)
+  req(rv$is_superadmin, rv$db_con, input$editing_format_id)
 
   tryCatch({
     dbExecute(rv$db_con, "DELETE FROM formats WHERE format_id = ?",

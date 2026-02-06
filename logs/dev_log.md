@@ -4,6 +4,32 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-06: Admin / Super Admin Tiers & renv Sync
+
+### Summary
+Added a barebones two-tier admin system using passwords, and synced renv for the first time after many package additions.
+
+### Admin Tiers
+Implemented a simple admin vs superadmin split to reduce sidebar clutter for regular tournament organizers:
+- **Admin** (`ADMIN_PASSWORD`): Enter Results, Edit Tournaments, Edit Players, Edit Decks
+- **Super Admin** (`SUPERADMIN_PASSWORD`): Edit Stores, Edit Formats (plus all admin tabs)
+
+Uses the same single-password-field login modal — the entered password determines the role. Superadmin password is checked first (so if both are the same, you get superadmin). Server-side `req(rv$is_superadmin)` guards protect stores/formats even from programmatic access.
+
+This is a stopgap before Discord OAuth in v0.22. Keeps things simple while letting us onboard scene admins who only need result entry access.
+
+### renv Sync
+First full `renv::restore()` on the project. Key issues:
+- `duckdb` wouldn't compile from source on Windows (rtools header issue) — installed binary (1.4.4) instead
+- `atomtemplates` (private GitHub package) needed `GITHUB_PAT` from `gh auth token`
+- `dotenv` and `httr2` were used in code but missing from lockfile — added via `renv::snapshot()`
+- R updated from 4.5.0 to 4.5.1
+
+### Sidebar Width
+Bumped from 220px to 230px — "Edit Tournaments" was wrapping to two lines on some viewports.
+
+---
+
 ## 2026-02-06: Deck Request Queue & Database Sync
 
 ### Summary
