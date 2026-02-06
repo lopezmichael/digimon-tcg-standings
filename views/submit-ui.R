@@ -30,7 +30,6 @@ submit_ui <- tagList(
 
       div(
         class = "p-3",
-        style = "overflow: visible;",
 
         # Wizard step indicator
         div(
@@ -52,58 +51,45 @@ submit_ui <- tagList(
         # Step 1: Tournament Details + Screenshot Upload
         div(
           id = "submit_wizard_step1",
-          style = "overflow: visible;",
 
           # Tournament Details Card
           card(
-            class = "upload-card",
             card_header("Tournament Details"),
             card_body(
-              style = "overflow: visible;",
               layout_columns(
                 col_widths = c(6, 6),
                 # Left column - Store
                 div(
-                  style = "overflow: visible;",
                   selectInput("submit_store", "Store",
                               choices = c("Loading..." = ""),
-                              width = "100%"),
+                              selectize = FALSE),
                   actionLink("submit_request_store", "Store not listed? Request it",
                              class = "small text-primary")
                 ),
                 # Right column - Date
-                div(
-                  dateInput("submit_date", "Date", value = NA, width = "100%")
-                )
+                dateInput("submit_date", "Date", value = NA)
               ),
               layout_columns(
                 col_widths = c(4, 4, 4),
-                style = "overflow: visible;",
-                div(
-                  style = "overflow: visible;",
-                  selectInput("submit_event_type", "Event Type",
-                              choices = c("Select..." = "",
-                                          "Locals" = "locals",
-                                          "Evo Cup" = "evo_cup",
-                                          "Store Championship" = "store_championship",
-                                          "Regional" = "regional",
-                                          "Online" = "online"),
-                              width = "100%")
-                ),
-                div(
-                  style = "overflow: visible;",
-                  selectInput("submit_format", "Format",
-                              choices = c("Loading..." = ""),
-                              width = "100%")
-                ),
-                numericInput("submit_rounds", "Total Rounds", value = 4, min = 1, max = 15, width = "100%")
+                selectInput("submit_event_type", "Event Type",
+                            choices = c("Select..." = "",
+                                        "Locals" = "locals",
+                                        "Evo Cup" = "evo_cup",
+                                        "Store Championship" = "store_championship",
+                                        "Regional" = "regional",
+                                        "Online" = "online"),
+                            selectize = FALSE),
+                selectInput("submit_format", "Format",
+                            choices = c("Loading..." = ""),
+                            selectize = FALSE),
+                numericInput("submit_rounds", "Total Rounds", value = 4, min = 1, max = 15)
               )
             )
           ),
 
           # Screenshot Upload Card
           card(
-            class = "upload-card mt-3",
+            class = "mt-3",
             card_header("Upload Screenshots"),
             card_body(
               # Info callout
@@ -122,8 +108,7 @@ submit_ui <- tagList(
                 class = "upload-file-input",
                 fileInput("submit_screenshots", "Select Files",
                           multiple = TRUE,
-                          accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
-                          width = "100%")
+                          accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"))
               ),
 
               # Screenshot preview
@@ -144,7 +129,6 @@ submit_ui <- tagList(
         shinyjs::hidden(
           div(
             id = "submit_wizard_step2",
-            style = "overflow: visible;",
 
             # Summary banner
             uiOutput("submit_summary_banner"),
@@ -194,7 +178,6 @@ submit_ui <- tagList(
 
       div(
         class = "p-3",
-        style = "overflow: visible;",
 
         # Info box - updated with Bandai TCG+ mention
         div(
@@ -211,25 +194,16 @@ submit_ui <- tagList(
 
         # Tournament Selection Card
         card(
-          class = "upload-card",
           card_header("Select Tournament"),
           card_body(
-            style = "overflow: visible;",
             layout_columns(
               col_widths = c(6, 6),
-              style = "overflow: visible;",
-              div(
-                style = "overflow: visible;",
-                selectInput("match_store", "Store",
-                            choices = c("All stores" = ""),
-                            width = "100%")
-              ),
-              div(
-                style = "overflow: visible;",
-                selectInput("match_tournament", "Tournament",
-                            choices = c("Select a tournament..." = ""),
-                            width = "100%")
-              )
+              selectInput("match_store", "Store",
+                          choices = c("All stores" = ""),
+                          selectize = FALSE),
+              selectInput("match_tournament", "Tournament",
+                          choices = c("Select a tournament..." = ""),
+                          selectize = FALSE)
             ),
             uiOutput("match_tournament_info")
           )
@@ -237,7 +211,7 @@ submit_ui <- tagList(
 
         # Your Player Info Card
         card(
-          class = "upload-card mt-3",
+          class = "mt-3",
           card_header("Your Player Info"),
           card_body(
             p(class = "text-muted small mb-2",
@@ -246,12 +220,12 @@ submit_ui <- tagList(
               col_widths = c(6, 6),
               div(
                 textInput("match_player_username", "Your Username",
-                          placeholder = "e.g., HappyCat", width = "100%"),
+                          placeholder = "e.g., HappyCat"),
                 div(id = "match_username_hint", class = "form-text text-danger d-none", "Required")
               ),
               div(
                 textInput("match_player_member", "Your Member Number",
-                          placeholder = "e.g., 0000123456", width = "100%"),
+                          placeholder = "e.g., 0000123456"),
                 div(id = "match_member_hint", class = "form-text text-danger d-none", "Required")
               )
             )
@@ -260,7 +234,7 @@ submit_ui <- tagList(
 
         # Screenshot Upload Card
         card(
-          class = "upload-card mt-3",
+          class = "mt-3",
           card_header("Match History Screenshot"),
           card_body(
             # Simple file upload
@@ -268,8 +242,7 @@ submit_ui <- tagList(
               class = "upload-file-input",
               fileInput("match_screenshots", "Select File",
                         multiple = FALSE,
-                        accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
-                        width = "100%")
+                        accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"))
             ),
 
             uiOutput("match_screenshot_preview"),

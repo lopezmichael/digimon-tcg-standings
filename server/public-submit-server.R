@@ -427,27 +427,26 @@ output$submit_results_table <- renderUI({
         # Player + match indicator
         div(
           textInput(paste0("submit_player_", i), NULL,
-                    value = row$username, width = "100%"),
+                    value = row$username),
           match_indicator
         ),
         # Member number
         div(
           textInput(paste0("submit_member_", i), NULL,
                     value = if (!is.na(row$member_number)) row$member_number else "",
-                    width = "100%",
                     placeholder = "0000...")
         ),
         # Points
         div(
           numericInput(paste0("submit_points_", i), NULL,
                        value = if (!is.na(row$points)) row$points else 0,
-                       min = 0, max = 99, width = "100%")
+                       min = 0, max = 99)
         ),
         # Deck
         div(
           selectInput(paste0("submit_deck_", i), NULL,
                       choices = deck_choices,
-                      width = "100%")
+                      selectize = FALSE)
         )
       )
     })
@@ -886,27 +885,25 @@ output$match_results_preview <- renderUI({
           # Opponent username (editable)
           div(
             textInput(paste0("match_opponent_", i), NULL,
-                      value = row$opponent_username, width = "100%")
+                      value = row$opponent_username)
           ),
           # Opponent member number (editable)
           div(
             textInput(paste0("match_member_", i), NULL,
                       value = if (!is.na(row$opponent_member_number)) row$opponent_member_number else "",
-                      width = "100%",
                       placeholder = "0000...")
           ),
           # Games W-L-T (editable as text to allow "2-0-0" format)
           div(
             textInput(paste0("match_games_", i), NULL,
                       value = paste0(row$games_won, "-", row$games_lost, "-", row$games_tied),
-                      width = "100%",
                       placeholder = "W-L-T")
           ),
           # Match points (editable)
           div(
             numericInput(paste0("match_points_", i), NULL,
                          value = as.integer(row$match_points),
-                         min = 0, max = 9, width = "100%")
+                         min = 0, max = 9)
           )
         )
       })

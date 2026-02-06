@@ -4161,6 +4161,36 @@ button.mapbox-gl-draw_point {
   padding: 0.35rem 0.5rem;
 }
 
+/* Fix input width overflow in upload results - critical! */
+.upload-result-row .bslib-grid-item,
+.upload-result-row > div {
+  min-width: 0 !important;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.upload-result-row .shiny-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+.upload-result-row .selectize-control,
+.upload-result-row .selectize-input,
+.upload-result-row select {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Same fix for results header row */
+.results-header-row .bslib-grid-item,
+.results-header-row > div {
+  min-width: 0 !important;
+}
+
 /* Placement badge */
 .placement-badge {
   display: inline-flex;
@@ -4273,33 +4303,39 @@ button.mapbox-gl-draw_point {
 }
 
 .match-badge--matched {
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #16a34a;
+  background: rgba(34, 197, 94, 0.15) !important;
+  border: 1px solid rgba(34, 197, 94, 0.3) !important;
+  color: #16a34a !important;
 }
 
-.match-badge--matched .bi {
-  color: #22c55e;
+.match-badge--matched .bi,
+.match-badge--matched .badge-count,
+.match-badge--matched .badge-label {
+  color: #16a34a !important;
 }
 
 .match-badge--possible {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #2563eb;
+  background: rgba(59, 130, 246, 0.15) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  color: #2563eb !important;
 }
 
-.match-badge--possible .bi {
-  color: #3b82f6;
+.match-badge--possible .bi,
+.match-badge--possible .badge-count,
+.match-badge--possible .badge-label {
+  color: #2563eb !important;
 }
 
 .match-badge--new {
-  background: rgba(107, 114, 128, 0.15);
-  border: 1px solid rgba(107, 114, 128, 0.3);
-  color: #4b5563;
+  background: rgba(107, 114, 128, 0.15) !important;
+  border: 1px solid rgba(107, 114, 128, 0.3) !important;
+  color: #4b5563 !important;
 }
 
-.match-badge--new .bi {
-  color: #6b7280;
+.match-badge--new .bi,
+.match-badge--new .badge-count,
+.match-badge--new .badge-label {
+  color: #6b7280 !important;
 }
 
 /* Upload results table */
@@ -4476,21 +4512,39 @@ div.player-match-indicator.new {
 }
 
 [data-bs-theme="dark"] .match-badge--matched {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.4);
-  color: #4ade80;
+  background: rgba(34, 197, 94, 0.2) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  color: #4ade80 !important;
+}
+
+[data-bs-theme="dark"] .match-badge--matched .bi,
+[data-bs-theme="dark"] .match-badge--matched .badge-count,
+[data-bs-theme="dark"] .match-badge--matched .badge-label {
+  color: #4ade80 !important;
 }
 
 [data-bs-theme="dark"] .match-badge--possible {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #60a5fa !important;
+}
+
+[data-bs-theme="dark"] .match-badge--possible .bi,
+[data-bs-theme="dark"] .match-badge--possible .badge-count,
+[data-bs-theme="dark"] .match-badge--possible .badge-label {
+  color: #60a5fa !important;
 }
 
 [data-bs-theme="dark"] .match-badge--new {
-  background: rgba(156, 163, 175, 0.2);
-  border-color: rgba(156, 163, 175, 0.4);
-  color: #9ca3af;
+  background: rgba(156, 163, 175, 0.2) !important;
+  border-color: rgba(156, 163, 175, 0.4) !important;
+  color: #9ca3af !important;
+}
+
+[data-bs-theme="dark"] .match-badge--new .bi,
+[data-bs-theme="dark"] .match-badge--new .badge-count,
+[data-bs-theme="dark"] .match-badge--new .badge-label {
+  color: #9ca3af !important;
 }
 
 [data-bs-theme="dark"] .player-match-indicator.matched,
