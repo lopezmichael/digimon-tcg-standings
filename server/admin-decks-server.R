@@ -570,12 +570,24 @@ output$deck_requests_section <- renderUI({
           ),
           div(
             class = "d-flex gap-2",
-            actionButton(paste0("approve_deck_", req$request_id), "Approve",
-                         class = "btn-sm btn-success"),
-            actionButton(paste0("edit_approve_deck_", req$request_id), "Edit & Approve",
-                         class = "btn-sm btn-outline-primary"),
-            actionButton(paste0("reject_deck_", req$request_id), "Reject",
-                         class = "btn-sm btn-outline-danger")
+            tags$button(
+              type = "button",
+              class = "btn btn-sm btn-success",
+              onclick = sprintf("Shiny.setInputValue('deck_request_approve_click', %d, {priority: 'event'})", req$request_id),
+              "Approve"
+            ),
+            tags$button(
+              type = "button",
+              class = "btn btn-sm btn-outline-primary",
+              onclick = sprintf("Shiny.setInputValue('deck_request_edit_click', %d, {priority: 'event'})", req$request_id),
+              "Edit & Approve"
+            ),
+            tags$button(
+              type = "button",
+              class = "btn btn-sm btn-outline-danger",
+              onclick = sprintf("Shiny.setInputValue('deck_request_reject_click', %d, {priority: 'event'})", req$request_id),
+              "Reject"
+            )
           )
         )
       })
@@ -583,69 +595,49 @@ output$deck_requests_section <- renderUI({
   )
 })
 
-# Handle approve buttons dynamically
-observe({
-  req(rv$db_con)
-  rv$deck_requests_refresh
-
-  pending <- tryCatch({
-    dbGetQuery(rv$db_con, "SELECT request_id FROM deck_requests WHERE status = 'pending'")
-  }, error = function(e) data.frame(request_id = integer()))
-
-  if (nrow(pending) > 0) {
-    lapply(pending$request_id, function(req_id) {
-      observeEvent(input[[paste0("approve_deck_", req_id)]], {
-        approve_deck_request(req_id, session, rv)
-      }, ignoreInit = TRUE, once = TRUE)
-    })
-  }
+# Handle approve button clicks (using Shiny.setInputValue from onclick)
+observeEvent(input$deck_request_approve_click, {
+  req(rv$db_con, rv$is_admin)
+  req_id <- input$deck_request_approve_click
+  approve_deck_request(req_id, session, rv)
 })
 
-# Handle edit & approve buttons dynamically
-observe({
-  req(rv$db_con)
-  rv$deck_requests_refresh
+# Handle edit & approve button clicks
+observeEvent(input$deck_request_edit_click, {
+  req(rv$db_con, rv$is_admin)
+  req_id <- input$deck_request_edit_click
 
-  pending <- tryCatch({
-    dbGetQuery(rv$db_con, "SELECT request_id FROM deck_requests WHERE status = 'pending'")
-  }, error = function(e) data.frame(request_id = integer()))
+  req_data <- dbGetQuery(rv$db_con, "SELECT * FROM deck_requests WHERE request_id = ?",
+                         params = list(req_id))
+  if (nrow(req_data) == 0) return()
+  req_data <- req_data[1, ]
 
-  if (nrow(pending) > 0) {
-    lapply(pending$request_id, function(req_id) {
-      observeEvent(input[[paste0("edit_approve_deck_", req_id)]], {
-        req_data <- dbGetQuery(rv$db_con, "SELECT * FROM deck_requests WHERE request_id = ?",
-                               params = list(req_id))
-        if (nrow(req_data) == 0) return()
-        req_data <- req_data[1, ]
+  rv$editing_deck_request_id <- req_id
 
-        rv$editing_deck_request_id <- req_id
-
-        showModal(modalDialog(
-          title = "Edit & Approve Deck Request",
-          textInput("edit_deck_request_name", "Deck Name", value = req_data$deck_name),
-          layout_columns(
-            col_widths = c(6, 6),
-            selectInput("edit_deck_request_color", "Primary Color",
-                        choices = c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White"),
-                        selected = req_data$primary_color,
-                        selectize = FALSE),
-            selectInput("edit_deck_request_color2", "Secondary Color",
-                        choices = c("None" = "", "Red", "Blue", "Yellow", "Green", "Purple", "Black", "White"),
-                        selected = if (!is.na(req_data$secondary_color)) req_data$secondary_color else "",
-                        selectize = FALSE)
-          ),
-          textInput("edit_deck_request_card_id", "Card ID",
-                    value = if (!is.na(req_data$display_card_id)) req_data$display_card_id else ""),
-          footer = tagList(
-            modalButton("Cancel"),
-            actionButton("confirm_edit_approve_deck", "Approve", class = "btn-success")
-          ),
-          size = "m",
-          easyClose = TRUE
-        ))
-      }, ignoreInit = TRUE, once = TRUE)
-    })
-  }
+  showModal(modalDialog(
+    title = "Edit & Approve Deck Request",
+    textInput("edit_deck_request_name", "Deck Name", value = req_data$deck_name),
+    layout_columns(
+      col_widths = c(6, 6),
+      class = "deck-request-colors",
+      selectInput("edit_deck_request_color", "Primary Color",
+                  choices = c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White"),
+                  selected = req_data$primary_color,
+                  selectize = FALSE),
+      selectInput("edit_deck_request_color2", "Secondary Color",
+                  choices = c("None" = "", "Red", "Blue", "Yellow", "Green", "Purple", "Black", "White"),
+                  selected = if (!is.na(req_data$secondary_color)) req_data$secondary_color else "",
+                  selectize = FALSE)
+    ),
+    textInput("edit_deck_request_card_id", "Card ID",
+              value = if (!is.na(req_data$display_card_id)) req_data$display_card_id else ""),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_edit_approve_deck", "Approve", class = "btn-success")
+    ),
+    size = "m",
+    easyClose = TRUE
+  ))
 })
 
 # Handle confirm edit & approve
@@ -671,22 +663,11 @@ observeEvent(input$confirm_edit_approve_deck, {
   rv$editing_deck_request_id <- NULL
 })
 
-# Handle reject buttons dynamically
-observe({
-  req(rv$db_con)
-  rv$deck_requests_refresh
-
-  pending <- tryCatch({
-    dbGetQuery(rv$db_con, "SELECT request_id FROM deck_requests WHERE status = 'pending'")
-  }, error = function(e) data.frame(request_id = integer()))
-
-  if (nrow(pending) > 0) {
-    lapply(pending$request_id, function(req_id) {
-      observeEvent(input[[paste0("reject_deck_", req_id)]], {
-        reject_deck_request(req_id, session, rv)
-      }, ignoreInit = TRUE, once = TRUE)
-    })
-  }
+# Handle reject button clicks
+observeEvent(input$deck_request_reject_click, {
+  req(rv$db_con, rv$is_admin)
+  req_id <- input$deck_request_reject_click
+  reject_deck_request(req_id, session, rv)
 })
 
 # Helper function to approve a deck request (uses original values)
