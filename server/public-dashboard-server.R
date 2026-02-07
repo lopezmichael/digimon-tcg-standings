@@ -951,23 +951,58 @@ output$meta_diversity_gauge <- renderUI({
   data <- meta_diversity_data()
 
   if (is.null(data) || is.na(data$score)) {
-    return(div(class = "health-indicator-value text-muted", "--"))
+    return(div(class = "gauge-container",
+      div(class = "gauge-value text-muted", "--")
+    ))
   }
 
   score <- data$score
   # Color based on score
-  color_class <- if (score >= 70) {
-    "text-success"
+  color <- if (score >= 70) {
+    "#38A169"  # green
   } else if (score >= 40) {
-    "text-warning"
+    "#F5B700"  # yellow
   } else {
-    "text-danger"
+    "#E5383B"  # red
   }
 
-  div(
-    class = paste("health-indicator-value", color_class),
-    sprintf("%d", score),
-    tags$span(class = "health-indicator-unit", "/100")
+  # SVG arc gauge - semicircle from 180 to 0 degrees
+  # Arc goes from left (0%) to right (100%)
+  arc_pct <- score / 100
+  # Calculate arc end point (180 degrees = 0%, 0 degrees = 100%)
+  end_angle <- 180 - (arc_pct * 180)
+  end_rad <- end_angle * pi / 180
+  # SVG arc coordinates (center at 50,50, radius 40)
+  end_x <- 50 + 40 * cos(end_rad)
+  end_y <- 50 - 40 * sin(end_rad)
+  large_arc <- if (arc_pct > 0.5) 1 else 0
+
+  div(class = "gauge-container",
+    tags$svg(
+      viewBox = "0 0 100 55",
+      class = "gauge-svg",
+      # Background arc (gray)
+      tags$path(
+        d = "M 10 50 A 40 40 0 0 1 90 50",
+        fill = "none",
+        stroke = "#e2e8f0",
+        `stroke-width` = "8",
+        `stroke-linecap` = "round"
+      ),
+      # Foreground arc (colored based on score)
+      if (score > 0) {
+        tags$path(
+          d = sprintf("M 10 50 A 40 40 0 %d 1 %.1f %.1f", large_arc, end_x, end_y),
+          fill = "none",
+          stroke = color,
+          `stroke-width` = "8",
+          `stroke-linecap` = "round"
+        )
+      }
+    ),
+    div(class = "gauge-value", style = sprintf("color: %s;", color),
+      sprintf("%d", score)
+    )
   )
 })
 
@@ -1005,6 +1040,15 @@ event_health_data <- reactive({
       AND event_date < '%s' %s %s %s
   ", date_60_ago, date_30_ago, filters$format, filters$event_type, filters$store))
 
+  # Get last 8 events for sparkline
+  sparkline_data <- dbGetQuery(rv$db_con, sprintf("
+    SELECT player_count
+    FROM tournaments t
+    WHERE 1=1 %s %s %s
+    ORDER BY event_date DESC
+    LIMIT 8
+  ", filters$format, filters$event_type, filters$store))
+
   avg_recent <- if (is.na(recent$avg_players)) 0 else round(recent$avg_players, 1)
   avg_prior <- if (is.na(prior$avg_players)) 0 else prior$avg_players
   event_count <- if (is.na(recent$event_count)) 0 else recent$event_count
@@ -1016,10 +1060,14 @@ event_health_data <- reactive({
     pct_change <- NA
   }
 
+  # Reverse sparkline data so oldest is first
+  sparkline_values <- if (nrow(sparkline_data) > 0) rev(sparkline_data$player_count) else c()
+
   list(
     avg_recent = avg_recent,
     pct_change = pct_change,
-    event_count = event_count
+    event_count = event_count,
+    sparkline = sparkline_values
   )
 })
 
@@ -1027,42 +1075,84 @@ output$event_health_indicator <- renderUI({
   data <- event_health_data()
 
   if (is.null(data) || data$avg_recent == 0) {
-    return(div(class = "health-indicator-value text-muted", "--"))
+    return(div(class = "event-health-container",
+      div(class = "health-indicator-value text-muted", "--")
+    ))
   }
 
-  # Determine trend arrow and color
+  # Determine trend color
   if (is.na(data$pct_change)) {
-    arrow <- ""
-    color_class <- "text-muted"
+    trend_color <- "#94a3b8"  # muted
     change_text <- ""
   } else if (data$pct_change >= 10) {
-    arrow <- bsicons::bs_icon("arrow-up", class = "me-1")
-    color_class <- "text-success"
+    trend_color <- "#38A169"  # green
     change_text <- sprintf("+%d%%", data$pct_change)
   } else if (data$pct_change >= 1) {
-    arrow <- bsicons::bs_icon("arrow-up-right", class = "me-1")
-    color_class <- "text-success"
+    trend_color <- "#38A169"
     change_text <- sprintf("+%d%%", data$pct_change)
   } else if (data$pct_change >= -1) {
-    arrow <- bsicons::bs_icon("arrow-right", class = "me-1")
-    color_class <- "text-muted"
+    trend_color <- "#94a3b8"
     change_text <- "flat"
   } else if (data$pct_change >= -10) {
-    arrow <- bsicons::bs_icon("arrow-down-right", class = "me-1")
-    color_class <- "text-warning"
+    trend_color <- "#F5B700"  # yellow
     change_text <- sprintf("%d%%", data$pct_change)
   } else {
-    arrow <- bsicons::bs_icon("arrow-down", class = "me-1")
-    color_class <- "text-danger"
+    trend_color <- "#E5383B"  # red
     change_text <- sprintf("%d%%", data$pct_change)
   }
 
-  div(
-    class = "health-indicator-value",
-    span(data$avg_recent),
-    tags$span(class = "health-indicator-unit", " avg"),
-    if (change_text != "") {
-      span(class = paste("health-indicator-trend", color_class), arrow, change_text)
+  # Build sparkline SVG if we have data
+  sparkline_svg <- NULL
+  if (length(data$sparkline) >= 2) {
+    vals <- data$sparkline
+    n <- length(vals)
+    min_val <- min(vals)
+    max_val <- max(vals)
+    range_val <- max(max_val - min_val, 1)  # avoid division by zero
+
+    # Scale to SVG coordinates (width=80, height=30, with padding)
+    x_coords <- seq(5, 75, length.out = n)
+    y_coords <- 25 - ((vals - min_val) / range_val) * 20  # invert y, leave padding
+
+    # Build polyline points
+    points <- paste(sprintf("%.1f,%.1f", x_coords, y_coords), collapse = " ")
+
+    sparkline_svg <- tags$svg(
+      viewBox = "0 0 80 30",
+      class = "sparkline-svg",
+      # Line
+      tags$polyline(
+        points = points,
+        fill = "none",
+        stroke = trend_color,
+        `stroke-width` = "2",
+        `stroke-linecap` = "round",
+        `stroke-linejoin` = "round"
+      ),
+      # End dot
+      tags$circle(
+        cx = x_coords[n],
+        cy = y_coords[n],
+        r = "3",
+        fill = trend_color
+      )
+    )
+  }
+
+  div(class = "event-health-container",
+    div(class = "event-health-main",
+      div(class = "health-indicator-value",
+        span(data$avg_recent),
+        tags$span(class = "health-indicator-unit", " avg")
+      ),
+      if (change_text != "") {
+        div(class = "health-indicator-trend", style = sprintf("color: %s;", trend_color),
+          change_text
+        )
+      }
+    ),
+    if (!is.null(sparkline_svg)) {
+      div(class = "event-health-sparkline", sparkline_svg)
     }
   )
 })
@@ -1170,80 +1260,86 @@ output$player_growth_chart <- renderHighchart({
     hc_add_theme(hc_theme_atom_switch(chart_mode))
 })
 
-# Competitive Balance Chart
-output$competitive_balance_chart <- renderHighchart({
+# Rising Stars - players with strong recent performance
+output$rising_stars_cards <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
-    return(highchart() |> hc_add_theme(hc_theme_atom_switch("light")))
+    return(div(class = "text-muted", "No data available"))
   }
 
-  chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
   filters <- build_dashboard_filters("t")
+  today <- Sys.Date()
+  date_30_ago <- format(today - 30, "%Y-%m-%d")
 
-  # Get top 15 players by tournament wins
+  # Get players with top 3 finishes in last 30 days
   result <- dbGetQuery(rv$db_con, sprintf("
-    SELECT p.display_name, COUNT(*) as wins
+    SELECT
+      p.player_id,
+      p.display_name,
+      COUNT(CASE WHEN r.placement = 1 THEN 1 END) as recent_wins,
+      COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as recent_top3,
+      COUNT(*) as recent_events
     FROM results r
     JOIN players p ON r.player_id = p.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE r.placement = 1 %s %s %s
-    GROUP BY r.player_id, p.display_name
-    ORDER BY wins DESC
-    LIMIT 15
-  ", filters$format, filters$event_type, filters$store))
+    WHERE t.event_date >= '%s' %s %s %s
+    GROUP BY p.player_id, p.display_name
+    HAVING COUNT(CASE WHEN r.placement <= 3 THEN 1 END) > 0
+    ORDER BY
+      COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC,
+      COUNT(CASE WHEN r.placement <= 3 THEN 1 END) DESC,
+      COUNT(*) DESC
+    LIMIT 5
+  ", date_30_ago, filters$format, filters$event_type, filters$store))
 
   if (nrow(result) == 0) {
-    return(
-      highchart() |>
-        hc_subtitle(text = "No tournament winners yet") |>
-        hc_add_theme(hc_theme_atom_switch(chart_mode))
-    )
+    return(div(class = "text-muted text-center py-3", "No recent top placements"))
   }
 
-  # Reverse for horizontal bar (top player at top)
-  result <- result[nrow(result):1, ]
+  # Get competitive ratings
+  comp_ratings <- player_competitive_ratings()
 
-  highchart() |>
-    hc_chart(type = "bar") |>
-    hc_xAxis(
-      categories = result$display_name,
-      title = list(text = NULL)
-    ) |>
-    hc_yAxis(
-      title = list(text = "Tournament Wins"),
-      allowDecimals = FALSE
-    ) |>
-    hc_add_series(
-      name = "Wins",
-      data = result$wins,
-      color = "#0F4C81",
-      showInLegend = FALSE
-    ) |>
-    hc_tooltip(
-      pointFormat = "<b>{point.y}</b> tournament wins"
-    ) |>
-    hc_add_theme(hc_theme_atom_switch(chart_mode))
-})
+  # Merge ratings
+  result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
+  result$competitive_rating[is.na(result$competitive_rating)] <- 1500
 
-output$competitive_balance_subtitle <- renderUI({
-  if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+  # Re-sort after merge
 
-  filters <- build_dashboard_filters("t")
+  result <- result[order(-result$recent_wins, -result$recent_top3, -result$recent_events), ]
 
-  result <- dbGetQuery(rv$db_con, sprintf("
-    SELECT
-      COUNT(DISTINCT CASE WHEN r.placement = 1 THEN r.player_id END) as unique_winners,
-      COUNT(DISTINCT CASE WHEN r.placement = 1 THEN r.tournament_id END) as total_tournaments
-    FROM results r
-    JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE 1=1 %s %s %s
-  ", filters$format, filters$event_type, filters$store))
+  # Build player cards
+  div(class = "rising-stars-grid",
+    lapply(1:nrow(result), function(i) {
+      player <- result[i, ]
+      # Build placement badges
+      badges <- tagList()
+      if (player$recent_wins > 0) {
+        badges <- tagList(badges,
+          span(class = "rising-star-badge badge-gold",
+            bsicons::bs_icon("trophy-fill", class = "me-1"),
+            player$recent_wins
+          )
+        )
+      }
+      if (player$recent_top3 - player$recent_wins > 0) {
+        badges <- tagList(badges,
+          span(class = "rising-star-badge badge-silver",
+            bsicons::bs_icon("award-fill", class = "me-1"),
+            player$recent_top3 - player$recent_wins
+          )
+        )
+      }
 
-  if (result$total_tournaments == 0) {
-    return(span(class = "text-muted small", "No tournaments yet"))
-  }
-
-  span(
-    class = "text-muted small",
-    sprintf("%d different winners across %d tournaments", result$unique_winners, result$total_tournaments)
+      div(class = "rising-star-card",
+        div(class = "rising-star-rank", i),
+        div(class = "rising-star-info",
+          div(class = "rising-star-name", player$display_name),
+          div(class = "rising-star-badges", badges)
+        ),
+        div(class = "rising-star-rating",
+          span(class = "rating-value", player$competitive_rating),
+          span(class = "rating-label", "Rating")
+        )
+      )
+    })
   )
 })

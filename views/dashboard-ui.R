@@ -167,15 +167,18 @@ dashboard_ui <- tagList(
           highchartOutput("player_growth_chart", height = "200px")
         )
       ),
-      # Bottom row: Competitive Balance chart
+      # Bottom row: Rising Stars
       div(
         class = "mt-3",
         div(
           class = "d-flex justify-content-between align-items-center mb-2",
-          tags$strong("Competitive Balance"),
-          uiOutput("competitive_balance_subtitle", inline = TRUE)
+          div(
+            bsicons::bs_icon("graph-up-arrow", class = "text-success me-2"),
+            tags$strong("Rising Stars")
+          ),
+          tags$span(class = "text-muted small", "Biggest rating gains (last 30 days)")
         ),
-        highchartOutput("competitive_balance_chart", height = "250px")
+        uiOutput("rising_stars_cards")
       )
     )
   ),

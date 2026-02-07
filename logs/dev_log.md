@@ -4,6 +4,53 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-07: Scene Health Dashboard Section
+
+### Summary
+Added a new "Scene Health" section to the dashboard providing competition health metrics at a glance. Includes visual gauges, sparklines, and a Rising Stars feature.
+
+### Components Added
+
+**Meta Diversity Gauge**
+- SVG semi-circular arc gauge showing diversity score (0-100)
+- Based on Herfindahl-Hirschman Index (HHI) of win distribution across decks
+- Color-coded: green (70+), yellow (40-70), red (<40)
+- Shows "X decks with wins" as subtitle
+
+**Event Health Indicator**
+- Average attendance for last 30 days vs prior 30 days
+- Trend percentage with color coding
+- SVG sparkline showing last 8 events' attendance
+- Shows "X events (30 days)" as subtitle
+
+**Player Growth & Retention Chart**
+- Stacked bar chart by month
+- Three categories: New (first tournament), Returning (<3 events), Regulars (3+ events)
+- Uses strftime instead of DATE_TRUNC for Windows DuckDB compatibility
+
+**Rising Stars**
+- Replaced "Competitive Balance" bar chart (which was boring)
+- Shows top 5 players with most top-3 finishes in last 30 days
+- Card layout with rank badge, name, trophy/medal counts, and current rating
+- More engaging narrative than just "players with most wins"
+
+### Technical Notes
+
+**Windows DuckDB Compatibility**
+- `DATE_TRUNC` and `INTERVAL` require ICU extension (not available on Windows mingw builds)
+- Replaced with `strftime('%Y-%m', date)` for month truncation
+- Date arithmetic done in R and passed as formatted strings
+
+**SVG Gauges**
+- Arc calculated with trigonometry: end point based on percentage around semicircle
+- `large_arc` SVG flag set based on whether arc > 50%
+- Background arc in gray, foreground arc colored by score
+
+### Design Doc
+Full design documented in `docs/plans/2026-02-07-scene-health-dashboard-design.md`
+
+---
+
 ## 2026-02-06: Mobile Navigation & Pre-Merge Polish
 
 ### Summary
