@@ -513,6 +513,7 @@ observeEvent(input$confirm_delete_archetype, {
 # Initialize refresh trigger
 rv$deck_requests_refresh <- NULL
 rv$editing_deck_request_id <- NULL
+rv$rejecting_deck_request_id <- NULL
 
 # Render pending deck requests section
 output$deck_requests_section <- renderUI({
@@ -663,11 +664,71 @@ observeEvent(input$confirm_edit_approve_deck, {
   rv$editing_deck_request_id <- NULL
 })
 
-# Handle reject button clicks
+# Handle reject button clicks - show modal to select replacement deck
 observeEvent(input$deck_request_reject_click, {
   req(rv$db_con, rv$is_admin)
   req_id <- input$deck_request_reject_click
-  reject_deck_request(req_id, session, rv)
+
+  req_data <- dbGetQuery(rv$db_con, "SELECT * FROM deck_requests WHERE request_id = ?",
+                         params = list(req_id))
+  if (nrow(req_data) == 0) return()
+  req_data <- req_data[1, ]
+
+  rv$rejecting_deck_request_id <- req_id
+
+  # Get existing decks for dropdown
+  decks <- dbGetQuery(rv$db_con, "
+    SELECT archetype_id, archetype_name FROM deck_archetypes
+    WHERE is_active = TRUE
+    ORDER BY archetype_name
+  ")
+  deck_choices <- setNames(decks$archetype_id, decks$archetype_name)
+
+  # Count how many results use this pending request
+  result_count <- dbGetQuery(rv$db_con, "
+    SELECT COUNT(*) as cnt FROM results WHERE pending_deck_request_id = ?
+  ", params = list(req_id))$cnt
+
+  showModal(modalDialog(
+    title = "Reject Deck Request",
+    div(
+      class = "alert alert-warning",
+      bsicons::bs_icon("exclamation-triangle-fill", class = "me-2"),
+      sprintf("Rejecting request for '%s'", req_data$deck_name)
+    ),
+    if (result_count > 0) {
+      div(
+        p(sprintf("This deck is used in %d result(s). Select an existing deck to assign them to:", result_count)),
+        selectInput("reject_replacement_deck", "Replace with:",
+                    choices = c("Unknown" = "", deck_choices),
+                    selectize = FALSE)
+      )
+    } else {
+      p(class = "text-muted", "No results are using this pending deck.")
+    },
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_reject_deck", "Reject", class = "btn-danger")
+    ),
+    size = "m",
+    easyClose = TRUE
+  ))
+})
+
+# Handle confirm reject
+observeEvent(input$confirm_reject_deck, {
+  req(rv$db_con, rv$is_admin, rv$rejecting_deck_request_id)
+
+  req_id <- rv$rejecting_deck_request_id
+  replacement_id <- if (!is.null(input$reject_replacement_deck) && input$reject_replacement_deck != "") {
+    as.integer(input$reject_replacement_deck)
+  } else {
+    NULL
+  }
+
+  reject_deck_request(req_id, replacement_id, session, rv)
+  removeModal()
+  rv$rejecting_deck_request_id <- NULL
 })
 
 # Helper function to approve a deck request (uses original values)
@@ -732,6 +793,15 @@ create_deck_from_request <- function(req_id, deck_name, primary_color, secondary
     }
     showNotification(msg, type = "message")
 
+    # Remind admin to set card image if not provided
+    if (is.na(card_id) || card_id == "") {
+      showNotification(
+        "Remember to set a card image in the deck table below (decks without images are highlighted).",
+        type = "warning",
+        duration = 8
+      )
+    }
+
     # Refresh
     rv$deck_requests_refresh <- Sys.time()
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
@@ -745,7 +815,8 @@ create_deck_from_request <- function(req_id, deck_name, primary_color, secondary
 }
 
 # Helper function to reject a deck request
-reject_deck_request <- function(req_id, session, rv) {
+# replacement_archetype_id: ID of deck to assign results to, or NULL for UNKNOWN
+reject_deck_request <- function(req_id, replacement_archetype_id, session, rv) {
   tryCatch({
     req_data <- dbGetQuery(rv$db_con, "SELECT deck_name FROM deck_requests WHERE request_id = ?",
                            params = list(req_id))
@@ -754,16 +825,34 @@ reject_deck_request <- function(req_id, session, rv) {
       UPDATE deck_requests SET status = 'rejected', reviewed_at = CURRENT_TIMESTAMP WHERE request_id = ?
     ", params = list(req_id))
 
-    # Update any results that used this pending request to use UNKNOWN
-    unknown_id <- dbGetQuery(rv$db_con, "SELECT archetype_id FROM deck_archetypes WHERE archetype_name = 'UNKNOWN'")
-    if (nrow(unknown_id) > 0) {
-      dbExecute(rv$db_con, "
-        UPDATE results SET archetype_id = ?, pending_deck_request_id = NULL WHERE pending_deck_request_id = ?
-      ", params = list(unknown_id$archetype_id[1], req_id))
+    # Determine replacement deck ID
+    if (is.null(replacement_archetype_id)) {
+      # Fall back to UNKNOWN
+      unknown_result <- dbGetQuery(rv$db_con, "SELECT archetype_id FROM deck_archetypes WHERE archetype_name = 'UNKNOWN'")
+      if (nrow(unknown_result) > 0) {
+        replacement_archetype_id <- unknown_result$archetype_id[1]
+      }
     }
 
-    showNotification(sprintf("Rejected request for '%s'", req_data$deck_name[1]), type = "message")
+    # Update any results that used this pending request
+    updated_count <- 0
+    if (!is.null(replacement_archetype_id)) {
+      updated_count <- dbExecute(rv$db_con, "
+        UPDATE results SET archetype_id = ?, pending_deck_request_id = NULL WHERE pending_deck_request_id = ?
+      ", params = list(replacement_archetype_id, req_id))
+    }
+
+    # Build notification message
+    msg <- sprintf("Rejected request for '%s'", req_data$deck_name[1])
+    if (updated_count > 0) {
+      # Get replacement deck name for message
+      replacement_name <- dbGetQuery(rv$db_con, "SELECT archetype_name FROM deck_archetypes WHERE archetype_id = ?",
+                                     params = list(replacement_archetype_id))$archetype_name[1]
+      msg <- paste0(msg, sprintf(" - %d result(s) reassigned to '%s'", updated_count, replacement_name))
+    }
+    showNotification(msg, type = "message")
     rv$deck_requests_refresh <- Sys.time()
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
     showNotification(paste("Error rejecting request:", e$message), type = "error")
