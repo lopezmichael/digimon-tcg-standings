@@ -129,6 +129,57 @@ dashboard_ui <- tagList(
     )
   ),
 
+  # Scene Health section
+  card(
+    card_header(
+      class = "d-flex align-items-center gap-2",
+      bsicons::bs_icon("heart-pulse", class = "text-success"),
+      "Scene Health"
+    ),
+    card_body(
+      class = "scene-health-section",
+      # Top row: compact indicators + player growth chart
+      layout_columns(
+        col_widths = breakpoints(
+          sm = c(12, 12),
+          md = c(4, 8)
+        ),
+        # Left: compact indicators stacked
+        div(
+          class = "scene-health-indicators",
+          # Meta Diversity gauge
+          div(
+            class = "health-indicator-card",
+            div(class = "health-indicator-label", "Meta Diversity"),
+            uiOutput("meta_diversity_gauge"),
+            div(class = "health-indicator-subtitle", uiOutput("meta_diversity_subtitle", inline = TRUE))
+          ),
+          # Event Health indicator
+          div(
+            class = "health-indicator-card",
+            div(class = "health-indicator-label", "Event Health"),
+            uiOutput("event_health_indicator"),
+            div(class = "health-indicator-subtitle", uiOutput("event_health_subtitle", inline = TRUE))
+          )
+        ),
+        # Right: Player Growth chart
+        div(
+          highchartOutput("player_growth_chart", height = "200px")
+        )
+      ),
+      # Bottom row: Competitive Balance chart
+      div(
+        class = "mt-3",
+        div(
+          class = "d-flex justify-content-between align-items-center mb-2",
+          tags$strong("Competitive Balance"),
+          uiOutput("competitive_balance_subtitle", inline = TRUE)
+        ),
+        highchartOutput("competitive_balance_chart", height = "250px")
+      )
+    )
+  ),
+
   # Charts row (secondary analytics)
   layout_columns(
     col_widths = c(4, 4, 4),

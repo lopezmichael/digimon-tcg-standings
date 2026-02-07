@@ -903,3 +903,337 @@ output$tournaments_trend_chart <- renderHighchart({
     ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
 })
+
+# ---------------------------------------------------------------------------
+# Scene Health Section
+# ---------------------------------------------------------------------------
+
+# Meta Diversity - calculates HHI-based diversity score
+meta_diversity_data <- reactive({
+  if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+
+  filters <- build_dashboard_filters("t")
+
+  # Get win counts by archetype
+  result <- dbGetQuery(rv$db_con, sprintf("
+    SELECT da.archetype_id, da.archetype_name,
+           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as wins
+    FROM results r
+    JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE da.archetype_name != 'UNKNOWN' %s %s %s
+    GROUP BY da.archetype_id, da.archetype_name
+    HAVING COUNT(CASE WHEN r.placement = 1 THEN 1 END) > 0
+  ", filters$format, filters$event_type, filters$store))
+
+  if (nrow(result) == 0) return(list(score = NA, decks_with_wins = 0))
+
+  total_wins <- sum(result$wins)
+  if (total_wins == 0) return(list(score = NA, decks_with_wins = 0))
+
+  # Calculate HHI (sum of squared market shares)
+  shares <- result$wins / total_wins
+  hhi <- sum(shares^2)
+
+  # Convert to diversity score (0-100, higher = more diverse)
+  # HHI of 1 = monopoly (one deck wins everything) -> score 0
+  # HHI of 1/n = perfect equality -> score approaches 100
+  diversity_score <- round((1 - hhi) * 100, 0)
+
+  list(
+    score = diversity_score,
+    decks_with_wins = nrow(result),
+    total_wins = total_wins
+  )
+})
+
+output$meta_diversity_gauge <- renderUI({
+  data <- meta_diversity_data()
+
+  if (is.null(data) || is.na(data$score)) {
+    return(div(class = "health-indicator-value text-muted", "--"))
+  }
+
+  score <- data$score
+  # Color based on score
+  color_class <- if (score >= 70) {
+    "text-success"
+  } else if (score >= 40) {
+    "text-warning"
+  } else {
+    "text-danger"
+  }
+
+  div(
+    class = paste("health-indicator-value", color_class),
+    sprintf("%d", score),
+    tags$span(class = "health-indicator-unit", "/100")
+  )
+})
+
+output$meta_diversity_subtitle <- renderUI({
+  data <- meta_diversity_data()
+  if (is.null(data) || data$decks_with_wins == 0) {
+    return(span(class = "text-muted", "No data"))
+  }
+  span(sprintf("%d decks with wins", data$decks_with_wins))
+})
+
+# Event Health - attendance trends
+event_health_data <- reactive({
+  if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+
+  filters <- build_dashboard_filters("t")
+
+  # Recent period (last 30 days)
+  recent <- dbGetQuery(rv$db_con, sprintf("
+    SELECT AVG(player_count) as avg_players, COUNT(*) as event_count
+    FROM tournaments t
+    WHERE event_date >= CURRENT_DATE - INTERVAL 30 DAY %s %s %s
+  ", filters$format, filters$event_type, filters$store))
+
+  # Prior period (30-60 days ago)
+  prior <- dbGetQuery(rv$db_con, sprintf("
+    SELECT AVG(player_count) as avg_players
+    FROM tournaments t
+    WHERE event_date >= CURRENT_DATE - INTERVAL 60 DAY
+      AND event_date < CURRENT_DATE - INTERVAL 30 DAY %s %s %s
+  ", filters$format, filters$event_type, filters$store))
+
+  avg_recent <- if (is.na(recent$avg_players)) 0 else round(recent$avg_players, 1)
+  avg_prior <- if (is.na(prior$avg_players)) 0 else prior$avg_players
+  event_count <- if (is.na(recent$event_count)) 0 else recent$event_count
+
+  # Calculate change
+  if (avg_prior > 0) {
+    pct_change <- round((avg_recent - avg_prior) / avg_prior * 100, 0)
+  } else {
+    pct_change <- NA
+  }
+
+  list(
+    avg_recent = avg_recent,
+    pct_change = pct_change,
+    event_count = event_count
+  )
+})
+
+output$event_health_indicator <- renderUI({
+  data <- event_health_data()
+
+  if (is.null(data) || data$avg_recent == 0) {
+    return(div(class = "health-indicator-value text-muted", "--"))
+  }
+
+  # Determine trend arrow and color
+  if (is.na(data$pct_change)) {
+    arrow <- ""
+    color_class <- "text-muted"
+    change_text <- ""
+  } else if (data$pct_change >= 10) {
+    arrow <- bsicons::bs_icon("arrow-up", class = "me-1")
+    color_class <- "text-success"
+    change_text <- sprintf("+%d%%", data$pct_change)
+  } else if (data$pct_change >= 1) {
+    arrow <- bsicons::bs_icon("arrow-up-right", class = "me-1")
+    color_class <- "text-success"
+    change_text <- sprintf("+%d%%", data$pct_change)
+  } else if (data$pct_change >= -1) {
+    arrow <- bsicons::bs_icon("arrow-right", class = "me-1")
+    color_class <- "text-muted"
+    change_text <- "flat"
+  } else if (data$pct_change >= -10) {
+    arrow <- bsicons::bs_icon("arrow-down-right", class = "me-1")
+    color_class <- "text-warning"
+    change_text <- sprintf("%d%%", data$pct_change)
+  } else {
+    arrow <- bsicons::bs_icon("arrow-down", class = "me-1")
+    color_class <- "text-danger"
+    change_text <- sprintf("%d%%", data$pct_change)
+  }
+
+  div(
+    class = "health-indicator-value",
+    span(data$avg_recent),
+    tags$span(class = "health-indicator-unit", " avg"),
+    if (change_text != "") {
+      span(class = paste("health-indicator-trend", color_class), arrow, change_text)
+    }
+  )
+})
+
+output$event_health_subtitle <- renderUI({
+  data <- event_health_data()
+  if (is.null(data)) return(span(class = "text-muted", "No data"))
+  span(sprintf("%d events (30 days)", data$event_count))
+})
+
+# Player Growth & Retention Chart
+output$player_growth_chart <- renderHighchart({
+  if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
+    return(highchart() |> hc_add_theme(hc_theme_atom_switch("light")))
+  }
+
+  chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
+  filters <- build_dashboard_filters("t")
+
+  # Get player participation by month with their first ever tournament
+  result <- dbGetQuery(rv$db_con, sprintf("
+    WITH player_first AS (
+      SELECT r.player_id, MIN(t.event_date) as first_date
+      FROM results r
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      GROUP BY r.player_id
+    ),
+    player_monthly AS (
+      SELECT DISTINCT
+        DATE_TRUNC('month', t.event_date) as month,
+        r.player_id,
+        pf.first_date
+      FROM results r
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      JOIN player_first pf ON r.player_id = pf.player_id
+      WHERE 1=1 %s %s %s
+    ),
+    player_cumulative AS (
+      SELECT
+        pm.month,
+        pm.player_id,
+        pm.first_date,
+        (SELECT COUNT(DISTINCT t2.tournament_id)
+         FROM results r2
+         JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
+         WHERE r2.player_id = pm.player_id AND t2.event_date < pm.month) as prior_events
+      FROM player_monthly pm
+    )
+    SELECT
+      month,
+      COUNT(CASE WHEN DATE_TRUNC('month', first_date) = month THEN 1 END) as new_players,
+      COUNT(CASE WHEN DATE_TRUNC('month', first_date) < month AND prior_events < 3 THEN 1 END) as returning_players,
+      COUNT(CASE WHEN prior_events >= 3 THEN 1 END) as regulars
+    FROM player_cumulative
+    GROUP BY month
+    ORDER BY month
+  ", filters$format, filters$event_type, filters$store))
+
+  if (nrow(result) == 0) {
+    return(
+      highchart() |>
+        hc_subtitle(text = "No player data yet") |>
+        hc_add_theme(hc_theme_atom_switch(chart_mode))
+    )
+  }
+
+  # Convert month to date
+  result$month <- as.Date(result$month)
+
+  highchart() |>
+    hc_chart(type = "column") |>
+    hc_title(text = "Player Growth & Retention", style = list(fontSize = "14px")) |>
+    hc_xAxis(
+      categories = format(result$month, "%b %Y"),
+      title = list(text = NULL)
+    ) |>
+    hc_yAxis(
+      title = list(text = "Players"),
+      stackLabels = list(enabled = FALSE)
+    ) |>
+    hc_plotOptions(
+      column = list(
+        stacking = "normal",
+        borderWidth = 0
+      )
+    ) |>
+    hc_add_series(name = "New", data = result$new_players, color = "#38A169") |>
+    hc_add_series(name = "Returning", data = result$returning_players, color = "#2D7DD2") |>
+    hc_add_series(name = "Regulars", data = result$regulars, color = "#805AD5") |>
+    hc_tooltip(
+      shared = TRUE,
+      pointFormat = "<b>{series.name}:</b> {point.y}<br/>"
+    ) |>
+    hc_legend(
+      enabled = TRUE,
+      layout = "horizontal",
+      align = "center",
+      verticalAlign = "bottom"
+    ) |>
+    hc_add_theme(hc_theme_atom_switch(chart_mode))
+})
+
+# Competitive Balance Chart
+output$competitive_balance_chart <- renderHighchart({
+  if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
+    return(highchart() |> hc_add_theme(hc_theme_atom_switch("light")))
+  }
+
+  chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
+  filters <- build_dashboard_filters("t")
+
+  # Get top 15 players by tournament wins
+  result <- dbGetQuery(rv$db_con, sprintf("
+    SELECT p.display_name, COUNT(*) as wins
+    FROM results r
+    JOIN players p ON r.player_id = p.player_id
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE r.placement = 1 %s %s %s
+    GROUP BY r.player_id, p.display_name
+    ORDER BY wins DESC
+    LIMIT 15
+  ", filters$format, filters$event_type, filters$store))
+
+  if (nrow(result) == 0) {
+    return(
+      highchart() |>
+        hc_subtitle(text = "No tournament winners yet") |>
+        hc_add_theme(hc_theme_atom_switch(chart_mode))
+    )
+  }
+
+  # Reverse for horizontal bar (top player at top)
+  result <- result[nrow(result):1, ]
+
+  highchart() |>
+    hc_chart(type = "bar") |>
+    hc_xAxis(
+      categories = result$display_name,
+      title = list(text = NULL)
+    ) |>
+    hc_yAxis(
+      title = list(text = "Tournament Wins"),
+      allowDecimals = FALSE
+    ) |>
+    hc_add_series(
+      name = "Wins",
+      data = result$wins,
+      color = "#0F4C81",
+      showInLegend = FALSE
+    ) |>
+    hc_tooltip(
+      pointFormat = "<b>{point.y}</b> tournament wins"
+    ) |>
+    hc_add_theme(hc_theme_atom_switch(chart_mode))
+})
+
+output$competitive_balance_subtitle <- renderUI({
+  if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
+
+  filters <- build_dashboard_filters("t")
+
+  result <- dbGetQuery(rv$db_con, sprintf("
+    SELECT
+      COUNT(DISTINCT CASE WHEN r.placement = 1 THEN r.player_id END) as unique_winners,
+      COUNT(DISTINCT CASE WHEN r.placement = 1 THEN r.tournament_id END) as total_tournaments
+    FROM results r
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE 1=1 %s %s %s
+  ", filters$format, filters$event_type, filters$store))
+
+  if (result$total_tournaments == 0) {
+    return(span(class = "text-muted small", "No tournaments yet"))
+  }
+
+  span(
+    class = "text-muted small",
+    sprintf("%d different winners across %d tournaments", result$unique_winners, result$total_tournaments)
+  )
+})
