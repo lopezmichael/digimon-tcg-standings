@@ -248,6 +248,9 @@ output$archetype_list <- renderReactable({
   input$add_archetype
   input$update_archetype
   input$confirm_delete_archetype
+  # Also refresh when deck requests are approved
+  input$deck_request_approve_click
+  input$confirm_edit_approve_deck
 
   # Sort by Card ID with NULLs first (decks needing review), then alphabetically
   data <- dbGetQuery(rv$db_con, "
@@ -517,10 +520,14 @@ rv$rejecting_deck_request_id <- NULL
 
 # Render pending deck requests section
 output$deck_requests_section <- renderUI({
+
   req(rv$db_con)
 
-  # Trigger refresh after approve/reject
+  # Trigger refresh after approve/reject actions
   rv$deck_requests_refresh
+  input$deck_request_approve_click
+  input$confirm_edit_approve_deck
+  input$confirm_reject_deck
 
   pending <- tryCatch({
     dbGetQuery(rv$db_con, "
