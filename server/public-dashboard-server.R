@@ -985,20 +985,25 @@ event_health_data <- reactive({
 
   filters <- build_dashboard_filters("t")
 
+  # Calculate date boundaries in R to avoid INTERVAL syntax (requires ICU extension)
+  today <- Sys.Date()
+  date_30_ago <- format(today - 30, "%Y-%m-%d")
+  date_60_ago <- format(today - 60, "%Y-%m-%d")
+
   # Recent period (last 30 days)
   recent <- dbGetQuery(rv$db_con, sprintf("
     SELECT AVG(player_count) as avg_players, COUNT(*) as event_count
     FROM tournaments t
-    WHERE event_date >= CURRENT_DATE - INTERVAL 30 DAY %s %s %s
-  ", filters$format, filters$event_type, filters$store))
+    WHERE event_date >= '%s' %s %s %s
+  ", date_30_ago, filters$format, filters$event_type, filters$store))
 
   # Prior period (30-60 days ago)
   prior <- dbGetQuery(rv$db_con, sprintf("
     SELECT AVG(player_count) as avg_players
     FROM tournaments t
-    WHERE event_date >= CURRENT_DATE - INTERVAL 60 DAY
-      AND event_date < CURRENT_DATE - INTERVAL 30 DAY %s %s %s
-  ", filters$format, filters$event_type, filters$store))
+    WHERE event_date >= '%s'
+      AND event_date < '%s' %s %s %s
+  ", date_60_ago, date_30_ago, filters$format, filters$event_type, filters$store))
 
   avg_recent <- if (is.na(recent$avg_players)) 0 else round(recent$avg_players, 1)
   avg_prior <- if (is.na(prior$avg_players)) 0 else prior$avg_players
@@ -1078,17 +1083,21 @@ output$player_growth_chart <- renderHighchart({
   filters <- build_dashboard_filters("t")
 
   # Get player participation by month with their first ever tournament
+  # Using strftime instead of DATE_TRUNC to avoid ICU extension on Windows
   result <- dbGetQuery(rv$db_con, sprintf("
     WITH player_first AS (
-      SELECT r.player_id, MIN(t.event_date) as first_date
+      SELECT r.player_id,
+             MIN(t.event_date) as first_date,
+             strftime(MIN(t.event_date), '%%Y-%%m') as first_month
       FROM results r
       JOIN tournaments t ON r.tournament_id = t.tournament_id
       GROUP BY r.player_id
     ),
     player_monthly AS (
       SELECT DISTINCT
-        DATE_TRUNC('month', t.event_date) as month,
+        strftime(t.event_date, '%%Y-%%m') as month,
         r.player_id,
+        pf.first_month,
         pf.first_date
       FROM results r
       JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -1099,17 +1108,18 @@ output$player_growth_chart <- renderHighchart({
       SELECT
         pm.month,
         pm.player_id,
-        pm.first_date,
+        pm.first_month,
         (SELECT COUNT(DISTINCT t2.tournament_id)
          FROM results r2
          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
-         WHERE r2.player_id = pm.player_id AND t2.event_date < pm.month) as prior_events
+         WHERE r2.player_id = pm.player_id
+           AND strftime(t2.event_date, '%%Y-%%m') < pm.month) as prior_events
       FROM player_monthly pm
     )
     SELECT
       month,
-      COUNT(CASE WHEN DATE_TRUNC('month', first_date) = month THEN 1 END) as new_players,
-      COUNT(CASE WHEN DATE_TRUNC('month', first_date) < month AND prior_events < 3 THEN 1 END) as returning_players,
+      COUNT(CASE WHEN first_month = month THEN 1 END) as new_players,
+      COUNT(CASE WHEN first_month < month AND prior_events < 3 THEN 1 END) as returning_players,
       COUNT(CASE WHEN prior_events >= 3 THEN 1 END) as regulars
     FROM player_cumulative
     GROUP BY month
@@ -1124,8 +1134,8 @@ output$player_growth_chart <- renderHighchart({
     )
   }
 
-  # Convert month to date
-  result$month <- as.Date(result$month)
+  # Convert month string (YYYY-MM) to date (first of month)
+  result$month <- as.Date(paste0(result$month, "-01"))
 
   highchart() |>
     hc_chart(type = "column") |>
