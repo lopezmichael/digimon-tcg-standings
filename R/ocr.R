@@ -142,6 +142,65 @@ is_event_metadata <- function(text) {
   FALSE
 }
 
+#' Estimate points for a placement in a Swiss tournament
+#'
+#' Used to autofill missing/zero points when OCR fails to extract them.
+#' Swiss tournaments typically have predictable point distributions:
+#' - Win = 3 points, Draw = 1 point, Loss = 0 points
+#' - Top players cluster at high point totals
+#' - Only bottom ~20-25% should legitimately have 0 points
+#'
+#' @param placement Player's final placement (1 = first)
+#' @param player_count Total players in tournament
+#' @param rounds Number of rounds played
+#' @return Estimated points (multiple of 3)
+estimate_points_for_placement <- function(placement, player_count, rounds) {
+  max_points <- 3 * rounds
+
+  if (player_count <= 1) return(max_points)
+
+  # Calculate percentile (0 = 1st place, 1 = last place)
+  percentile <- (placement - 1) / (player_count - 1)
+
+  # In Swiss, point distribution follows a pattern where:
+ # - Top ~12% are typically undefeated or 1 loss
+  # - Middle clusters around 50% win rate
+  # - Bottom 20-25% may have 0-1 wins
+  #
+  # Estimate wins using a curve that reflects typical Swiss distribution
+  # The 0.6 exponent creates a distribution where more players have
+  # higher point totals (realistic for Swiss where draws are rare)
+  estimated_wins <- round(rounds * (1 - percentile^0.6))
+
+  # Convert to points (3 per win), clamped to valid range
+  estimated_points <- estimated_wins * 3
+  max(0, min(max_points, estimated_points))
+}
+
+#' Check if a player's points should be autofilled
+#'
+#' Returns TRUE if the player has 0/NA points but shouldn't based on placement.
+#' Players in the bottom ~25% of standings may legitimately have 0 points.
+#'
+#' @param placement Player's final placement
+#' @param player_count Total players in tournament
+#' @param points Current points value (may be 0 or NA)
+#' @return TRUE if points should be autofilled
+should_autofill_points <- function(placement, player_count, points) {
+  # Only autofill if points is 0 or NA
+ if (!is.na(points) && points > 0) return(FALSE)
+
+  # Players in bottom 25% may legitimately have 0 points
+  percentile <- placement / player_count
+  if (percentile > 0.75) return(FALSE)
+
+  # For small tournaments, be more conservative
+  # (last 2 players in an 8-player tournament is 25%)
+  if (player_count <= 8 && placement >= player_count - 1) return(FALSE)
+
+  TRUE
+}
+
 #' Parse tournament standings from OCR text
 #'
 #' Extracts player data from Bandai TCG+ tournament rankings screenshot.
@@ -338,6 +397,12 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
       # Collect standalone numbers (potential placement or points)
       # Now handles large tournaments (64, 128+ players)
       if (grepl("^\\d{1,3}$", line)) {
+        # Skip numbers with leading zeros (OCR artifacts like '00', '01', '001')
+        # Exception: standalone '0' is valid (0 points)
+        if (grepl("^0\\d", line)) {
+          if (verbose) message("[PARSE] Skipping leading-zero number: '", line, "'")
+          next
+        }
         val <- as.integer(line)
         # Only filter obvious non-data: values over 200 (no tournament that large)
         if (val <= 200) {
@@ -472,7 +537,34 @@ parse_tournament_standings <- function(ocr_text, total_rounds = 4, verbose = TRU
     ))
   }
 
-  do.call(rbind, results)
+  # Combine results into dataframe
+  result_df <- do.call(rbind, results)
+  player_count <- nrow(result_df)
+
+  # Autofill missing/zero points for players who shouldn't have 0
+  autofilled_count <- 0
+  for (i in seq_len(player_count)) {
+    if (should_autofill_points(result_df$placement[i], player_count, result_df$points[i])) {
+      estimated <- estimate_points_for_placement(result_df$placement[i], player_count, total_rounds)
+      if (verbose) {
+        message("[PARSE] Autofill: ", result_df$username[i], " (place ", result_df$placement[i],
+                ") points 0 -> ", estimated)
+      }
+      result_df$points[i] <- estimated
+      # Recalculate W-L-T from new points
+      result_df$wins[i] <- estimated %/% 3
+      remaining <- estimated %% 3
+      result_df$ties[i] <- remaining
+      result_df$losses[i] <- max(0, total_rounds - result_df$wins[i] - result_df$ties[i])
+      autofilled_count <- autofilled_count + 1
+    }
+  }
+
+  if (autofilled_count > 0 && verbose) {
+    message("[PARSE] Autofilled points for ", autofilled_count, " players")
+  }
+
+  result_df
 }
 
 #' Parse match history from OCR text

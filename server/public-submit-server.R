@@ -817,11 +817,15 @@ observeEvent(input$submit_tournament, {
   }
 
   tryCatch({
-    # Create tournament
+    # Create tournament - must generate ID since DuckDB doesn't auto-increment
+    max_tournament_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(tournament_id), 0) as max_id FROM tournaments")$max_id
+    tournament_id <- max_tournament_id + 1
+
     dbExecute(rv$db_con, "
-      INSERT INTO tournaments (store_id, event_date, event_type, format, player_count, rounds)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO tournaments (tournament_id, store_id, event_date, event_type, format, player_count, rounds)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     ", params = list(
+      tournament_id,
       as.integer(input$submit_store),
       as.character(input$submit_date),
       input$submit_event_type,
@@ -829,8 +833,6 @@ observeEvent(input$submit_tournament, {
       nrow(results),
       input$submit_rounds
     ))
-
-    tournament_id <- dbGetQuery(rv$db_con, "SELECT MAX(tournament_id) as id FROM tournaments")$id
     total_rounds <- input$submit_rounds
 
     # Insert each result
@@ -889,11 +891,13 @@ observeEvent(input$submit_tournament, {
         ", params = list(member_number, username))
 
         if (nrow(player) == 0) {
+          # Generate player_id since DuckDB doesn't auto-increment
+          max_player_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
+          player_id <- max_player_id + 1
           dbExecute(rv$db_con, "
-            INSERT INTO players (display_name, member_number)
-            VALUES (?, ?)
-          ", params = list(username, member_number))
-          player_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
+            INSERT INTO players (player_id, display_name, member_number)
+            VALUES (?, ?, ?)
+          ", params = list(player_id, username, member_number))
         } else {
           player_id <- player$player_id[1]
           if (!is.na(member_number)) {
@@ -911,11 +915,14 @@ observeEvent(input$submit_tournament, {
         deck_id <- if (nrow(unknown) > 0) unknown$archetype_id[1] else NA_integer_
       }
 
+      # Generate result_id since DuckDB doesn't auto-increment
+      max_result_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(result_id), 0) as max_id FROM results")$max_id
+      result_id <- max_result_id + 1
       dbExecute(rv$db_con, "
-        INSERT INTO results (tournament_id, player_id, archetype_id, pending_deck_request_id, placement, wins, losses, ties)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO results (result_id, tournament_id, player_id, archetype_id, pending_deck_request_id, placement, wins, losses, ties)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ", params = list(
-        tournament_id, player_id, deck_id, pending_deck_request_id,
+        result_id, tournament_id, player_id, deck_id, pending_deck_request_id,
         row$placement, wins, losses, ties
       ))
     }
@@ -1385,11 +1392,13 @@ observeEvent(input$match_submit, {
     ", params = list(submitter_member, submitter_username))
 
     if (nrow(player) == 0) {
+      # Generate player_id since DuckDB doesn't auto-increment
+      max_player_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
+      player_id <- max_player_id + 1
       dbExecute(rv$db_con, "
-        INSERT INTO players (display_name, member_number)
-        VALUES (?, ?)
-      ", params = list(submitter_username, submitter_member))
-      player_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
+        INSERT INTO players (player_id, display_name, member_number)
+        VALUES (?, ?, ?)
+      ", params = list(player_id, submitter_username, submitter_member))
     } else {
       player_id <- player$player_id[1]
       dbExecute(rv$db_con, "
@@ -1441,11 +1450,13 @@ observeEvent(input$match_submit, {
       ", params = list(opponent_member, opponent_username))
 
       if (nrow(opponent) == 0) {
+        # Generate player_id since DuckDB doesn't auto-increment
+        max_player_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
+        opponent_id <- max_player_id + 1
         dbExecute(rv$db_con, "
-          INSERT INTO players (display_name, member_number)
-          VALUES (?, ?)
-        ", params = list(opponent_username, opponent_member))
-        opponent_id <- dbGetQuery(rv$db_con, "SELECT MAX(player_id) as id FROM players")$id
+          INSERT INTO players (player_id, display_name, member_number)
+          VALUES (?, ?, ?)
+        ", params = list(opponent_id, opponent_username, opponent_member))
       } else {
         opponent_id <- opponent$player_id[1]
         if (!is.na(opponent_member)) {
@@ -1457,10 +1468,14 @@ observeEvent(input$match_submit, {
       }
 
       tryCatch({
+        # Generate match_id since DuckDB doesn't auto-increment
+        max_match_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(match_id), 0) as max_id FROM matches")$max_id
+        match_id <- max_match_id + 1
         dbExecute(rv$db_con, "
-          INSERT INTO matches (tournament_id, round_number, player_id, opponent_id, games_won, games_lost, games_tied, match_points)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO matches (match_id, tournament_id, round_number, player_id, opponent_id, games_won, games_lost, games_tied, match_points)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ", params = list(
+          match_id,
           tournament_id,
           as.integer(row$round),
           player_id,
