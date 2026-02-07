@@ -752,10 +752,44 @@ observeEvent(input$deck_request_submit, {
     VALUES (?, ?, ?, ?, ?, 'pending')
   ", params = list(request_id, deck_name, primary_color, secondary_color, card_id))
 
-  # Update the dropdown to select the new pending request
-  if (!is.null(rv$deck_request_row)) {
-    updateSelectInput(session, paste0("submit_deck_", rv$deck_request_row),
-                      selected = paste0("pending_", request_id))
+  # Build updated deck choices with the new pending request
+  decks <- dbGetQuery(rv$db_con, "
+    SELECT archetype_id, archetype_name FROM deck_archetypes
+    WHERE is_active = TRUE
+    ORDER BY archetype_name
+  ")
+  pending_requests <- dbGetQuery(rv$db_con, "
+    SELECT request_id, deck_name FROM deck_requests
+    WHERE status = 'pending'
+    ORDER BY deck_name
+  ")
+
+  updated_choices <- c("Unknown" = "")
+  updated_choices <- c(updated_choices, "\U2795 Request new deck..." = "__REQUEST_NEW__")
+  if (nrow(pending_requests) > 0) {
+    pending_choices <- setNames(
+      paste0("pending_", pending_requests$request_id),
+      paste0("Pending: ", pending_requests$deck_name)
+    )
+    updated_choices <- c(updated_choices, pending_choices)
+  }
+  updated_choices <- c(updated_choices, setNames(as.character(decks$archetype_id), decks$archetype_name))
+
+  # Update all deck dropdowns with new choices, preserving existing selections
+  results <- rv$submit_ocr_results
+  for (i in seq_len(nrow(results))) {
+    current_selection <- input[[paste0("submit_deck_", i)]]
+    # For the row that triggered the request, select the new pending deck
+    new_selection <- if (i == rv$deck_request_row) {
+      paste0("pending_", request_id)
+    } else if (!is.null(current_selection) && current_selection != "__REQUEST_NEW__") {
+      current_selection
+    } else {
+      ""
+    }
+    updateSelectInput(session, paste0("submit_deck_", i),
+                      choices = updated_choices,
+                      selected = new_selection)
   }
 
   showNotification(
@@ -764,9 +798,6 @@ observeEvent(input$deck_request_submit, {
   )
 
   removeModal()
-
-  # Trigger refresh of results table to show new pending deck in all dropdowns
-  rv$submit_refresh_trigger <- Sys.time()
 })
 
 # Handle final submission
