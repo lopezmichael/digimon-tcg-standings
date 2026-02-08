@@ -740,7 +740,7 @@ output$stores_map <- renderMapboxgl({
   # Default DFW center if no stores or no valid coordinates
   if (is.null(stores) || nrow(stores) == 0) {
     return(
-      atom_mapgl(theme = "minimal") |>
+      atom_mapgl(theme = "digital") |>
         mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
         add_atom_popup_style(theme = "light") |>
         mapgl::add_draw_control(
@@ -759,7 +759,7 @@ output$stores_map <- renderMapboxgl({
 
   if (nrow(stores_with_coords) == 0) {
     return(
-      atom_mapgl(theme = "minimal") |>
+      atom_mapgl(theme = "digital") |>
         mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
         add_atom_popup_style(theme = "light") |>
         mapgl::add_draw_control(
@@ -823,7 +823,7 @@ output$stores_map <- renderMapboxgl({
   # Create the map with draw controls
   # Using minimal theme for basemap, light theme for popups
   # Bubble size based on tournament activity
-  map <- atom_mapgl(theme = "minimal") |>
+  map <- atom_mapgl(theme = "digital") |>
     add_atom_popup_style(theme = "light") |>
     mapgl::add_circle_layer(
       id = "stores-layer",

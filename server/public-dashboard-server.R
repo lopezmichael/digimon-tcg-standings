@@ -741,8 +741,8 @@ output$conversion_rate_chart <- renderHighchart({
 
   highchart() |>
     hc_chart(type = "bar") |>
-    hc_xAxis(categories = result$name, title = list(text = NULL)) |>
-    hc_yAxis(title = list(text = NULL), max = 100, labels = list(format = "{value}%")) |>
+    hc_xAxis(categories = result$name, title = list(text = "")) |>
+    hc_yAxis(title = list(text = ""), max = 100, labels = list(format = "{value}%")) |>
     hc_add_series(
       name = "Conversion",
       data = lapply(1:nrow(result), function(i) {
@@ -762,7 +762,7 @@ output$conversion_rate_chart <- renderHighchart({
     hc_add_theme(hc_theme_atom_switch(chart_mode))
 })
 
-# Color Distribution Bar Chart (no title)
+# Color Distribution Bar Chart (by primary color)
 output$color_dist_chart <- renderHighchart({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
     return(highchart() |> hc_add_theme(hc_theme_atom_switch("light")))
@@ -773,17 +773,18 @@ output$color_dist_chart <- renderHighchart({
   # Build filter conditions
   filters <- build_dashboard_filters("t")
 
-  # Query color distribution - single colors + "Multi" for dual-color decks
+  # Query color distribution by primary color
+  # Dual-color decks show by their primary color (more informative than lumping as "Multi")
   # Exclude UNKNOWN archetype from analytics
   result <- dbGetQuery(rv$db_con, sprintf("
     SELECT
-      CASE WHEN da.secondary_color IS NOT NULL THEN 'Multi' ELSE da.primary_color END as color,
+      da.primary_color as color,
       COUNT(r.result_id) as count
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
-    GROUP BY CASE WHEN da.secondary_color IS NOT NULL THEN 'Multi' ELSE da.primary_color END
+    GROUP BY da.primary_color
     ORDER BY count DESC
   ", filters$store, filters$format, filters$event_type, filters$date))
 
@@ -802,14 +803,18 @@ output$color_dist_chart <- renderHighchart({
 
   highchart() |>
     hc_chart(type = "bar") |>
-    hc_xAxis(categories = result$color, title = list(text = NULL), labels = list(enabled = FALSE)) |>
-    hc_yAxis(title = list(text = NULL)) |>
+    hc_xAxis(categories = result$color, title = list(text = ""), labels = list(enabled = FALSE)) |>
+    hc_yAxis(title = list(text = "")) |>
     hc_add_series(
       name = "Entries",
       data = lapply(1:nrow(result), function(i) {
         list(y = result$count[i], color = result$bar_color[i])
       }),
-      showInLegend = FALSE
+      showInLegend = FALSE,
+      dataLabels = list(
+        enabled = TRUE,
+        format = "{point.category}"
+      )
     ) |>
     hc_tooltip(pointFormat = "<b>{point.y}</b> entries") |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
@@ -947,6 +952,15 @@ meta_diversity_data <- reactive({
   )
 })
 
+# Meta Diversity decks count for header
+output$meta_diversity_decks_count <- renderUI({
+  data <- meta_diversity_data()
+  if (is.null(data) || is.na(data$score)) {
+    return(tags$span(class = "text-muted small", "No data"))
+  }
+  tags$span(class = "text-muted small", sprintf("%d decks with wins", data$decks_with_wins))
+})
+
 output$meta_diversity_gauge <- renderHighchart({
   data <- meta_diversity_data()
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
@@ -960,7 +974,6 @@ output$meta_diversity_gauge <- renderHighchart({
   }
 
   score <- data$score
-  decks_count <- data$decks_with_wins
 
   # Color stops for the gauge: red -> yellow -> green
   color_stops <- list(
@@ -971,8 +984,8 @@ output$meta_diversity_gauge <- renderHighchart({
 
   highchart() |>
     hc_chart(type = "solidgauge") |>
-    hc_title(text = "Meta Diversity", style = list(fontSize = "14px")) |>
-    hc_subtitle(text = sprintf("%d decks with wins", decks_count), style = list(fontSize = "11px")) |>
+    hc_title(text = NULL) |>
+    hc_subtitle(text = NULL) |>
     hc_pane(
       startAngle = -90,
       endAngle = 90,
@@ -1082,7 +1095,7 @@ output$player_growth_chart <- renderHighchart({
 
   highchart() |>
     hc_chart(type = "column") |>
-    hc_title(text = "Player Growth & Retention", style = list(fontSize = "14px")) |>
+    hc_title(text = NULL) |>
     hc_xAxis(
       categories = format(result$month, "%b %Y"),
       title = list(text = NULL)

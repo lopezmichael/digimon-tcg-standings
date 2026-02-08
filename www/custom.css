@@ -2086,190 +2086,153 @@ a:hover, .nav-link:hover {
   border-radius: 0 0 8px 8px;
 }
 
-/* Style all map control buttons including draw controls */
-.mapboxgl-ctrl-group,
-.maplibregl-ctrl-group {
-  background: #0F4C81 !important;
-  border-radius: 6px !important;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-.mapboxgl-ctrl-group button,
-.maplibregl-ctrl-group button {
-  background-color: #0F4C81 !important;
-  border: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-  width: 36px !important;
-  height: 36px !important;
-}
-
-.mapboxgl-ctrl-group button:last-child,
-.maplibregl-ctrl-group button:last-child {
-  border-bottom: none !important;
-}
-
-.mapboxgl-ctrl-group button:hover,
-.maplibregl-ctrl-group button:hover {
-  background-color: #F7941D !important;
-}
-
-.mapboxgl-ctrl-group button.active,
-.maplibregl-ctrl-group button.active {
-  background-color: #F7941D !important;
-}
-
-/* Mapbox GL Draw - style the draw control buttons */
-.mapboxgl-ctrl-group button.mapbox-gl-draw_ctrl-draw-btn,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_polygon,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_trash,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_line,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_point,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_combine,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_uncombine {
-  background-color: #0F4C81 !important;
-}
-
-/* Make ALL button background images (icons) white by inverting */
-.mapboxgl-ctrl-group button {
-  filter: none !important;
-}
-
-/* Target the actual SVG/image icons inside buttons */
-.mapboxgl-ctrl button.mapboxgl-ctrl-icon,
-.maplibregl-ctrl button.maplibregl-ctrl-icon {
-  filter: brightness(0) invert(1) !important;
-}
-
-/* Mapbox GL Draw uses background-image for icons - invert them */
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_line,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_point,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_combine,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_uncombine,
-button.mapbox-gl-draw_polygon,
-button.mapbox-gl-draw_trash,
-button.mapbox-gl-draw_line,
-button.mapbox-gl-draw_point {
-  filter: invert(1) !important;
-  background-color: transparent !important;
-}
-
-/* Override to keep background but invert icon */
-.mapboxgl-ctrl-group button.mapbox-gl-draw_ctrl-draw-btn {
-  position: relative;
-}
-
-/* Alternative: Use CSS to style the buttons with custom colors */
-.mapboxgl-ctrl-group button::before {
-  filter: brightness(0) invert(1);
-}
-
-/* Ensure the draw control group has proper styling */
-.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group {
-  background: #0F4C81 !important;
-}
-
-/* =============================================================================
-   MAPBOX GL DRAW CONTROLS - Light Mode
-   ============================================================================= */
-
-/* Control group container */
-.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group,
-.mapboxgl-ctrl-group {
-  background-color: #FFFFFF !important;
-  border: 2px solid #0F4C81 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-}
-
-/* All buttons in control groups */
-.mapboxgl-ctrl-group > button,
-.mapboxgl-ctrl button {
-  background-color: #FFFFFF !important;
-  border: none !important;
-  border-bottom: 1px solid #E5E7EB !important;
-  width: 30px !important;
-  height: 30px !important;
-}
-
-.mapboxgl-ctrl-group > button:last-child {
-  border-bottom: none !important;
-}
-
-/* Hover state */
-.mapboxgl-ctrl-group > button:hover,
-.mapboxgl-ctrl button:hover {
-  background-color: #FEF3E2 !important;
-}
-
-/* Active/selected state - orange */
-.mapboxgl-ctrl-group > button.active,
-.mapboxgl-ctrl button.active {
-  background-color: #F7941D !important;
-}
-
-/* Active + hover */
-.mapboxgl-ctrl-group > button.active:hover,
-.mapboxgl-ctrl button.active:hover {
-  background-color: #E8842C !important;
-}
-
-/* =============================================================================
-   MAPBOX GL DRAW CONTROLS - Dark Mode
-   ============================================================================= */
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group,
-[data-bs-theme="dark"] .mapboxgl-ctrl-group {
-  background-color: #2D3748 !important;
-  border-color: #4A5568 !important;
-}
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-group > button,
-[data-bs-theme="dark"] .mapboxgl-ctrl button {
-  background-color: #2D3748 !important;
-  border-bottom-color: #4A5568 !important;
-  /* Invert icons to white for dark mode */
-  filter: invert(1) !important;
-}
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-group > button:hover,
-[data-bs-theme="dark"] .mapboxgl-ctrl button:hover {
-  background-color: #4A5568 !important;
-}
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-group > button.active,
-[data-bs-theme="dark"] .mapboxgl-ctrl button.active {
-  background-color: #F7941D !important;
-  filter: none !important;
-}
-
-/* Drawn polygon styling on map */
+/* Remove focus outline from map canvas */
 .mapboxgl-canvas {
   outline: none;
 }
 
-/* Dark mode map controls */
-[data-bs-theme="dark"] .mapboxgl-ctrl-group,
-[data-bs-theme="dark"] .maplibregl-ctrl-group {
-  background: #2D3748 !important;
+/* Collapse attribution by default - show only the info button */
+.mapboxgl-ctrl-attrib:not(.mapboxgl-compact-show),
+.maplibregl-ctrl-attrib:not(.maplibregl-compact-show) {
+  padding: 0;
+  background: transparent;
 }
 
-[data-bs-theme="dark"] .mapboxgl-ctrl-group button,
-[data-bs-theme="dark"] .maplibregl-ctrl-group button {
-  background-color: #2D3748 !important;
-  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+.mapboxgl-ctrl-attrib:not(.mapboxgl-compact-show) .mapboxgl-ctrl-attrib-inner,
+.maplibregl-ctrl-attrib:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-inner {
+  display: none;
 }
 
-[data-bs-theme="dark"] .mapboxgl-ctrl-group button:hover,
-[data-bs-theme="dark"] .maplibregl-ctrl-group button:hover {
-  background-color: #F7941D !important;
+.mapboxgl-ctrl-attrib.mapboxgl-compact,
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  min-height: 20px;
 }
 
-[data-bs-theme="dark"] .mapboxgl-ctrl-group button[class*="mapbox-gl-draw"] {
-  filter: invert(0.8) hue-rotate(180deg) !important;
-  background-color: #2D3748 !important;
+/* =============================================================================
+   HIGHCHARTS COLOR OVERRIDES
+   Override atomtemplates theme colors to use dark blue instead of burgundy
+   ============================================================================= */
+
+/* Axis labels - force dark blue text */
+.highcharts-axis-labels text,
+.highcharts-xaxis-labels text,
+.highcharts-yaxis-labels text {
+  fill: #0F4C81 !important;
+}
+
+/* Axis titles */
+.highcharts-axis-title {
+  fill: #0F4C81 !important;
+}
+
+/* Legend text */
+.highcharts-legend-item text {
+  fill: #334155 !important;
+}
+
+/* Tooltip text */
+.highcharts-tooltip text {
+  fill: #1e293b !important;
+}
+
+/* Chart title and subtitle */
+.highcharts-title,
+.highcharts-subtitle {
+  fill: #0F4C81 !important;
+}
+
+/* Data labels */
+.highcharts-data-label text {
+  fill: #334155 !important;
+}
+
+/* Dark mode overrides */
+[data-bs-theme="dark"] .highcharts-axis-labels text,
+[data-bs-theme="dark"] .highcharts-xaxis-labels text,
+[data-bs-theme="dark"] .highcharts-yaxis-labels text {
+  fill: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-axis-title {
+  fill: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-legend-item text {
+  fill: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-title,
+[data-bs-theme="dark"] .highcharts-subtitle {
+  fill: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-data-label text {
+  fill: #e2e8f0 !important;
+}
+
+/* =============================================================================
+   MAPBOX POPUP COLOR OVERRIDES
+   Override atomtemplates popup colors to use dark blue instead of burgundy
+   ============================================================================= */
+
+/* Force all text in popup to dark blue/slate */
+.mapboxgl-popup-content,
+.maplibregl-popup-content,
+.mapboxgl-popup-content *,
+.maplibregl-popup-content * {
+  color: #1e293b !important;
+}
+
+/* Popup header/title - stronger selectors */
+.mapboxgl-popup-content h1,
+.mapboxgl-popup-content h2,
+.mapboxgl-popup-content h3,
+.mapboxgl-popup-content h4,
+.mapboxgl-popup-content h5,
+.mapboxgl-popup-content h6,
+.mapboxgl-popup-content [class*="title"],
+.mapboxgl-popup-content [class*="header"],
+.mapboxgl-popup-content strong,
+.mapboxgl-popup-content b,
+.maplibregl-popup-content h1,
+.maplibregl-popup-content h2,
+.maplibregl-popup-content h3,
+.maplibregl-popup-content h4,
+.maplibregl-popup-content h5,
+.maplibregl-popup-content h6,
+.maplibregl-popup-content [class*="title"],
+.maplibregl-popup-content [class*="header"],
+.maplibregl-popup-content strong,
+.maplibregl-popup-content b {
+  color: #0F4C81 !important;
+}
+
+/* Popup subtitle and labels - muted */
+.mapboxgl-popup-content [class*="subtitle"],
+.mapboxgl-popup-content [class*="label"],
+.mapboxgl-popup-content small,
+.maplibregl-popup-content [class*="subtitle"],
+.maplibregl-popup-content [class*="label"],
+.maplibregl-popup-content small {
+  color: #64748b !important;
+}
+
+/* Popup metric values */
+.mapboxgl-popup-content [class*="value"],
+.mapboxgl-popup-content [class*="metric"],
+.maplibregl-popup-content [class*="value"],
+.maplibregl-popup-content [class*="metric"] {
+  color: #0F4C81 !important;
+}
+
+/* Override any inline styles on spans and divs */
+.mapboxgl-popup-content span,
+.mapboxgl-popup-content div,
+.mapboxgl-popup-content p,
+.maplibregl-popup-content span,
+.maplibregl-popup-content div,
+.maplibregl-popup-content p {
+  color: #334155 !important;
 }
 
 /* =============================================================================
