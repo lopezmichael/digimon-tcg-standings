@@ -1016,7 +1016,7 @@ body.bslib-gap-spacing {
 
 .vb-label-icon {
   font-size: 0.75rem;
-  color: #F7941D;
+  color: #D97706;
 }
 
 /* Value styling */
@@ -1611,7 +1611,7 @@ body.bslib-gap-spacing {
 
 /* Orange accent on interactive elements */
 a:hover, .nav-link:hover {
-  color: #F7941D !important;
+  color: #D97706 !important;
 }
 
 /* Primary button with orange hover */
@@ -1796,7 +1796,7 @@ a:hover, .nav-link:hover {
 }
 
 .modal-stat-value.stat-highlight {
-  color: #F7941D;
+  color: #D97706;
 }
 
 .modal-stat-label {
@@ -2448,7 +2448,7 @@ a:hover, .nav-link:hover {
 }
 
 [data-bs-theme="dark"] .deck-pct {
-  color: #F7941D;
+  color: #FBBF24;
 }
 
 /* Responsive - single column on small screens */
@@ -2500,7 +2500,7 @@ a:hover, .nav-link:hover {
 }
 
 [data-bs-theme="dark"] .rating-info-icon:hover {
-  color: #F7941D;
+  color: #FBBF24;
 }
 
 /* =============================================================================
@@ -2921,7 +2921,7 @@ a:hover, .nav-link:hover {
    ============================================================================= */
 
 .editing-mode .form-label {
-  color: #F7941D;
+  color: #D97706;
 }
 
 .editing-mode .card-header {
@@ -5120,7 +5120,7 @@ div.player-match-indicator.new {
   }
 
   .mobile-tab-bar .tab-bar-item.active {
-    color: #F7941D;
+    color: #FBBF24;
   }
 
   .mobile-tab-bar .tab-bar-item:hover {
@@ -5176,7 +5176,7 @@ div.player-match-indicator.new {
   [data-bs-theme="dark"] .admin-modal-link:hover {
     background: rgba(247, 148, 29, 0.12);
     border-color: rgba(247, 148, 29, 0.3);
-    color: #F7941D;
+    color: #FBBF24;
   }
 
   .admin-modal-link .bi {
@@ -5187,7 +5187,7 @@ div.player-match-indicator.new {
 
   .admin-modal-link:hover .bi {
     opacity: 1;
-    color: #F7941D;
+    color: #D97706;
   }
 
   .admin-modal-section {

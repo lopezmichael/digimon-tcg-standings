@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Scene Health Dashboard**: New analytics section on Overview tab
+  - Meta Diversity gauge showing how evenly distributed tournament wins are (HHI-based)
+  - Player Growth & Retention chart (new/returning/regular players by month)
+  - Rising Stars section highlighting players with recent top finishes
+  - Explanatory descriptions for user understanding
+
+### Changed
+- **Overview Tab Layout Improvements**:
+  - Reorganized section order: Top Decks → Rising Stars → Scene Health → Charts → Tables
+  - Split Meta Diversity and Player Growth into separate cards
+  - Added icons to all section headers throughout Overview
+  - Added consistent spacing between major sections
+  - Renamed "Tournament Player Counts Over Time" to "Player Attendance"
+- **Color Distribution Chart**: Now shows decks by primary color (dual-color decks grouped by primary)
+- **Orange Text Colors**: Darkened to #D97706 for better readability on light backgrounds
+- **Map Styling**: Removed custom toolbar button styling, collapsed attribution by default
+
+### Fixed
+- Highcharts axis labels, legends, and tooltips now use dark blue instead of burgundy (atomtemplates override)
+- Mapbox popup text colors now use dark blue/slate instead of burgundy
+
 ---
 
 ## [0.20.0] - 2026-02-06 - Public Submissions, OCR & Mobile Navigation

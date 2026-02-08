@@ -177,10 +177,10 @@ dashboard_ui <- tagList(
         class = "p-2 d-flex flex-column",
         div(
           class = "flex-grow-1",
-          highchartOutput("meta_diversity_gauge", height = "160px")
+          highchartOutput("meta_diversity_gauge", height = "220px")
         ),
         div(
-          class = "text-muted small text-center mt-2 px-2",
+          class = "text-muted small text-center px-2",
           style = "font-size: 0.75rem;",
           "How evenly distributed tournament wins are across different decks. Higher = healthier meta."
         )

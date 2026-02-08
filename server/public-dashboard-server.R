@@ -983,12 +983,18 @@ output$meta_diversity_gauge <- renderHighchart({
   )
 
   highchart() |>
-    hc_chart(type = "solidgauge") |>
+    hc_chart(
+      type = "solidgauge",
+      spacing = c(0, 0, 0, 0),
+      margin = c(0, 0, -80, 0)
+    ) |>
     hc_title(text = NULL) |>
     hc_subtitle(text = NULL) |>
     hc_pane(
       startAngle = -90,
       endAngle = 90,
+      center = c("50%", "70%"),
+      size = "100%",
       background = list(
         backgroundColor = if (chart_mode == "dark") "#475569" else "#e2e8f0",
         innerRadius = "60%",
