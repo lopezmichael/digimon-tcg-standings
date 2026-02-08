@@ -138,48 +138,38 @@ dashboard_ui <- tagList(
     ),
     card_body(
       class = "scene-health-section",
-      # Top row: compact indicators + player growth chart
       layout_columns(
         col_widths = breakpoints(
           sm = c(12, 12),
           md = c(4, 8)
         ),
-        # Left: compact indicators stacked
+        # Left: Meta Diversity gauge
         div(
-          class = "scene-health-indicators",
-          # Meta Diversity gauge
-          div(
-            class = "health-indicator-card",
-            div(class = "health-indicator-label", "Meta Diversity"),
-            uiOutput("meta_diversity_gauge"),
-            div(class = "health-indicator-subtitle", uiOutput("meta_diversity_subtitle", inline = TRUE))
-          ),
-          # Event Health indicator
-          div(
-            class = "health-indicator-card",
-            div(class = "health-indicator-label", "Event Health"),
-            uiOutput("event_health_indicator"),
-            div(class = "health-indicator-subtitle", uiOutput("event_health_subtitle", inline = TRUE))
-          )
+          class = "meta-diversity-container",
+          highchartOutput("meta_diversity_gauge", height = "200px")
         ),
         # Right: Player Growth chart
         div(
           highchartOutput("player_growth_chart", height = "200px")
         )
-      ),
-      # Bottom row: Rising Stars
-      div(
-        class = "mt-3",
-        div(
-          class = "d-flex justify-content-between align-items-center mb-2",
-          div(
-            bsicons::bs_icon("graph-up-arrow", class = "text-success me-2"),
-            tags$strong("Rising Stars")
-          ),
-          tags$span(class = "text-muted small", "Biggest rating gains (last 30 days)")
-        ),
-        uiOutput("rising_stars_cards")
       )
+    )
+  ),
+
+  # Rising Stars section
+  card(
+    card_header(
+      class = "d-flex justify-content-between align-items-center",
+      div(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("graph-up-arrow", class = "text-success"),
+        "Rising Stars"
+      ),
+      tags$span(class = "text-muted small", "Top finishes (last 30 days)")
+    ),
+    card_body(
+      class = "rising-stars-section",
+      uiOutput("rising_stars_cards")
     )
   ),
 

@@ -7,32 +7,30 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 ## 2026-02-07: Scene Health Dashboard Section
 
 ### Summary
-Added a new "Scene Health" section to the dashboard providing competition health metrics at a glance. Includes visual gauges, sparklines, and a Rising Stars feature.
+Added a new "Scene Health" section to the dashboard providing competition health metrics at a glance. Includes a Highcharts gauge, player growth chart, and Rising Stars feature.
 
 ### Components Added
 
 **Meta Diversity Gauge**
-- SVG semi-circular arc gauge showing diversity score (0-100)
+- Highcharts solidgauge showing diversity score (0-100)
 - Based on Herfindahl-Hirschman Index (HHI) of win distribution across decks
-- Color-coded: green (70+), yellow (40-70), red (<40)
+- Color stops: red (0-40), yellow (40-70), green (70-100)
 - Shows "X decks with wins" as subtitle
-
-**Event Health Indicator**
-- Average attendance for last 30 days vs prior 30 days
-- Trend percentage with color coding
-- SVG sparkline showing last 8 events' attendance
-- Shows "X events (30 days)" as subtitle
 
 **Player Growth & Retention Chart**
 - Stacked bar chart by month
 - Three categories: New (first tournament), Returning (<3 events), Regulars (3+ events)
 - Uses strftime instead of DATE_TRUNC for Windows DuckDB compatibility
 
-**Rising Stars**
-- Replaced "Competitive Balance" bar chart (which was boring)
-- Shows top 5 players with most top-3 finishes in last 30 days
+**Rising Stars** (separate card)
+- Shows top 4 players with most top-3 finishes in last 30 days
+- Own card section below Scene Health for cleaner layout
 - Card layout with rank badge, name, trophy/medal counts, and current rating
-- More engaging narrative than just "players with most wins"
+- Limited to 4 for consistent display across screen sizes
+
+### Removed Components
+
+**Event Health Indicator** - Removed as redundant with existing "Tournament Player Counts Over Time" chart
 
 ### Technical Notes
 
@@ -41,10 +39,10 @@ Added a new "Scene Health" section to the dashboard providing competition health
 - Replaced with `strftime('%Y-%m', date)` for month truncation
 - Date arithmetic done in R and passed as formatted strings
 
-**SVG Gauges**
-- Arc calculated with trigonometry: end point based on percentage around semicircle
-- `large_arc` SVG flag set based on whether arc > 50%
-- Background arc in gray, foreground arc colored by score
+**Highcharts solidgauge**
+- Uses `hc_pane()` for semi-circular arc configuration
+- Color stops defined via `hc_yAxis(stops = ...)` for gradient effect
+- Data labels positioned with `y = -25` to center in gauge
 
 ### Design Doc
 Full design documented in `docs/plans/2026-02-07-scene-health-dashboard-design.md`

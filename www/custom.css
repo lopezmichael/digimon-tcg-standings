@@ -1215,115 +1215,11 @@ body.bslib-gap-spacing {
    ============================================================================= */
 
 .scene-health-section {
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
-.scene-health-indicators {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.health-indicator-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  padding: 1rem;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.health-indicator-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0F4C81, #00C8FF);
-  opacity: 0.6;
-}
-
-.health-indicator-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #64748b;
-  margin-bottom: 0.5rem;
-}
-
-.health-indicator-value {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.1;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.health-indicator-unit {
-  font-size: 1rem;
-  font-weight: 400;
-  opacity: 0.6;
-}
-
-.health-indicator-trend {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-left: 0.5rem;
-}
-
-.health-indicator-subtitle {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.5rem;
-}
-
-/* Meta Diversity Gauge */
-.gauge-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.5rem 0;
-}
-
-.gauge-svg {
-  width: 100px;
-  height: 55px;
-}
-
-.gauge-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  margin-top: -0.25rem;
-}
-
-/* Event Health with Sparkline */
-.event-health-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.event-health-main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.event-health-sparkline {
-  width: 100%;
-  max-width: 100px;
-}
-
-.sparkline-svg {
-  width: 100%;
-  height: 30px;
+.rising-stars-section {
+  padding: 0.75rem;
 }
 
 /* Rising Stars Grid */
@@ -1422,24 +1318,7 @@ body.bslib-gap-spacing {
   color: #64748b;
 }
 
-/* Dark mode for scene health indicators */
-[data-bs-theme="dark"] .health-indicator-card {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-bs-theme="dark"] .health-indicator-label {
-  color: #94a3b8;
-}
-
-[data-bs-theme="dark"] .health-indicator-subtitle {
-  color: #94a3b8;
-}
-
-[data-bs-theme="dark"] .gauge-svg path[stroke="#e2e8f0"] {
-  stroke: #475569;
-}
-
+/* Dark mode for scene health */
 [data-bs-theme="dark"] .rising-star-card {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   border-color: rgba(255, 255, 255, 0.1);
@@ -1455,44 +1334,6 @@ body.bslib-gap-spacing {
 
 [data-bs-theme="dark"] .rising-star-rating .rating-label {
   color: #94a3b8;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .scene-health-indicators {
-    flex-direction: row;
-    gap: 0.75rem;
-  }
-
-  .health-indicator-card {
-    flex: 1;
-    padding: 0.75rem;
-  }
-
-  .health-indicator-value {
-    font-size: 1.5rem;
-  }
-
-  .health-indicator-unit {
-    font-size: 0.8rem;
-  }
-
-  .health-indicator-trend {
-    display: block;
-    margin-left: 0;
-    margin-top: 0.25rem;
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .health-indicator-value {
-    font-size: 1.25rem;
-  }
-
-  .health-indicator-label {
-    font-size: 0.65rem;
-  }
 }
 
 /* =============================================================================

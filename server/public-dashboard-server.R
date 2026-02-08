@@ -947,220 +947,73 @@ meta_diversity_data <- reactive({
   )
 })
 
-output$meta_diversity_gauge <- renderUI({
+output$meta_diversity_gauge <- renderHighchart({
   data <- meta_diversity_data()
+  chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
 
   if (is.null(data) || is.na(data$score)) {
-    return(div(class = "gauge-container",
-      div(class = "gauge-value text-muted", "--")
-    ))
+    return(
+      highchart() |>
+        hc_subtitle(text = "No data available") |>
+        hc_add_theme(hc_theme_atom_switch(chart_mode))
+    )
   }
 
   score <- data$score
-  # Color based on score
-  color <- if (score >= 70) {
-    "#38A169"  # green
-  } else if (score >= 40) {
-    "#F5B700"  # yellow
-  } else {
-    "#E5383B"  # red
-  }
+  decks_count <- data$decks_with_wins
 
-  # SVG arc gauge - semicircle from 180 to 0 degrees
-  # Arc goes from left (0%) to right (100%)
-  arc_pct <- score / 100
-  # Calculate arc end point (180 degrees = 0%, 0 degrees = 100%)
-  end_angle <- 180 - (arc_pct * 180)
-  end_rad <- end_angle * pi / 180
-  # SVG arc coordinates (center at 50,50, radius 40)
-  end_x <- 50 + 40 * cos(end_rad)
-  end_y <- 50 - 40 * sin(end_rad)
-  large_arc <- if (arc_pct > 0.5) 1 else 0
-
-  div(class = "gauge-container",
-    tags$svg(
-      viewBox = "0 0 100 55",
-      class = "gauge-svg",
-      # Background arc (gray)
-      tags$path(
-        d = "M 10 50 A 40 40 0 0 1 90 50",
-        fill = "none",
-        stroke = "#e2e8f0",
-        `stroke-width` = "8",
-        `stroke-linecap` = "round"
-      ),
-      # Foreground arc (colored based on score)
-      if (score > 0) {
-        tags$path(
-          d = sprintf("M 10 50 A 40 40 0 %d 1 %.1f %.1f", large_arc, end_x, end_y),
-          fill = "none",
-          stroke = color,
-          `stroke-width` = "8",
-          `stroke-linecap` = "round"
-        )
-      }
-    ),
-    div(class = "gauge-value", style = sprintf("color: %s;", color),
-      sprintf("%d", score)
-    )
+  # Color stops for the gauge: red -> yellow -> green
+  color_stops <- list(
+    list(0.4, "#E5383B"),   # red up to 40
+    list(0.7, "#F5B700"),   # yellow up to 70
+    list(1.0, "#38A169")    # green up to 100
   )
-})
 
-output$meta_diversity_subtitle <- renderUI({
-  data <- meta_diversity_data()
-  if (is.null(data) || data$decks_with_wins == 0) {
-    return(span(class = "text-muted", "No data"))
-  }
-  span(sprintf("%d decks with wins", data$decks_with_wins))
-})
-
-# Event Health - attendance trends
-event_health_data <- reactive({
-  if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
-
-  filters <- build_dashboard_filters("t")
-
-  # Calculate date boundaries in R to avoid INTERVAL syntax (requires ICU extension)
-  today <- Sys.Date()
-  date_30_ago <- format(today - 30, "%Y-%m-%d")
-  date_60_ago <- format(today - 60, "%Y-%m-%d")
-
-  # Recent period (last 30 days)
-  recent <- dbGetQuery(rv$db_con, sprintf("
-    SELECT AVG(player_count) as avg_players, COUNT(*) as event_count
-    FROM tournaments t
-    WHERE event_date >= '%s' %s %s %s
-  ", date_30_ago, filters$format, filters$event_type, filters$store))
-
-  # Prior period (30-60 days ago)
-  prior <- dbGetQuery(rv$db_con, sprintf("
-    SELECT AVG(player_count) as avg_players
-    FROM tournaments t
-    WHERE event_date >= '%s'
-      AND event_date < '%s' %s %s %s
-  ", date_60_ago, date_30_ago, filters$format, filters$event_type, filters$store))
-
-  # Get last 8 events for sparkline
-  sparkline_data <- dbGetQuery(rv$db_con, sprintf("
-    SELECT player_count
-    FROM tournaments t
-    WHERE 1=1 %s %s %s
-    ORDER BY event_date DESC
-    LIMIT 8
-  ", filters$format, filters$event_type, filters$store))
-
-  avg_recent <- if (is.na(recent$avg_players)) 0 else round(recent$avg_players, 1)
-  avg_prior <- if (is.na(prior$avg_players)) 0 else prior$avg_players
-  event_count <- if (is.na(recent$event_count)) 0 else recent$event_count
-
-  # Calculate change
-  if (avg_prior > 0) {
-    pct_change <- round((avg_recent - avg_prior) / avg_prior * 100, 0)
-  } else {
-    pct_change <- NA
-  }
-
-  # Reverse sparkline data so oldest is first
-  sparkline_values <- if (nrow(sparkline_data) > 0) rev(sparkline_data$player_count) else c()
-
-  list(
-    avg_recent = avg_recent,
-    pct_change = pct_change,
-    event_count = event_count,
-    sparkline = sparkline_values
-  )
-})
-
-output$event_health_indicator <- renderUI({
-  data <- event_health_data()
-
-  if (is.null(data) || data$avg_recent == 0) {
-    return(div(class = "event-health-container",
-      div(class = "health-indicator-value text-muted", "--")
-    ))
-  }
-
-  # Determine trend color
-  if (is.na(data$pct_change)) {
-    trend_color <- "#94a3b8"  # muted
-    change_text <- ""
-  } else if (data$pct_change >= 10) {
-    trend_color <- "#38A169"  # green
-    change_text <- sprintf("+%d%%", data$pct_change)
-  } else if (data$pct_change >= 1) {
-    trend_color <- "#38A169"
-    change_text <- sprintf("+%d%%", data$pct_change)
-  } else if (data$pct_change >= -1) {
-    trend_color <- "#94a3b8"
-    change_text <- "flat"
-  } else if (data$pct_change >= -10) {
-    trend_color <- "#F5B700"  # yellow
-    change_text <- sprintf("%d%%", data$pct_change)
-  } else {
-    trend_color <- "#E5383B"  # red
-    change_text <- sprintf("%d%%", data$pct_change)
-  }
-
-  # Build sparkline SVG if we have data
-  sparkline_svg <- NULL
-  if (length(data$sparkline) >= 2) {
-    vals <- data$sparkline
-    n <- length(vals)
-    min_val <- min(vals)
-    max_val <- max(vals)
-    range_val <- max(max_val - min_val, 1)  # avoid division by zero
-
-    # Scale to SVG coordinates (width=80, height=30, with padding)
-    x_coords <- seq(5, 75, length.out = n)
-    y_coords <- 25 - ((vals - min_val) / range_val) * 20  # invert y, leave padding
-
-    # Build polyline points
-    points <- paste(sprintf("%.1f,%.1f", x_coords, y_coords), collapse = " ")
-
-    sparkline_svg <- tags$svg(
-      viewBox = "0 0 80 30",
-      class = "sparkline-svg",
-      # Line
-      tags$polyline(
-        points = points,
-        fill = "none",
-        stroke = trend_color,
-        `stroke-width` = "2",
-        `stroke-linecap` = "round",
-        `stroke-linejoin` = "round"
-      ),
-      # End dot
-      tags$circle(
-        cx = x_coords[n],
-        cy = y_coords[n],
-        r = "3",
-        fill = trend_color
+  highchart() |>
+    hc_chart(type = "solidgauge") |>
+    hc_title(text = "Meta Diversity", style = list(fontSize = "14px")) |>
+    hc_subtitle(text = sprintf("%d decks with wins", decks_count), style = list(fontSize = "11px")) |>
+    hc_pane(
+      startAngle = -90,
+      endAngle = 90,
+      background = list(
+        backgroundColor = if (chart_mode == "dark") "#475569" else "#e2e8f0",
+        innerRadius = "60%",
+        outerRadius = "100%",
+        shape = "arc"
       )
-    )
-  }
-
-  div(class = "event-health-container",
-    div(class = "event-health-main",
-      div(class = "health-indicator-value",
-        span(data$avg_recent),
-        tags$span(class = "health-indicator-unit", " avg")
-      ),
-      if (change_text != "") {
-        div(class = "health-indicator-trend", style = sprintf("color: %s;", trend_color),
-          change_text
+    ) |>
+    hc_yAxis(
+      min = 0,
+      max = 100,
+      stops = color_stops,
+      lineWidth = 0,
+      tickWidth = 0,
+      minorTickInterval = NULL,
+      tickAmount = 2,
+      labels = list(
+        y = 16,
+        style = list(fontSize = "10px")
+      )
+    ) |>
+    hc_plotOptions(
+      solidgauge = list(
+        dataLabels = list(
+          y = -25,
+          borderWidth = 0,
+          useHTML = TRUE,
+          format = '<div style="text-align:center"><span style="font-size:24px;font-weight:bold;">{y}</span><br/><span style="font-size:11px;opacity:0.7">/ 100</span></div>'
         )
-      }
-    ),
-    if (!is.null(sparkline_svg)) {
-      div(class = "event-health-sparkline", sparkline_svg)
-    }
-  )
-})
-
-output$event_health_subtitle <- renderUI({
-  data <- event_health_data()
-  if (is.null(data)) return(span(class = "text-muted", "No data"))
-  span(sprintf("%d events (30 days)", data$event_count))
+      )
+    ) |>
+    hc_add_series(
+      name = "Diversity Score",
+      data = list(score),
+      innerRadius = "60%",
+      outerRadius = "100%"
+    ) |>
+    hc_tooltip(enabled = FALSE) |>
+    hc_add_theme(hc_theme_atom_switch(chart_mode))
 })
 
 # Player Growth & Retention Chart
@@ -1288,7 +1141,7 @@ output$rising_stars_cards <- renderUI({
       COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC,
       COUNT(CASE WHEN r.placement <= 3 THEN 1 END) DESC,
       COUNT(*) DESC
-    LIMIT 5
+    LIMIT 4
   ", date_30_ago, filters$format, filters$event_type, filters$store))
 
   if (nrow(result) == 0) {
