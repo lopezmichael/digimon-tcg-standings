@@ -2,7 +2,7 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.20.0
+**Current Version:** v0.20.2
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
@@ -124,18 +124,19 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## Stores Tab Improvements (Planned)
+## Stores Tab Improvements (v0.20.1-v0.20.2) - COMPLETE
 
 **Design:** `docs/plans/2026-02-08-stores-tab-improvements.md`
 
 | ID | Type | Description |
 |----|------|-------------|
 | ST1 | DONE | Switch to Mapbox geocoding (replaces OSM/Nominatim) |
-| ST2 | FEATURE | Store schedules schema (recurring day/time/event type) |
-| ST3 | FEATURE | Upcoming tournaments table in Stores tab |
-| ST4 | FEATURE | Store modal improvements (mini map, schedule display) |
-| ST5 | FEATURE | Store rating formula adjustments (TBD) |
-| ST6 | FEATURE | Map bubble sizing alternatives |
+| ST2 | DONE | Store schedules schema (recurring day/time/event type) |
+| ST3 | DONE | Weekly calendar view with schedule/all stores toggle |
+| ST4 | DONE | Store modal improvements (mini map, two-column stats layout) |
+| ST5 | DONE | Replaced Store Rating with Avg Player Rating (weighted Elo) |
+| ST6 | DONE | Tiered bubble sizing based on avg event size |
+| ST7 | DONE | Removed region filter (replaced by scene selection in v0.23) |
 
 ---
 
@@ -172,6 +173,20 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.20.2 - Store Modal Polish & Map Improvements
+- Store modal redesign: two-column layout (stats + mini map)
+- Replaced Store Rating with Avg Player Rating (weighted Elo)
+- Tiered bubble sizing based on avg event size
+- Removed region filter (to be replaced by scene selection in v0.23)
+- Text selection enabled in modals
+
+### v0.20.1 - Store Schedules & Calendar
+- Store schedules schema (recurring day/time/frequency)
+- Admin UI for schedule management
+- Weekly calendar view with schedule/all stores toggle
+- Store modal mini map with interactive Mapbox display
+- Mapbox geocoding (replaces OSM/Nominatim)
 
 ### v0.20.0 - Public Submissions & OCR
 - Public "Upload Results" tab with screenshot-based submission

@@ -4,6 +4,52 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-09: Store Modal Polish & Map Improvements (v0.20.2)
+
+### Summary
+Completed stores tab improvements with modal redesign, rating system changes, and map enhancements.
+
+### Store Modal Redesign
+
+**Layout Changes:**
+- Two-column layout: vertical stats list (left) + mini map (right)
+- Address moved to modal header (street, city, state, zip format)
+- Website link as icon in header (beside store name)
+- Stats labels in bold for readability
+- Mini map height matches stats box (218px)
+
+**Rating Change:**
+- Removed "Store Rating" (confusing 0-100 score that looked like quality judgment)
+- Replaced with "Avg Player Rating" - weighted Elo average of players who compete there
+- Weighting: players who attend more frequently count more toward the average
+- Renamed "Avg Size" to "Avg Event Size" for clarity
+
+### Map Improvements
+
+**Bubble Sizing:**
+- Changed from event count to tiered avg event size
+- Tiers: 5px (no events), 10px (<8 players), 14px (8-12), 18px (13-18), 22px (19-24), 26px (25+)
+
+**Removed Region Filter:**
+- Removed lasso/draw filter functionality (~260 lines of code)
+- Will be replaced by scene selection dropdown in v0.23
+
+### Other Changes
+- Enabled text selection in modals (CSS `user-select: text`)
+- Synced store_schedules schema to MotherDuck
+
+### Files Changed
+- `R/ratings.R` - New `calculate_store_avg_player_rating()` function
+- `app.R` - Renamed reactive from `store_ratings` to `store_avg_ratings`
+- `server/public-stores-server.R` - Modal redesign, bubble sizing, removed region filter
+- `server/public-dashboard-server.R` - Removed store_rating from recent tournaments
+- `server/public-tournaments-server.R` - Removed store_rating from tournament modal
+- `views/stores-ui.R` - Removed filter buttons and banner
+- `www/custom.css` - Text selection, minor modal styling
+- `CHANGELOG.md` - v0.20.2 release notes
+
+---
+
 ## 2026-02-09: Store Schedules & Modal Improvements
 
 ### Summary
