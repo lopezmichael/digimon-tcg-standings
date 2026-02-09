@@ -182,17 +182,22 @@ Deleted low-value `popular_deck` query and UI section.
 
 ---
 
-## Future Considerations
+## Completed Post-Phase Changes
 
-### Store Rating Adjustments
-- Current: 50% player strength, 30% attendance, 20% activity
-- Potential: Adjust weights, add recency weighting, consistency bonus
-- Status: Gather feedback first
+### Store Rating → Avg Player Rating ✓
+- Removed confusing 0-100 "Store Rating" score
+- Replaced with "Avg Player Rating" (weighted Elo average)
+- Weighted by participation: regulars count more than one-time visitors
+- Clearer meaning: "players here average 1520 Elo"
 
-### Map Bubble Sizing
-- Current: Linear scale 8-20px based on tournament count
-- Alternatives: Log scale, fixed tiers, attendance-based
-- Status: TBD
+### Map Bubble Sizing ✓
+- Changed from tournament count to avg event size
+- Larger bubbles = stores with bigger average turnout
+- More useful signal for users choosing where to play
+
+### Region Filter Removal ✓
+- Removed draw-to-filter lasso functionality
+- Will be replaced by scene selection in v0.23
 
 ---
 
