@@ -177,8 +177,8 @@ dashboard_ui <- tagList(
           highchartOutput("meta_diversity_gauge", height = "220px")
         ),
         div(
-          class = "text-muted small text-center px-2",
-          style = "font-size: 0.75rem;",
+          class = "info-hint-box text-center",
+          bsicons::bs_icon("info-circle", class = "info-hint-icon"),
           "How evenly distributed tournament wins are across different decks. Higher = healthier meta."
         )
       )

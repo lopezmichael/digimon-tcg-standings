@@ -952,64 +952,121 @@ output$meta_diversity_gauge <- renderHighchart({
   }
 
   score <- data$score
+  decks_with_wins <- data$decks_with_wins
+  total_wins <- data$total_wins
 
-  # Color stops for the gauge: red -> yellow -> green
-  color_stops <- list(
-    list(0.4, "#E5383B"),   # red up to 40
-    list(0.7, "#F5B700"),   # yellow up to 70
-    list(1.0, "#38A169")    # green up to 100
-  )
+  # Determine color and label based on score: red (<40), yellow (40-70), green (>70)
+  if (score < 40) {
+    score_color <- "#E5383B"  # red
+    health_label <- "Low Diversity"
+    health_desc <- "A few decks dominate the meta"
+  } else if (score < 70) {
+    score_color <- "#F5B700"  # yellow
+    health_label <- "Moderate Diversity"
+    health_desc <- "Several viable decks in the meta"
+  } else {
+    score_color <- "#38A169"  # green
+    health_label <- "High Diversity"
+    health_desc <- "Many competitive decks in the meta"
+  }
+
+  # Background color for the remaining portion
+  bg_color <- if (chart_mode == "dark") "#475569" else "#e2e8f0"
+  text_color <- if (chart_mode == "dark") "#e2e8f0" else "#1e293b"
+
+  # Custom renderer to draw centered text in the donut hole
+  center_text_renderer <- JS(sprintf("
+    function() {
+      var chart = this;
+      var centerX = chart.plotLeft + chart.plotWidth / 2;
+      var centerY = chart.plotTop + chart.plotHeight / 2;
+
+      // Remove existing center text if re-rendering
+      if (chart.centerText) {
+        chart.centerText.destroy();
+      }
+      if (chart.centerSubtext) {
+        chart.centerSubtext.destroy();
+      }
+
+      // Draw main score
+      chart.centerText = chart.renderer.text('%d', centerX, centerY + 8)
+        .css({
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: '%s',
+          textAnchor: 'middle'
+        })
+        .attr({ zIndex: 5, align: 'center' })
+        .add();
+
+      // Draw subtext
+      chart.centerSubtext = chart.renderer.text('/ 100', centerX, centerY + 28)
+        .css({
+          fontSize: '12px',
+          color: '%s',
+          opacity: 0.7,
+          textAnchor: 'middle'
+        })
+        .attr({ zIndex: 5, align: 'center' })
+        .add();
+    }
+  ", score, text_color, text_color))
 
   highchart() |>
     hc_chart(
-      type = "solidgauge",
+      type = "pie",
       spacing = c(0, 0, 0, 0),
-      margin = c(0, 0, -80, 0)
+      margin = c(0, 0, 0, 0),
+      events = list(
+        load = center_text_renderer,
+        redraw = center_text_renderer
+      )
     ) |>
     hc_title(text = NULL) |>
-    hc_subtitle(text = NULL) |>
-    hc_pane(
-      startAngle = -90,
-      endAngle = 90,
-      center = c("50%", "70%"),
-      size = "100%",
-      background = list(
-        backgroundColor = if (chart_mode == "dark") "#475569" else "#e2e8f0",
-        innerRadius = "60%",
-        outerRadius = "100%",
-        shape = "arc"
-      )
-    ) |>
-    hc_yAxis(
-      min = 0,
-      max = 100,
-      stops = color_stops,
-      lineWidth = 0,
-      tickWidth = 0,
-      minorTickInterval = NULL,
-      tickAmount = 2,
-      labels = list(
-        y = 16,
-        style = list(fontSize = "10px")
-      )
-    ) |>
     hc_plotOptions(
-      solidgauge = list(
-        dataLabels = list(
-          y = -25,
-          borderWidth = 0,
-          useHTML = TRUE,
-          format = '<div style="text-align:center"><span style="font-size:24px;font-weight:bold;">{y}</span><br/><span style="font-size:11px;opacity:0.7">/ 100</span></div>'
-        )
+      pie = list(
+        innerSize = "70%",
+        dataLabels = list(enabled = FALSE),
+        startAngle = 0,
+        endAngle = 360,
+        cursor = "pointer"
       )
     ) |>
     hc_add_series(
-      name = "Diversity Score",
-      data = list(score),
-      innerRadius = "60%",
-      outerRadius = "100%"
+      name = "Diversity",
+      data = list(
+        list(
+          name = "Score",
+          y = score,
+          color = score_color,
+          custom = list(
+            healthLabel = health_label,
+            healthDesc = health_desc,
+            decksWithWins = decks_with_wins,
+            totalWins = total_wins
+          )
+        ),
+        list(name = "Remaining", y = 100 - score, color = bg_color)
+      )
     ) |>
-    hc_tooltip(enabled = FALSE) |>
+    hc_tooltip(
+      useHTML = TRUE,
+      formatter = JS(sprintf("
+        function() {
+          if (this.point.name === 'Remaining') {
+            return false;  // Don't show tooltip for background
+          }
+          return '<div style=\"text-align:center;padding:8px;\">' +
+            '<b style=\"font-size:14px;\">%s</b><br/>' +
+            '<span style=\"opacity:0.8;\">%s</span><br/><br/>' +
+            '<span style=\"font-size:12px;\">' +
+            '<b>%d</b> decks with wins<br/>' +
+            '<b>%d</b> total tournament wins' +
+            '</span></div>';
+        }
+      ", health_label, health_desc, decks_with_wins, total_wins))
+    ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
 })
 

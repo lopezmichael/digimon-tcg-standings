@@ -30,7 +30,7 @@ admin_stores_ui <- tagList(
             textInput("store_address", "Street Address"),
             textInput("store_city", "City"),
             selectInput("store_state", "State", choices = c("TX" = "TX"), selected = "TX"),
-            textInput("store_zip", "ZIP Code (optional)")
+            textInput("store_zip", "ZIP Code")
           ),
 
           # Online store fields (shown when checkbox checked)
@@ -42,9 +42,6 @@ admin_stores_ui <- tagList(
 
           # Common fields for both
           textInput("store_website", "Website (optional)"),
-          textAreaInput("store_schedule", "Schedule Info (optional)",
-                        rows = 2,
-                        placeholder = "e.g., Locals every Friday at 7pm"),
 
           # Geocode message only for physical stores
           conditionalPanel(
@@ -54,20 +51,23 @@ admin_stores_ui <- tagList(
               bsicons::bs_icon("geo-alt"), " Location will be automatically geocoded from address"
             )
           ),
-          div(
-            class = "d-flex gap-2",
-            actionButton("add_store", "Add Store", class = "btn-primary"),
-            actionButton("update_store", "Update Store", class = "btn-success", style = "display: none;"),
-            actionButton("delete_store", "Delete Store", class = "btn-danger", style = "display: none;")
-          ),
 
-          # Schedule management section (only when editing a store)
+          # Schedule management section (for physical stores - both new and editing)
           conditionalPanel(
-            condition = "input.editing_store_id && input.editing_store_id != '' && !input.store_is_online",
+            condition = "!input.store_is_online",
             hr(),
             h5("Regular Schedule"),
-            p(class = "text-muted small", "Click a schedule to delete it"),
-            reactableOutput("store_schedules_table"),
+            # Show existing schedules when editing
+            conditionalPanel(
+              condition = "input.editing_store_id && input.editing_store_id != ''",
+              p(class = "text-muted small", "Click a schedule to delete it"),
+              reactableOutput("store_schedules_table")
+            ),
+            # Show pending schedules when adding new store
+            conditionalPanel(
+              condition = "!input.editing_store_id || input.editing_store_id == ''",
+              uiOutput("pending_schedules_display")
+            ),
             div(
               class = "mt-3",
               layout_columns(
@@ -107,6 +107,14 @@ admin_stores_ui <- tagList(
                 )
               )
             )
+          ),
+
+          hr(),
+          div(
+            class = "d-flex gap-2",
+            actionButton("add_store", "Add Store", class = "btn-primary"),
+            actionButton("update_store", "Update Store", class = "btn-success", style = "display: none;"),
+            actionButton("delete_store", "Delete Store", class = "btn-danger", style = "display: none;")
           )
         )
       ),
@@ -114,7 +122,18 @@ admin_stores_ui <- tagList(
         card_header(
           class = "d-flex justify-content-between align-items-center",
           "Current Stores",
-          span(class = "small text-muted", "Click a row to edit")
+          div(
+            class = "d-flex align-items-center gap-3",
+            span(class = "small text-muted", "Click to edit"),
+            div(
+              class = "d-flex align-items-center gap-2 small",
+              span(
+                style = "width: 12px; height: 12px; background: rgba(245, 183, 0, 0.3); border-left: 2px solid #F5B700; display: inline-block;",
+                title = "Missing schedule or ZIP"
+              ),
+              span(class = "text-muted", "Incomplete")
+            )
+          )
         ),
         card_body(
           reactableOutput("admin_store_list")

@@ -3,6 +3,61 @@
 /* Layout: Sidebar + Header */
 
 /* =============================================================================
+   CUSTOM SCROLLBARS - Digital Aesthetic
+   ============================================================================= */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 76, 129, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.5) 0%, rgba(15, 76, 129, 0.6) 100%);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 200, 255, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.7) 0%, rgba(15, 76, 129, 0.8) 100%);
+  border-color: rgba(0, 200, 255, 0.4);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark mode scrollbars */
+[data-bs-theme="dark"] ::-webkit-scrollbar-track {
+  background: rgba(0, 200, 255, 0.05);
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.4) 0%, rgba(15, 76, 129, 0.5) 100%);
+  border-color: rgba(0, 200, 255, 0.3);
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.6) 0%, rgba(15, 76, 129, 0.7) 100%);
+  border-color: rgba(0, 200, 255, 0.5);
+}
+
+/* Firefox scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 200, 255, 0.5) rgba(15, 76, 129, 0.1);
+}
+
+[data-bs-theme="dark"] * {
+  scrollbar-color: rgba(0, 200, 255, 0.4) rgba(0, 200, 255, 0.05);
+}
+
+/* =============================================================================
    APP HEADER
    ============================================================================= */
 
@@ -1828,6 +1883,69 @@ a:hover, .nav-link:hover {
 
 [data-bs-theme="dark"] .modal-stat-label {
   color: #a0aec0;
+}
+
+/* =============================================================================
+   INFO HINT BOX - Digital Styled Explanatory Text
+   ============================================================================= */
+
+.info-hint-box {
+  position: relative;
+  background:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 12px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 12px),
+    linear-gradient(135deg, rgba(15, 76, 129, 0.08) 0%, rgba(0, 200, 255, 0.05) 100%);
+  border: 1px solid rgba(0, 200, 255, 0.35);
+  border-radius: 6px;
+  padding: 0.625rem 0.875rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+/* Corner accent - top left horizontal */
+.info-hint-box::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.7), transparent);
+}
+
+/* Corner accent - top left vertical */
+.info-hint-box::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 2px;
+  height: 16px;
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.7), transparent);
+}
+
+/* Icon styling within info hint */
+.info-hint-box .info-hint-icon {
+  color: #0F4C81;
+  margin-right: 0.375rem;
+  opacity: 0.8;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] .info-hint-box {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 12px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 12px),
+    linear-gradient(135deg, rgba(0, 200, 255, 0.12) 0%, rgba(15, 76, 129, 0.08) 100%);
+  border-color: rgba(0, 200, 255, 0.4);
+  color: #a0aec0;
+}
+
+[data-bs-theme="dark"] .info-hint-box .info-hint-icon {
+  color: rgba(0, 200, 255, 0.9);
+  opacity: 1;
 }
 
 /* =============================================================================

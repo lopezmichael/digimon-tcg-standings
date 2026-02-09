@@ -613,6 +613,10 @@ server <- function(input, output, session) {
     format_refresh = 0,
     tournament_refresh = 0,
     modal_results_refresh = 0,
+    schedules_refresh = 0,
+
+    # === STORE FORM STATE ===
+    pending_schedules = list(),  # Schedules to add when creating new store
 
     # === DELETE PERMISSION STATE ===
     # Pattern: can_delete_{entity} + {entity}_{related}_count

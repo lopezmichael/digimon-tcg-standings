@@ -50,12 +50,20 @@ output$stores_schedule_content <- renderUI({
   # Get current day of week (0=Sunday in JS, but R's wday returns 1=Sunday)
   today_wday <- as.integer(format(Sys.Date(), "%w"))  # 0=Sunday, 6=Saturday
 
-  # Query schedules with store info
+  # Query schedules with store info and tournament stats
   schedules <- dbGetQuery(rv$db_con, "
+    WITH store_stats AS (
+      SELECT store_id,
+             COALESCE(ROUND(AVG(player_count), 0), 0) as avg_players
+      FROM tournaments
+      GROUP BY store_id
+    )
     SELECT ss.day_of_week, ss.start_time, ss.frequency,
-           s.store_id, s.name as store_name, s.city
+           s.store_id, s.name as store_name, s.city,
+           COALESCE(st.avg_players, 0) as avg_players
     FROM store_schedules ss
     JOIN stores s ON ss.store_id = s.store_id
+    LEFT JOIN store_stats st ON s.store_id = st.store_id
     WHERE ss.is_active = TRUE
       AND s.is_active = TRUE
       AND (s.is_online = FALSE OR s.is_online IS NULL)
@@ -118,7 +126,15 @@ output$stores_schedule_content <- renderUI({
                 span(class = "fw-medium", sched$store_name),
                 if (!is.na(sched$city)) span(class = "text-muted small ms-2", sched$city)
               ),
-              span(class = "text-muted", sched$time_display)
+              div(
+                class = "d-flex align-items-center gap-2",
+                span(
+                  class = "text-muted small",
+                  title = "Average tournament size",
+                  if (sched$avg_players > 0) paste0("~", sched$avg_players, " Average Turnout") else "Turnout Data Unavailable"
+                ),
+                span(class = "text-muted", sched$time_display)
+              )
             )
           })
         )
