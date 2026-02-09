@@ -174,9 +174,17 @@ observeEvent(input$link_copied, {
   showNotification("Link copied to clipboard!", type = "message", duration = 2)
 })
 
-# Handle modal close - clear entity from URL
+# Handle modal close - clear entity from URL and reset reactive values
 observeEvent(input$modal_closed, {
+  # Clear URL entity parameter
   clear_url_entity(session)
+
+  # Clear all selected entity IDs to prevent modal from re-appearing
+  # when user navigates to a different tab
+  rv$selected_player_id <- NULL
+  rv$selected_store_id <- NULL
+  rv$selected_archetype_id <- NULL
+  rv$selected_tournament_id <- NULL
 })
 
 # Update URL when tab changes (for shareable tab links)
