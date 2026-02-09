@@ -33,8 +33,10 @@ MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
 # Insert in this order (parents first), delete in reverse order (children first)
 TABLES = [
     "stores",
-    "players",
+    "store_schedules",
     "formats",
+    "cards",
+    "players",
     "deck_archetypes",
     "deck_requests",
     "archetype_cards",

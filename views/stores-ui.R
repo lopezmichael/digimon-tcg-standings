@@ -50,17 +50,45 @@ stores_ui <- tagList(
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",
-      span("Store List"),
+      # View toggle buttons
+      div(
+        class = "btn-group btn-group-sm",
+        role = "group",
+        `aria-label` = "Store view toggle",
+        actionButton(
+          "stores_view_schedule",
+          tagList(bsicons::bs_icon("calendar-week"), " Schedule"),
+          class = "btn-outline-primary active"
+        ),
+        actionButton(
+          "stores_view_all",
+          tagList(bsicons::bs_icon("list-ul"), " All Stores"),
+          class = "btn-outline-primary"
+        )
+      ),
       div(
         class = "d-flex align-items-center gap-2",
-        span(class = "small text-muted", "Click a row for details"),
+        uiOutput("stores_view_hint"),
         uiOutput("stores_filter_badge")
       )
     ),
     card_body(
-      reactableOutput("store_list")
+      # Schedule view (default)
+      conditionalPanel(
+        condition = "input.stores_view_mode != 'all'",
+        id = "stores_schedule_view",
+        uiOutput("stores_schedule_content")
+      ),
+      # All Stores view
+      conditionalPanel(
+        condition = "input.stores_view_mode == 'all'",
+        id = "stores_all_view",
+        reactableOutput("store_list")
+      )
     )
   ),
+  # Hidden input to track view mode
+  tags$input(type = "hidden", id = "stores_view_mode", value = "schedule", class = "shiny-input-text"),
 
   # Store detail modal (rendered dynamically)
   uiOutput("store_detail_modal"),

@@ -5205,3 +5205,71 @@ div.player-match-indicator.new {
   border-top-color: rgba(0, 200, 255, 0.2);
 }
 
+/* =============================================================================
+   STORES SCHEDULE VIEW
+   ============================================================================= */
+
+/* Schedule day section */
+.schedule-day-section {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 0.75rem;
+}
+
+.schedule-day-section:last-of-type {
+  border-bottom: none;
+}
+
+/* Day header */
+.schedule-day-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.schedule-day-today {
+  color: var(--bs-primary) !important;
+}
+
+/* Store item in schedule */
+.schedule-store-item {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.schedule-store-item:hover {
+  background: rgba(15, 76, 129, 0.08);
+}
+
+.schedule-store-item:active {
+  background: rgba(15, 76, 129, 0.12);
+}
+
+/* Dark mode schedule styles */
+[data-bs-theme="dark"] .schedule-day-section {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .schedule-store-item {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-bs-theme="dark"] .schedule-store-item:hover {
+  background: rgba(0, 200, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .schedule-store-item:active {
+  background: rgba(0, 200, 255, 0.12);
+}
+
+/* View toggle active state */
+.btn-group .btn-outline-primary.active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+

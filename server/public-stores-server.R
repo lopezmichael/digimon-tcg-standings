@@ -5,6 +5,175 @@
 # This is kept here for now due to physical proximity; could move to shared-server.R later.
 # Also contains reset_dashboard_filters which should ideally be in Dashboard server.
 
+# =============================================================================
+# View Toggle (Schedule / All Stores)
+# =============================================================================
+
+# Day of week labels
+WEEKDAY_LABELS <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+# Handle Schedule view button click
+observeEvent(input$stores_view_schedule, {
+  shinyjs::runjs("
+    document.getElementById('stores_view_mode').value = 'schedule';
+    Shiny.setInputValue('stores_view_mode', 'schedule');
+    document.getElementById('stores_view_schedule').classList.add('active');
+    document.getElementById('stores_view_all').classList.remove('active');
+  ")
+})
+
+# Handle All Stores view button click
+observeEvent(input$stores_view_all, {
+  shinyjs::runjs("
+    document.getElementById('stores_view_mode').value = 'all';
+    Shiny.setInputValue('stores_view_mode', 'all');
+    document.getElementById('stores_view_all').classList.add('active');
+    document.getElementById('stores_view_schedule').classList.remove('active');
+  ")
+})
+
+# View hint text
+output$stores_view_hint <- renderUI({
+  view_mode <- input$stores_view_mode
+  if (is.null(view_mode) || view_mode != "all") {
+    span(class = "small text-muted", "Click a store for details")
+  } else {
+    span(class = "small text-muted", "Click a row for details")
+  }
+})
+
+# Schedule view content
+output$stores_schedule_content <- renderUI({
+  req(rv$db_con)
+  rv$data_refresh  # Trigger refresh on admin changes
+
+  # Get current day of week (0=Sunday in JS, but R's wday returns 1=Sunday)
+  today_wday <- as.integer(format(Sys.Date(), "%w"))  # 0=Sunday, 6=Saturday
+
+  # Query schedules with store info, filtered by region if active
+  store_filter <- if (!is.null(rv$selected_store_ids) && length(rv$selected_store_ids) > 0) {
+    sprintf("AND s.store_id IN (%s)", paste(rv$selected_store_ids, collapse = ","))
+  } else {
+    ""
+  }
+
+  schedules <- dbGetQuery(rv$db_con, sprintf("
+    SELECT ss.day_of_week, ss.start_time, ss.frequency,
+           s.store_id, s.name as store_name, s.city
+    FROM store_schedules ss
+    JOIN stores s ON ss.store_id = s.store_id
+    WHERE ss.is_active = TRUE
+      AND s.is_active = TRUE
+      AND (s.is_online = FALSE OR s.is_online IS NULL)
+      %s
+    ORDER BY ss.day_of_week, ss.start_time, s.name
+  ", store_filter))
+
+  # Get stores without schedules
+  stores_without_schedules <- dbGetQuery(rv$db_con, sprintf("
+    SELECT s.store_id, s.name, s.city
+    FROM stores s
+    WHERE s.is_active = TRUE
+      AND (s.is_online = FALSE OR s.is_online IS NULL)
+      AND s.store_id NOT IN (
+        SELECT DISTINCT store_id FROM store_schedules WHERE is_active = TRUE
+      )
+      %s
+    ORDER BY s.name
+  ", store_filter))
+
+  # Build day sections, sorted starting from today
+  day_order <- c(today_wday:6, if (today_wday > 0) 0:(today_wday - 1) else integer(0))
+
+  day_sections <- lapply(day_order, function(day_idx) {
+    day_name <- WEEKDAY_LABELS[day_idx + 1]
+    is_today <- day_idx == today_wday
+
+    day_schedules <- schedules[schedules$day_of_week == day_idx, ]
+
+    # Format time for display (24h to 12h)
+    if (nrow(day_schedules) > 0) {
+      day_schedules$time_display <- sapply(day_schedules$start_time, function(t) {
+        parts <- strsplit(t, ":")[[1]]
+        hour <- as.integer(parts[1])
+        minute <- parts[2]
+        ampm <- if (hour >= 12) "PM" else "AM"
+        hour12 <- if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        sprintf("%d:%s %s", hour12, minute, ampm)
+      })
+    }
+
+    div(
+      class = "schedule-day-section mb-3",
+      # Day header
+      div(
+        class = paste("schedule-day-header", if (is_today) "schedule-day-today" else ""),
+        style = if (is_today) "font-weight: bold; color: var(--bs-primary);" else "",
+        span(day_name),
+        if (is_today) span(class = "badge bg-primary ms-2", "Today")
+      ),
+      # Store list for this day
+      if (nrow(day_schedules) > 0) {
+        div(
+          class = "schedule-day-stores",
+          lapply(1:nrow(day_schedules), function(i) {
+            sched <- day_schedules[i, ]
+            tags$button(
+              type = "button",
+              class = "schedule-store-item d-flex justify-content-between align-items-center w-100 text-start border-0 p-2 mb-1",
+              onclick = sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", sched$store_id),
+              div(
+                span(class = "fw-medium", sched$store_name),
+                if (!is.na(sched$city)) span(class = "text-muted small ms-2", sched$city)
+              ),
+              span(class = "text-muted", sched$time_display)
+            )
+          })
+        )
+      } else {
+        div(
+          class = "text-muted small ps-2 py-1",
+          "No scheduled events"
+        )
+      }
+    )
+  })
+
+  # Stores without schedules section
+  no_schedule_section <- if (nrow(stores_without_schedules) > 0) {
+    div(
+      class = "mt-4 pt-3 border-top",
+      div(
+        class = "text-muted small mb-2",
+        bsicons::bs_icon("question-circle"),
+        sprintf(" %d store%s without regular schedules",
+                nrow(stores_without_schedules),
+                if (nrow(stores_without_schedules) == 1) "" else "s")
+      ),
+      div(
+        class = "d-flex flex-wrap gap-1",
+        lapply(1:nrow(stores_without_schedules), function(i) {
+          store <- stores_without_schedules[i, ]
+          tags$button(
+            type = "button",
+            class = "btn btn-sm btn-outline-secondary",
+            onclick = sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", store$store_id),
+            store$name
+          )
+        })
+      )
+    )
+  } else {
+    NULL
+  }
+
+  # Combine all sections
+  tagList(
+    day_sections,
+    no_schedule_section
+  )
+})
+
 # Store list (uses filtered stores from map selection)
 output$store_list <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes

@@ -1,8 +1,8 @@
 -- DigiLab - Digimon TCG Tournament Tracker
 -- Database Schema for MotherDuck (Cloud DuckDB)
--- Version: 1.1.0
+-- Version: 1.2.0
 -- Created: January 2026
--- Updated: 2026-01-28 - Removed FK constraints from results table (DuckDB UPDATE fix)
+-- Updated: 2026-02-09 - Added store_schedules table for recurring event tracking
 
 -- =============================================================================
 -- STORES TABLE
@@ -26,6 +26,27 @@ CREATE TABLE IF NOT EXISTS stores (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- =============================================================================
+-- STORE SCHEDULES TABLE
+-- Tracks recurring event schedules for stores (e.g., "Wednesdays at 7pm")
+-- One row per day/time slot - stores with multiple events have multiple rows
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS store_schedules (
+    schedule_id INTEGER PRIMARY KEY,
+    store_id INTEGER NOT NULL,          -- References stores(store_id) - no FK for DuckDB compat
+    day_of_week INTEGER NOT NULL,       -- 0=Sunday, 1=Monday, ..., 6=Saturday
+    start_time TEXT NOT NULL,           -- "19:00" format (24-hour)
+    frequency VARCHAR DEFAULT 'weekly', -- weekly, biweekly, monthly
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for schedule queries
+CREATE INDEX IF NOT EXISTS idx_store_schedules_store ON store_schedules(store_id);
+CREATE INDEX IF NOT EXISTS idx_store_schedules_day ON store_schedules(day_of_week);
+CREATE INDEX IF NOT EXISTS idx_store_schedules_active ON store_schedules(is_active);
 
 -- =============================================================================
 -- FORMATS TABLE

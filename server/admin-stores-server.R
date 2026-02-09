@@ -463,6 +463,10 @@ observeEvent(input$confirm_delete_store, {
   store_id <- as.integer(input$editing_store_id)
 
   tryCatch({
+    # Also delete associated schedules
+    dbExecute(rv$db_con, "DELETE FROM store_schedules WHERE store_id = ?",
+              params = list(store_id))
+
     dbExecute(rv$db_con, "DELETE FROM stores WHERE store_id = ?",
               params = list(store_id))
     showNotification("Store deleted", type = "message")
@@ -495,5 +499,166 @@ observeEvent(input$confirm_delete_store, {
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
+  })
+})
+
+# =============================================================================
+# Store Schedules Management
+# =============================================================================
+
+# Day of week labels
+DAY_LABELS <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+# Render schedules table for selected store
+output$store_schedules_table <- renderReactable({
+  req(input$editing_store_id)
+  req(rv$db_con)
+
+  store_id <- as.integer(input$editing_store_id)
+
+  # Trigger refresh when schedules change
+  rv$schedules_refresh
+
+  schedules <- dbGetQuery(rv$db_con, "
+    SELECT schedule_id, day_of_week, start_time, frequency
+    FROM store_schedules
+    WHERE store_id = ? AND is_active = TRUE
+    ORDER BY day_of_week, start_time
+  ", params = list(store_id))
+
+  if (nrow(schedules) == 0) {
+    return(NULL)
+  }
+
+  # Convert day_of_week to label
+  schedules$day_name <- DAY_LABELS[schedules$day_of_week + 1]
+
+  # Format time for display (24h to 12h)
+  schedules$time_display <- sapply(schedules$start_time, function(t) {
+    parts <- strsplit(t, ":")[[1]]
+    hour <- as.integer(parts[1])
+    minute <- parts[2]
+    ampm <- if (hour >= 12) "PM" else "AM"
+    hour12 <- if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+    sprintf("%d:%s %s", hour12, minute, ampm)
+  })
+
+  # Capitalize frequency
+  schedules$freq_display <- tools::toTitleCase(schedules$frequency)
+
+  reactable(
+    schedules[, c("schedule_id", "day_name", "time_display", "freq_display")],
+    compact = TRUE,
+    striped = TRUE,
+    columns = list(
+      schedule_id = colDef(show = FALSE),
+      day_name = colDef(name = "Day", width = 100),
+      time_display = colDef(name = "Time", width = 90),
+      freq_display = colDef(name = "Frequency", width = 90)
+    ),
+    onClick = JS("function(rowInfo, column) {
+      if (column.id !== 'delete') {
+        Shiny.setInputValue('schedule_to_delete', rowInfo.row.schedule_id, {priority: 'event'});
+      }
+    }"),
+    rowStyle = list(cursor = "pointer")
+  )
+})
+
+# Add schedule
+observeEvent(input$add_schedule, {
+  req(rv$is_superadmin, rv$db_con, input$editing_store_id)
+
+  # Double-check we're actually editing a store
+  if (is.null(input$editing_store_id) || input$editing_store_id == "") {
+    return()
+  }
+
+  store_id <- as.integer(input$editing_store_id)
+  day_of_week <- as.integer(input$schedule_day)
+  start_time <- input$schedule_time
+  frequency <- input$schedule_frequency
+
+  # Validate time format
+  if (is.null(start_time) || start_time == "") {
+    showNotification("Please select a start time", type = "error")
+    return()
+  }
+
+  tryCatch({
+    # Check for duplicate schedule
+    existing <- dbGetQuery(rv$db_con, "
+      SELECT schedule_id FROM store_schedules
+      WHERE store_id = ? AND day_of_week = ? AND start_time = ? AND is_active = TRUE
+    ", params = list(store_id, day_of_week, start_time))
+
+    if (nrow(existing) > 0) {
+      showNotification("This schedule already exists for this store", type = "warning")
+      return()
+    }
+
+    # Get next ID
+    max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(schedule_id), 0) as max_id FROM store_schedules")$max_id
+    new_id <- max_id + 1
+
+    dbExecute(rv$db_con, "
+      INSERT INTO store_schedules (schedule_id, store_id, day_of_week, start_time, frequency)
+      VALUES (?, ?, ?, ?, ?)
+    ", params = list(new_id, store_id, day_of_week, start_time, frequency))
+
+    showNotification(sprintf("Added %s schedule", DAY_LABELS[day_of_week + 1]), type = "message")
+
+    # Reset form
+    updateSelectInput(session, "schedule_day", selected = "1")
+    updateTextInput(session, "schedule_time", value = "19:00")
+    updateSelectInput(session, "schedule_frequency", selected = "weekly")
+
+    # Trigger refresh
+    rv$schedules_refresh <- (rv$schedules_refresh %||% 0) + 1
+
+  }, error = function(e) {
+    showNotification(paste("Error adding schedule:", e$message), type = "error")
+  })
+})
+
+# Delete schedule (triggered by clicking a row)
+observeEvent(input$schedule_to_delete, {
+  req(rv$is_superadmin, rv$db_con)
+
+  schedule_id <- input$schedule_to_delete
+
+  # Show confirmation
+  showModal(modalDialog(
+    title = "Delete Schedule",
+    "Are you sure you want to delete this schedule?",
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_delete_schedule", "Delete", class = "btn-danger")
+    ),
+    easyClose = TRUE
+  ))
+
+  rv$schedule_to_delete_id <- schedule_id
+})
+
+# Confirm delete schedule
+observeEvent(input$confirm_delete_schedule, {
+  req(rv$is_superadmin, rv$db_con, rv$schedule_to_delete_id)
+
+  tryCatch({
+    dbExecute(rv$db_con, "
+      UPDATE store_schedules SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
+      WHERE schedule_id = ?
+    ", params = list(rv$schedule_to_delete_id))
+
+    showNotification("Schedule deleted", type = "message")
+    removeModal()
+
+    # Trigger refresh
+    rv$schedules_refresh <- (rv$schedules_refresh %||% 0) + 1
+    rv$schedule_to_delete_id <- NULL
+
+  }, error = function(e) {
+    showNotification(paste("Error deleting schedule:", e$message), type = "error")
   })
 })

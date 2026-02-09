@@ -59,6 +59,54 @@ admin_stores_ui <- tagList(
             actionButton("add_store", "Add Store", class = "btn-primary"),
             actionButton("update_store", "Update Store", class = "btn-success", style = "display: none;"),
             actionButton("delete_store", "Delete Store", class = "btn-danger", style = "display: none;")
+          ),
+
+          # Schedule management section (only when editing a store)
+          conditionalPanel(
+            condition = "input.editing_store_id && input.editing_store_id != '' && !input.store_is_online",
+            hr(),
+            h5("Regular Schedule"),
+            p(class = "text-muted small", "Click a schedule to delete it"),
+            reactableOutput("store_schedules_table"),
+            div(
+              class = "mt-3",
+              layout_columns(
+                col_widths = c(4, 3, 3, 2),
+                selectInput(
+                  "schedule_day", "Day",
+                  choices = list(
+                    "Sunday" = "0",
+                    "Monday" = "1",
+                    "Tuesday" = "2",
+                    "Wednesday" = "3",
+                    "Thursday" = "4",
+                    "Friday" = "5",
+                    "Saturday" = "6"
+                  ),
+                  selected = "1",
+                  selectize = FALSE
+                ),
+                textInput(
+                  "schedule_time", "Time",
+                  value = "19:00",
+                  placeholder = "HH:MM (e.g., 19:00)"
+                ),
+                selectInput(
+                  "schedule_frequency", "Frequency",
+                  choices = list(
+                    "Weekly" = "weekly",
+                    "Biweekly" = "biweekly",
+                    "Monthly" = "monthly"
+                  ),
+                  selected = "weekly",
+                  selectize = FALSE
+                ),
+                div(
+                  style = "padding-top: 32px;",
+                  actionButton("add_schedule", "Add", class = "btn-outline-primary btn-sm")
+                )
+              )
+            )
           )
         )
       ),
