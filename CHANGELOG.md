@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.21.0] - 2026-02-09 - Deep Linking & Shareable URLs
+
+### Added
+- **Shareable URLs**: Opening a modal updates the browser URL for easy sharing
+  - Players: `?player=atomshell`
+  - Decks: `?deck=blue-flare`
+  - Stores: `?store=sci-fi-factory`
+  - Tournaments: `?tournament=123`
+- **Tab URLs**: Tab navigation reflected in URL (`?tab=meta`, `?tab=about`, etc.)
+- **Scene Foundation**: URL supports scene parameter (`?scene=dfw`) for future multi-region
+- **Copy Link Button**: All modals now have "Copy Link" button in footer
+- **Browser History Support**: Back/forward buttons work with modal navigation
+
+### Changed
+- **URL Routing**: Admin pages clear URL to base (no shareable links for admin)
+- **Schema**: Added `slug` column to `stores` and `deck_archetypes` tables
+- **Schema**: Added `scenes` table with hierarchy (Global → Country → State → Metro)
+- **Schema**: Added `scene_id` column to `stores` table
+
+### Technical
+- New `server/url-routing-server.R` for URL parsing and entity resolution
+- New `www/url-routing.js` for browser history management (pushState/popstate)
+- Slug-based entity resolution with fallback to slugified names
+
+---
+
 ## [0.20.2] - 2026-02-09 - Store Modal & Map Improvements
 
 ### Added

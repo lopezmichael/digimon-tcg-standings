@@ -2,29 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.20.2
+**Current Version:** v0.21.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.21 - Deep Linking
-
-**Design:** `docs/plans/2026-02-04-deep-linking-design.md`
-
-| ID | Type | Description |
-|----|------|-------------|
-| DL1 | FEATURE | Shareable URLs for entities (`?player=atomshell`, `?deck=blue-flare`, `?store=sci-fi-factory`) |
-| DL2 | FEATURE | Tab navigation via URL (`?tab=meta`, `?tab=players`) |
-| DL3 | FEATURE | Scene/region in URL (`?scene=dfw`) |
-| DL4 | FEATURE | Browser back button closes modals (pushState/popstate) |
-| DL5 | FEATURE | "Copy Link" button in all modals |
-| DL6 | SCHEMA | Add `slug` column to stores, deck_archetypes tables |
-
-**Technical Notes:**
-- Uses `parseQueryString(session$clientData$url_search)` for reading URLs
-- Uses JavaScript `history.pushState()` for updating URLs without reload
-- Slug resolution: exact match opens modal, multiple matches show search results
 
 ---
 
@@ -173,6 +153,15 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.21.0 - Deep Linking & Shareable URLs
+- Shareable URLs for players, decks, stores, tournaments
+- Tab navigation via URL (`?tab=meta`, `?tab=about`, etc.)
+- Scene parameter foundation (`?scene=dfw`)
+- Copy Link button in all modal footers
+- Browser back/forward support for modal navigation
+- Schema: `slug` columns on stores and deck_archetypes
+- Schema: `scenes` table with hierarchy for future multi-region
 
 ### v0.20.2 - Store Modal Polish & Map Improvements
 - Store modal redesign: two-column layout (stats + mini map)

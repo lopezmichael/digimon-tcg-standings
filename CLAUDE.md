@@ -88,12 +88,9 @@ The architecture doc contains:
 
 ## Current Work
 
-### Active Branch: `feature/public-submissions`
+### Latest Release: v0.21.0 - Deep Linking
 
-Working on **v0.20 - Public Submissions & OCR**. Core functionality complete:
-- Phase 1 (OCR integration): Complete
-- Phase 2 (submission flow): Complete - tournament standings upload, player pre-matching, editable preview
-- Phase 3 (UI polish): In progress - awaiting user feedback
+Completed deep linking with shareable URLs for players, decks, stores, and tournaments. Browser back/forward navigation works with modals.
 
 See `ROADMAP.md` for the full version plan through v1.0.
 
@@ -101,8 +98,6 @@ See `ROADMAP.md` for the full version plan through v1.0.
 
 | Version | Focus | Design Doc |
 |---------|-------|------------|
-| v0.20 | Public Submissions & OCR | `docs/plans/2026-02-03-public-submissions-design.md` |
-| v0.21 | Deep Linking | `docs/plans/2026-02-04-deep-linking-design.md` |
 | v0.22 | User Accounts & Permissions | `docs/plans/2026-02-05-user-accounts-design.md` |
 | v0.23 | Multi-Region & Online Scene | `docs/plans/2026-02-04-region-expansion-design.md` |
 | v0.24 | Onboarding & Help | - |
@@ -351,6 +346,6 @@ See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
-**v0.20.0** - Public Submissions & OCR (Screenshot-based tournament submission with Google Cloud Vision OCR)
+**v0.21.0** - Deep Linking & Shareable URLs (Shareable URLs for players, decks, stores, tournaments with browser history support)
 
 See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.

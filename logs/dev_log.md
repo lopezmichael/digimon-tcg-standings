@@ -4,6 +4,65 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-09: Deep Linking & Shareable URLs (v0.21.0)
+
+### Summary
+Implemented full deep linking system enabling shareable URLs for all entities. URLs update when modals open and browser back/forward navigation works correctly.
+
+### URL Structure
+- Players: `?player=atomshell` (uses slugified display_name)
+- Decks: `?deck=blue-flare` (uses slug column)
+- Stores: `?store=sci-fi-factory` (uses slug column)
+- Tournaments: `?tournament=123` (uses ID, names not unique)
+- Tabs: `?tab=meta`, `?tab=players`, `?tab=about`, etc.
+- Scene: `?scene=dfw` (foundation for v0.23 multi-region)
+
+### Technical Implementation
+
+**Browser Side (`www/url-routing.js`):**
+- `popstate` event listener for back/forward buttons
+- Custom message handlers: `pushUrl`, `replaceUrl`, `historyBack`
+- `hidden.bs.modal` listener to clear URL when modals close
+- `copyCurrentUrl()` function for Copy Link button
+
+**Server Side (`server/url-routing-server.R`):**
+- `slugify()` helper for URL-friendly text conversion
+- `parse_url_params()` / `build_url_query()` for URL handling
+- `open_entity_from_url()` resolves slugs to entity IDs
+- `update_url_for_*()` functions called when modals open
+- Tab change observer updates URL (replace, not push)
+
+### Schema Changes
+- Added `scenes` table with hierarchy (Global → USA → Texas → DFW, plus Online)
+- Added `slug` column to `stores` and `deck_archetypes`
+- Added `scene_id` column to `stores` (all assigned to DFW scene)
+
+### Key Decisions
+
+**FK Constraints:**
+- Removed FK constraints from local DuckDB (UPDATE = DELETE + INSERT causes violations)
+- Kept FK constraints in MotherDuck for production data integrity
+- Application-level integrity is sufficient for this use case
+
+**Admin Pages:**
+- Admin tabs clear URL to base (no shareable links)
+- Prevents accidental sharing of admin state
+
+**Cross-Modal Navigation:**
+- Modal close detection uses 100ms delay
+- Checks if another modal is visible before clearing URL
+- Prevents URL flicker during modal-to-modal navigation
+
+### Files Created/Modified
+- `server/url-routing-server.R` (new) - 373 lines
+- `www/url-routing.js` (new) - 144 lines
+- `app.R` - Added script include and current_scene reactive
+- `db/schema.sql` - scenes table, slug columns
+- `server/public-*.R` - Added URL update calls and Copy Link buttons
+- `scripts/sync_*.py` - Added scenes to table list
+
+---
+
 ## 2026-02-09: Store Modal Polish & Map Improvements (v0.20.2)
 
 ### Summary
