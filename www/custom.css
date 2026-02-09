@@ -5273,3 +5273,35 @@ div.player-match-indicator.new {
   color: white;
 }
 
+/* =============================================================================
+   STORE MINI MAP (Modal)
+   ============================================================================= */
+
+.store-mini-map {
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.15);
+  transition: box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.store-mini-map:hover {
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.3);
+}
+
+.store-mini-map .mapboxgl-map {
+  border-radius: inherit;
+}
+
+/* Hide map controls in mini map */
+.store-mini-map .mapboxgl-ctrl-bottom-left,
+.store-mini-map .mapboxgl-ctrl-bottom-right,
+.store-mini-map .mapboxgl-ctrl-top-left,
+.store-mini-map .mapboxgl-ctrl-top-right {
+  display: none;
+}
+
+[data-bs-theme="dark"] .store-mini-map {
+  border-color: rgba(0, 200, 255, 0.4);
+  box-shadow: 0 0 12px rgba(0, 200, 255, 0.2);
+}
+

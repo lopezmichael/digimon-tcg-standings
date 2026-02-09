@@ -4,6 +4,66 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-09: Store Schedules & Modal Improvements
+
+### Summary
+Implemented comprehensive Stores tab improvements: recurring schedule management, weekly calendar view, and enhanced store modal with mini map.
+
+### Store Schedules Feature
+
+**New Schema:** `store_schedules` table
+- Tracks recurring event times (day_of_week, start_time, frequency)
+- One row per day/time slot (stores with multiple events have multiple rows)
+- Frequency options: weekly, biweekly, monthly
+- Kept existing `schedule_info` as general notes field
+
+**Admin UI:** Schedule management in Edit Stores
+- Add/delete schedules when editing a physical store
+- Shows day, time, frequency in a table
+- Click to delete with confirmation
+
+**Public View:** Schedule/All Stores toggle
+- Schedule view: Weekly calendar sorted from current day ("Today" first)
+- Shows stores with events each day + time
+- "Stores without regular schedules" section at bottom
+- All Stores view: Original store list with sorting
+
+### Store Modal Improvements
+
+**Layout Reorganization:**
+- Stats box moved to top (right below store name)
+- Two-column layout: store info (left) + mini map (right)
+- Regular Schedule section shows store's recurring events
+
+**Mini Map:**
+- Interactive `atom_mapgl` with digital theme
+- Orange circle marker at store location
+- Hidden map controls for cleaner look
+- Falls back gracefully if no coordinates
+
+**Removed:** "Most Popular Deck" section (low value)
+
+### Technical Notes
+
+- Used `mapboxglOutput` inside modal by storing coords in `rv$modal_store_coords`
+- `renderMapboxgl` reacts to coordinate changes and renders the map
+- CSS hides map controls in mini map context
+
+### Files Changed
+- `db/schema.sql` - Added store_schedules table
+- `scripts/migrate_add_store_schedules.R` - Migration script
+- `scripts/sync_to_motherduck.py` - Added store_schedules to sync
+- `scripts/sync_from_motherduck.py` - Added store_schedules to sync
+- `server/admin-stores-server.R` - Schedule CRUD handlers
+- `views/admin-stores-ui.R` - Schedule management UI
+- `server/public-stores-server.R` - Schedule view + modal mini map
+- `views/stores-ui.R` - View toggle UI
+- `www/custom.css` - Schedule view + mini map styling
+- `ARCHITECTURE.md` - New reactive values
+- `docs/plans/2026-02-08-stores-tab-improvements.md` - Updated to complete
+
+---
+
 ## 2026-02-08: Mapbox Geocoding & Stores Tab Planning
 
 ### Summary

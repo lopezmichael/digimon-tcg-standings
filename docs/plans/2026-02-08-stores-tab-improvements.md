@@ -2,7 +2,7 @@
 
 **Created:** 2026-02-08
 **Updated:** 2026-02-09
-**Status:** In Progress
+**Status:** Complete
 **Branch:** `feature/stores-tab-improvements`
 
 ---
@@ -157,31 +157,28 @@ Current store cards/list with sorting options.
 
 ---
 
-## Phase 4: Store Modal Improvements (Future)
+## Phase 4: Store Modal Improvements ✓
 
-### Add Regular Schedule Section
+### Layout Reorganization
+- Stats box moved to top (right below store name)
+- Two-column layout: store info (left) + mini map (right)
+- Regular Schedule section below
 
-Show store's regular schedule in the detail modal:
+### Add Regular Schedule Section ✓
+Shows store's scheduled events from `store_schedules` table.
 
-```
-Regular Schedule
-┌───────────┬──────────┐
-│ Day       │ Time     │
-├───────────┼──────────┤
-│ Wednesday │ 7:00 PM  │
-│ Saturday  │ 2:00 PM  │
-└───────────┴──────────┘
-```
+### Remove Most Popular Deck ✓
+Deleted low-value `popular_deck` query and UI section.
 
-### Remove Most Popular Deck
-- Delete the `popular_deck` query and UI section (low value)
-
-### Add Mini Map (Optional)
-- Small static Mapbox map showing store location
-- Lower priority
+### Add Mini Map ✓
+- Uses Mapbox Static Images API with dark theme
+- Orange pin marker at store location
+- Digital-style glow border
+- Falls back gracefully if no coordinates
 
 **Files:**
 - `server/public-stores-server.R` - Modal rendering logic
+- `www/custom.css` - Mini map styling
 
 ---
 
@@ -202,10 +199,10 @@ Regular Schedule
 ## Implementation Order
 
 1. ✓ Mapbox geocoding
-2. **Phase 1:** Store schedules schema (current)
-3. **Phase 2:** Admin schedule management UI
-4. **Phase 3:** Stores tab view toggle (Schedule / All Stores)
-5. **Phase 4:** Store modal improvements
+2. ✓ **Phase 1:** Store schedules schema
+3. ✓ **Phase 2:** Admin schedule management UI
+4. ✓ **Phase 3:** Stores tab view toggle (Schedule / All Stores)
+5. ✓ **Phase 4:** Store modal improvements
 
 ---
 

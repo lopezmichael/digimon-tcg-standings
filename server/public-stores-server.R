@@ -331,18 +331,14 @@ output$store_detail_modal <- renderUI({
     ", store_id))$cnt
   }
 
-  # Get most popular deck at this store
-  popular_deck <- NULL
+  # Get store schedules
+  store_schedules <- NULL
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    popular_deck <- dbGetQuery(rv$db_con, sprintf("
-      SELECT da.archetype_name, da.primary_color, COUNT(*) as cnt
-      FROM results r
-      JOIN tournaments t ON r.tournament_id = t.tournament_id
-      JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE t.store_id = %d AND da.archetype_name != 'UNKNOWN'
-      GROUP BY da.archetype_id, da.archetype_name, da.primary_color
-      ORDER BY COUNT(*) DESC
-      LIMIT 1
+    store_schedules <- dbGetQuery(rv$db_con, sprintf("
+      SELECT day_of_week, start_time, frequency
+      FROM store_schedules
+      WHERE store_id = %d AND is_active = TRUE
+      ORDER BY day_of_week, start_time
     ", store_id))
   }
 
@@ -358,6 +354,14 @@ output$store_detail_modal <- renderUI({
            et)
   }
 
+  # Store coordinates for mini map (used by renderMapboxgl below)
+  rv$modal_store_coords <- list(
+    lat = store$latitude,
+    lng = store$longitude,
+    name = store$name
+
+  )
+
   # Build modal content
   showModal(modalDialog(
     title = div(
@@ -369,18 +373,7 @@ output$store_detail_modal <- renderUI({
     easyClose = TRUE,
     footer = modalButton("Close"),
 
-    # Store info
-    div(
-      class = "mb-3",
-      if (!is.na(store$city) && store$city != "") p(bsicons::bs_icon("geo-alt"), " ", store$city),
-      if (!is.na(store$address) && store$address != "") p(class = "text-muted small", store$address),
-      if (!is.na(store$website) && store$website != "") p(
-        tags$a(href = store$website, target = "_blank",
-               bsicons::bs_icon("globe"), " Website")
-      )
-    ),
-
-    # Activity stats with Store Rating, unique players
+    # Activity stats - moved to top right below name
     div(
       class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
       div(
@@ -411,13 +404,73 @@ output$store_detail_modal <- renderUI({
       )
     ),
 
-    # Most popular deck
-    if (!is.null(popular_deck) && nrow(popular_deck) > 0) {
+    # Two-column layout: Store info (left) + Mini map (right)
+    div(
+      class = "row mb-3",
+      # Left column: Address, website, notes
       div(
-        class = "mb-3",
-        span(class = "text-muted small", "Most played deck: "),
-        span(class = paste("deck-badge deck-badge-", tolower(popular_deck$primary_color), sep = ""),
-             popular_deck$archetype_name)
+        class = "col-md-6",
+        if (!is.na(store$city) && store$city != "")
+          p(class = "mb-1", bsicons::bs_icon("geo-alt"), " ", store$city),
+        if (!is.na(store$address) && store$address != "")
+          p(class = "text-muted small mb-1", store$address),
+        if (!is.na(store$website) && store$website != "")
+          p(class = "mb-1",
+            tags$a(href = store$website, target = "_blank",
+                   bsicons::bs_icon("globe"), " Website")),
+        if (!is.na(store$schedule_info) && store$schedule_info != "")
+          p(class = "text-muted small fst-italic mt-2",
+            bsicons::bs_icon("info-circle"), " ", store$schedule_info)
+      ),
+      # Right column: Mini map
+      div(
+        class = "col-md-6",
+        if (!is.na(store$latitude) && !is.na(store$longitude)) {
+          div(
+            class = "store-mini-map rounded",
+            mapboxglOutput("store_modal_map", height = "180px")
+          )
+        } else {
+          div(
+            class = "text-muted small p-3 bg-light rounded text-center",
+            "Map not available"
+          )
+        }
+      )
+    ),
+
+    # Regular Schedule
+    if (!is.null(store_schedules) && nrow(store_schedules) > 0) {
+      # Format schedules for display
+      schedule_rows <- lapply(1:nrow(store_schedules), function(i) {
+        sched <- store_schedules[i, ]
+        day_name <- WEEKDAY_LABELS[sched$day_of_week + 1]
+        # Format time (24h to 12h)
+        parts <- strsplit(sched$start_time, ":")[[1]]
+        hour <- as.integer(parts[1])
+        minute <- parts[2]
+        ampm <- if (hour >= 12) "PM" else "AM"
+        hour12 <- if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        time_display <- sprintf("%d:%s %s", hour12, minute, ampm)
+
+        tags$tr(
+          tags$td(day_name),
+          tags$td(time_display),
+          tags$td(tools::toTitleCase(sched$frequency))
+        )
+      })
+
+      tagList(
+        h6(class = "modal-section-header", "Regular Schedule"),
+        tags$table(
+          class = "table table-sm table-striped mb-3",
+          tags$thead(
+            tags$tr(
+              tags$th("Day"), tags$th("Time"), tags$th("Frequency")
+            )
+          ),
+          tags$tbody(schedule_rows)
+        )
       )
     },
 
@@ -486,6 +539,39 @@ output$store_detail_modal <- renderUI({
       )
     }
   ))
+})
+
+# Mini map for store modal
+output$store_modal_map <- renderMapboxgl({
+  req(rv$modal_store_coords)
+  coords <- rv$modal_store_coords
+
+  if (is.null(coords$lat) || is.null(coords$lng) || is.na(coords$lat) || is.na(coords$lng)) {
+    return(NULL)
+  }
+
+  # Create point for the store
+  store_point <- sf::st_sf(
+    name = coords$name,
+    geometry = sf::st_sfc(sf::st_point(c(coords$lng, coords$lat)), crs = 4326)
+  )
+
+  # Build mini map with digital theme
+
+  atom_mapgl(theme = "digital") |>
+    mapgl::add_circle_layer(
+      id = "store-pin",
+      source = store_point,
+      circle_color = "#F7941D",
+      circle_radius = 10,
+      circle_stroke_color = "#FFFFFF",
+      circle_stroke_width = 2,
+      circle_opacity = 0.9
+    ) |>
+    mapgl::set_view(
+      center = c(coords$lng, coords$lat),
+      zoom = 13
+    )
 })
 
 # Online Tournament Organizers section

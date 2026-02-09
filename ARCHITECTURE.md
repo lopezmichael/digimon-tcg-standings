@@ -104,6 +104,7 @@ Pattern: `selected_{entity}_id` for single selection, `selected_{entity}_ids` fo
 | `selected_archetype_id` | integer | Archetype ID for deck modal |
 | `selected_tournament_id` | integer | Tournament ID for detail modal |
 | `selected_store_ids` | integer[] | Store IDs from map region filter |
+| `modal_store_coords` | list | Store coordinates for modal mini map (lat, lng, name) |
 
 ### Form/Wizard State
 
