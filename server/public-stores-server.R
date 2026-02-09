@@ -362,77 +362,84 @@ output$store_detail_modal <- renderUI({
 
   )
 
+
+  # Build address string for header (standard format: street, city, state zip)
+  address_parts <- c()
+  if (!is.na(store$address) && store$address != "") address_parts <- c(address_parts, store$address)
+  # City, State ZIP as one unit
+  city_state_zip <- c()
+  if (!is.na(store$city) && store$city != "") city_state_zip <- c(city_state_zip, store$city)
+  if (!is.na(store$state) && store$state != "") city_state_zip <- c(city_state_zip, store$state)
+  city_state_part <- paste(city_state_zip, collapse = ", ")
+  if (!is.na(store$zip_code) && store$zip_code != "") city_state_part <- paste(city_state_part, store$zip_code)
+  if (nchar(city_state_part) > 0) address_parts <- c(address_parts, city_state_part)
+  address_display <- if (length(address_parts) > 0) paste(address_parts, collapse = ", ") else NULL
+  has_website <- !is.na(store$website) && store$website != ""
+
   # Build modal content
   showModal(modalDialog(
     title = div(
       class = "d-flex align-items-center gap-2",
       bsicons::bs_icon("shop"),
-      store$name
+      span(store$name),
+      if (!is.null(address_display))
+        span(class = "text-muted fw-normal ms-2", style = "font-size: 0.7rem;", address_display),
+      if (has_website)
+        tags$a(href = store$website, target = "_blank", class = "text-primary ms-1",
+               style = "font-size: 0.75rem;", title = "Visit website",
+               bsicons::bs_icon("link-45deg"))
     ),
     size = "l",
     easyClose = TRUE,
     footer = modalButton("Close"),
 
-    # Activity stats - moved to top right below name
-    div(
-      class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", if (store_rating > 0) store_rating else "-"),
-        div(class = "modal-stat-label", "Store Rating")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", store$tournament_count),
-        div(class = "modal-stat-label", "Events")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", unique_players),
-        div(class = "modal-stat-label", "Players")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", if (store$avg_players > 0) store$avg_players else "-"),
-        div(class = "modal-stat-label", "Avg Size")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value",
-            if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-"),
-        div(class = "modal-stat-label", "Last Event")
-      )
-    ),
-
-    # Two-column layout: Store info (left) + Mini map (right)
+    # Two-column layout: Stats (left) + Mini map (right)
     div(
       class = "row mb-3",
-      # Left column: Address, website, notes
+      # Left column: Vertical stats list with box styling
       div(
-        class = "col-md-6",
-        if (!is.na(store$city) && store$city != "")
-          p(class = "mb-1", bsicons::bs_icon("geo-alt"), " ", store$city),
-        if (!is.na(store$address) && store$address != "")
-          p(class = "text-muted small mb-1", store$address),
-        if (!is.na(store$website) && store$website != "")
-          p(class = "mb-1",
-            tags$a(href = store$website, target = "_blank",
-                   bsicons::bs_icon("globe"), " Website")),
-        if (!is.na(store$schedule_info) && store$schedule_info != "")
-          p(class = "text-muted small fst-italic mt-2",
-            bsicons::bs_icon("info-circle"), " ", store$schedule_info)
+        class = "col-md-5",
+        div(
+          class = "modal-stats-box p-3",
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Store Rating"),
+            span(if (store_rating > 0) store_rating else "-")
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Events"),
+            span(store$tournament_count)
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Unique Players"),
+            span(unique_players)
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Avg Size"),
+            span(if (store$avg_players > 0) store$avg_players else "-")
+          ),
+          div(
+            class = "d-flex justify-content-between py-2",
+            span(class = "fw-semibold", "Last Event"),
+            span(if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-")
+          )
+        )
       ),
-      # Right column: Mini map
+      # Right column: Mini map (height matched to stats box)
       div(
-        class = "col-md-6",
+        class = "col-md-7",
         if (!is.na(store$latitude) && !is.na(store$longitude)) {
           div(
             class = "store-mini-map rounded",
-            mapboxglOutput("store_modal_map", height = "180px")
+            mapboxglOutput("store_modal_map", height = "218px")
           )
         } else {
           div(
-            class = "text-muted small p-3 bg-light rounded text-center",
+            class = "text-muted small p-3 bg-light rounded text-center d-flex align-items-center justify-content-center",
+            style = "height: 218px;",
             "Map not available"
           )
         }
@@ -762,16 +769,16 @@ stores_data <- reactive({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   stores <- dbGetQuery(rv$db_con, "
-    SELECT s.store_id, s.name, s.address, s.city, s.latitude, s.longitude,
-           s.website, s.schedule_info,
+    SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+           s.latitude, s.longitude, s.website, s.schedule_info,
            COUNT(t.tournament_id) as tournament_count,
            COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
            MAX(t.event_date) as last_event
     FROM stores s
     LEFT JOIN tournaments t ON s.store_id = t.store_id
     WHERE s.is_active = TRUE AND (s.is_online = FALSE OR s.is_online IS NULL)
-    GROUP BY s.store_id, s.name, s.address, s.city, s.latitude, s.longitude,
-             s.website, s.schedule_info
+    GROUP BY s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+             s.latitude, s.longitude, s.website, s.schedule_info
   ")
   stores
 })

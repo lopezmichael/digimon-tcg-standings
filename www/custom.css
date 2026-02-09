@@ -1734,6 +1734,13 @@ a:hover, .nav-link:hover {
   border: 1px solid rgba(0, 200, 255, 0.2);
 }
 
+/* Enable text selection in modals */
+.modal-body,
+.modal-body * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Dark mode modal */
 [data-bs-theme="dark"] .modal-header {
   background-image:

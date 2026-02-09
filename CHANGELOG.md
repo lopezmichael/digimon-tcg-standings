@@ -7,12 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Stores tab improvements (in progress)
+
+---
+
+## [0.20.1] - 2026-02-09 - Scene Health Dashboard & Stores Tab Improvements
+
 ### Added
 - **Scene Health Dashboard**: New analytics section on Overview tab
   - Meta Diversity gauge showing how evenly distributed tournament wins are (HHI-based)
   - Player Growth & Retention chart (new/returning/regular players by month)
   - Rising Stars section highlighting players with recent top finishes
   - Explanatory descriptions for user understanding
+- **Store Schedules**: Stores now have structured recurring schedules
+  - New `store_schedules` table for day/time/frequency data
+  - Admin UI for managing store schedules in Edit Stores
+  - Schedule view on Stores tab (weekly calendar sorted from today)
+- **Store Modal Improvements**:
+  - Mini map showing store location (Mapbox GL)
+  - Regular Schedule section displaying store's weekly events
+  - Removed low-value "Most Popular Deck" section
 
 ### Changed
 - **Overview Tab Layout Improvements**:
@@ -21,9 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added icons to all section headers throughout Overview
   - Added consistent spacing between major sections
   - Renamed "Tournament Player Counts Over Time" to "Player Attendance"
+- **Stores Tab View Toggle**: Switch between Schedule view and All Stores view
 - **Color Distribution Chart**: Now shows decks by primary color (dual-color decks grouped by primary)
 - **Orange Text Colors**: Darkened to #D97706 for better readability on light backgrounds
 - **Map Styling**: Removed custom toolbar button styling, collapsed attribution by default
+- **Geocoding**: Switched from OSM/Nominatim to Mapbox Geocoding API for better accuracy
 
 ### Fixed
 - Highcharts axis labels, legends, and tooltips now use dark blue instead of burgundy (atomtemplates override)
