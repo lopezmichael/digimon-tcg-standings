@@ -271,16 +271,12 @@ build_dashboard_filters <- function(table_alias = "t") {
     sprintf("AND %s.event_type = '%s'", table_alias, input$dashboard_event_type)
   } else ""
 
-  store_filter <- if (!is.null(rv$selected_store_ids) && length(rv$selected_store_ids) > 0) {
-    sprintf("AND %s.store_id IN (%s)", table_alias, paste(rv$selected_store_ids, collapse = ", "))
-  } else ""
-
   list(
     format = format_filter,
     event_type = event_type_filter,
-    store = store_filter,
-    date = "",  # Date filter removed
-    any_active = (format_filter != "" || event_type_filter != "" || store_filter != "")
+    store = "",  # Region filter removed - will be replaced by scene selection
+    date = "",   # Date filter removed
+    any_active = (format_filter != "" || event_type_filter != "")
   )
 }
 
@@ -823,20 +819,16 @@ output$tournaments_trend_chart <- renderHighchart({
     sprintf("AND event_type = '%s'", input$dashboard_event_type)
   } else ""
 
-  store_filter <- if (!is.null(rv$selected_store_ids) && length(rv$selected_store_ids) > 0) {
-    sprintf("AND store_id IN (%s)", paste(rv$selected_store_ids, collapse = ", "))
-  } else ""
-
   # Query tournaments aggregated by day with avg players
   result <- dbGetQuery(rv$db_con, sprintf("
     SELECT event_date,
            COUNT(*) as tournaments,
            ROUND(AVG(player_count), 1) as avg_players
     FROM tournaments
-    WHERE 1=1 %s %s %s
+    WHERE 1=1 %s %s
     GROUP BY event_date
     ORDER BY event_date
-  ", store_filter, format_filter, event_type_filter))
+  ", format_filter, event_type_filter))
 
   if (nrow(result) == 0) {
     return(

@@ -2,9 +2,6 @@
 # Dashboard tab UI
 
 dashboard_ui <- tagList(
-  # Region filter indicator (shown when stores are filtered from map)
-  uiOutput("region_filter_indicator"),
-
   # Title strip with integrated filters
   div(
     class = "page-title-strip mb-2",

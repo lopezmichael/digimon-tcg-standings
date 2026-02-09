@@ -588,13 +588,12 @@ server <- function(input, output, session) {
     navigate_to_tournament_id = NULL,
 
     # === MODAL STATE ===
-    # Pattern: selected_{entity}_id (singular), selected_{entity}_ids (plural/multiple)
+    # Pattern: selected_{entity}_id (singular)
     selected_store_id = NULL,
     selected_online_store_id = NULL,
     selected_player_id = NULL,
     selected_archetype_id = NULL,
     selected_tournament_id = NULL,
-    selected_store_ids = NULL,  # Map region filter (multiple stores)
 
     # === FORM/WIZARD STATE ===
     wizard_step = 1,

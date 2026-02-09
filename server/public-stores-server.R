@@ -50,14 +50,8 @@ output$stores_schedule_content <- renderUI({
   # Get current day of week (0=Sunday in JS, but R's wday returns 1=Sunday)
   today_wday <- as.integer(format(Sys.Date(), "%w"))  # 0=Sunday, 6=Saturday
 
-  # Query schedules with store info, filtered by region if active
-  store_filter <- if (!is.null(rv$selected_store_ids) && length(rv$selected_store_ids) > 0) {
-    sprintf("AND s.store_id IN (%s)", paste(rv$selected_store_ids, collapse = ","))
-  } else {
-    ""
-  }
-
-  schedules <- dbGetQuery(rv$db_con, sprintf("
+  # Query schedules with store info
+  schedules <- dbGetQuery(rv$db_con, "
     SELECT ss.day_of_week, ss.start_time, ss.frequency,
            s.store_id, s.name as store_name, s.city
     FROM store_schedules ss
@@ -65,12 +59,11 @@ output$stores_schedule_content <- renderUI({
     WHERE ss.is_active = TRUE
       AND s.is_active = TRUE
       AND (s.is_online = FALSE OR s.is_online IS NULL)
-      %s
     ORDER BY ss.day_of_week, ss.start_time, s.name
-  ", store_filter))
+  ")
 
   # Get stores without schedules
-  stores_without_schedules <- dbGetQuery(rv$db_con, sprintf("
+  stores_without_schedules <- dbGetQuery(rv$db_con, "
     SELECT s.store_id, s.name, s.city
     FROM stores s
     WHERE s.is_active = TRUE
@@ -78,9 +71,8 @@ output$stores_schedule_content <- renderUI({
       AND s.store_id NOT IN (
         SELECT DISTINCT store_id FROM store_schedules WHERE is_active = TRUE
       )
-      %s
     ORDER BY s.name
-  ", store_filter))
+  ")
 
   # Build day sections, sorted starting from today
   day_order <- c(today_wday:6, if (today_wday > 0) 0:(today_wday - 1) else integer(0))
@@ -174,10 +166,10 @@ output$stores_schedule_content <- renderUI({
   )
 })
 
-# Store list (uses filtered stores from map selection)
+# Store list
 output$store_list <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
-  stores <- filtered_stores()
+  stores <- stores_data()
 
   if (is.null(stores) || nrow(stores) == 0) {
     return(reactable(data.frame(Message = "No stores yet"), compact = TRUE))
@@ -783,205 +775,6 @@ stores_data <- reactive({
   stores
 })
 
-# Reactive: Filtered stores based on drawn region
-filtered_stores <- reactive({
-  stores <- stores_data()
-  if (is.null(stores) || nrow(stores) == 0) {
-    return(stores)
-  }
-
-  # If no stores are selected, return all
-  if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
-    return(stores)
-  }
-
-  # Return only selected stores
-  stores[stores$store_id %in% rv$selected_store_ids, ]
-})
-
-# Apply region filter button handler
-observeEvent(input$apply_region_filter, {
-  stores <- stores_data()
-  if (is.null(stores) || nrow(stores) == 0) {
-    showNotification("No stores to filter", type = "warning")
-    return()
-  }
-
-  # Filter stores with valid coordinates
-  stores_with_coords <- stores[!is.na(stores$latitude) & !is.na(stores$longitude), ]
-  if (nrow(stores_with_coords) == 0) {
-    showNotification("No stores have coordinates", type = "warning")
-    return()
-  }
-
-  # Convert stores to sf
-  stores_sf <- st_as_sf(stores_with_coords, coords = c("longitude", "latitude"), crs = 4326)
-
-  # Get drawn features as sf
-  tryCatch({
-    proxy <- mapboxgl_proxy("stores_map")
-    drawn_sf <- get_drawn_features(proxy)
-    if (is.null(drawn_sf) || nrow(drawn_sf) == 0) {
-      showNotification("Draw a region on the map first", type = "warning")
-      return()
-    }
-
-    # Filter to polygons only
-    drawn_polygons <- drawn_sf[st_geometry_type(drawn_sf) %in% c("POLYGON", "MULTIPOLYGON"), ]
-    if (nrow(drawn_polygons) == 0) {
-      showNotification("Draw a polygon region on the map", type = "warning")
-      return()
-    }
-
-    # Union all polygons
-    region <- st_union(drawn_polygons)
-    # Filter stores within the region
-    within_region <- st_filter(stores_sf, region)
-
-    if (nrow(within_region) == 0) {
-      showNotification("No stores found in drawn region", type = "warning")
-      return()
-    }
-
-    # Update selected store IDs
-    rv$selected_store_ids <- within_region$store_id
-
-    # Update map to highlight selected stores
-    # Use a match expression to color selected stores differently
-    selected_ids <- within_region$store_id
-    mapboxgl_proxy("stores_map") |>
-      set_paint_property(
-        layer_id = "stores-layer",
-        name = "circle-color",
-        value = list(
-          "case",
-          list("in", list("get", "store_id"), list("literal", selected_ids)),
-          "#16A34A",  # Green for selected
-          "#999999"   # Gray for non-selected
-        )
-      ) |>
-      set_paint_property(
-        layer_id = "stores-layer",
-        name = "circle-opacity",
-        value = list(
-          "case",
-          list("in", list("get", "store_id"), list("literal", selected_ids)),
-          1.0,  # Full opacity for selected
-          0.4   # Faded for non-selected
-        )
-      )
-
-    showNotification(sprintf("Filtered to %d stores", nrow(within_region)), type = "message")
-
-  }, error = function(e) {
-    showNotification(paste("Error applying filter:", e$message), type = "error")
-  })
-})
-
-# Clear region button handler
-observeEvent(input$clear_region, {
-  mapboxgl_proxy("stores_map") |>
-    clear_drawn_features() |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-color",
-      value = "#F7941D"  # Reset to orange
-    ) |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-opacity",
-      value = 1  # Reset to original opacity
-    )
-  rv$selected_store_ids <- NULL
-  showNotification("Region filter cleared", type = "message")
-})
-
-# Filter active banner for Stores tab
-output$stores_filter_active_banner <- renderUI({
-  if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
-    return(NULL)
-  }
-
-  n_stores <- length(rv$selected_store_ids)
-
-  div(
-    class = "alert alert-success d-flex align-items-center mb-3 store-filter-badge--success",
-    bsicons::bs_icon("check-circle-fill"),
-    span(
-      class = "ms-2",
-      sprintf(" Region filter active: %d store%s selected. ",
-              n_stores, if (n_stores == 1) "" else "s"),
-      tags$strong("Dashboard, Players, and Meta tabs are now filtered to these stores.")
-    )
-  )
-})
-
-# Filter badge showing how many stores are filtered
-output$stores_filter_badge <- renderUI({
-  all_stores <- stores_data()
-  filtered <- filtered_stores()
-
-  if (is.null(all_stores) || is.null(filtered)) return(NULL)
-
-  total <- nrow(all_stores)
-  showing <- nrow(filtered)
-
-  if (showing < total) {
-    span(
-      class = "badge bg-warning text-dark",
-      sprintf("Showing %d of %d stores", showing, total)
-    )
-  } else {
-    span(class = "badge bg-secondary", sprintf("%d stores", total))
-  }
-})
-
-# Region filter indicator for dashboard
-output$region_filter_indicator <- renderUI({
-  if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
-    return(NULL)
-  }
-
-  # Get names of selected stores
-  stores <- stores_data()
-  if (is.null(stores)) return(NULL)
-
-  selected_names <- stores$name[stores$store_id %in% rv$selected_store_ids]
-  store_list <- if (length(selected_names) <= 3) {
-    paste(selected_names, collapse = ", ")
-  } else {
-    paste(c(selected_names[1:3], sprintf("and %d more", length(selected_names) - 3)), collapse = ", ")
-  }
-
-  div(
-    class = "alert alert-info d-flex justify-content-between align-items-center mb-3 store-filter-badge--info",
-    div(
-      bsicons::bs_icon("funnel-fill"),
-      sprintf(" Filtered by region: %s", store_list)
-    ),
-    actionButton("clear_region_from_dashboard", "Clear Filter",
-                 class = "btn btn-sm btn-outline-primary")
-  )
-})
-
-# Clear region from dashboard button
-observeEvent(input$clear_region_from_dashboard, {
-  mapboxgl_proxy("stores_map") |>
-    clear_drawn_features() |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-color",
-      value = "#F7941D"  # Reset to orange
-    ) |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-opacity",
-      value = 1  # Reset to original opacity
-    )
-  rv$selected_store_ids <- NULL
-  showNotification("Region filter cleared", type = "message")
-})
-
 # Reset dashboard filters (reset to defaults: first format + locals)
 # Note: This should ideally be in Dashboard server, kept here due to physical proximity
 observeEvent(input$reset_dashboard_filters, {
@@ -1004,15 +797,7 @@ output$stores_map <- renderMapboxgl({
     return(
       atom_mapgl(theme = "digital") |>
         mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
-        add_atom_popup_style(theme = "light") |>
-        mapgl::add_draw_control(
-          position = "top-left",
-          freehand = TRUE,
-          point = FALSE,
-          line_string = FALSE,
-          polygon = TRUE,
-          trash = TRUE
-        )
+        add_atom_popup_style(theme = "light")
     )
   }
 
@@ -1023,26 +808,18 @@ output$stores_map <- renderMapboxgl({
     return(
       atom_mapgl(theme = "digital") |>
         mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
-        add_atom_popup_style(theme = "light") |>
-        mapgl::add_draw_control(
-          position = "top-left",
-          freehand = TRUE,
-          point = FALSE,
-          line_string = FALSE,
-          polygon = TRUE,
-          trash = TRUE
-        )
+        add_atom_popup_style(theme = "light")
     )
   }
 
   # Convert to sf object
   stores_sf <- st_as_sf(stores_with_coords, coords = c("longitude", "latitude"), crs = 4326)
 
-  # Calculate bubble size based on tournament activity (min 8, max 20)
-  max_tournaments <- max(stores_with_coords$tournament_count, na.rm = TRUE)
-  if (is.na(max_tournaments) || max_tournaments == 0) max_tournaments <- 1
+  # Calculate bubble size based on average event size (min 8, max 20)
+  max_avg_players <- max(stores_with_coords$avg_players, na.rm = TRUE)
+  if (is.na(max_avg_players) || max_avg_players == 0) max_avg_players <- 1
 
-  stores_sf$bubble_size <- 8 + (stores_with_coords$tournament_count / max_tournaments) * 12
+  stores_sf$bubble_size <- 8 + (stores_with_coords$avg_players / max_avg_players) * 12
 
   # Create popup content with activity metrics
   stores_sf$popup <- sapply(1:nrow(stores_sf), function(i) {
@@ -1082,9 +859,9 @@ output$stores_map <- renderMapboxgl({
     )
   })
 
-  # Create the map with draw controls
-  # Using minimal theme for basemap, light theme for popups
-  # Bubble size based on tournament activity
+  # Create the map
+  # Using digital theme for basemap, light theme for popups
+  # Bubble size based on average event size
   map <- atom_mapgl(theme = "digital") |>
     add_atom_popup_style(theme = "light") |>
     mapgl::add_circle_layer(
@@ -1096,14 +873,6 @@ output$stores_map <- renderMapboxgl({
       circle_stroke_width = 2,
       circle_opacity = 0.85,
       popup = "popup"
-    ) |>
-    mapgl::add_draw_control(
-      position = "top-left",
-      freehand = TRUE,
-      point = FALSE,
-      line_string = FALSE,
-      polygon = TRUE,
-      trash = TRUE
     ) |>
     mapgl::fit_bounds(stores_sf, padding = 50)
 
