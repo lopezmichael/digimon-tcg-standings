@@ -124,6 +124,21 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
+## Stores Tab Improvements (Planned)
+
+**Design:** `docs/plans/2026-02-08-stores-tab-improvements.md`
+
+| ID | Type | Description |
+|----|------|-------------|
+| ST1 | DONE | Switch to Mapbox geocoding (replaces OSM/Nominatim) |
+| ST2 | FEATURE | Store schedules schema (recurring day/time/event type) |
+| ST3 | FEATURE | Upcoming tournaments table in Stores tab |
+| ST4 | FEATURE | Store modal improvements (mini map, schedule display) |
+| ST5 | FEATURE | Store rating formula adjustments (TBD) |
+| ST6 | FEATURE | Map bubble sizing alternatives |
+
+---
+
 ## Parking Lot
 
 Items for future consideration, not scheduled:

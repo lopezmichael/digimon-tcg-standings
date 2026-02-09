@@ -4,6 +4,47 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-08: Mapbox Geocoding & Stores Tab Planning
+
+### Summary
+Switched from OSM/Nominatim geocoding to Mapbox Geocoding API for more accurate store coordinates. Created comprehensive design document for future Stores tab improvements.
+
+### Geocoding Change
+
+**Problem:** OSM/Nominatim via tidygeocoder was producing inaccurate coordinates for some store addresses.
+
+**Solution:** Replaced with Mapbox Geocoding API (already have token for map display).
+
+**Implementation:**
+- Added `geocode_with_mapbox()` helper function to `server/admin-stores-server.R`
+- Uses httr2 for API calls (already a project dependency)
+- Returns `list(lat, lng)` or `NA` values on failure
+- Both add and update store handlers now use Mapbox
+
+**Migration Script:** `scripts/migrate_geocode_stores.R`
+- Re-geocodes all existing physical stores
+- Dry run mode by default to preview changes
+- Shows distance change from old to new coordinates
+- Rate limited to avoid API throttling
+
+### Future Stores Tab Improvements
+
+Created design doc: `docs/plans/2026-02-08-stores-tab-improvements.md`
+
+Planned features:
+1. **Store Schedules Schema** - Structured table for recurring tournament schedules (day, time, event type, frequency)
+2. **Upcoming Tournaments Display** - Table showing expected events this week based on schedules
+3. **Store Modal Improvements** - Add mini map, show regular schedule, remove "most played deck"
+4. **Store Rating Adjustments** - Potential changes to the 50/30/20 weighting
+5. **Map Bubble Sizing** - Consider alternatives to current linear scaling
+
+### Files Changed
+- `server/admin-stores-server.R` - Mapbox geocoding helper + replaced tidygeocoder calls
+- `scripts/migrate_geocode_stores.R` - New migration script
+- `docs/plans/2026-02-08-stores-tab-improvements.md` - New design document
+
+---
+
 ## 2026-02-07: Scene Health Dashboard Section
 
 ### Summary

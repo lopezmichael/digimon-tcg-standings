@@ -2,6 +2,56 @@
 # Admin: Edit Stores Server Logic
 # =============================================================================
 
+# -----------------------------------------------------------------------------
+# Mapbox Geocoding Helper
+# -----------------------------------------------------------------------------
+#' Geocode an address using Mapbox Geocoding API
+#'
+#' @param address Full address string to geocode
+#' @return List with lat and lng, or list(lat = NA, lng = NA) if failed
+geocode_with_mapbox <- function(address) {
+  # Get Mapbox token from environment
+
+  mapbox_token <- Sys.getenv("MAPBOX_ACCESS_TOKEN")
+  if (mapbox_token == "") {
+    warning("MAPBOX_ACCESS_TOKEN not set")
+    return(list(lat = NA_real_, lng = NA_real_))
+  }
+
+  tryCatch({
+    # URL encode the address
+    encoded_address <- utils::URLencode(address, reserved = TRUE)
+
+    # Build request URL
+    url <- sprintf(
+      "https://api.mapbox.com/geocoding/v5/mapbox.places/%s.json?access_token=%s&limit=1",
+      encoded_address,
+      mapbox_token
+    )
+
+    # Make request using httr2
+    resp <- httr2::request(url) |>
+      httr2::req_timeout(10) |>
+      httr2::req_perform()
+
+    # Parse response
+    result <- httr2::resp_body_json(resp)
+
+    # Check if we got results
+    if (length(result$features) == 0) {
+      return(list(lat = NA_real_, lng = NA_real_))
+    }
+
+    # Mapbox returns [longitude, latitude]
+    coords <- result$features[[1]]$center
+    list(lat = coords[[2]], lng = coords[[1]])
+
+  }, error = function(e) {
+    warning(paste("Mapbox geocoding error:", e$message))
+    list(lat = NA_real_, lng = NA_real_)
+  })
+}
+
 # Add store
 observeEvent(input$add_store, {
   req(rv$is_superadmin, rv$db_con)
@@ -86,12 +136,12 @@ observeEvent(input$add_store, {
       }
       full_address <- paste(address_parts, collapse = ", ")
 
-      # Geocode the address
+      # Geocode the address using Mapbox
       showNotification("Geocoding address...", type = "message", duration = 2)
-      geo_result <- tidygeocoder::geo(full_address, method = "osm", quiet = TRUE)
+      geo_result <- geocode_with_mapbox(full_address)
 
       lat <- geo_result$lat
-      lng <- geo_result$long
+      lng <- geo_result$lng
 
       if (is.na(lat) || is.na(lng)) {
         showNotification("Could not geocode address. Store added without coordinates.", type = "warning")
@@ -289,12 +339,12 @@ observeEvent(input$update_store, {
       }
       full_address <- paste(address_parts, collapse = ", ")
 
-      # Geocode the address
+      # Geocode the address using Mapbox
       showNotification("Geocoding address...", type = "message", duration = 2)
-      geo_result <- tidygeocoder::geo(full_address, method = "osm", quiet = TRUE)
+      geo_result <- geocode_with_mapbox(full_address)
 
       lat <- geo_result$lat
-      lng <- geo_result$long
+      lng <- geo_result$lng
 
       if (is.na(lat) || is.na(lng)) {
         showNotification("Could not geocode address. Keeping existing coordinates.", type = "warning")
