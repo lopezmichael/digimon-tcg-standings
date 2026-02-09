@@ -5,6 +5,55 @@
   'use strict';
 
   // ==========================================================================
+  // Parent Frame Communication (for iframe embedding on digilab.cards)
+  // ==========================================================================
+
+  var PARENT_ORIGIN = 'https://digilab.cards';
+  var isInIframe = window.parent !== window;
+
+  // Send URL update to parent frame
+  function notifyParentUrl(url, replace) {
+    if (isInIframe) {
+      try {
+        window.parent.postMessage({
+          type: 'digilab-url-update',
+          url: url,
+          replace: replace || false
+        }, PARENT_ORIGIN);
+      } catch (e) {
+        // Parent may not be digilab.cards, ignore
+      }
+    }
+  }
+
+  // Listen for URL updates from parent (browser back/forward in parent)
+  window.addEventListener('message', function(event) {
+    if (event.origin !== PARENT_ORIGIN) return;
+    if (!event.data) return;
+
+    if (event.data.type === 'digilab-url-navigate') {
+      // Parent is telling us to navigate to a URL (back/forward button)
+      var search = event.data.search || '';
+      if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+        Shiny.setInputValue('url_popstate', {
+          state: {},
+          search: search,
+          timestamp: Date.now()
+        }, {priority: 'event'});
+      }
+    } else if (event.data.type === 'digilab-initial-url') {
+      // Parent is sending initial URL params on load
+      var search = event.data.search || '';
+      if (search && typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+        Shiny.setInputValue('url_initial', {
+          search: search,
+          timestamp: Date.now()
+        }, {priority: 'event'});
+      }
+    }
+  });
+
+  // ==========================================================================
   // Browser History Handling
   // ==========================================================================
 
@@ -48,6 +97,8 @@
       // Only push if URL is different from current
       if (window.location.search !== url) {
         history.pushState(state, '', url || window.location.pathname);
+        // Notify parent frame of URL change
+        notifyParentUrl(url, false);
       }
     });
 
@@ -56,6 +107,8 @@
       var url = message.url || '';
       var state = message.state || {};
       history.replaceState(state, '', url || window.location.pathname);
+      // Notify parent frame of URL change (replace mode)
+      notifyParentUrl(url, true);
     });
 
     // Handler for going back in history
@@ -64,12 +117,33 @@
     });
 
     // Parse initial URL and send to Shiny
-    var initialSearch = window.location.search;
-    if (initialSearch) {
-      Shiny.setInputValue('url_initial', {
-        search: initialSearch,
-        timestamp: Date.now()
-      }, {priority: 'event'});
+    // Only if we're not in an iframe (parent will send initial URL via postMessage)
+    if (!isInIframe) {
+      var initialSearch = window.location.search;
+      if (initialSearch) {
+        Shiny.setInputValue('url_initial', {
+          search: initialSearch,
+          timestamp: Date.now()
+        }, {priority: 'event'});
+      }
+    }
+
+    // If in iframe, tell parent we're ready to receive initial URL
+    if (isInIframe) {
+      try {
+        window.parent.postMessage({
+          type: 'digilab-iframe-ready'
+        }, PARENT_ORIGIN);
+      } catch (e) {
+        // Fallback: use own URL if parent doesn't respond
+        var initialSearch = window.location.search;
+        if (initialSearch) {
+          Shiny.setInputValue('url_initial', {
+            search: initialSearch,
+            timestamp: Date.now()
+          }, {priority: 'event'});
+        }
+      }
     }
   });
 
@@ -77,9 +151,17 @@
   // Copy URL Functions
   // ==========================================================================
 
-  // Copy current URL to clipboard
+  // Copy current URL to clipboard (uses digilab.cards URL when in iframe)
   window.copyCurrentUrl = function() {
-    navigator.clipboard.writeText(window.location.href).then(function() {
+    var urlToCopy;
+    if (isInIframe) {
+      // Build the digilab.cards URL with current query params
+      urlToCopy = PARENT_ORIGIN + '/' + window.location.search;
+    } else {
+      urlToCopy = window.location.href;
+    }
+
+    navigator.clipboard.writeText(urlToCopy).then(function() {
       // Notify Shiny that link was copied (for toast notification)
       if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
         Shiny.setInputValue('link_copied', Date.now(), {priority: 'event'});
@@ -88,7 +170,7 @@
       console.error('Failed to copy URL:', err);
       // Fallback: select and copy
       var textArea = document.createElement('textarea');
-      textArea.value = window.location.href;
+      textArea.value = urlToCopy;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
