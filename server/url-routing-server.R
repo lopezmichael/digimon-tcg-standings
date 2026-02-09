@@ -1,0 +1,373 @@
+# =============================================================================
+# URL Routing Server Logic
+# Handles deep linking for shareable URLs
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Helper Functions
+# -----------------------------------------------------------------------------
+
+#' Generate URL-friendly slug from text
+#' @param text String to slugify
+#' @return Lowercase string with special chars replaced by hyphens
+slugify <- function(text) {
+  if (is.null(text) || is.na(text) || text == "") return("")
+  text |>
+    tolower() |>
+    gsub("[^a-z0-9]+", "-", x = _) |>
+    gsub("^-|-$", "", x = _)
+}
+
+#' Parse query string into named list
+#' @param query_string URL query string (with or without leading ?)
+#' @return Named list of parameters
+parse_url_params <- function(query_string) {
+  if (is.null(query_string) || query_string == "") return(list())
+
+  # Remove leading ?
+query_string <- gsub("^\\?", "", query_string)
+  if (query_string == "") return(list())
+
+  # Split into key=value pairs
+  pairs <- strsplit(query_string, "&")[[1]]
+  params <- list()
+
+  for (pair in pairs) {
+    parts <- strsplit(pair, "=")[[1]]
+    if (length(parts) == 2) {
+      key <- utils::URLdecode(parts[1])
+      value <- utils::URLdecode(parts[2])
+      params[[key]] <- value
+    }
+  }
+
+  params
+}
+
+#' Build URL query string from parameters
+#' @param params Named list of parameters
+#' @return Query string starting with ?
+build_url_query <- function(params) {
+  if (length(params) == 0) return("")
+
+  # Filter out NULL/NA values
+  params <- params[!sapply(params, function(x) is.null(x) || is.na(x) || x == "")]
+  if (length(params) == 0) return("")
+
+  pairs <- sapply(names(params), function(key) {
+    paste0(utils::URLencode(key, reserved = TRUE), "=",
+           utils::URLencode(as.character(params[[key]]), reserved = TRUE))
+  })
+
+  paste0("?", paste(pairs, collapse = "&"))
+}
+
+#' Send URL update to browser
+#' @param session Shiny session
+#' @param params Named list of URL parameters
+#' @param replace If TRUE, replace current history entry; if FALSE, push new entry
+update_browser_url <- function(session, params, replace = FALSE) {
+  url <- build_url_query(params)
+  message_type <- if (replace) "replaceUrl" else "pushUrl"
+  session$sendCustomMessage(message_type, list(url = url, state = params))
+}
+
+# -----------------------------------------------------------------------------
+# URL Parameter Handlers
+# -----------------------------------------------------------------------------
+
+# Process initial URL on app load
+observeEvent(input$url_initial, {
+  req(rv$db_con)
+
+  params <- parse_url_params(input$url_initial$search)
+  if (length(params) == 0) return()
+
+  # Process in order: scene -> tab -> entity modal
+
+  # 1. Scene filter (future use - for now just store it)
+  if (!is.null(params$scene)) {
+    rv$current_scene <- params$scene
+  }
+
+  # 2. Tab navigation
+  if (!is.null(params$tab)) {
+    valid_tabs <- c("dashboard", "players", "meta", "tournaments", "stores",
+                    "submit", "about", "faq", "for_tos")
+    if (params$tab %in% valid_tabs) {
+      # Use slight delay to ensure UI is ready
+      shinyjs::delay(100, {
+        nav_select("main_content", params$tab)
+        rv$current_nav <- params$tab
+      })
+    }
+  }
+
+  # 3. Entity modals (player, deck, store, tournament)
+  # Use delay to ensure tab navigation completes first
+  shinyjs::delay(200, {
+    # Player modal
+    if (!is.null(params$player) || !is.null(params$player_id)) {
+      open_entity_from_url("player", params$player, params$player_id)
+    }
+
+    # Deck modal
+    if (!is.null(params$deck) || !is.null(params$deck_id)) {
+      # Navigate to meta tab first if not there
+      if (is.null(params$tab) || params$tab != "meta") {
+        nav_select("main_content", "meta")
+        rv$current_nav <- "meta"
+      }
+      shinyjs::delay(100, {
+        open_entity_from_url("deck", params$deck, params$deck_id)
+      })
+    }
+
+    # Store modal
+    if (!is.null(params$store) || !is.null(params$store_id)) {
+      open_entity_from_url("store", params$store, params$store_id)
+    }
+
+    # Tournament modal
+    if (!is.null(params$tournament) || !is.null(params$tournament_id)) {
+      open_entity_from_url("tournament", params$tournament, params$tournament_id)
+    }
+  })
+}, once = TRUE)
+
+# Handle browser back/forward button
+observeEvent(input$url_popstate, {
+  req(rv$db_con)
+
+  params <- parse_url_params(input$url_popstate$search)
+
+  # Close any open modals first
+  removeModal()
+
+  # If URL has no entity params, we're done (modal closed via back button)
+  has_entity <- any(c("player", "player_id", "deck", "deck_id",
+                       "store", "store_id", "tournament", "tournament_id") %in% names(params))
+
+  if (!has_entity) {
+    # Just navigating between tabs or closing modal
+    if (!is.null(params$tab)) {
+      nav_select("main_content", params$tab)
+      rv$current_nav <- params$tab
+    }
+    return()
+  }
+
+  # Re-open the modal from the URL (forward button case)
+  if (!is.null(params$player) || !is.null(params$player_id)) {
+    open_entity_from_url("player", params$player, params$player_id)
+  } else if (!is.null(params$deck) || !is.null(params$deck_id)) {
+    open_entity_from_url("deck", params$deck, params$deck_id)
+  } else if (!is.null(params$store) || !is.null(params$store_id)) {
+    open_entity_from_url("store", params$store, params$store_id)
+  } else if (!is.null(params$tournament) || !is.null(params$tournament_id)) {
+    open_entity_from_url("tournament", params$tournament, params$tournament_id)
+  }
+})
+
+# Handle "Copy Link" toast notification
+observeEvent(input$link_copied, {
+  showNotification("Link copied to clipboard!", type = "message", duration = 2)
+})
+
+# Handle modal close - clear entity from URL
+observeEvent(input$modal_closed, {
+  clear_url_entity(session)
+})
+
+# Update URL when tab changes (for shareable tab links)
+observeEvent(rv$current_nav, {
+  # Public tabs that should have URL support
+
+  public_tabs <- c("dashboard", "players", "meta", "tournaments", "stores",
+                   "submit", "about", "faq", "for_tos")
+
+  # Admin tabs should clear URL back to base
+
+  admin_tabs <- c("admin_results", "admin_tournaments", "admin_decks",
+                  "admin_stores", "admin_formats", "admin_players")
+
+  if (!is.null(rv$current_nav)) {
+    if (rv$current_nav %in% public_tabs) {
+      params <- list()
+      if (rv$current_nav != "dashboard") {
+        params$tab <- rv$current_nav
+      }
+      if (!is.null(rv$current_scene)) {
+        params$scene <- rv$current_scene
+      }
+      # Use replace instead of push to avoid cluttering history with tab changes
+      update_browser_url(session, params, replace = TRUE)
+    } else if (rv$current_nav %in% admin_tabs) {
+      # Clear URL for admin pages (no shareable links)
+      update_browser_url(session, list(), replace = TRUE)
+    }
+  }
+}, ignoreInit = TRUE)
+
+# -----------------------------------------------------------------------------
+# Entity Resolution Functions
+# -----------------------------------------------------------------------------
+
+#' Open entity modal from URL parameters
+#' @param entity_type One of: player, deck, store, tournament
+#' @param slug Human-readable identifier (e.g., "atomshell", "blue-flare")
+#' @param id Database ID (takes precedence over slug if both provided)
+open_entity_from_url <- function(entity_type, slug = NULL, id = NULL) {
+  req(rv$db_con)
+
+  # Resolve to entity ID
+  entity_id <- NULL
+
+  if (!is.null(id)) {
+    # Direct ID lookup
+    entity_id <- as.integer(id)
+  } else if (!is.null(slug)) {
+    # Slug-based lookup
+    entity_id <- resolve_entity_slug(entity_type, slug)
+  }
+
+  if (is.null(entity_id)) {
+    showNotification(
+      sprintf("%s not found", tools::toTitleCase(entity_type)),
+      type = "warning",
+      duration = 3
+    )
+    return()
+  }
+
+  # Trigger the appropriate modal
+  switch(entity_type,
+    "player" = {
+      rv$selected_player_id <- entity_id
+    },
+    "deck" = {
+      rv$selected_archetype_id <- entity_id
+    },
+    "store" = {
+      rv$selected_store_id <- entity_id
+    },
+    "tournament" = {
+      rv$selected_tournament_id <- entity_id
+    }
+  )
+}
+
+#' Resolve entity slug to database ID
+#' @param entity_type One of: player, deck, store, tournament
+#' @param slug URL slug to look up
+#' @return Entity ID or NULL if not found
+resolve_entity_slug <- function(entity_type, slug) {
+  req(rv$db_con)
+
+  result <- switch(entity_type,
+    "player" = {
+      # Players use display_name (slugified for comparison)
+      players <- dbGetQuery(rv$db_con, "SELECT player_id, display_name FROM players WHERE is_active = TRUE")
+      match_idx <- which(sapply(players$display_name, slugify) == slug)
+      if (length(match_idx) == 1) players$player_id[match_idx] else NULL
+    },
+    "deck" = {
+      # Decks have a slug column
+      deck <- dbGetQuery(rv$db_con, "SELECT archetype_id FROM deck_archetypes WHERE slug = ? AND is_active = TRUE",
+                         params = list(slug))
+      if (nrow(deck) == 1) deck$archetype_id else NULL
+    },
+    "store" = {
+      # Stores have a slug column
+      store <- dbGetQuery(rv$db_con, "SELECT store_id FROM stores WHERE slug = ? AND is_active = TRUE",
+                          params = list(slug))
+      if (nrow(store) == 1) store$store_id else NULL
+    },
+    "tournament" = {
+      # Tournaments use ID only (names aren't unique)
+      NULL
+    }
+  )
+
+  result
+}
+
+# -----------------------------------------------------------------------------
+# URL Update Triggers (called when modals open)
+# -----------------------------------------------------------------------------
+
+#' Update URL when player modal opens
+#' Call this from player modal observers
+update_url_for_player <- function(session, player_id, display_name) {
+  slug <- slugify(display_name)
+  params <- list(player = slug)
+
+  # Preserve current tab in URL
+  if (!is.null(rv$current_nav) && rv$current_nav != "dashboard") {
+    params$tab <- rv$current_nav
+  }
+
+  # Preserve scene if set
+  if (!is.null(rv$current_scene)) {
+    params$scene <- rv$current_scene
+  }
+
+  update_browser_url(session, params, replace = FALSE)
+}
+
+#' Update URL when deck modal opens
+update_url_for_deck <- function(session, archetype_id, slug) {
+  params <- list(deck = slug, tab = "meta")
+
+  if (!is.null(rv$current_scene)) {
+    params$scene <- rv$current_scene
+  }
+
+  update_browser_url(session, params, replace = FALSE)
+}
+
+#' Update URL when store modal opens
+update_url_for_store <- function(session, store_id, slug) {
+  params <- list(store = slug)
+
+  if (!is.null(rv$current_nav) && rv$current_nav != "dashboard") {
+    params$tab <- rv$current_nav
+  }
+
+  if (!is.null(rv$current_scene)) {
+    params$scene <- rv$current_scene
+  }
+
+  update_browser_url(session, params, replace = FALSE)
+}
+
+#' Update URL when tournament modal opens
+update_url_for_tournament <- function(session, tournament_id) {
+  params <- list(tournament = tournament_id)
+
+  if (!is.null(rv$current_nav) && rv$current_nav != "dashboard") {
+    params$tab <- rv$current_nav
+  }
+
+  if (!is.null(rv$current_scene)) {
+    params$scene <- rv$current_scene
+  }
+
+  update_browser_url(session, params, replace = FALSE)
+}
+
+#' Clear entity from URL (when modal closes)
+clear_url_entity <- function(session) {
+  params <- list()
+
+  # Keep tab and scene
+  if (!is.null(rv$current_nav) && rv$current_nav != "dashboard") {
+    params$tab <- rv$current_nav
+  }
+
+  if (!is.null(rv$current_scene)) {
+    params$scene <- rv$current_scene
+  }
+
+  update_browser_url(session, params, replace = TRUE)
+}

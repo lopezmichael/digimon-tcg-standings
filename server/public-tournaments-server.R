@@ -135,6 +135,9 @@ output$tournament_detail_modal <- renderUI({
                                 "online" = "Online",
                                 tournament$event_type)
 
+  # Update URL for deep linking
+  update_url_for_tournament(session, tournament_id)
+
   # Build modal
   showModal(modalDialog(
     title = div(
@@ -151,7 +154,15 @@ output$tournament_detail_modal <- renderUI({
     ),
     size = "l",
     easyClose = TRUE,
-    footer = modalButton("Close"),
+    footer = tagList(
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-secondary me-auto",
+        onclick = "copyCurrentUrl()",
+        bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      modalButton("Close")
+    ),
 
     # Tournament info
     div(

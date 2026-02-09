@@ -28,6 +28,7 @@ MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
 
 # Tables in order (respects foreign key dependencies)
 TABLES = [
+    "scenes",
     "stores",
     "store_schedules",
     "formats",

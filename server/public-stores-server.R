@@ -384,6 +384,14 @@ output$store_detail_modal <- renderUI({
   address_display <- if (length(address_parts) > 0) paste(address_parts, collapse = ", ") else NULL
   has_website <- !is.na(store$website) && store$website != ""
 
+  # Update URL for deep linking
+  store_slug <- if (!is.null(store$slug) && !is.na(store$slug) && store$slug != "") {
+    store$slug
+  } else {
+    slugify(store$name)  # Fallback to generating from name
+  }
+  update_url_for_store(session, store_id, store_slug)
+
   # Build modal content
   showModal(modalDialog(
     title = div(
@@ -399,7 +407,15 @@ output$store_detail_modal <- renderUI({
     ),
     size = "l",
     easyClose = TRUE,
-    footer = modalButton("Close"),
+    footer = tagList(
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-secondary me-auto",
+        onclick = "copyCurrentUrl()",
+        bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      modalButton("Close")
+    ),
 
     # Two-column layout: Stats (left) + Mini map (right)
     div(
@@ -778,7 +794,7 @@ stores_data <- reactive({
 
   stores <- dbGetQuery(rv$db_con, "
     SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
-           s.latitude, s.longitude, s.website, s.schedule_info,
+           s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
            COUNT(t.tournament_id) as tournament_count,
            COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
            MAX(t.event_date) as last_event
@@ -786,7 +802,7 @@ stores_data <- reactive({
     LEFT JOIN tournaments t ON s.store_id = t.store_id
     WHERE s.is_active = TRUE AND (s.is_online = FALSE OR s.is_online IS NULL)
     GROUP BY s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
-             s.latitude, s.longitude, s.website, s.schedule_info
+             s.latitude, s.longitude, s.website, s.schedule_info, s.slug
   ")
   stores
 })

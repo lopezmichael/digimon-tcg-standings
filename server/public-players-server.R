@@ -233,6 +233,9 @@ output$player_detail_modal <- renderUI({
     LIMIT 10
   ", player_id))
 
+  # Update URL for deep linking
+  update_url_for_player(session, player_id, player$display_name)
+
   # Build modal
   showModal(modalDialog(
     title = div(
@@ -242,7 +245,15 @@ output$player_detail_modal <- renderUI({
     ),
     size = "l",
     easyClose = TRUE,
-    footer = modalButton("Close"),
+    footer = tagList(
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-secondary me-auto",
+        onclick = "copyCurrentUrl()",
+        bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      modalButton("Close")
+    ),
 
     # Player info with clickable home store
     if (!is.na(player$home_store) && !is.na(player$home_store_id)) {
