@@ -815,11 +815,16 @@ output$stores_map <- renderMapboxgl({
   # Convert to sf object
   stores_sf <- st_as_sf(stores_with_coords, coords = c("longitude", "latitude"), crs = 4326)
 
-  # Calculate bubble size based on average event size (min 8, max 20)
-  max_avg_players <- max(stores_with_coords$avg_players, na.rm = TRUE)
-  if (is.na(max_avg_players) || max_avg_players == 0) max_avg_players <- 1
-
-  stores_sf$bubble_size <- 8 + (stores_with_coords$avg_players / max_avg_players) * 12
+  # Calculate bubble size based on average event size (tiered)
+  # No events: 5px, <8: 10px, 8-12: 14px, 13-18: 18px, 19-24: 22px, 25+: 26px
+  stores_sf$bubble_size <- sapply(stores_with_coords$avg_players, function(avg) {
+    if (is.na(avg) || avg == 0) return(5)      # No events
+    if (avg < 8) return(10)                     # Small/casual
+    if (avg <= 12) return(14)                   # Typical locals
+    if (avg <= 18) return(18)                   # Active locals
+    if (avg <= 24) return(22)                   # Popular store
+    return(26)                                  # Major events (25+)
+  })
 
   # Create popup content with activity metrics
   stores_sf$popup <- sapply(1:nrow(stores_sf), function(i) {
