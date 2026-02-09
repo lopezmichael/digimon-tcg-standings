@@ -681,14 +681,14 @@ server <- function(input, output, session) {
     calculate_achievement_scores(rv$db_con)
   })
 
-  # Reactive: Calculate store ratings
-  store_ratings <- reactive({
+  # Reactive: Calculate average player rating per store (weighted by participation)
+  store_avg_ratings <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
-      return(data.frame(store_id = integer(), store_rating = numeric()))
+      return(data.frame(store_id = integer(), avg_player_rating = numeric()))
     }
     rv$results_refresh
     player_rtgs <- player_competitive_ratings()
-    calculate_store_ratings(rv$db_con, player_rtgs)
+    calculate_store_avg_player_rating(rv$db_con, player_rtgs)
   })
 
 

@@ -183,10 +183,10 @@ output$store_list <- renderReactable({
     return(reactable(data.frame(Message = "No stores yet"), compact = TRUE))
   }
 
-  # Join with store ratings
-  str_ratings <- store_ratings()
-  stores <- merge(stores, str_ratings, by = "store_id", all.x = TRUE)
-  stores$store_rating[is.na(stores$store_rating)] <- 0
+  # Join with average player ratings per store
+  avg_ratings <- store_avg_ratings()
+  stores <- merge(stores, avg_ratings, by = "store_id", all.x = TRUE)
+  stores$avg_player_rating[is.na(stores$avg_player_rating)] <- 0
 
   # Format last event date
   stores$last_event_display <- sapply(stores$last_event, function(d) {
@@ -199,10 +199,10 @@ output$store_list <- renderReactable({
     else format(as.Date(d), "%b %d")
   })
 
-  # Format for display - include activity metrics and rating
-  data <- stores[order(-stores$store_rating, -stores$tournament_count, stores$city, stores$name),
-                 c("name", "city", "tournament_count", "avg_players", "store_rating", "last_event_display", "store_id")]
-  names(data) <- c("Store", "City", "Events", "Avg Players", "Rating", "Last Event", "store_id")
+  # Format for display - sort by events then avg players
+  data <- stores[order(-stores$tournament_count, -stores$avg_players, stores$city, stores$name),
+                 c("name", "city", "tournament_count", "avg_players", "avg_player_rating", "last_event_display", "store_id")]
+  names(data) <- c("Store", "City", "Events", "Avg Event Size", "Avg Rating", "Last Event", "store_id")
 
   reactable(
     data,
@@ -210,7 +210,7 @@ output$store_list <- renderReactable({
     striped = TRUE,
     pagination = TRUE,
     defaultPageSize = 32,
-    defaultSorted = list(Rating = "desc"),
+    defaultSorted = list(Events = "desc"),
     rowStyle = list(cursor = "pointer"),
     onClick = JS("function(rowInfo, column) {
       if (rowInfo) {
@@ -227,15 +227,15 @@ output$store_list <- renderReactable({
           if (value == 0) "-" else value
         }
       ),
-      `Avg Players` = colDef(
-        minWidth = 90,
+      `Avg Event Size` = colDef(
+        minWidth = 80,
         align = "center",
         cell = function(value) {
           if (value == 0) "-" else value
         }
       ),
-      Rating = colDef(
-        minWidth = 70,
+      `Avg Rating` = colDef(
+        minWidth = 90,
         align = "center",
         cell = function(value) {
           if (value == 0) "-" else value
@@ -315,10 +315,10 @@ output$store_detail_modal <- renderUI({
     ", store_id))
   }
 
-  # Get store rating
-  str_ratings <- store_ratings()
-  store_rating <- str_ratings$store_rating[str_ratings$store_id == store_id]
-  if (length(store_rating) == 0) store_rating <- 0
+  # Get average player rating for this store
+  avg_ratings <- store_avg_ratings()
+  avg_player_rating <- avg_ratings$avg_player_rating[avg_ratings$store_id == store_id]
+  if (length(avg_player_rating) == 0) avg_player_rating <- 0
 
   # Get total unique players
   unique_players <- 0
@@ -403,13 +403,13 @@ output$store_detail_modal <- renderUI({
           class = "modal-stats-box p-3",
           div(
             class = "d-flex justify-content-between py-2 border-bottom",
-            span(class = "fw-semibold", "Store Rating"),
-            span(if (store_rating > 0) store_rating else "-")
+            span(class = "fw-semibold", "Events"),
+            span(store$tournament_count)
           ),
           div(
             class = "d-flex justify-content-between py-2 border-bottom",
-            span(class = "fw-semibold", "Events"),
-            span(store$tournament_count)
+            span(class = "fw-semibold", "Avg Event Size"),
+            span(if (store$avg_players > 0) store$avg_players else "-")
           ),
           div(
             class = "d-flex justify-content-between py-2 border-bottom",
@@ -418,8 +418,8 @@ output$store_detail_modal <- renderUI({
           ),
           div(
             class = "d-flex justify-content-between py-2 border-bottom",
-            span(class = "fw-semibold", "Avg Size"),
-            span(if (store$avg_players > 0) store$avg_players else "-")
+            span(class = "fw-semibold", "Avg Player Rating"),
+            span(if (avg_player_rating > 0) avg_player_rating else "-")
           ),
           div(
             class = "d-flex justify-content-between py-2",

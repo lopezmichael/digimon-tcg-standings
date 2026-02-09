@@ -211,72 +211,43 @@ calculate_achievement_scores <- function(db_con) {
 
 
 # -----------------------------------------------------------------------------
-# STORE RATING (Weighted blend)
+# STORE AVERAGE PLAYER RATING (Weighted by participation)
 # -----------------------------------------------------------------------------
 
-#' Calculate store ratings
-#' Weighted blend of player strength, attendance, and activity
+#' Calculate average player rating for each store
+#' Weighted by number of appearances (regulars count more)
 #'
 #' @param db_con DuckDB connection
 #' @param player_ratings Data frame from calculate_competitive_ratings()
-#' @return Data frame with store_id and store_rating
-calculate_store_ratings <- function(db_con, player_ratings) {
+#' @return Data frame with store_id and avg_player_rating
+calculate_store_avg_player_rating <- function(db_con, player_ratings) {
 
-  # Get store tournament activity (last 6 months)
-  six_months_ago <- Sys.Date() - 180
-
-  store_stats <- DBI::dbGetQuery(db_con, sprintf("
-    SELECT s.store_id, s.name,
-           COUNT(DISTINCT t.tournament_id) as event_count,
-           AVG(t.player_count) as avg_attendance
-    FROM stores s
-    LEFT JOIN tournaments t ON s.store_id = t.store_id
-      AND t.event_date >= '%s'
-    WHERE s.is_active = TRUE AND (s.is_online = FALSE OR s.is_online IS NULL)
-    GROUP BY s.store_id, s.name
-  ", six_months_ago))
-
-  if (nrow(store_stats) == 0) {
-    return(data.frame(store_id = integer(), store_rating = numeric()))
-  }
-
-  # Get player ratings per store (last 6 months)
-  store_players <- DBI::dbGetQuery(db_con, sprintf("
-    SELECT DISTINCT t.store_id, r.player_id
+  # Get player appearances per store (all time)
+  store_appearances <- DBI::dbGetQuery(db_con, "
+    SELECT t.store_id, r.player_id, COUNT(*) as appearances
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE t.event_date >= '%s'
-  ", six_months_ago))
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE s.is_active = TRUE
+    GROUP BY t.store_id, r.player_id
+  ")
 
-  # Calculate average player rating per store
-  store_stats$avg_player_rating <- sapply(store_stats$store_id, function(sid) {
-    players_at_store <- store_players$player_id[store_players$store_id == sid]
-    if (length(players_at_store) == 0) return(1500)
+  if (nrow(store_appearances) == 0) {
+    return(data.frame(store_id = integer(), avg_player_rating = numeric()))
+  }
 
-    player_rtgs <- player_ratings$competitive_rating[player_ratings$player_id %in% players_at_store]
-    if (length(player_rtgs) == 0) return(1500)
+  # Join with player ratings
+  store_appearances <- merge(store_appearances, player_ratings, by = "player_id", all.x = TRUE)
+  store_appearances$competitive_rating[is.na(store_appearances$competitive_rating)] <- 1500
 
-    mean(player_rtgs)
-  })
-
-  # Normalize components to 0-100 scale
-  # Player strength: 1200-2000 -> 0-100
-  store_stats$strength_score <- pmin(pmax((store_stats$avg_player_rating - 1200) / 8, 0), 100)
-
-  # Attendance: 4-32 players -> 0-100
-  store_stats$attendance_score <- pmin(pmax((store_stats$avg_attendance - 4) / 0.28, 0), 100)
-  store_stats$attendance_score[is.na(store_stats$attendance_score)] <- 0
-
-  # Activity: 0-4 events per month (over 6 months = 0-24 events) -> 0-100
-  store_stats$activity_score <- pmin(store_stats$event_count / 24 * 100, 100)
-
-  # Weighted blend: 50% strength, 30% attendance, 20% activity
-  store_stats$store_rating <- round(
-    (store_stats$strength_score * 0.5) +
-    (store_stats$attendance_score * 0.3) +
-    (store_stats$activity_score * 0.2),
-    0
+  # Calculate weighted average per store
+  # Formula: SUM(rating * appearances) / SUM(appearances)
+  store_avg <- aggregate(
+    cbind(weighted_rating = competitive_rating * appearances, appearances) ~ store_id,
+    data = store_appearances,
+    FUN = sum
   )
+  store_avg$avg_player_rating <- round(store_avg$weighted_rating / store_avg$appearances, 0)
 
-  store_stats[, c("store_id", "store_rating")]
+  store_avg[, c("store_id", "avg_player_rating")]
 }

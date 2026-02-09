@@ -311,14 +311,6 @@ output$recent_tournaments <- renderReactable({
     return(reactable(data.frame(Message = "No tournaments yet"), compact = TRUE))
   }
 
-  # Join with store ratings
-  str_ratings <- store_ratings()
-  data <- merge(data, str_ratings, by = "store_id", all.x = TRUE)
-  data$store_rating[is.na(data$store_rating)] <- 0
-
-  # Re-sort by date (merge may have changed order)
-  data <- data[order(as.Date(data$Date), decreasing = TRUE), ]
-
   # Replace NA winners with "-"
   data$Winner[is.na(data$Winner)] <- "-"
 
@@ -333,18 +325,12 @@ output$recent_tournaments <- renderReactable({
       tournament_id = colDef(show = FALSE),
       store_id = colDef(show = FALSE),
       Store = colDef(
-        minWidth = 150,
+        minWidth = 180,
         style = list(overflow = "hidden", textOverflow = "ellipsis", whiteSpace = "nowrap")
       ),
       Date = colDef(width = 100),
-      Players = colDef(width = 65, align = "center"),
-      Winner = colDef(width = 110),
-      store_rating = colDef(
-        name = "Rating",
-        width = 60,
-        align = "center",
-        cell = function(value) if (value == 0) "-" else value
-      )
+      Players = colDef(width = 70, align = "center"),
+      Winner = colDef(minWidth = 120)
     )
   )
 })
