@@ -7,8 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.20.2] - 2026-02-09 - Store Modal & Map Improvements
+
+### Added
+- **Text Selection in Modals**: Can now select and copy text from all modals
+
 ### Changed
-- Stores tab improvements (in progress)
+- **Store Modal Redesign**:
+  - Stats list (left) + mini map (right) side-by-side layout
+  - Address moved to header in standard format (street, city, state zip)
+  - Website link as icon in header
+  - Stats reordered: Events, Avg Event Size, Unique Players, Avg Player Rating, Last Event
+- **Store Rating → Avg Player Rating**:
+  - Removed confusing 0-100 "Store Rating" score
+  - Replaced with weighted average player Elo (regulars count more)
+  - Clearer meaning: shows competitive level of players at each store
+- **Map Bubble Sizing**: Now tiered by avg event size instead of event count
+  - No events: 5px (tiny dot)
+  - < 8 players: 10px
+  - 8-12 players: 14px
+  - 13-18 players: 18px
+  - 19-24 players: 22px
+  - 25+ players: 26px
+- **Store List Table**: Sorted by Events (not rating), renamed "Avg Size" to "Avg Event Size"
+
+### Removed
+- **Region Filter**: Removed draw-to-filter lasso functionality (will be replaced by scene selection in v0.23)
+- **Store Rating from Tournament Modal**: No longer shows store rating stat
 
 ---
 
