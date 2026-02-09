@@ -1,23 +1,49 @@
 -- DigiLab - Digimon TCG Tournament Tracker
 -- Database Schema for MotherDuck (Cloud DuckDB)
--- Version: 1.2.0
+-- Version: 1.3.0
 -- Created: January 2026
--- Updated: 2026-02-09 - Added store_schedules table for recurring event tracking
+-- Updated: 2026-02-09 - Added scenes table, slugs for deep linking
+
+-- =============================================================================
+-- SCENES TABLE
+-- Hierarchical geographic organization (Global -> Country -> State -> Metro)
+-- Enables multi-region support and deep linking with ?scene=dfw URLs
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS scenes (
+    scene_id INTEGER PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    slug VARCHAR UNIQUE,              -- URL-friendly identifier (e.g., 'dfw', 'online')
+    display_name VARCHAR,             -- Human-readable name (e.g., 'Dallas-Fort Worth')
+    parent_scene_id INTEGER,          -- FK to parent scene (Texas -> USA -> Global)
+    scene_type VARCHAR NOT NULL,      -- 'global', 'country', 'state', 'metro', 'online'
+    latitude DECIMAL(9, 6),           -- Center point for map views
+    longitude DECIMAL(9, 6),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for scene queries
+CREATE INDEX IF NOT EXISTS idx_scenes_slug ON scenes(slug);
+CREATE INDEX IF NOT EXISTS idx_scenes_parent ON scenes(parent_scene_id);
+CREATE INDEX IF NOT EXISTS idx_scenes_type ON scenes(scene_type);
 
 -- =============================================================================
 -- STORES TABLE
--- Tracks local game stores hosting Digimon TCG events in the DFW area
+-- Tracks local game stores hosting Digimon TCG events
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS stores (
     store_id INTEGER PRIMARY KEY,
     name VARCHAR NOT NULL,
+    slug VARCHAR,                     -- URL-friendly identifier for deep linking
     address VARCHAR,
     city VARCHAR NOT NULL,
     state VARCHAR DEFAULT 'TX',
     zip_code VARCHAR,
     latitude DECIMAL(9, 6),
     longitude DECIMAL(9, 6),
-    schedule_info TEXT,  -- JSON stored as text
+    scene_id INTEGER,                 -- FK to scenes table
+    schedule_info TEXT,               -- Legacy: JSON stored as text (use store_schedules instead)
     tcgplus_store_id VARCHAR,
     website VARCHAR,
     phone VARCHAR,
@@ -26,6 +52,10 @@ CREATE TABLE IF NOT EXISTS stores (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create index for store slug lookups
+CREATE INDEX IF NOT EXISTS idx_stores_slug ON stores(slug);
+CREATE INDEX IF NOT EXISTS idx_stores_scene ON stores(scene_id);
 
 -- =============================================================================
 -- STORE SCHEDULES TABLE
@@ -122,10 +152,11 @@ CREATE INDEX IF NOT EXISTS idx_players_tcgplus_id ON players(tcgplus_id);
 CREATE TABLE IF NOT EXISTS deck_archetypes (
     archetype_id INTEGER PRIMARY KEY,
     archetype_name VARCHAR NOT NULL UNIQUE,
+    slug VARCHAR,                     -- URL-friendly identifier for deep linking
     display_card_id VARCHAR,
     primary_color VARCHAR NOT NULL,
     secondary_color VARCHAR,
-    playstyle_tags TEXT,  -- JSON array stored as text
+    playstyle_tags TEXT,              -- JSON array stored as text
     is_active BOOLEAN DEFAULT TRUE,
     is_multi_color BOOLEAN DEFAULT FALSE,
     notes TEXT,
@@ -133,8 +164,9 @@ CREATE TABLE IF NOT EXISTS deck_archetypes (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create index for archetype lookups
+-- Create indexes for archetype lookups
 CREATE INDEX IF NOT EXISTS idx_archetypes_name ON deck_archetypes(archetype_name);
+CREATE INDEX IF NOT EXISTS idx_archetypes_slug ON deck_archetypes(slug);
 CREATE INDEX IF NOT EXISTS idx_archetypes_color ON deck_archetypes(primary_color);
 
 -- =============================================================================

@@ -32,6 +32,7 @@ MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
 # Tables in order (respects foreign key dependencies)
 # Insert in this order (parents first), delete in reverse order (children first)
 TABLES = [
+    "scenes",
     "stores",
     "store_schedules",
     "formats",
