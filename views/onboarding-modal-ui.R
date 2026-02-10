@@ -34,14 +34,12 @@ onboarding_welcome_ui <- function() {
           span("Explore deck meta"))
     ),
 
-    # Links
+    # Links - clicking these will close the modal and navigate
     div(
       class = "onboarding-links",
-      actionLink("onboarding_about", "Learn more about DigiLab",
-                 onclick = "nav_select('main_content', 'about'); Shiny.setInputValue('close_onboarding', Date.now());"),
+      actionLink("onboarding_about", "Learn more about DigiLab"),
       span(" | "),
-      actionLink("onboarding_faq", "FAQ",
-                 onclick = "nav_select('main_content', 'faq'); Shiny.setInputValue('close_onboarding', Date.now());")
+      actionLink("onboarding_faq", "FAQ")
     ),
 
     # Action button

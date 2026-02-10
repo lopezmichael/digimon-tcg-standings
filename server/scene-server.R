@@ -139,6 +139,26 @@ observeEvent(input$close_onboarding, {
   updateSelectInput(session, "scene_selector", selected = "all")
 })
 
+# Handle About link from onboarding
+observeEvent(input$onboarding_about, {
+  removeModal()
+  session$sendCustomMessage("saveScenePreference", list(scene = "all"))
+  rv$current_scene <- "all"
+  updateSelectInput(session, "scene_selector", selected = "all")
+  nav_select("main_content", "about")
+  rv$current_nav <- "about"
+})
+
+# Handle FAQ link from onboarding
+observeEvent(input$onboarding_faq, {
+  removeModal()
+  session$sendCustomMessage("saveScenePreference", list(scene = "all"))
+  rv$current_scene <- "all"
+  updateSelectInput(session, "scene_selector", selected = "all")
+  nav_select("main_content", "faq")
+  rv$current_nav <- "faq"
+})
+
 # -----------------------------------------------------------------------------
 # Scene Selection (from onboarding modal)
 # -----------------------------------------------------------------------------
@@ -176,41 +196,47 @@ output$onboarding_map <- mapgl::renderMapboxgl({
   center_lng <- -98.5
   center_lat <- 39.8
 
-  # Create base map
-  map <- mapgl::mapboxgl(
-    style = mapgl::basemaps$Mapbox$light,
-    center = c(center_lng, center_lat),
-    zoom = 3,
-    accessToken = Sys.getenv("MAPBOX_ACCESS_TOKEN")
-  )
+  # Create base map using atom theme
+  map <- atom_mapgl(theme = "digital")
 
-  # Add markers for each scene if we have data
-  if (!is.null(scenes) && nrow(scenes) > 0) {
-    for (i in seq_len(nrow(scenes))) {
-      scene <- scenes[i, ]
-      map <- map |>
-        mapgl::add_markers(
-          data = data.frame(
-            lng = scene$longitude,
-            lat = scene$latitude,
-            name = scene$display_name,
-            slug = scene$slug
-          ),
-          lng_col = "lng",
-          lat_col = "lat",
-          popup = sprintf(
-            '<div style="text-align:center;padding:5px;">
-              <strong>%s</strong><br>
-              <button onclick="Shiny.setInputValue(\'select_scene_from_map\', \'%s\', {priority: \'event\'});"
-                      class="btn btn-primary btn-sm" style="margin-top:8px;">
-                Select
-              </button>
-            </div>',
-            scene$display_name, scene$slug
-          ),
-          marker_id = paste0("scene_", scene$scene_id)
-        )
-    }
+  # Add scene markers if we have data
+if (!is.null(scenes) && nrow(scenes) > 0) {
+    # Build popup HTML for each scene
+    scenes$popup <- sapply(seq_len(nrow(scenes)), function(i) {
+      sprintf(
+        '<div style="text-align:center;padding:8px;min-width:120px;">
+          <strong style="font-size:14px;">%s</strong><br>
+          <button onclick="Shiny.setInputValue(\'select_scene_from_map\', \'%s\', {priority: \'event\'});"
+                  class="btn btn-primary btn-sm" style="margin-top:10px;">
+            Select
+          </button>
+        </div>',
+        scenes$display_name[i], scenes$slug[i]
+      )
+    })
+
+    # Convert to sf object
+    scenes_sf <- sf::st_as_sf(scenes,
+                              coords = c("longitude", "latitude"),
+                              crs = 4326)
+
+    map <- map |>
+      add_atom_popup_style(theme = "light") |>
+      mapgl::add_circle_layer(
+        id = "scenes-layer",
+        source = scenes_sf,
+        circle_color = "#F7941D",
+        circle_radius = 12,
+        circle_stroke_color = "#FFFFFF",
+        circle_stroke_width = 2,
+        circle_opacity = 0.9,
+        popup = "popup"
+      ) |>
+      mapgl::set_view(center = c(center_lng, center_lat), zoom = 3)
+  } else {
+    # No scenes - just show centered map
+    map <- map |>
+      mapgl::set_view(center = c(center_lng, center_lat), zoom = 3)
   }
 
   map
