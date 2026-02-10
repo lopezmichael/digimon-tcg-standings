@@ -4286,6 +4286,11 @@ a:hover, .nav-link:hover {
   user-select: none;
 }
 
+.footer-icon-link {
+  font-size: 1.1rem;
+  padding: 0.25rem 0.5rem;
+}
+
 .footer-meta {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.8rem;

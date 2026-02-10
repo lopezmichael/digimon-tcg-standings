@@ -389,20 +389,6 @@ ui <- page_fillable(
     ),
     div(
       class = "header-actions",
-      tags$a(
-        href = "https://github.com/lopezmichael/digimon-tcg-standings",
-        target = "_blank",
-        class = "header-action-btn",
-        title = "View on GitHub",
-        bsicons::bs_icon("github")
-      ),
-      tags$a(
-        href = "https://ko-fi.com/atomshell",
-        target = "_blank",
-        class = "header-action-btn header-coffee-btn",
-        title = "Support on Ko-fi",
-        bsicons::bs_icon("cup-hot")
-      ),
       actionLink("admin_login_link",
                  tagList(bsicons::bs_icon("lock"), " Admin"),
                  class = "header-action-btn"),
@@ -537,7 +523,22 @@ ui <- page_fillable(
       span(class = "footer-divider", "//"),
       actionLink("nav_faq", "FAQ", class = "footer-link"),
       span(class = "footer-divider", "//"),
-      actionLink("nav_for_tos", "For Organizers", class = "footer-link")
+      actionLink("nav_for_tos", "For Organizers", class = "footer-link"),
+      span(class = "footer-divider", "//"),
+      tags$a(
+        href = "https://github.com/lopezmichael/digimon-tcg-standings",
+        target = "_blank",
+        class = "footer-link footer-icon-link",
+        title = "View on GitHub",
+        bsicons::bs_icon("github")
+      ),
+      tags$a(
+        href = "https://ko-fi.com/atomshell",
+        target = "_blank",
+        class = "footer-link footer-icon-link",
+        title = "Support on Ko-fi",
+        bsicons::bs_icon("cup-hot")
+      )
     ),
     tags$div(
       class = "footer-meta",
