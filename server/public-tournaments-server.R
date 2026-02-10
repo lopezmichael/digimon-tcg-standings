@@ -28,6 +28,8 @@ output$tournament_history <- renderReactable({
     sprintf("AND t.event_type = '%s'", input$tournaments_event_type)
   } else ""
 
+  scene_filter <- build_scene_filter(rv$current_scene, "s")
+
   result <- dbGetQuery(rv$db_con, sprintf("
     SELECT t.tournament_id, t.event_date as Date, s.name as Store, t.event_type as Type,
            t.format as Format, t.player_count as Players, t.rounds as Rounds,
@@ -37,9 +39,9 @@ output$tournament_history <- renderReactable({
     LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
     LEFT JOIN players p ON r.player_id = p.player_id
     LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-    WHERE 1=1 %s %s %s
+    WHERE 1=1 %s %s %s %s
     ORDER BY t.event_date DESC
-  ", search_filter, format_filter, event_type_filter))
+  ", search_filter, format_filter, event_type_filter, scene_filter))
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No tournaments match filters"), compact = TRUE))

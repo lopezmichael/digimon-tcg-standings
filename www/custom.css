@@ -215,6 +215,60 @@
   color: #FFFFFF !important;
 }
 
+/* Scene selector dropdown in header */
+.header-scene-selector {
+  display: flex;
+  align-items: center;
+}
+
+.header-scene-selector .form-group {
+  margin-bottom: 0;
+}
+
+.header-scene-selector select {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 1.5rem;
+}
+
+.header-scene-selector select:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.header-scene-selector select:focus {
+  outline: none;
+  border-color: #00C8FF !important;
+  box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.2);
+}
+
+.header-scene-selector select option {
+  background-color: #0A3055;
+  color: #FFFFFF;
+}
+
+/* Mobile responsive - narrower on small screens */
+@media (max-width: 768px) {
+  .header-scene-selector select {
+    width: 110px !important;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.5rem;
+    padding-right: 1.3rem;
+  }
+}
+
 /* =============================================================================
    SIDEBAR NAVIGATION
    ============================================================================= */
@@ -1987,6 +2041,211 @@ a:hover, .nav-link:hover {
 [data-bs-theme="dark"] .modal-section-header {
   color: rgba(0, 200, 255, 0.9);
   border-color: rgba(0, 200, 255, 0.3);
+}
+
+/* =============================================================================
+   ONBOARDING MODAL - First-visit welcome and scene selection
+   ============================================================================= */
+
+.onboarding-modal .modal-dialog {
+  max-width: 500px;
+}
+
+.onboarding-modal .modal-content {
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+}
+
+[data-bs-theme="dark"] .onboarding-modal .modal-content {
+  background: linear-gradient(180deg, #0A1929 0%, #0D2137 100%);
+  border-color: rgba(0, 200, 255, 0.4);
+}
+
+/* Step container */
+.onboarding-step {
+  padding: 1rem;
+  text-align: center;
+}
+
+/* Welcome step header */
+.onboarding-header {
+  margin-bottom: 1.5rem;
+}
+
+.onboarding-logo {
+  width: 80px;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+.onboarding-header h2 {
+  color: #0F4C81;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+[data-bs-theme="dark"] .onboarding-header h2 {
+  color: rgba(0, 200, 255, 0.95);
+}
+
+.onboarding-description {
+  color: #4A5568;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+[data-bs-theme="dark"] .onboarding-description {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Feature list */
+.onboarding-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  padding: 0 1rem;
+}
+
+.onboarding-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #2D3748;
+  font-size: 0.95rem;
+}
+
+.onboarding-feature svg {
+  color: #F7941D;
+  flex-shrink: 0;
+}
+
+[data-bs-theme="dark"] .onboarding-feature {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-bs-theme="dark"] .onboarding-feature svg {
+  color: #FFB347;
+}
+
+/* Links */
+.onboarding-links {
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.onboarding-links a {
+  color: #0F4C81;
+  text-decoration: none;
+}
+
+.onboarding-links a:hover {
+  text-decoration: underline;
+}
+
+[data-bs-theme="dark"] .onboarding-links a {
+  color: rgba(0, 200, 255, 0.9);
+}
+
+.onboarding-links span {
+  color: #A0AEC0;
+}
+
+/* Actions */
+.onboarding-actions {
+  margin-top: 1rem;
+}
+
+.onboarding-actions .btn-primary {
+  min-width: 150px;
+}
+
+/* Scene picker step */
+.onboarding-scene-picker h3 {
+  color: #0F4C81;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+[data-bs-theme="dark"] .onboarding-scene-picker h3 {
+  color: rgba(0, 200, 255, 0.95);
+}
+
+.onboarding-subtitle {
+  color: #718096;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+[data-bs-theme="dark"] .onboarding-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Map container */
+.onboarding-map-container {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 200, 255, 0.2);
+  margin-bottom: 1rem;
+}
+
+/* Geolocation button */
+.onboarding-geolocation {
+  margin-bottom: 1rem;
+}
+
+.onboarding-geolocation .btn {
+  min-width: 160px;
+}
+
+/* Alternative scene buttons */
+.onboarding-scene-alternatives {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.onboarding-scene-alternatives .btn {
+  min-width: 140px;
+}
+
+/* Back link */
+.onboarding-back {
+  margin-top: 0.5rem;
+}
+
+.onboarding-back a {
+  color: #718096;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.onboarding-back a:hover {
+  color: #0F4C81;
+}
+
+[data-bs-theme="dark"] .onboarding-back a {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+[data-bs-theme="dark"] .onboarding-back a:hover {
+  color: rgba(0, 200, 255, 0.9);
+}
+
+/* Mobile adjustments */
+@media (max-width: 576px) {
+  .onboarding-scene-alternatives {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .onboarding-scene-alternatives .btn {
+    width: 100%;
+  }
 }
 
 /* =============================================================================

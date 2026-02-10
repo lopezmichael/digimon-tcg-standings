@@ -24,6 +24,8 @@ output$player_standings <- renderReactable({
     sprintf("AND t.format = '%s'", input$players_format)
   } else ""
 
+  scene_filter <- build_scene_filter(rv$current_scene, "s")
+
   min_events <- as.numeric(input$players_min_events)
   if (is.na(min_events)) min_events <- 0
 
@@ -37,10 +39,11 @@ output$player_standings <- renderReactable({
     FROM players p
     JOIN results r ON p.player_id = r.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE 1=1 %s %s
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE 1=1 %s %s %s
     GROUP BY p.player_id, p.display_name
     HAVING COUNT(DISTINCT r.tournament_id) >= %d
-  ", search_filter, format_filter, min_events))
+  ", search_filter, format_filter, scene_filter, min_events))
 
   # Get most played deck for each player (Main Deck)
   main_decks <- dbGetQuery(rv$db_con, sprintf("
@@ -52,13 +55,14 @@ output$player_standings <- renderReactable({
       JOIN players p ON r.player_id = p.player_id
       JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE da.archetype_name != 'UNKNOWN' %s %s
+      JOIN stores s ON t.store_id = s.store_id
+      WHERE da.archetype_name != 'UNKNOWN' %s %s %s
       GROUP BY r.player_id, da.archetype_name, da.primary_color
     )
     SELECT player_id, archetype_name as main_deck, primary_color as main_deck_color
     FROM player_deck_counts
     WHERE rn = 1
-  ", search_filter, format_filter))
+  ", search_filter, format_filter, scene_filter))
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))

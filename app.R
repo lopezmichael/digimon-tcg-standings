@@ -251,6 +251,7 @@ source("views/admin-players-ui.R", local = TRUE)
 source("views/about-ui.R", local = TRUE)
 source("views/faq-ui.R", local = TRUE)
 source("views/for-tos-ui.R", local = TRUE)
+source("views/onboarding-modal-ui.R", local = TRUE)
 
 # =============================================================================
 # UI
@@ -290,6 +291,8 @@ ui <- page_fillable(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
     # Deep linking URL routing
     tags$script(src = "url-routing.js"),
+    # Scene selection and localStorage
+    tags$script(src = "scene-selector.js"),
     # JavaScript to handle active nav state and loading screen
     tags$script(HTML("
       $(document).on('click', '.nav-link-sidebar', function() {
@@ -403,6 +406,18 @@ ui <- page_fillable(
       actionLink("admin_login_link",
                  tagList(bsicons::bs_icon("lock"), " Admin"),
                  class = "header-action-btn"),
+      div(
+        class = "header-scene-selector",
+        selectInput("scene_selector", NULL,
+                    choices = list(
+                      "All Scenes" = "all",
+                      "Dallas-Fort Worth" = "dfw",
+                      "Online" = "online"
+                    ),
+                    selected = "all",
+                    width = "140px",
+                    selectize = FALSE)
+      ),
       input_dark_mode(id = "dark_mode", mode = "light")
     )
   ),
@@ -650,6 +665,7 @@ server <- function(input, output, session) {
 
   source("server/shared-server.R", local = TRUE)
   source("server/url-routing-server.R", local = TRUE)
+  source("server/scene-server.R", local = TRUE)
   source("server/admin-results-server.R", local = TRUE)
   source("server/admin-tournaments-server.R", local = TRUE)
   source("server/admin-decks-server.R", local = TRUE)

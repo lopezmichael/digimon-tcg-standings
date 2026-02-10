@@ -23,6 +23,8 @@ output$archetype_stats <- renderReactable({
     sprintf("AND t.format = '%s'", input$meta_format)
   } else ""
 
+  scene_filter <- build_scene_filter(rv$current_scene, "s")
+
   min_entries <- as.numeric(input$meta_min_entries)
   if (is.na(min_entries)) min_entries <- 0
 
@@ -36,11 +38,12 @@ output$archetype_stats <- renderReactable({
     FROM deck_archetypes da
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s
     GROUP BY da.archetype_id, da.archetype_name, da.primary_color
     HAVING COUNT(r.result_id) >= %d
     ORDER BY COUNT(r.result_id) DESC, COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
-  ", search_filter, format_filter, min_entries))
+  ", search_filter, format_filter, scene_filter, min_entries))
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No decks match the current filters"), compact = TRUE))
@@ -137,7 +140,8 @@ output$deck_detail_modal <- renderUI({
     LIMIT 5
   ", archetype_id))
 
-  # Get recent results with this deck
+  # Get recent results with this deck (filtered by scene)
+  scene_filter <- build_scene_filter(rv$current_scene, "s")
   recent_results <- dbGetQuery(rv$db_con, sprintf("
     SELECT t.event_date as Date, s.name as Store, p.display_name as Player,
            r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
@@ -145,10 +149,10 @@ output$deck_detail_modal <- renderUI({
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id
     JOIN players p ON r.player_id = p.player_id
-    WHERE r.archetype_id = %d
+    WHERE r.archetype_id = %d %s
     ORDER BY t.event_date DESC, r.placement ASC
     LIMIT 10
-  ", archetype_id))
+  ", archetype_id, scene_filter))
 
   # Card image URL
   card_img_url <- if (!is.na(archetype$display_card_id) && archetype$display_card_id != "") {

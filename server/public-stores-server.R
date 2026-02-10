@@ -790,9 +790,12 @@ output$online_store_detail_modal <- renderUI({
 
 # Reactive: All stores data with activity metrics (for filtering and map)
 stores_data <- reactive({
+  rv$data_refresh  # Trigger refresh on admin/scene changes
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  stores <- dbGetQuery(rv$db_con, "
+  scene_filter <- build_scene_filter(rv$current_scene, "s")
+
+  stores <- dbGetQuery(rv$db_con, sprintf("
     SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
            s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
            COUNT(t.tournament_id) as tournament_count,
@@ -800,10 +803,10 @@ stores_data <- reactive({
            MAX(t.event_date) as last_event
     FROM stores s
     LEFT JOIN tournaments t ON s.store_id = t.store_id
-    WHERE s.is_active = TRUE AND (s.is_online = FALSE OR s.is_online IS NULL)
+    WHERE s.is_active = TRUE AND (s.is_online = FALSE OR s.is_online IS NULL) %s
     GROUP BY s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
              s.latitude, s.longitude, s.website, s.schedule_info, s.slug
-  ")
+  ", scene_filter))
   stores
 })
 

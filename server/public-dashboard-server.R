@@ -40,26 +40,28 @@ output$dashboard_context_text <- renderUI({
   HTML(paste0(format_name, " <span style='opacity: 0.6;'>·</span> ", event_name))
 })
 
-# Value box outputs (filtered by format/event type)
+# Value box outputs (filtered by format/event type/scene)
 output$total_tournaments_val <- renderText({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return("0")
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
   query <- sprintf("
     SELECT COUNT(*) as n FROM tournaments t
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 %s %s %s
-  ", filters$format, filters$event_type, filters$store)
+  ", filters$format, filters$event_type, filters$scene)
   dbGetQuery(rv$db_con, query)$n
 })
 
 output$total_players_val <- renderText({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return("0")
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
   query <- sprintf("
     SELECT COUNT(DISTINCT r.player_id) as n
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 %s %s %s
-  ", filters$format, filters$event_type, filters$store)
+  ", filters$format, filters$event_type, filters$scene)
   dbGetQuery(rv$db_con, query)$n
 })
 
@@ -83,7 +85,7 @@ output$total_decks_val <- renderText({
 most_popular_deck <- reactive({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Always use filtered query for consistency
   # Exclude UNKNOWN archetype from analytics
@@ -93,11 +95,12 @@ most_popular_deck <- reactive({
     FROM deck_archetypes da
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s
     GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
     ORDER BY entries DESC
     LIMIT 1
-  ", filters$format, filters$event_type, filters$store))
+  ", filters$format, filters$event_type, filters$scene))
 
   if (nrow(result) == 0) return(NULL)
   result[1, ]
@@ -133,12 +136,14 @@ output$top_deck_meta_share <- renderUI({
 hot_deck <- reactive({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Get tournament count to check if we have enough data
   tournament_count <- dbGetQuery(rv$db_con, sprintf("
-    SELECT COUNT(*) as n FROM tournaments t WHERE 1=1 %s %s %s
-  ", filters$format, filters$event_type, filters$store))$n
+    SELECT COUNT(*) as n FROM tournaments t
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE 1=1 %s %s %s
+  ", filters$format, filters$event_type, filters$scene))$n
 
   # Need at least 10 tournaments for meaningful trend data
   if (tournament_count < 10) {
@@ -148,8 +153,10 @@ hot_deck <- reactive({
   # Get median tournament date to split into older/newer halves
   median_date <- dbGetQuery(rv$db_con, sprintf("
     SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY event_date) as median_date
-    FROM tournaments t WHERE 1=1 %s %s %s
-  ", filters$format, filters$event_type, filters$store))$median_date
+    FROM tournaments t
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE 1=1 %s %s %s
+  ", filters$format, filters$event_type, filters$scene))$median_date
 
   # Calculate meta share for older tournaments
   # Exclude UNKNOWN archetype from analytics
@@ -159,9 +166,10 @@ hot_deck <- reactive({
     FROM deck_archetypes da
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE t.event_date < '%s' AND da.archetype_name != 'UNKNOWN' %s %s %s
     GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
-  ", median_date, filters$format, filters$event_type, filters$store))
+  ", median_date, filters$format, filters$event_type, filters$scene))
 
   # Calculate meta share for newer tournaments
   # Exclude UNKNOWN archetype from analytics
@@ -171,9 +179,10 @@ hot_deck <- reactive({
     FROM deck_archetypes da
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE t.event_date >= '%s' AND da.archetype_name != 'UNKNOWN' %s %s %s
     GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
-  ", median_date, filters$format, filters$event_type, filters$store))
+  ", median_date, filters$format, filters$event_type, filters$scene))
 
   if (nrow(older_meta) == 0 || nrow(newer_meta) == 0) {
     return(list(insufficient_data = TRUE, tournament_count = tournament_count))
@@ -262,7 +271,7 @@ output$most_popular_deck_image <- renderUI({
 })
 
 # Helper function to build dashboard filter conditions
-build_dashboard_filters <- function(table_alias = "t") {
+build_dashboard_filters <- function(table_alias = "t", store_alias = "s") {
   format_filter <- if (!is.null(input$dashboard_format) && input$dashboard_format != "") {
     sprintf("AND %s.format = '%s'", table_alias, input$dashboard_format)
   } else ""
@@ -271,12 +280,16 @@ build_dashboard_filters <- function(table_alias = "t") {
     sprintf("AND %s.event_type = '%s'", table_alias, input$dashboard_event_type)
   } else ""
 
+  # Scene filter - filter by store's scene
+  scene_filter <- build_scene_filter(rv$current_scene, store_alias)
+
   list(
     format = format_filter,
     event_type = event_type_filter,
-    store = "",  # Region filter removed - will be replaced by scene selection
+    scene = scene_filter,
+    store = "",  # Legacy - use scene instead
     date = "",   # Date filter removed
-    any_active = (format_filter != "" || event_type_filter != "")
+    any_active = (format_filter != "" || event_type_filter != "" || scene_filter != "")
   )
 }
 
@@ -286,7 +299,7 @@ output$recent_tournaments <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Query with winner (player who got placement = 1) and store_id for rating join
   query <- sprintf("
@@ -300,7 +313,7 @@ output$recent_tournaments <- renderReactable({
     WHERE 1=1 %s %s %s %s
     ORDER BY t.event_date DESC
     LIMIT 10
-  ", filters$store, filters$format, filters$event_type, filters$date)
+  ", filters$scene, filters$format, filters$event_type, filters$date)
 
   data <- dbGetQuery(rv$db_con, query)
   if (nrow(data) == 0) {
@@ -337,7 +350,7 @@ output$top_players <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Query players with basic stats
   result <- dbGetQuery(rv$db_con, sprintf("
@@ -349,10 +362,11 @@ output$top_players <- renderReactable({
     FROM players p
     JOIN results r ON p.player_id = r.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 %s %s %s %s
     GROUP BY p.player_id, p.display_name
     HAVING COUNT(DISTINCT r.tournament_id) > 0
-  ", filters$store, filters$format, filters$event_type, filters$date))
+  ", filters$scene, filters$format, filters$event_type, filters$date))
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No player data yet"), compact = TRUE))
@@ -408,7 +422,7 @@ output$meta_share_timeline <- renderHighchart({
   }
 
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Query results by week and archetype
   # Exclude UNKNOWN archetype from analytics
@@ -420,10 +434,11 @@ output$meta_share_timeline <- renderHighchart({
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
     GROUP BY date_trunc('week', t.event_date), da.archetype_id, da.archetype_name, da.primary_color
     ORDER BY week_start, entries DESC
-  ", filters$store, filters$format, filters$event_type, filters$date))
+  ", filters$scene, filters$format, filters$event_type, filters$date))
 
   if (nrow(result) == 0) {
     return(
@@ -566,12 +581,13 @@ output$meta_share_timeline <- renderHighchart({
 filtered_tournament_count <- reactive({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(0)
 
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
   dbGetQuery(rv$db_con, sprintf("
-    SELECT COUNT(DISTINCT tournament_id) as total
+    SELECT COUNT(DISTINCT t.tournament_id) as total
     FROM tournaments t
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 %s %s %s %s
-  ", filters$store, filters$format, filters$event_type, filters$date))$total
+  ", filters$scene, filters$format, filters$event_type, filters$date))$total
 })
 
 # Dynamic Top Decks header showing tournament count
@@ -593,7 +609,7 @@ output$top_decks_with_images <- renderUI({
   }
 
   # Build filter conditions
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
   total_tournaments <- filtered_tournament_count()
 
   if (total_tournaments == 0) {
@@ -609,12 +625,13 @@ output$top_decks_with_images <- renderUI({
     FROM deck_archetypes da
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
     GROUP BY da.archetype_id, da.archetype_name, da.display_card_id, da.primary_color
     HAVING COUNT(r.result_id) >= 1
     ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(r.result_id) DESC
     LIMIT 6
-  ", filters$store, filters$format, filters$event_type, filters$date))
+  ", filters$scene, filters$format, filters$event_type, filters$date))
 
   if (nrow(result) == 0) {
     return(digital_empty_state("No deck data found", "// expand search filters", "search"))
@@ -688,7 +705,7 @@ output$conversion_rate_chart <- renderHighchart({
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
 
   # Build filter conditions
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Query conversion rate (top 3 finishes / total entries) - minimum 2 entries
   # Exclude UNKNOWN archetype from analytics
@@ -700,12 +717,13 @@ output$conversion_rate_chart <- renderHighchart({
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
     GROUP BY da.archetype_id, da.archetype_name, da.primary_color
     HAVING COUNT(r.result_id) >= 2
     ORDER BY conversion DESC
     LIMIT 5
-  ", filters$store, filters$format, filters$event_type, filters$date))
+  ", filters$scene, filters$format, filters$event_type, filters$date))
 
   if (nrow(result) == 0) {
     return(
@@ -753,7 +771,7 @@ output$color_dist_chart <- renderHighchart({
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
 
   # Build filter conditions
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Query color distribution by primary color
   # Dual-color decks show by their primary color (more informative than lumping as "Multi")
@@ -765,10 +783,11 @@ output$color_dist_chart <- renderHighchart({
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s %s
     GROUP BY da.primary_color
     ORDER BY count DESC
-  ", filters$store, filters$format, filters$event_type, filters$date))
+  ", filters$scene, filters$format, filters$event_type, filters$date))
 
   if (nrow(result) == 0) {
     return(
@@ -895,7 +914,7 @@ output$tournaments_trend_chart <- renderHighchart({
 meta_diversity_data <- reactive({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Get win counts by archetype
   result <- dbGetQuery(rv$db_con, sprintf("
@@ -904,10 +923,11 @@ meta_diversity_data <- reactive({
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE da.archetype_name != 'UNKNOWN' %s %s %s
     GROUP BY da.archetype_id, da.archetype_name
     HAVING COUNT(CASE WHEN r.placement = 1 THEN 1 END) > 0
-  ", filters$format, filters$event_type, filters$store))
+  ", filters$format, filters$event_type, filters$scene))
 
   if (nrow(result) == 0) return(list(score = NA, decks_with_wins = 0))
 
@@ -1077,7 +1097,7 @@ output$player_growth_chart <- renderHighchart({
   }
 
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
 
   # Get player participation by month with their first ever tournament
   # Using strftime instead of DATE_TRUNC to avoid ICU extension on Windows
@@ -1098,6 +1118,7 @@ output$player_growth_chart <- renderHighchart({
         pf.first_date
       FROM results r
       JOIN tournaments t ON r.tournament_id = t.tournament_id
+      JOIN stores s ON t.store_id = s.store_id
       JOIN player_first pf ON r.player_id = pf.player_id
       WHERE 1=1 %s %s %s
     ),
@@ -1121,7 +1142,7 @@ output$player_growth_chart <- renderHighchart({
     FROM player_cumulative
     GROUP BY month
     ORDER BY month
-  ", filters$format, filters$event_type, filters$store))
+  ", filters$format, filters$event_type, filters$scene))
 
   if (nrow(result) == 0) {
     return(
@@ -1173,7 +1194,7 @@ output$rising_stars_cards <- renderUI({
     return(div(class = "text-muted", "No data available"))
   }
 
-  filters <- build_dashboard_filters("t")
+  filters <- build_dashboard_filters("t", "s")
   today <- Sys.Date()
   date_30_ago <- format(today - 30, "%Y-%m-%d")
 
@@ -1188,6 +1209,7 @@ output$rising_stars_cards <- renderUI({
     FROM results r
     JOIN players p ON r.player_id = p.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
     WHERE t.event_date >= '%s' %s %s %s
     GROUP BY p.player_id, p.display_name
     HAVING COUNT(CASE WHEN r.placement <= 3 THEN 1 END) > 0
@@ -1196,7 +1218,7 @@ output$rising_stars_cards <- renderUI({
       COUNT(CASE WHEN r.placement <= 3 THEN 1 END) DESC,
       COUNT(*) DESC
     LIMIT 4
-  ", date_30_ago, filters$format, filters$event_type, filters$store))
+  ", date_30_ago, filters$format, filters$event_type, filters$scene))
 
   if (nrow(result) == 0) {
     return(div(class = "text-muted text-center py-3", "No recent top placements"))
