@@ -139,26 +139,6 @@ observeEvent(input$close_onboarding, {
   updateSelectInput(session, "scene_selector", selected = "all")
 })
 
-# Handle About link from onboarding
-observeEvent(input$onboarding_about, {
-  removeModal()
-  session$sendCustomMessage("saveScenePreference", list(scene = "all"))
-  rv$current_scene <- "all"
-  updateSelectInput(session, "scene_selector", selected = "all")
-  nav_select("main_content", "about")
-  rv$current_nav <- "about"
-})
-
-# Handle FAQ link from onboarding
-observeEvent(input$onboarding_faq, {
-  removeModal()
-  session$sendCustomMessage("saveScenePreference", list(scene = "all"))
-  rv$current_scene <- "all"
-  updateSelectInput(session, "scene_selector", selected = "all")
-  nav_select("main_content", "faq")
-  rv$current_nav <- "faq"
-})
-
 # -----------------------------------------------------------------------------
 # Scene Selection (from onboarding modal)
 # -----------------------------------------------------------------------------
