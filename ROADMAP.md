@@ -34,18 +34,24 @@ This document outlines the planned features, improvements, and bug fixes for the
 ## v0.23 - Multi-Region & Online Scene
 
 **Design:** `docs/plans/2026-02-04-region-expansion-design.md`
+**Branch:** `feature/multi-region` (in progress)
 
-| ID | Type | Description |
-|----|------|-------------|
-| MR1 | FEATURE | Scenes table with hierarchy (Global → Country → State → Metro) |
-| MR2 | FEATURE | Scene selector in header + first-visit modal |
-| MR3 | FEATURE | All tabs filter by selected scene |
-| MR4 | FEATURE | "Online" as special top-level scene for webcam/Discord tournaments |
-| MR5 | FEATURE | Leaderboards filtered by scene (players who competed there) |
-| MR6 | FEATURE | "All Scenes" / Global toggle for cross-region viewing |
-| MR7 | SCHEMA | Add `scene_id` to stores table |
-| MR8 | SCHEMA | Add `tier` to tournaments table (local, regional, national, international) |
-| L1 | FEATURE | Limitless API exploration for online tournament data |
+| ID | Type | Description | Status |
+|----|------|-------------|--------|
+| MR1 | FEATURE | Scenes table with hierarchy (Global → Country → State → Metro) | Done (v0.21) |
+| MR2 | FEATURE | Scene selector in header + first-visit modal | Done |
+| MR3 | FEATURE | All tabs filter by selected scene | Done |
+| MR4 | FEATURE | "Online" as special top-level scene for webcam/Discord tournaments | Done |
+| MR5 | FEATURE | Leaderboards filtered by scene (players who competed there) | Done |
+| MR6 | FEATURE | "All Scenes" / Global toggle for cross-region viewing | Done |
+| MR7 | SCHEMA | Add `scene_id` to stores table | Done (v0.21) |
+| MR8 | SCHEMA | Add `tier` to tournaments table (local, regional, national, international) | Pending |
+| L1 | FEATURE | Limitless API exploration for online tournament data | Deferred |
+
+**Remaining:**
+- Fix mobile header alignment (dark mode toggle, right alignment)
+- Testing and QA
+- Merge to main
 
 **Key Design Decisions:**
 - Players don't belong to scenes (no accounts required for viewers)

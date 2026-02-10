@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (v0.23 - Multi-Region Scene Selection)
+- **Scene Selector**: Dropdown in header to filter by scene (All Scenes, Dallas-Fort Worth, Online)
+- **First-Visit Onboarding Modal**: Two-step welcome flow with map-based scene picker
+  - Step 1: Welcome to DigiLab with feature cards
+  - Step 2: Interactive map with scene markers, "Find My Scene" geolocation, Online/All options
+- **Scene Filtering**: All data queries (dashboard, players, meta, tournaments, stores) filter by selected scene
+- **localStorage Persistence**: Scene preference saved locally for return visits
+- **Geolocation Support**: "Find My Scene" button uses browser location to find nearest scene
+
+### Changed
+- **Header Layout**: Moved GitHub and Ko-fi links to footer for cleaner mobile experience
+- **Footer**: Now includes GitHub and Ko-fi icon links alongside About, FAQ, For Organizers
+
+### Known Issues
+- Mobile header alignment needs adjustment (dark mode toggle, right alignment)
+
 ---
 
 ## [0.21.0] - 2026-02-09 - Deep Linking & Shareable URLs

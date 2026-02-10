@@ -4,6 +4,54 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-09: Multi-Region Scene Selection (v0.23 WIP)
+
+### Summary
+Implementing scene selection infrastructure to support filtering by local metro area. This is a simplified version of v0.23 - no Limitless API integration yet, just the scene filtering foundation.
+
+### Branch
+`feature/multi-region`
+
+### Implementation
+
+**New Files:**
+- `views/onboarding-modal-ui.R` - Two-step first-visit modal (welcome + scene picker)
+- `www/scene-selector.js` - localStorage persistence, geolocation support
+- `server/scene-server.R` - Scene selection logic, onboarding handlers, `build_scene_filter()` helper
+
+**Modified Files:**
+- `app.R` - Added scene selector dropdown to header, sourced new files
+- `www/custom.css` - Onboarding modal styling, header/footer adjustments
+- All `server/public-*-server.R` files - Added scene filtering to queries
+
+### Scene Filtering Pattern
+All data queries now join with stores table and use the `build_scene_filter()` helper:
+```r
+build_scene_filter <- function(scene_slug, store_alias = "s") {
+  if (is.null(scene_slug) || scene_slug == "" || scene_slug == "all") return("")
+  if (scene_slug == "online") return(sprintf("AND %s.is_online = TRUE", store_alias))
+  sprintf("AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = '%s')", store_alias, scene_slug)
+}
+```
+
+### Onboarding Flow
+1. First visit: Check localStorage for `digilab_onboarding_complete`
+2. If not complete, show welcome modal with feature cards
+3. User clicks "Get Started" → scene picker with map
+4. User can: click map marker, use geolocation, or choose Online/All Scenes
+5. Selection saved to localStorage, modal closes, data refreshes
+
+### UI Decisions
+- Moved GitHub and Ko-fi links from header to footer (cleaner mobile)
+- Admin button shows only lock icon on mobile (hide "Admin" text)
+- Scene selector width: 140px desktop, 130px mobile
+
+### Known Issues
+- Mobile header alignment not working correctly (dark mode toggle visibility, right alignment)
+- Will revisit after other priorities
+
+---
+
 ## 2026-02-09: Deep Linking & Shareable URLs (v0.21.0)
 
 ### Summary
