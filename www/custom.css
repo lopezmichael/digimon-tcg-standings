@@ -261,11 +261,22 @@
 
 /* Mobile responsive header */
 @media (max-width: 768px) {
+  /* Prevent header from clipping dark mode toggle */
+  .app-header {
+    overflow: visible;
+  }
+
+  /* Ensure actions stay right-aligned */
+  .header-actions {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
   .header-scene-selector select {
-    width: 140px !important;
-    font-size: 0.85rem;
-    padding: 0.35rem 0.5rem;
-    padding-right: 1.5rem;
+    width: 130px !important;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.4rem;
+    padding-right: 1.3rem;
   }
 
   /* Hide "Admin" text on mobile, show only lock icon */
@@ -275,7 +286,12 @@
 
   /* Adjust admin button for icon-only */
   #admin_login_link {
-    padding: 0.4rem 0.6rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  /* Dark mode toggle sizing on mobile */
+  .app-header .bslib-dark-mode {
+    font-size: 1rem;
   }
 }
 
