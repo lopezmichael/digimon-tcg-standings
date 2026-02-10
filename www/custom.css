@@ -259,13 +259,23 @@
   color: #FFFFFF;
 }
 
-/* Mobile responsive - narrower on small screens */
+/* Mobile responsive header */
 @media (max-width: 768px) {
   .header-scene-selector select {
-    width: 110px !important;
-    font-size: 0.8rem;
+    width: 140px !important;
+    font-size: 0.85rem;
     padding: 0.35rem 0.5rem;
-    padding-right: 1.3rem;
+    padding-right: 1.5rem;
+  }
+
+  /* Hide "Admin" text on mobile, show only lock icon */
+  .admin-text {
+    display: none;
+  }
+
+  /* Adjust admin button for icon-only */
+  #admin_login_link {
+    padding: 0.4rem 0.6rem;
   }
 }
 

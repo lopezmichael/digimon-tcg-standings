@@ -390,7 +390,7 @@ ui <- page_fillable(
     div(
       class = "header-actions",
       actionLink("admin_login_link",
-                 tagList(bsicons::bs_icon("lock"), " Admin"),
+                 tagList(bsicons::bs_icon("lock"), span("Admin", class = "admin-text")),
                  class = "header-action-btn"),
       div(
         class = "header-scene-selector",
