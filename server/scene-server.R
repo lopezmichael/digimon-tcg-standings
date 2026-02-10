@@ -184,10 +184,10 @@ if (!is.null(scenes) && nrow(scenes) > 0) {
     # Build popup HTML for each scene
     scenes$popup <- sapply(seq_len(nrow(scenes)), function(i) {
       sprintf(
-        '<div style="text-align:center;padding:8px;min-width:120px;">
-          <strong style="font-size:14px;">%s</strong><br>
+        '<div style="text-align:center;padding:12px 16px;min-width:140px;font-family:system-ui,-apple-system,sans-serif;">
+          <div style="font-size:15px;font-weight:600;color:#1a1a2e;margin-bottom:10px;">%s</div>
           <button onclick="Shiny.setInputValue(\'select_scene_from_map\', \'%s\', {priority: \'event\'});"
-                  class="btn btn-primary btn-sm" style="margin-top:10px;">
+                  style="background:#F7941D;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.2s;">
             Select
           </button>
         </div>',

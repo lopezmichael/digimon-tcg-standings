@@ -11,13 +11,9 @@ onboarding_welcome_ui <- function() {
     # Decorative top accent
     div(class = "onboarding-accent-top"),
 
-    # Logo and heading
+    # Heading
     div(
       class = "onboarding-header",
-      div(
-        class = "onboarding-logo-container",
-        tags$img(src = "digilab-logo.svg", class = "onboarding-logo", alt = "DigiLab")
-      ),
       h2("Welcome to DigiLab"),
       p(class = "onboarding-tagline", "Your Local Digimon TCG Hub")
     ),
