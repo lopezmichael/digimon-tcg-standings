@@ -132,6 +132,7 @@ Items for future consideration, not scheduled:
 
 | ID | Type | Description | Notes |
 |----|------|-------------|-------|
+| FD1 | IMPROVEMENT | Smart format default | Instead of "All Formats", default to current format group (e.g., BT24+EX11+AD01 until BT25 releases). Avoids empty results on new format release while keeping data relevant. |
 | F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification |
 | F8 | FEATURE | Embed widgets for stores | Let stores embed tournament history on their sites |
 | P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration in v0.23 |

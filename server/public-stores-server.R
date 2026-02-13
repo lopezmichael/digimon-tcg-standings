@@ -810,12 +810,10 @@ stores_data <- reactive({
   stores
 })
 
-# Reset dashboard filters (reset to defaults: first format + locals)
+# Reset dashboard filters (reset to defaults: all formats + locals)
 # Note: This should ideally be in Dashboard server, kept here due to physical proximity
 observeEvent(input$reset_dashboard_filters, {
-  format_choices <- get_format_choices(rv$db_con)
-  first_format <- if (length(format_choices) > 0) format_choices[1] else ""
-  updateSelectInput(session, "dashboard_format", selected = first_format)
+  updateSelectInput(session, "dashboard_format", selected = "")
   updateSelectInput(session, "dashboard_event_type", selected = "locals")
   showNotification("Filters reset to defaults", type = "message")
 })
