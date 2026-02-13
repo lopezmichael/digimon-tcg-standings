@@ -420,7 +420,6 @@ observe({
 
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
     format_choices <- get_format_choices(rv$db_con)
-    first_format <- if (length(format_choices) > 0) format_choices[1] else ""
 
     # Format choices with "All Formats" option
     format_choices_with_all <- list(
@@ -428,8 +427,8 @@ observe({
       "Recent Formats" = format_choices
     )
 
-    # Update all format dropdowns
-    updateSelectInput(session, "dashboard_format", choices = format_choices_with_all, selected = first_format)
+    # Update all format dropdowns (default to All Formats to avoid empty results when new format has no data)
+    updateSelectInput(session, "dashboard_format", choices = format_choices_with_all, selected = "")
     updateSelectInput(session, "players_format", choices = format_choices_with_all)
     updateSelectInput(session, "meta_format", choices = format_choices_with_all)
     updateSelectInput(session, "tournaments_format", choices = format_choices_with_all)
