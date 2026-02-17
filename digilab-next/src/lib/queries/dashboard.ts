@@ -103,12 +103,16 @@ export async function getHotDeck(
     return { insufficient_data: true, tournament_count: tournamentCount }
   }
 
-  const medianResult = await query<{ median_date: string }>(`
+  const medianResult = await query<{ median_date: string | Date }>(`
     SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY event_date) as median_date
     FROM tournaments t WHERE 1=1 ${f.format} ${f.eventType} ${f.store}
   `)
-  const medianDate = medianResult[0]?.median_date
-  if (!medianDate) return { insufficient_data: true, tournament_count: tournamentCount }
+  const rawMedian = medianResult[0]?.median_date
+  if (!rawMedian) return { insufficient_data: true, tournament_count: tournamentCount }
+  // DuckDB may return a Date object; convert to YYYY-MM-DD string
+  const medianDate = rawMedian instanceof Date
+    ? rawMedian.toISOString().split('T')[0]
+    : String(rawMedian).slice(0, 10)
 
   const [olderMeta, newerMeta] = await Promise.all([
     query<{ archetype_name: string; display_card_id: string | null; meta_share: number }>(`
@@ -213,7 +217,7 @@ export async function getRecentTournaments(
     Winner: string | null
   }>(`
     SELECT t.tournament_id, s.store_id, s.name as Store,
-           t.event_date as Date, t.player_count as Players,
+           CAST(t.event_date AS VARCHAR) as Date, t.player_count as Players,
            p.display_name as Winner
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
@@ -332,7 +336,7 @@ export async function getTrendData(
     tournaments: number
     avg_players: number
   }>(`
-    SELECT event_date,
+    SELECT CAST(event_date AS VARCHAR) as event_date,
            COUNT(*) as tournaments,
            ROUND(AVG(player_count), 1) as avg_players
     FROM tournaments t
@@ -370,7 +374,7 @@ export async function getMetaTimeline(
     primary_color: string
     entries: number
   }>(`
-    SELECT date_trunc('week', t.event_date) as week_start,
+    SELECT CAST(date_trunc('week', t.event_date) AS VARCHAR) as week_start,
            da.archetype_name,
            da.primary_color,
            COUNT(r.result_id) as entries
@@ -440,12 +444,12 @@ export async function getCompetitiveRatings(): Promise<{ player_id: number; comp
     tournament_id: number
     player_id: number
     placement: number
-    event_date: string
+    event_date: string | Date
     player_count: number
     rounds: number | null
   }>(`
     SELECT r.tournament_id, r.player_id, r.placement,
-           t.event_date, t.player_count, t.rounds
+           CAST(t.event_date AS VARCHAR) as event_date, t.player_count, t.rounds
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN players p ON r.player_id = p.player_id
@@ -477,7 +481,7 @@ export async function getCompetitiveRatings(): Promise<{ player_id: number; comp
       const first = results.find(r => r.tournament_id === id)!
       return { id, event_date: first.event_date, rounds: first.rounds }
     })
-    .sort((a, b) => a.event_date.localeCompare(b.event_date))
+    .sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)))
 
   const currentDate = new Date()
 
