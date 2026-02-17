@@ -16,9 +16,10 @@ output$dashboard_context_text <- renderUI({
   format_name <- if (!is.null(input$dashboard_format) && input$dashboard_format != "") {
     # Get format display name from database (parameterized query)
     if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-      result <- dbGetQuery(rv$db_con,
+      result <- safe_query(rv$db_con,
         "SELECT display_name FROM formats WHERE format_id = ?",
-        params = list(input$dashboard_format)
+        params = list(input$dashboard_format),
+        default = data.frame(display_name = character(0))
       )
       if (nrow(result) > 0) result$display_name[1] else input$dashboard_format
     } else {
@@ -47,7 +48,7 @@ output$total_tournaments_val <- renderText({
   query <- paste("
     SELECT COUNT(*) as n FROM tournaments t
     WHERE 1=1", filters$sql)
-  dbGetQuery(rv$db_con, query, params = filters$params)$n
+  safe_query(rv$db_con, query, params = filters$params, default = data.frame(n = 0))$n
 })
 
 output$total_players_val <- renderText({
@@ -58,13 +59,13 @@ output$total_players_val <- renderText({
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     WHERE 1=1", filters$sql)
-  dbGetQuery(rv$db_con, query, params = filters$params)$n
+  safe_query(rv$db_con, query, params = filters$params, default = data.frame(n = 0))$n
 })
 
 output$total_stores_val <- renderText({
   count <- 0
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) as n FROM stores WHERE is_active = TRUE")$n
+    count <- safe_query(rv$db_con, "SELECT COUNT(*) as n FROM stores WHERE is_active = TRUE", default = data.frame(n = 0))$n
   }
   count
 })
@@ -72,7 +73,7 @@ output$total_stores_val <- renderText({
 output$total_decks_val <- renderText({
   count <- 0
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) as n FROM deck_archetypes WHERE is_active = TRUE")$n
+    count <- safe_query(rv$db_con, "SELECT COUNT(*) as n FROM deck_archetypes WHERE is_active = TRUE", default = data.frame(n = 0))$n
   }
   count
 })
@@ -85,7 +86,7 @@ most_popular_deck <- reactive({
 
   # Always use filtered query for consistency
   # Exclude UNKNOWN archetype from analytics
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT da.archetype_name, da.display_card_id, COUNT(r.result_id) as entries,
            ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 1) as meta_share
     FROM deck_archetypes da
@@ -95,7 +96,7 @@ most_popular_deck <- reactive({
     GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
     ORDER BY entries DESC
     LIMIT 1
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) return(NULL)
   result[1, ]
@@ -134,9 +135,9 @@ hot_deck <- reactive({
   filters <- build_dashboard_filters("t")
 
   # Get tournament count to check if we have enough data
-  tournament_count <- dbGetQuery(rv$db_con, paste("
+  tournament_count <- safe_query(rv$db_con, paste("
     SELECT COUNT(*) as n FROM tournaments t WHERE 1=1", filters$sql
-  ), params = filters$params)$n
+  ), params = filters$params, default = data.frame(n = 0))$n
 
   # Need at least 10 tournaments for meaningful trend data
   if (tournament_count < 10) {
@@ -144,16 +145,16 @@ hot_deck <- reactive({
   }
 
   # Get median tournament date to split into older/newer halves
-  median_date <- dbGetQuery(rv$db_con, paste("
+  median_date <- safe_query(rv$db_con, paste("
     SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY event_date) as median_date
     FROM tournaments t WHERE 1=1", filters$sql
-  ), params = filters$params)$median_date
+  ), params = filters$params, default = data.frame(median_date = NA))$median_date
 
   # Calculate meta share for older tournaments
   # Exclude UNKNOWN archetype from analytics
   # Params: median_date first, then the filter params
   older_params <- c(list(as.character(median_date)), filters$params)
-  older_meta <- dbGetQuery(rv$db_con, paste("
+  older_meta <- safe_query(rv$db_con, paste("
     SELECT da.archetype_name, da.display_card_id,
            ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 2) as meta_share
     FROM deck_archetypes da
@@ -161,13 +162,13 @@ hot_deck <- reactive({
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     WHERE t.event_date < ? AND da.archetype_name != 'UNKNOWN'", filters$sql, "
     GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
-  "), params = older_params)
+  "), params = older_params, default = data.frame())
 
   # Calculate meta share for newer tournaments
   # Exclude UNKNOWN archetype from analytics
   # Params: median_date first, then the filter params
   newer_params <- c(list(as.character(median_date)), filters$params)
-  newer_meta <- dbGetQuery(rv$db_con, paste("
+  newer_meta <- safe_query(rv$db_con, paste("
     SELECT da.archetype_name, da.display_card_id,
            ROUND(COUNT(r.result_id) * 100.0 / NULLIF(SUM(COUNT(r.result_id)) OVER(), 0), 2) as meta_share
     FROM deck_archetypes da
@@ -175,7 +176,7 @@ hot_deck <- reactive({
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     WHERE t.event_date >= ? AND da.archetype_name != 'UNKNOWN'", filters$sql, "
     GROUP BY da.archetype_id, da.archetype_name, da.display_card_id
-  "), params = newer_params)
+  "), params = newer_params, default = data.frame())
 
   if (nrow(older_meta) == 0 || nrow(newer_meta) == 0) {
     return(list(insufficient_data = TRUE, tournament_count = tournament_count))
@@ -313,7 +314,7 @@ output$recent_tournaments <- renderReactable({
     LIMIT 10
   ")
 
-  data <- dbGetQuery(rv$db_con, query, params = filters$params)
+  data <- safe_query(rv$db_con, query, params = filters$params, default = data.frame())
   if (nrow(data) == 0) {
     return(reactable(data.frame(Message = "No tournaments yet"), compact = TRUE))
   }
@@ -351,7 +352,7 @@ output$top_players <- renderReactable({
   filters <- build_dashboard_filters("t")
 
   # Query players with basic stats (parameterized)
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT p.player_id,
            p.display_name as Player,
            COUNT(DISTINCT r.tournament_id) as Events,
@@ -363,7 +364,7 @@ output$top_players <- renderReactable({
     WHERE 1=1", filters$sql, "
     GROUP BY p.player_id, p.display_name
     HAVING COUNT(DISTINCT r.tournament_id) > 0
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No player data yet"), compact = TRUE))
@@ -423,7 +424,7 @@ output$meta_share_timeline <- renderHighchart({
 
   # Query results by week and archetype (parameterized)
   # Exclude UNKNOWN archetype from analytics
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT date_trunc('week', t.event_date) as week_start,
            da.archetype_name,
            da.primary_color,
@@ -434,7 +435,7 @@ output$meta_share_timeline <- renderHighchart({
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN'", filters$sql, "
     GROUP BY date_trunc('week', t.event_date), da.archetype_id, da.archetype_name, da.primary_color
     ORDER BY week_start, entries DESC
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(
@@ -578,11 +579,11 @@ filtered_tournament_count <- reactive({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(0)
 
   filters <- build_dashboard_filters("t")
-  dbGetQuery(rv$db_con, paste("
+  safe_query(rv$db_con, paste("
     SELECT COUNT(DISTINCT tournament_id) as total
     FROM tournaments t
     WHERE 1=1", filters$sql
-  ), params = filters$params)$total
+  ), params = filters$params, default = data.frame(total = 0))$total
 })
 
 # Dynamic Top Decks header showing tournament count
@@ -613,7 +614,7 @@ output$top_decks_with_images <- renderUI({
 
   # Query top decks with 1st place finishes (parameterized)
   # Exclude UNKNOWN archetype from analytics
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT da.archetype_name, da.display_card_id, da.primary_color,
            COUNT(r.result_id) as times_played,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as first_places
@@ -625,7 +626,7 @@ output$top_decks_with_images <- renderUI({
     HAVING COUNT(r.result_id) >= 1
     ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(r.result_id) DESC
     LIMIT 6
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(digital_empty_state("No deck data found", "// expand search filters", "search"))
@@ -703,7 +704,7 @@ output$conversion_rate_chart <- renderHighchart({
 
   # Query conversion rate (top 3 finishes / total entries) - minimum 2 entries
   # Exclude UNKNOWN archetype from analytics (parameterized)
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT da.archetype_name as name, da.primary_color as color,
            COUNT(r.result_id) as entries,
            COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3,
@@ -716,7 +717,7 @@ output$conversion_rate_chart <- renderHighchart({
     HAVING COUNT(r.result_id) >= 2
     ORDER BY conversion DESC
     LIMIT 5
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(
@@ -769,7 +770,7 @@ output$color_dist_chart <- renderHighchart({
   # Query color distribution by primary color (parameterized)
   # Dual-color decks show by their primary color (more informative than lumping as "Multi")
   # Exclude UNKNOWN archetype from analytics
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT
       da.primary_color as color,
       COUNT(r.result_id) as count
@@ -779,7 +780,7 @@ output$color_dist_chart <- renderHighchart({
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN'", filters$sql, "
     GROUP BY da.primary_color
     ORDER BY count DESC
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(
@@ -838,7 +839,7 @@ output$tournaments_trend_chart <- renderHighchart({
   filter_sql <- paste(sql_parts, collapse = " ")
 
   # Query tournaments aggregated by day with avg players (parameterized)
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT event_date,
            COUNT(*) as tournaments,
            ROUND(AVG(player_count), 1) as avg_players
@@ -846,7 +847,7 @@ output$tournaments_trend_chart <- renderHighchart({
     WHERE 1=1", filter_sql, "
     GROUP BY event_date
     ORDER BY event_date
-  "), params = params)
+  "), params = params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(
@@ -916,7 +917,7 @@ meta_diversity_data <- reactive({
   filters <- build_dashboard_filters("t")
 
   # Get win counts by archetype (parameterized)
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT da.archetype_id, da.archetype_name,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as wins
     FROM results r
@@ -925,7 +926,7 @@ meta_diversity_data <- reactive({
     WHERE da.archetype_name != 'UNKNOWN'", filters$sql, "
     GROUP BY da.archetype_id, da.archetype_name
     HAVING COUNT(CASE WHEN r.placement = 1 THEN 1 END) > 0
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) return(list(score = NA, decks_with_wins = 0))
 
@@ -1099,7 +1100,7 @@ output$player_growth_chart <- renderHighchart({
 
   # Get player participation by month with their first ever tournament (parameterized)
   # Using strftime instead of DATE_TRUNC to avoid ICU extension on Windows
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     WITH player_first AS (
       SELECT r.player_id,
              MIN(t.event_date) as first_date,
@@ -1139,7 +1140,7 @@ output$player_growth_chart <- renderHighchart({
     FROM player_cumulative
     GROUP BY month
     ORDER BY month
-  "), params = filters$params)
+  "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(
@@ -1198,7 +1199,7 @@ output$rising_stars_cards <- renderUI({
   # Get players with top 3 finishes in last 30 days (parameterized)
   # Params: date_30_ago first, then the filter params
   query_params <- c(list(date_30_ago), filters$params)
-  result <- dbGetQuery(rv$db_con, paste("
+  result <- safe_query(rv$db_con, paste("
     SELECT
       p.player_id,
       p.display_name,
@@ -1216,7 +1217,7 @@ output$rising_stars_cards <- renderUI({
       COUNT(CASE WHEN r.placement <= 3 THEN 1 END) DESC,
       COUNT(*) DESC
     LIMIT 4
-  "), params = query_params)
+  "), params = query_params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(div(class = "text-muted text-center py-3", "No recent top placements"))
