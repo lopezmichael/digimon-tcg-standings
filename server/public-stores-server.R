@@ -292,7 +292,7 @@ output$store_detail_modal <- renderUI({
   # Get recent tournaments at this store
   recent_tournaments <- NULL
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    recent_tournaments <- dbGetQuery(rv$db_con, sprintf("
+    recent_tournaments <- dbGetQuery(rv$db_con, "
       SELECT t.event_date as Date, t.event_type as Type, t.format as Format,
              t.player_count as Players, p.display_name as Winner,
              da.archetype_name as Deck, r.decklist_url
@@ -300,27 +300,27 @@ output$store_detail_modal <- renderUI({
       LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
       LEFT JOIN players p ON r.player_id = p.player_id
       LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE t.store_id = %d
+      WHERE t.store_id = ?
       ORDER BY t.event_date DESC
       LIMIT 5
-    ", store_id))
+    ", params = list(store_id))
   }
 
   # Get top players at this store
   top_players <- NULL
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    top_players <- dbGetQuery(rv$db_con, sprintf("
+    top_players <- dbGetQuery(rv$db_con, "
       SELECT p.display_name as Player,
              COUNT(DISTINCT r.tournament_id) as Events,
              COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE t.store_id = %d
+      WHERE t.store_id = ?
       GROUP BY p.player_id, p.display_name
       ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(DISTINCT r.tournament_id) DESC
       LIMIT 5
-    ", store_id))
+    ", params = list(store_id))
   }
 
   # Get average player rating for this store
@@ -331,23 +331,23 @@ output$store_detail_modal <- renderUI({
   # Get total unique players
   unique_players <- 0
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    unique_players <- dbGetQuery(rv$db_con, sprintf("
+    unique_players <- dbGetQuery(rv$db_con, "
       SELECT COUNT(DISTINCT r.player_id) as cnt
       FROM results r
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE t.store_id = %d
-    ", store_id))$cnt
+      WHERE t.store_id = ?
+    ", params = list(store_id))$cnt
   }
 
   # Get store schedules
   store_schedules <- NULL
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    store_schedules <- dbGetQuery(rv$db_con, sprintf("
+    store_schedules <- dbGetQuery(rv$db_con, "
       SELECT day_of_week, start_time, frequency
       FROM store_schedules
-      WHERE store_id = %d AND is_active = TRUE
+      WHERE store_id = ? AND is_active = TRUE
       ORDER BY day_of_week, start_time
-    ", store_id))
+    ", params = list(store_id))
   }
 
   # Format event type
@@ -671,21 +671,21 @@ output$online_store_detail_modal <- renderUI({
 
   store_id <- rv$selected_online_store_id
 
-  store <- dbGetQuery(rv$db_con, sprintf("
+  store <- dbGetQuery(rv$db_con, "
     SELECT s.store_id, s.name, s.city as region, s.website, s.schedule_info,
            COUNT(t.tournament_id) as tournament_count,
            COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
            MAX(t.event_date) as last_event
     FROM stores s
     LEFT JOIN tournaments t ON s.store_id = t.store_id
-    WHERE s.store_id = %d
+    WHERE s.store_id = ?
     GROUP BY s.store_id, s.name, s.city, s.website, s.schedule_info
-  ", store_id))
+  ", params = list(store_id))
 
   if (nrow(store) == 0) return(NULL)
 
   # Get recent tournaments
-  recent_tournaments <- dbGetQuery(rv$db_con, sprintf("
+  recent_tournaments <- dbGetQuery(rv$db_con, "
     SELECT t.event_date as Date, t.event_type as Type, t.format as Format,
            t.player_count as Players, p.display_name as Winner,
            da.archetype_name as Deck
@@ -693,24 +693,24 @@ output$online_store_detail_modal <- renderUI({
     LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
     LEFT JOIN players p ON r.player_id = p.player_id
     LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-    WHERE t.store_id = %d
+    WHERE t.store_id = ?
     ORDER BY t.event_date DESC
     LIMIT 5
-  ", store_id))
+  ", params = list(store_id))
 
   # Get top players
-  top_players <- dbGetQuery(rv$db_con, sprintf("
+  top_players <- dbGetQuery(rv$db_con, "
     SELECT p.display_name as Player,
            COUNT(DISTINCT r.tournament_id) as Events,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
     FROM players p
     JOIN results r ON p.player_id = r.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE t.store_id = %d
+    WHERE t.store_id = ?
     GROUP BY p.player_id, p.display_name
     ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
     LIMIT 5
-  ", store_id))
+  ", params = list(store_id))
 
   showModal(modalDialog(
     title = div(
