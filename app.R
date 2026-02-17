@@ -593,8 +593,6 @@ ui <- page_fillable(
     ),
     tags$div(
       class = "footer-meta",
-      textOutput("last_updated", inline = TRUE),
-      " | ",
       paste0("v", APP_VERSION, " | \u00A9 2026 DigiLab")
     )
   ),

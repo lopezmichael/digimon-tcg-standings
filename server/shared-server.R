@@ -273,24 +273,6 @@ outputOptions(output, "is_superadmin", suspendWhenHidden = FALSE)
 output$has_active_tournament <- reactive({ !is.null(rv$active_tournament_id) })
 outputOptions(output, "has_active_tournament", suspendWhenHidden = FALSE)
 
-# Last updated timestamp (most recent tournament date)
-output$last_updated <- renderText({
-  rv$data_refresh  # Invalidate when data changes
-  if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
-    return("")
-  }
-  tryCatch({
-    result <- DBI::dbGetQuery(rv$db_con,
-      "SELECT MAX(date) as last_date FROM tournaments WHERE date IS NOT NULL")
-    if (nrow(result) > 0 && !is.na(result$last_date[1])) {
-      last_date <- as.Date(result$last_date[1])
-      paste0("Data through ", format(last_date, "%b %d"))
-    } else {
-      ""
-    }
-  }, error = function(e) "")
-})
-
 # Login modal
 observeEvent(input$admin_login_link, {
   if (rv$is_admin) {
