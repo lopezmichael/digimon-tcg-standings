@@ -4,9 +4,11 @@
 #
 # API Documentation: https://digimoncard.io/index.php/api-documentation
 # Rate Limit: 15 requests per 10 seconds per IP
+#
+# Note: httr is loaded on-demand via namespacing (httr::) to avoid loading
+# at app startup. This API is rarely called since cards are cached in DB.
 # =============================================================================
 
-library(httr)
 library(jsonlite)
 
 # -----------------------------------------------------------------------------
@@ -104,10 +106,10 @@ search_cards <- function(card_number = NULL,
   url <- paste0(DIGIMONCARD_API_BASE, "/search")
 
   tryCatch({
-    response <- GET(
+    response <- httr::GET(
       url,
       query = params,
-      add_headers(
+      httr::add_headers(
         `User-Agent` = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         `Accept` = "application/json, text/plain, */*",
         `Accept-Language` = "en-US,en;q=0.9",
@@ -115,25 +117,25 @@ search_cards <- function(card_number = NULL,
       )
     )
 
-    if (status_code(response) == 429) {
+    if (httr::status_code(response) == 429) {
       warning("Rate limited by API. Waiting 60 seconds...")
       Sys.sleep(60)
-      response <- GET(url, query = params)
+      response <- httr::GET(url, query = params)
     }
 
-    if (status_code(response) == 400) {
+    if (httr::status_code(response) == 400) {
       # No results found
       return(NULL)
     }
 
-    if (status_code(response) != 200) {
-      warning("API error: HTTP ", status_code(response))
+    if (httr::status_code(response) != 200) {
+      warning("API error: HTTP ", httr::status_code(response))
       return(NULL)
     }
 
     # Parse response
-    content <- content(response, as = "text", encoding = "UTF-8")
-    cards <- fromJSON(content, flatten = TRUE)
+    resp_content <- httr::content(response, as = "text", encoding = "UTF-8")
+    cards <- fromJSON(resp_content, flatten = TRUE)
 
     if (length(cards) == 0) {
       return(NULL)

@@ -10,18 +10,19 @@ library(bslib)
 library(bsicons)
 library(DBI)
 library(duckdb)
-library(httr)
 library(jsonlite)
 library(reactable)
 library(htmltools)
-library(tidygeocoder)
 library(atomtemplates)
-library(sysfonts)
-library(showtext)
 library(mapgl)
 library(sf)
 library(highcharter)
-library(brand.yml)
+
+# Removed after audit (unused or optional atomtemplates dependencies):
+# - tidygeocoder: Not used (custom Mapbox geocoding in admin-stores-server.R)
+# - sysfonts/showtext: Optional deps of atomtemplates, not directly used
+# - brand.yml: Optional dep of atomtemplates, not directly used
+# - httr: Lazy-loaded via namespacing in R/digimoncard_api.R (rarely used, cards cached)
 
 # App version (update with each release)
 APP_VERSION <- "0.20.0"
