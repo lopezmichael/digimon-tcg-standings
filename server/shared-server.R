@@ -10,8 +10,21 @@
 observe({
   rv$db_con <- connect_db()
 
-  # Once database is connected, hide the loading screen
+  # Once database is connected, check and populate ratings cache if empty
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+    # Check if ratings cache is empty and populate if needed
+    tryCatch({
+      cache_count <- DBI::dbGetQuery(rv$db_con,
+        "SELECT COUNT(*) as n FROM player_ratings_cache")$n
+      if (is.na(cache_count) || cache_count == 0) {
+        message("[startup] Ratings cache empty, populating...")
+        recalculate_ratings_cache(rv$db_con)
+        message("[startup] Ratings cache populated")
+      }
+    }, error = function(e) {
+      message("[startup] Could not check/populate ratings cache: ", e$message)
+    })
+
     # Small delay to let initial data queries complete
     shinyjs::delay(800, {
       session$sendCustomMessage("hideLoading", list())
