@@ -15,19 +15,27 @@ output$player_standings <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
-  # Build filters
-  search_filter <- if (!is.null(input$players_search) && nchar(trimws(input$players_search)) > 0) {
-    sprintf("AND LOWER(p.display_name) LIKE LOWER('%%%s%%')", trimws(input$players_search))
-  } else ""
+  # Build parameterized filters to prevent SQL injection
+  search_filters <- build_filters_param(
+    table_alias = "p",
+    search = input$players_search,
+    search_column = "display_name"
+  )
 
-  format_filter <- if (!is.null(input$players_format) && input$players_format != "") {
-    sprintf("AND t.format = '%s'", input$players_format)
-  } else ""
+  format_filters <- build_filters_param(
+    table_alias = "t",
+    format = input$players_format
+  )
+
+  # Combine filter SQL and params
+  filter_sql <- paste(search_filters$sql, format_filters$sql)
+  filter_params <- c(search_filters$params, format_filters$params)
 
   min_events <- as.numeric(input$players_min_events)
   if (is.na(min_events)) min_events <- 0
 
-  result <- dbGetQuery(rv$db_con, sprintf("
+  # Build query with parameterized HAVING clause
+  query <- sprintf("
     SELECT p.player_id, p.display_name as Player,
            COUNT(DISTINCT r.tournament_id) as Events,
            SUM(r.wins) as W, SUM(r.losses) as L, SUM(r.ties) as T,
@@ -37,13 +45,15 @@ output$player_standings <- renderReactable({
     FROM players p
     JOIN results r ON p.player_id = r.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE 1=1 %s %s
+    WHERE 1=1 %s
     GROUP BY p.player_id, p.display_name
-    HAVING COUNT(DISTINCT r.tournament_id) >= %d
-  ", search_filter, format_filter, min_events))
+    HAVING COUNT(DISTINCT r.tournament_id) >= ?
+  ", filter_sql)
+
+  result <- dbGetQuery(rv$db_con, query, params = c(filter_params, list(min_events)))
 
   # Get most played deck for each player (Main Deck)
-  main_decks <- dbGetQuery(rv$db_con, sprintf("
+  main_decks_query <- sprintf("
     WITH player_deck_counts AS (
       SELECT r.player_id, da.archetype_name, da.primary_color,
              COUNT(*) as times_played,
@@ -52,13 +62,15 @@ output$player_standings <- renderReactable({
       JOIN players p ON r.player_id = p.player_id
       JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
-      WHERE da.archetype_name != 'UNKNOWN' %s %s
+      WHERE da.archetype_name != 'UNKNOWN' %s
       GROUP BY r.player_id, da.archetype_name, da.primary_color
     )
     SELECT player_id, archetype_name as main_deck, primary_color as main_deck_color
     FROM player_deck_counts
     WHERE rn = 1
-  ", search_filter, format_filter))
+  ", filter_sql)
+
+  main_decks <- dbGetQuery(rv$db_con, main_decks_query, params = filter_params)
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
@@ -176,18 +188,18 @@ output$player_detail_modal <- renderUI({
   player_id <- rv$selected_player_id
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  # Get player info
-  player <- dbGetQuery(rv$db_con, sprintf("
+  # Get player info (parameterized query)
+  player <- dbGetQuery(rv$db_con, "
     SELECT p.player_id, p.display_name, p.home_store_id, s.name as home_store
     FROM players p
     LEFT JOIN stores s ON p.home_store_id = s.store_id
-    WHERE p.player_id = %d
-  ", player_id))
+    WHERE p.player_id = ?
+  ", params = list(player_id))
 
   if (nrow(player) == 0) return(NULL)
 
-  # Get overall stats including ties and avg placement
-  stats <- dbGetQuery(rv$db_con, sprintf("
+  # Get overall stats including ties and avg placement (parameterized query)
+  stats <- dbGetQuery(rv$db_con, "
     SELECT COUNT(DISTINCT r.tournament_id) as events,
            SUM(r.wins) as wins, SUM(r.losses) as losses, SUM(r.ties) as ties,
            ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct,
@@ -195,8 +207,8 @@ output$player_detail_modal <- renderUI({
            COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3,
            ROUND(AVG(r.placement), 1) as avg_placement
     FROM results r
-    WHERE r.player_id = %d
-  ", player_id))
+    WHERE r.player_id = ?
+  ", params = list(player_id))
 
   # Get rating and achievement score
   p_ratings <- player_competitive_ratings()
@@ -206,32 +218,32 @@ output$player_detail_modal <- renderUI({
   if (length(player_rating) == 0) player_rating <- 1500
   if (length(player_score) == 0) player_score <- 0
 
-  # Get favorite decks (most played)
+  # Get favorite decks (most played, parameterized query)
   # Exclude UNKNOWN archetype from player profiles
-  favorite_decks <- dbGetQuery(rv$db_con, sprintf("
+  favorite_decks <- dbGetQuery(rv$db_con, "
     SELECT da.archetype_name as Deck, da.primary_color as color,
            COUNT(*) as Times,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-    WHERE r.player_id = %d AND da.archetype_name != 'UNKNOWN'
+    WHERE r.player_id = ? AND da.archetype_name != 'UNKNOWN'
     GROUP BY da.archetype_id, da.archetype_name, da.primary_color
     ORDER BY COUNT(*) DESC
     LIMIT 5
-  ", player_id))
+  ", params = list(player_id))
 
-  # Get recent tournament results
-  recent_results <- dbGetQuery(rv$db_con, sprintf("
+  # Get recent tournament results (parameterized query)
+  recent_results <- dbGetQuery(rv$db_con, "
     SELECT t.event_date as Date, s.name as Store, da.archetype_name as Deck,
            r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-    WHERE r.player_id = %d
+    WHERE r.player_id = ?
     ORDER BY t.event_date DESC
     LIMIT 10
-  ", player_id))
+  ", params = list(player_id))
 
   # Update URL for deep linking
   update_url_for_player(session, player_id, player$display_name)
