@@ -50,7 +50,7 @@ output$player_standings <- renderReactable({
     HAVING COUNT(DISTINCT r.tournament_id) >= ?
   ", filter_sql)
 
-  result <- dbGetQuery(rv$db_con, query, params = c(filter_params, list(min_events)))
+  result <- safe_query(rv$db_con, query, params = c(filter_params, list(min_events)), default = data.frame())
 
   # Get most played deck for each player (Main Deck)
   main_decks_query <- sprintf("
@@ -70,7 +70,7 @@ output$player_standings <- renderReactable({
     WHERE rn = 1
   ", filter_sql)
 
-  main_decks <- dbGetQuery(rv$db_con, main_decks_query, params = filter_params)
+  main_decks <- safe_query(rv$db_con, main_decks_query, params = filter_params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
@@ -189,17 +189,17 @@ output$player_detail_modal <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   # Get player info (parameterized query)
-  player <- dbGetQuery(rv$db_con, "
+  player <- safe_query(rv$db_con, "
     SELECT p.player_id, p.display_name, p.home_store_id, s.name as home_store
     FROM players p
     LEFT JOIN stores s ON p.home_store_id = s.store_id
     WHERE p.player_id = ?
-  ", params = list(player_id))
+  ", params = list(player_id), default = data.frame())
 
   if (nrow(player) == 0) return(NULL)
 
   # Get overall stats including ties and avg placement (parameterized query)
-  stats <- dbGetQuery(rv$db_con, "
+  stats <- safe_query(rv$db_con, "
     SELECT COUNT(DISTINCT r.tournament_id) as events,
            SUM(r.wins) as wins, SUM(r.losses) as losses, SUM(r.ties) as ties,
            ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct,
@@ -208,7 +208,7 @@ output$player_detail_modal <- renderUI({
            ROUND(AVG(r.placement), 1) as avg_placement
     FROM results r
     WHERE r.player_id = ?
-  ", params = list(player_id))
+  ", params = list(player_id), default = data.frame(events = 0, wins = 0, losses = 0, ties = 0, win_pct = NA, first_places = 0, top3 = 0, avg_placement = NA))
 
   # Get rating and achievement score
   p_ratings <- player_competitive_ratings()
@@ -220,7 +220,7 @@ output$player_detail_modal <- renderUI({
 
   # Get favorite decks (most played, parameterized query)
   # Exclude UNKNOWN archetype from player profiles
-  favorite_decks <- dbGetQuery(rv$db_con, "
+  favorite_decks <- safe_query(rv$db_con, "
     SELECT da.archetype_name as Deck, da.primary_color as color,
            COUNT(*) as Times,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
@@ -230,10 +230,10 @@ output$player_detail_modal <- renderUI({
     GROUP BY da.archetype_id, da.archetype_name, da.primary_color
     ORDER BY COUNT(*) DESC
     LIMIT 5
-  ", params = list(player_id))
+  ", params = list(player_id), default = data.frame())
 
   # Get recent tournament results (parameterized query)
-  recent_results <- dbGetQuery(rv$db_con, "
+  recent_results <- safe_query(rv$db_con, "
     SELECT t.event_date as Date, s.name as Store, da.archetype_name as Deck,
            r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
     FROM results r
@@ -243,7 +243,7 @@ output$player_detail_modal <- renderUI({
     WHERE r.player_id = ?
     ORDER BY t.event_date DESC
     LIMIT 10
-  ", params = list(player_id))
+  ", params = list(player_id), default = data.frame())
 
   # Update URL for deep linking
   update_url_for_player(session, player_id, player$display_name)
