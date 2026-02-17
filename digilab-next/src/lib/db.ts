@@ -1,8 +1,13 @@
-import duckdb from 'duckdb'
 import path from 'path'
 
+// Use require() to load duckdb at runtime, avoiding Turbopack static analysis
+// of the native addon's package.json (which causes build failures).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const duckdb = require('duckdb')
+
 // Singleton database connection
-let db: InstanceType<typeof duckdb.Database> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let db: any = null
 
 function getDbPath(): string {
   // Local dev: use the same DuckDB file as the Shiny app
@@ -11,7 +16,8 @@ function getDbPath(): string {
   return path.resolve(process.cwd(), '..', 'data', 'local.duckdb')
 }
 
-function getDatabase(): InstanceType<typeof duckdb.Database> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getDatabase(): any {
   if (!db) {
     const dbPath = getDbPath()
     db = new duckdb.Database(dbPath, { access_mode: 'READ_ONLY' })
@@ -24,9 +30,11 @@ function getDatabase(): InstanceType<typeof duckdb.Database> {
  * DuckDB returns COUNT(*), SUM(), and other aggregate results as BigInt,
  * which cannot be serialized to JSON. This converts them to regular numbers.
  */
-function convertBigInts(rows: duckdb.TableData): duckdb.TableData {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function convertBigInts(rows: any[]): any[] {
   return rows.map(row => {
-    const converted: duckdb.RowData = {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const converted: Record<string, any> = {}
     for (const [key, value] of Object.entries(row)) {
       converted[key] = typeof value === 'bigint' ? Number(value) : value
     }
@@ -37,7 +45,8 @@ function convertBigInts(rows: duckdb.TableData): duckdb.TableData {
 export function query<T = Record<string, unknown>>(sql: string): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const database = getDatabase()
-    database.all(sql, (err: duckdb.DuckDbError | null, rows: duckdb.TableData) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    database.all(sql, (err: Error | null, rows: any[]) => {
       if (err) reject(err)
       else resolve(convertBigInts(rows ?? []) as T[])
     })
