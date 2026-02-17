@@ -8,35 +8,6 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.21.1 - Performance & Foundations
-
-**Design:** `docs/plans/2026-02-17-performance-foundations-design.md`
-
-Quick wins and foundational improvements to prepare for user accounts (v0.22) and multi-region (v0.23). No new features — focused on speed, security, resilience, and discoverability.
-
-| ID | Type | Description |
-|----|------|-------------|
-| PF1 | PERFORMANCE | Remove forced 800ms loading delay after DB connection |
-| PF2 | PERFORMANCE | Add `bindCache()` to all dashboard reactives (keyed by format + event type) |
-| PF3 | PERFORMANCE | Pre-compute player ratings into cache table (recalc on result entry, not page load) |
-| PF4 | PERFORMANCE | Lazy-load admin server modules behind `observeEvent(rv$is_admin)` |
-| PF5 | SECURITY | Parameterize all SQL queries (replace sprintf/paste0 with `?` placeholders) |
-| PF6 | RESILIENCE | Add `safe_query()` wrapper with tryCatch + graceful UI fallbacks |
-| PF7 | SEO | Add `robots.txt` to digilab.cards wrapper |
-| PF8 | SEO | Add `sitemap.xml` to digilab.cards wrapper |
-| PF9 | SEO | Add `og:image` meta tag (branded 1200x630 social preview image) |
-| PF10 | UX | Visibility-aware keepalive script (prevents timeout while tab is active) |
-| PF11 | UX | Custom branded disconnect overlay with deep-link resume button |
-| PF12 | UX | "Last updated" timestamp on dashboard |
-
-**Technical Notes:**
-- `bindCache()` cache key: format + event_type (+ scene_id in v0.23)
-- Ratings cache table recomputed via trigger in admin-results-server after result submission
-- Keepalive only fires when tab is visible (Page Visibility API) — avoids burning Posit Connect hours
-- Disconnect overlay leverages existing deep linking (v0.21) to restore exact state on resume
-
----
-
 ## v0.22 - User Accounts & Permissions
 
 **Design:** `docs/plans/2026-02-05-user-accounts-design.md`
@@ -83,7 +54,7 @@ Quick wins and foundational improvements to prepare for user accounts (v0.22) an
 | MR10 | FEATURE | Scene comparison page (DFW vs Houston side-by-side stats) | Pending |
 | MR11 | FEATURE | Cross-scene badges in player modal ("Competed in: DFW, Houston, Austin") | Pending |
 | MR12 | FEATURE | Scene health dashboard for Scene Admins (trends, retention, store activity) | Pending |
-| MR13 | PERFORMANCE | Query builder abstraction for consistent scene filtering across all queries | Pending |
+| MR13 | PERFORMANCE | Query builder abstraction for consistent scene filtering across all queries | Done |
 | MR14 | PERFORMANCE | Connection pooling via `pool` package | Pending |
 | MR15 | PERFORMANCE | Batch dashboard queries (reduce from 8 separate to 2-3 combined) | Pending |
 | MR16 | PERFORMANCE | Pre-computed dashboard stats cache table (recalc on data change) | Pending |
@@ -93,6 +64,8 @@ Quick wins and foundational improvements to prepare for user accounts (v0.22) an
 **Remaining:**
 - Fix mobile header alignment (dark mode toggle, right alignment)
 - Testing and QA
+
+**Note:** Scene filtering now uses parameterized queries (merged from v0.21.1).
 
 **Key Design Decisions:**
 - Players don't belong to scenes (no accounts required for viewers)

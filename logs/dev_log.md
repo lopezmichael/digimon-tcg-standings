@@ -4,6 +4,74 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-17: Merge v0.21.1 Security Improvements into Multi-Region Branch
+
+### Summary
+Merged v0.21.1 Performance & Security Foundations (main) into feature/multi-region (develop) to combine SQL parameterization and safe_query() with scene filtering. This required resolving conflicts across 6 files and updating the query pattern to support both security improvements and scene filtering.
+
+### Branch
+`feature/multi-region` (develop)
+
+### Merge Approach
+The merge had conflicts in all public server files because:
+- Main had: parameterized SQL queries with `?` placeholders + `safe_query()` wrapper
+- Develop had: scene filtering with stores JOIN pattern
+
+**Resolution:** Updated `build_filters_param()` to support both patterns:
+```r
+build_filters_param <- function(table_alias = "t",
+                                 format = NULL,
+                                 event_type = NULL,
+                                 search = NULL,
+                                 search_column = "display_name",
+                                 id = NULL,
+                                 id_column = "id",
+                                 scene = NULL,         # NEW
+                                 store_alias = NULL) { # NEW
+  # ... existing filters ...
+
+  # Scene filter (requires store_alias to be set)
+  if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
+    if (scene == "online") {
+      sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
+    } else {
+      sql_parts <- c(sql_parts, sprintf(
+        "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
+        store_alias
+      ))
+      params <- c(params, list(scene))
+    }
+  }
+  # ...
+}
+```
+
+### Files Modified
+- `server/shared-server.R` - Updated `build_filters_param()` with scene support
+- `server/public-dashboard-server.R` - Updated `build_dashboard_filters()` with scene support, all 18 queries updated
+- `server/public-players-server.R` - 2 queries updated with scene filtering
+- `server/public-meta-server.R` - 4 queries updated with scene filtering
+- `server/public-tournaments-server.R` - 1 query updated with scene filtering
+- `server/public-stores-server.R` - 3 queries updated with scene filtering
+
+### Pattern Now Used Across All Public Queries
+1. **Parameterized SQL** - All user inputs use `?` placeholders
+2. **safe_query() wrapper** - Graceful error handling with tryCatch
+3. **Scene filtering** - Stores JOIN with scene_id filter
+4. **bindCache()** - Cross-session caching with format, event_type, and scene keys
+
+### Key Insight
+The `build_filters_param()` helper now serves as the central abstraction for query filtering, supporting:
+- Format filtering
+- Event type filtering
+- Search (text) filtering
+- ID filtering
+- **Scene filtering** (new, requires store_alias parameter)
+
+This completes MR13 (Query builder abstraction) from the v0.23 roadmap.
+
+---
+
 ## 2026-02-09: Multi-Region Scene Selection (v0.23 WIP)
 
 ### Summary

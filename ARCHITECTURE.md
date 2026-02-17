@@ -2,7 +2,7 @@
 
 Technical reference for the DigiLab codebase. Consult this document before adding new server modules, reactive values, or modifying core patterns.
 
-**Last Updated:** February 2026 (v0.18.1)
+**Last Updated:** February 2026 (v0.21.1)
 
 > **Note:** Always keep this document in sync with code changes. Update when adding new reactive values, server modules, or patterns.
 
@@ -293,6 +293,70 @@ dbGetQuery(rv$db_con, "SELECT * FROM players WHERE player_id = $1",
 # WRONG - SQL injection risk
 dbGetQuery(rv$db_con, paste0("SELECT * FROM players WHERE player_id = ", player_id))
 ```
+
+### safe_query() Wrapper (v0.21.1+)
+
+All public queries should use the `safe_query()` wrapper for graceful error handling:
+
+```r
+# In shared-server.R
+safe_query <- function(con, query, params = NULL, default = NULL) {
+  tryCatch({
+    if (is.null(params) || length(params) == 0) {
+      dbGetQuery(con, query)
+    } else {
+      dbGetQuery(con, query, params = params)
+    }
+  }, error = function(e) {
+    message("Database query error: ", e$message)
+    default
+  })
+}
+
+# Usage
+result <- safe_query(rv$db_con, "SELECT * FROM players WHERE id = ?",
+                     params = list(player_id),
+                     default = data.frame())
+```
+
+### build_filters_param() Helper (v0.21.1+)
+
+Use `build_filters_param()` for consistent parameterized WHERE clause construction:
+
+```r
+# Build filters with SQL injection prevention
+filters <- build_filters_param(
+  table_alias = "t",
+  format = input$format_filter,        # Format dropdown value
+  event_type = input$event_type,       # Event type dropdown
+  search = input$search_text,          # Text search
+  search_column = "name",              # Column to search
+  scene = rv$current_scene,            # Scene filter (v0.23+)
+  store_alias = "s"                    # Required for scene filtering
+)
+
+# Use in query
+query <- sprintf("
+  SELECT * FROM tournaments t
+  JOIN stores s ON t.store_id = s.store_id
+  WHERE 1=1 %s
+", filters$sql)
+
+result <- safe_query(rv$db_con, query, params = filters$params, default = data.frame())
+```
+
+**Parameters:**
+| Parameter | Description |
+|-----------|-------------|
+| `table_alias` | Alias for main table (e.g., "t" for tournaments) |
+| `format` | Format filter value (e.g., "BT19") |
+| `event_type` | Event type filter (e.g., "locals") |
+| `search` | Text search value |
+| `search_column` | Column to search in (e.g., "name", "display_name") |
+| `scene` | Scene slug for filtering (e.g., "dfw", "online", "all") |
+| `store_alias` | Alias for stores table (required for scene filtering) |
+
+**Returns:** `list(sql = "AND ... AND ...", params = list(...))`
 
 ---
 
