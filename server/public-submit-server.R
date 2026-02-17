@@ -1049,20 +1049,27 @@ observe({
 observe({
   req(rv$db_con)
 
-  store_filter <- if (!is.null(input$match_store) && input$match_store != "") {
-    paste0(" AND t.store_id = ", as.integer(input$match_store))
-  } else {
-    ""
-  }
+  # Use parameterized query for store filter
+  has_store_filter <- !is.null(input$match_store) && input$match_store != ""
 
-  tournaments <- dbGetQuery(rv$db_con, paste0("
-    SELECT t.tournament_id, t.event_date, t.event_type, s.name as store_name
-    FROM tournaments t
-    JOIN stores s ON t.store_id = s.store_id
-    WHERE 1=1 ", store_filter, "
-    ORDER BY t.event_date DESC
-    LIMIT 50
-  "))
+  if (has_store_filter) {
+    tournaments <- dbGetQuery(rv$db_con, "
+      SELECT t.tournament_id, t.event_date, t.event_type, s.name as store_name
+      FROM tournaments t
+      JOIN stores s ON t.store_id = s.store_id
+      WHERE t.store_id = ?
+      ORDER BY t.event_date DESC
+      LIMIT 50
+    ", params = list(as.integer(input$match_store)))
+  } else {
+    tournaments <- dbGetQuery(rv$db_con, "
+      SELECT t.tournament_id, t.event_date, t.event_type, s.name as store_name
+      FROM tournaments t
+      JOIN stores s ON t.store_id = s.store_id
+      ORDER BY t.event_date DESC
+      LIMIT 50
+    ")
+  }
 
   if (nrow(tournaments) > 0) {
     labels <- paste0(tournaments$store_name, " - ",
