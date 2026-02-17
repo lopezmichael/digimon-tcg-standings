@@ -273,10 +273,12 @@ ui <- page_fillable(
     tags$meta(property = "og:type", content = "website"),
     tags$meta(property = "og:url", content = "https://digilab.cards/"),
     tags$meta(property = "og:site_name", content = "DigiLab"),
+    tags$meta(property = "og:image", content = "https://digilab.cards/digimon-logo.png"),
     # Twitter Card tags
     tags$meta(name = "twitter:card", content = "summary"),
     tags$meta(name = "twitter:title", content = "DigiLab - Digimon TCG Locals Tracker"),
     tags$meta(name = "twitter:description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
+    tags$meta(name = "twitter:image", content = "https://digilab.cards/digimon-logo.png"),
     # Standard meta description
     tags$meta(name = "description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
     # Google Analytics
@@ -347,7 +349,7 @@ ui <- page_fillable(
       Shiny.addCustomMessageHandler('hideLoading', function(message) {
         setTimeout(function() {
           $('.app-loading-overlay').addClass('loaded');
-        }, 500);
+        }, 200);
       });
 
       // Inject loading overlay into body on document ready (avoids prependContent warning)
@@ -364,6 +366,70 @@ ui <- page_fillable(
         $('body').prepend(loadingHTML);
         setInterval(cycleLoadingMessage, 1200);
       });
+
+      // Visibility-aware keepalive - ping server only when tab is visible
+      (function() {
+        var KEEPALIVE_INTERVAL = 30000; // 30 seconds
+        var keepaliveTimer = null;
+
+        function sendKeepalive() {
+          if (Shiny && Shiny.shinyapp && Shiny.shinyapp.$socket) {
+            // Send a no-op message to keep connection alive
+            Shiny.setInputValue('keepalive_ping', Date.now(), {priority: 'event'});
+          }
+        }
+
+        function startKeepalive() {
+          if (!keepaliveTimer) {
+            keepaliveTimer = setInterval(sendKeepalive, KEEPALIVE_INTERVAL);
+          }
+        }
+
+        function stopKeepalive() {
+          if (keepaliveTimer) {
+            clearInterval(keepaliveTimer);
+            keepaliveTimer = null;
+          }
+        }
+
+        // Start/stop based on visibility
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            stopKeepalive();
+          } else {
+            startKeepalive();
+            sendKeepalive(); // Send immediately when tab becomes visible
+          }
+        });
+
+        // Start keepalive when Shiny connects
+        $(document).on('shiny:connected', function() {
+          if (!document.hidden) {
+            startKeepalive();
+          }
+        });
+
+        // Stop on disconnect
+        $(document).on('shiny:disconnected', stopKeepalive);
+      })();
+
+      // Custom disconnect overlay
+      (function() {
+        var disconnectHTML = '<div class=\"disconnect-overlay\" id=\"custom-disconnect\">' +
+          '<div class=\"disconnect-icon\"></div>' +
+          '<div class=\"disconnect-title\">Connection Lost</div>' +
+          '<div class=\"disconnect-message\">The Digital Gate has closed. Click below to reconnect.</div>' +
+          '<button class=\"disconnect-btn\" onclick=\"location.reload()\">Reconnect</button>' +
+        '</div>';
+
+        $(document).ready(function() {
+          $('body').append(disconnectHTML);
+        });
+
+        $(document).on('shiny:disconnected', function() {
+          $('#custom-disconnect').addClass('active');
+        });
+      })();
     "))
   ),
 
@@ -526,6 +592,8 @@ ui <- page_fillable(
     ),
     tags$div(
       class = "footer-meta",
+      textOutput("last_updated", inline = TRUE),
+      " | ",
       paste0("v", APP_VERSION, " | \u00A9 2026 DigiLab")
     )
   ),
@@ -650,20 +718,31 @@ server <- function(input, output, session) {
 
   source("server/shared-server.R", local = TRUE)
   source("server/url-routing-server.R", local = TRUE)
-  source("server/admin-results-server.R", local = TRUE)
-  source("server/admin-tournaments-server.R", local = TRUE)
-  source("server/admin-decks-server.R", local = TRUE)
-  source("server/admin-stores-server.R", local = TRUE)
-  source("server/admin-formats-server.R", local = TRUE)
-  source("server/admin-players-server.R", local = TRUE)
 
-  # Public page server modules
+  # Public page server modules (loaded immediately for all users)
   source("server/public-meta-server.R", local = TRUE)
   source("server/public-stores-server.R", local = TRUE)
   source("server/public-tournaments-server.R", local = TRUE)
   source("server/public-players-server.R", local = TRUE)
   source("server/public-dashboard-server.R", local = TRUE)
   source("server/public-submit-server.R", local = TRUE)
+
+  # ---------------------------------------------------------------------------
+  # Lazy-load Admin Modules (only when user logs in as admin)
+  # ---------------------------------------------------------------------------
+  admin_modules_loaded <- reactiveVal(FALSE)
+
+  observeEvent(rv$is_admin, {
+    if (rv$is_admin && !admin_modules_loaded()) {
+      source("server/admin-results-server.R", local = TRUE)
+      source("server/admin-tournaments-server.R", local = TRUE)
+      source("server/admin-decks-server.R", local = TRUE)
+      source("server/admin-stores-server.R", local = TRUE)
+      source("server/admin-formats-server.R", local = TRUE)
+      source("server/admin-players-server.R", local = TRUE)
+      admin_modules_loaded(TRUE)
+    }
+  }, ignoreInit = TRUE)
 
   # ---------------------------------------------------------------------------
   # Rating Cache Queries (reactive)

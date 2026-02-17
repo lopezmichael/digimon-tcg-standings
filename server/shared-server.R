@@ -25,12 +25,15 @@ observe({
       message("[startup] Could not check/populate ratings cache: ", e$message)
     })
 
-    # Small delay to let initial data queries complete
-    shinyjs::delay(800, {
-      session$sendCustomMessage("hideLoading", list())
-    })
+    # Hide loading screen - data is ready after cache check
+    session$sendCustomMessage("hideLoading", list())
   }
 })
+
+# Keepalive handler - receiving the input is enough to keep connection alive
+observeEvent(input$keepalive_ping, {
+  # No-op: just receiving this keeps the WebSocket active
+}, ignoreInit = TRUE)
 
 onStop(function() {
   isolate({
@@ -269,6 +272,24 @@ outputOptions(output, "is_superadmin", suspendWhenHidden = FALSE)
 
 output$has_active_tournament <- reactive({ !is.null(rv$active_tournament_id) })
 outputOptions(output, "has_active_tournament", suspendWhenHidden = FALSE)
+
+# Last updated timestamp (most recent tournament date)
+output$last_updated <- renderText({
+  rv$data_refresh  # Invalidate when data changes
+  if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+    return("")
+  }
+  tryCatch({
+    result <- DBI::dbGetQuery(rv$db_con,
+      "SELECT MAX(date) as last_date FROM tournaments WHERE date IS NOT NULL")
+    if (nrow(result) > 0 && !is.na(result$last_date[1])) {
+      last_date <- as.Date(result$last_date[1])
+      paste0("Data through ", format(last_date, "%b %d"))
+    } else {
+      ""
+    }
+  }, error = function(e) "")
+})
 
 # Login modal
 observeEvent(input$admin_login_link, {
