@@ -2,7 +2,7 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.21.0
+**Current Version:** v0.21.1
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
@@ -154,6 +154,16 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.21.1 - Performance & Security Foundations
+- SQL parameterization for all public queries (security)
+- safe_query() wrapper for graceful error handling (resilience)
+- bindCache() on dashboard outputs (performance)
+- Pre-computed ratings cache tables (performance)
+- Faster loading: removed delays, lazy-load admin modules
+- Library audit: removed 5 unused packages from startup
+- Visibility-aware keepalive, custom disconnect overlay (UX)
+- SEO: robots.txt, sitemap.xml, og:image meta tags
 
 ### v0.21.0 - Deep Linking & Shareable URLs
 - Shareable URLs for players, decks, stores, tournaments
