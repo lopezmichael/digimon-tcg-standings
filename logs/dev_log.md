@@ -4,6 +4,59 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-16: React Rewrite - Dashboard PoC (explore/react-rewrite)
+
+### Summary
+Built a full Next.js dashboard PoC that mirrors the existing R Shiny dashboard, reading from the same local DuckDB database. The app lives in `digilab-next/` and runs on `localhost:3000`.
+
+### Tech Stack
+- Next.js 16.1.6 (App Router, Turbopack)
+- TypeScript, Tailwind CSS v4, shadcn/ui
+- Recharts v3 (charts), TanStack Table v8 (tables)
+- next-themes (dark mode), duckdb npm package v1.4.4
+- 14 API routes, 11 dashboard components
+
+### Architecture
+- `src/lib/db.ts` — Singleton DuckDB connection (READ_ONLY), BigInt conversion
+- `src/lib/queries/dashboard.ts` — All SQL queries + rating calculations (Elo, Achievement, Store)
+- `src/app/api/dashboard/*/route.ts` — Thin API route wrappers
+- `src/components/dashboard/*.tsx` — Client components fetching from API routes
+- `src/hooks/use-dashboard-filters.ts` — Filter state management (format, eventType)
+
+### Dashboard Sections Implemented
+1. Title strip with format/event type filters
+2. Value boxes (Tournaments, Players, Hot Deck, Top Deck)
+3. Top Decks grid (6 decks with card images + win rate bars)
+4. Rising Stars (top 4 players, last 30 days)
+5. Meta Diversity gauge (HHI-based, donut chart) + Player Growth & Retention (stacked bar)
+6. Charts row: Top 3 Conversion, Color Distribution, Player Attendance
+7. Tables: Recent Tournaments, Top Players (with rating tooltip)
+8. Meta Share Over Time (stacked area chart)
+
+### Key Technical Decisions
+
+**DuckDB + Turbopack Compatibility:**
+- Turbopack (Next.js 16 default bundler) incompatible with duckdb native module for production builds
+- Dev server works fine with `serverExternalPackages: ['duckdb']` + `require()` instead of `import`
+- Postinstall script (`scripts/patch-duckdb.js`) removes `napi_versions` from duckdb's package.json
+- Production build (`npm run build`) remains blocked — known Turbopack limitation
+
+**DuckDB Data Gotchas:**
+- BigInt returned for all aggregates — `convertBigInts()` helper converts to Number for JSON
+- DATE columns returned as Date objects — use `CAST(... AS VARCHAR)` in SQL
+- `PERCENTILE_CONT` on dates returns Date objects — convert to ISO string before interpolating
+
+**Tailwind v4 vs v3:**
+- `create-next-app` generated v3 syntax (`@tailwind base/components/utilities`)
+- Tailwind v4 requires `@import "tailwindcss"` — shadcn/ui init overwrites with full v4 theme
+
+### Status
+- PoC is functional with all dashboard sections matching R Shiny
+- Data may be stale (needs MotherDuck sync)
+- Next: aesthetic comparison with live Shiny app, possible additional polish
+
+---
+
 ## 2026-02-09: Deep Linking & Shareable URLs (v0.21.0)
 
 ### Summary
