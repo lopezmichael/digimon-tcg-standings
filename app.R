@@ -666,36 +666,42 @@ server <- function(input, output, session) {
   source("server/public-submit-server.R", local = TRUE)
 
   # ---------------------------------------------------------------------------
-  # Rating Calculations (reactive)
+  # Rating Cache Queries (reactive)
+  # Ratings are pre-computed and stored in cache tables for performance.
+  # Cache is refreshed when results are entered/modified.
   # ---------------------------------------------------------------------------
 
-  # Reactive: Calculate competitive ratings for all players
+  # Reactive: Get cached competitive ratings for all players
   player_competitive_ratings <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
       return(data.frame(player_id = integer(), competitive_rating = numeric()))
     }
-    # Invalidate when results change
-    rv$results_refresh
-    calculate_competitive_ratings(rv$db_con)
+    rv$data_refresh  # Invalidate when cache is refreshed
+    safe_query(rv$db_con,
+      "SELECT player_id, competitive_rating FROM player_ratings_cache",
+      default = data.frame(player_id = integer(), competitive_rating = numeric()))
   })
 
-  # Reactive: Calculate achievement scores for all players
+  # Reactive: Get cached achievement scores for all players
   player_achievement_scores <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
       return(data.frame(player_id = integer(), achievement_score = numeric()))
     }
-    rv$results_refresh
-    calculate_achievement_scores(rv$db_con)
+    rv$data_refresh
+    safe_query(rv$db_con,
+      "SELECT player_id, achievement_score FROM player_ratings_cache",
+      default = data.frame(player_id = integer(), achievement_score = numeric()))
   })
 
-  # Reactive: Calculate average player rating per store (weighted by participation)
+  # Reactive: Get cached average player rating per store
   store_avg_ratings <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
       return(data.frame(store_id = integer(), avg_player_rating = numeric()))
     }
-    rv$results_refresh
-    player_rtgs <- player_competitive_ratings()
-    calculate_store_avg_player_rating(rv$db_con, player_rtgs)
+    rv$data_refresh
+    safe_query(rv$db_con,
+      "SELECT store_id, avg_player_rating FROM store_ratings_cache",
+      default = data.frame(store_id = integer(), avg_player_rating = numeric()))
   })
 
 
