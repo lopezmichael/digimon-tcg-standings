@@ -15,22 +15,30 @@ output$tournament_history <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  # Build filters
-  search_filter <- if (!is.null(input$tournaments_search) && nchar(trimws(input$tournaments_search)) > 0) {
-    sprintf("AND LOWER(s.name) LIKE LOWER('%%%s%%')", trimws(input$tournaments_search))
-  } else ""
+  # Build parameterized filters to prevent SQL injection
+  search_filters <- build_filters_param(
+    table_alias = "s",
+    search = input$tournaments_search,
+    search_column = "name"
+  )
 
-  format_filter <- if (!is.null(input$tournaments_format) && input$tournaments_format != "") {
-    sprintf("AND t.format = '%s'", input$tournaments_format)
-  } else ""
+  format_filters <- build_filters_param(
+    table_alias = "t",
+    format = input$tournaments_format,
+    scene = rv$current_scene,
+    store_alias = "s"
+  )
 
-  event_type_filter <- if (!is.null(input$tournaments_event_type) && input$tournaments_event_type != "") {
-    sprintf("AND t.event_type = '%s'", input$tournaments_event_type)
-  } else ""
+  event_type_filters <- build_filters_param(
+    table_alias = "t",
+    event_type = input$tournaments_event_type
+  )
 
-  scene_filter <- build_scene_filter(rv$current_scene, "s")
+  # Combine filter SQL and params
+  filter_sql <- paste(search_filters$sql, format_filters$sql, event_type_filters$sql)
+  filter_params <- c(search_filters$params, format_filters$params, event_type_filters$params)
 
-  result <- dbGetQuery(rv$db_con, sprintf("
+  query <- paste0("
     SELECT t.tournament_id, t.event_date as Date, s.name as Store, t.event_type as Type,
            t.format as Format, t.player_count as Players, t.rounds as Rounds,
            p.display_name as Winner, da.archetype_name as 'Winning Deck'
@@ -39,9 +47,11 @@ output$tournament_history <- renderReactable({
     LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
     LEFT JOIN players p ON r.player_id = p.player_id
     LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-    WHERE 1=1 %s %s %s %s
+    WHERE 1=1 ", filter_sql, "
     ORDER BY t.event_date DESC
-  ", search_filter, format_filter, event_type_filter, scene_filter))
+  ")
+
+  result <- safe_query(rv$db_con, query, params = filter_params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No tournaments match filters"), compact = TRUE))
@@ -107,18 +117,18 @@ output$tournament_detail_modal <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   # Get tournament info (include store_id for clickable link)
-  tournament <- dbGetQuery(rv$db_con, "
+  tournament <- safe_query(rv$db_con, "
     SELECT t.event_date, t.event_type, t.format, t.player_count, t.rounds,
            s.store_id, s.name as store_name
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
     WHERE t.tournament_id = ?
-  ", params = list(tournament_id))
+  ", params = list(tournament_id), default = data.frame())
 
   if (nrow(tournament) == 0) return(NULL)
 
   # Get all results for this tournament
-  results <- dbGetQuery(rv$db_con, "
+  results <- safe_query(rv$db_con, "
     SELECT r.placement as Place, p.display_name as Player, da.archetype_name as Deck,
            da.primary_color as color, r.wins as W, r.losses as L, r.ties as T, r.decklist_url
     FROM results r
@@ -126,7 +136,7 @@ output$tournament_detail_modal <- renderUI({
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     WHERE r.tournament_id = ?
     ORDER BY r.placement ASC
-  ", params = list(tournament_id))
+  ", params = list(tournament_id), default = data.frame())
 
   # Format event type
   event_type_display <- switch(tournament$event_type,

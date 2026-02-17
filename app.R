@@ -10,21 +10,22 @@ library(bslib)
 library(bsicons)
 library(DBI)
 library(duckdb)
-library(httr)
 library(jsonlite)
 library(reactable)
 library(htmltools)
-library(tidygeocoder)
 library(atomtemplates)
-library(sysfonts)
-library(showtext)
 library(mapgl)
 library(sf)
 library(highcharter)
-library(brand.yml)
+
+# Removed after audit (unused or optional atomtemplates dependencies):
+# - tidygeocoder: Not used (custom Mapbox geocoding in admin-stores-server.R)
+# - sysfonts/showtext: Optional deps of atomtemplates, not directly used
+# - brand.yml: Optional dep of atomtemplates, not directly used
+# - httr: Lazy-loaded via namespacing in R/digimoncard_api.R (rarely used, cards cached)
 
 # App version (update with each release)
-APP_VERSION <- "0.20.0"
+APP_VERSION <- "0.21.1"
 
 # Load modules
 source("R/db_connection.R")
@@ -274,10 +275,12 @@ ui <- page_fillable(
     tags$meta(property = "og:type", content = "website"),
     tags$meta(property = "og:url", content = "https://digilab.cards/"),
     tags$meta(property = "og:site_name", content = "DigiLab"),
+    tags$meta(property = "og:image", content = "https://digilab.cards/digimon-logo.png"),
     # Twitter Card tags
     tags$meta(name = "twitter:card", content = "summary"),
     tags$meta(name = "twitter:title", content = "DigiLab - Digimon TCG Locals Tracker"),
     tags$meta(name = "twitter:description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
+    tags$meta(name = "twitter:image", content = "https://digilab.cards/digimon-logo.png"),
     # Standard meta description
     tags$meta(name = "description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
     # Google Analytics
@@ -350,7 +353,7 @@ ui <- page_fillable(
       Shiny.addCustomMessageHandler('hideLoading', function(message) {
         setTimeout(function() {
           $('.app-loading-overlay').addClass('loaded');
-        }, 500);
+        }, 200);
       });
 
       // Inject loading overlay into body on document ready (avoids prependContent warning)
@@ -367,6 +370,70 @@ ui <- page_fillable(
         $('body').prepend(loadingHTML);
         setInterval(cycleLoadingMessage, 1200);
       });
+
+      // Visibility-aware keepalive - ping server only when tab is visible
+      (function() {
+        var KEEPALIVE_INTERVAL = 30000; // 30 seconds
+        var keepaliveTimer = null;
+
+        function sendKeepalive() {
+          if (Shiny && Shiny.shinyapp && Shiny.shinyapp.$socket) {
+            // Send a no-op message to keep connection alive
+            Shiny.setInputValue('keepalive_ping', Date.now(), {priority: 'event'});
+          }
+        }
+
+        function startKeepalive() {
+          if (!keepaliveTimer) {
+            keepaliveTimer = setInterval(sendKeepalive, KEEPALIVE_INTERVAL);
+          }
+        }
+
+        function stopKeepalive() {
+          if (keepaliveTimer) {
+            clearInterval(keepaliveTimer);
+            keepaliveTimer = null;
+          }
+        }
+
+        // Start/stop based on visibility
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            stopKeepalive();
+          } else {
+            startKeepalive();
+            sendKeepalive(); // Send immediately when tab becomes visible
+          }
+        });
+
+        // Start keepalive when Shiny connects
+        $(document).on('shiny:connected', function() {
+          if (!document.hidden) {
+            startKeepalive();
+          }
+        });
+
+        // Stop on disconnect
+        $(document).on('shiny:disconnected', stopKeepalive);
+      })();
+
+      // Custom disconnect overlay
+      (function() {
+        var disconnectHTML = '<div class=\"disconnect-overlay\" id=\"custom-disconnect\">' +
+          '<div class=\"disconnect-icon\"></div>' +
+          '<div class=\"disconnect-title\">Connection Lost</div>' +
+          '<div class=\"disconnect-message\">The Digital Gate has closed. Click below to reconnect.</div>' +
+          '<button class=\"disconnect-btn\" onclick=\"location.reload()\">Reconnect</button>' +
+        '</div>';
+
+        $(document).ready(function() {
+          $('body').append(disconnectHTML);
+        });
+
+        $(document).on('shiny:disconnected', function() {
+          $('#custom-disconnect').addClass('active');
+        });
+      })();
     "))
   ),
 
@@ -667,14 +734,8 @@ server <- function(input, output, session) {
   source("server/shared-server.R", local = TRUE)
   source("server/url-routing-server.R", local = TRUE)
   source("server/scene-server.R", local = TRUE)
-  source("server/admin-results-server.R", local = TRUE)
-  source("server/admin-tournaments-server.R", local = TRUE)
-  source("server/admin-decks-server.R", local = TRUE)
-  source("server/admin-stores-server.R", local = TRUE)
-  source("server/admin-formats-server.R", local = TRUE)
-  source("server/admin-players-server.R", local = TRUE)
 
-  # Public page server modules
+  # Public page server modules (loaded immediately for all users)
   source("server/public-meta-server.R", local = TRUE)
   source("server/public-stores-server.R", local = TRUE)
   source("server/public-tournaments-server.R", local = TRUE)
@@ -683,36 +744,59 @@ server <- function(input, output, session) {
   source("server/public-submit-server.R", local = TRUE)
 
   # ---------------------------------------------------------------------------
-  # Rating Calculations (reactive)
+  # Lazy-load Admin Modules (only when user logs in as admin)
+  # ---------------------------------------------------------------------------
+  admin_modules_loaded <- reactiveVal(FALSE)
+
+  observeEvent(rv$is_admin, {
+    if (rv$is_admin && !admin_modules_loaded()) {
+      source("server/admin-results-server.R", local = TRUE)
+      source("server/admin-tournaments-server.R", local = TRUE)
+      source("server/admin-decks-server.R", local = TRUE)
+      source("server/admin-stores-server.R", local = TRUE)
+      source("server/admin-formats-server.R", local = TRUE)
+      source("server/admin-players-server.R", local = TRUE)
+      admin_modules_loaded(TRUE)
+    }
+  }, ignoreInit = TRUE)
+
+  # ---------------------------------------------------------------------------
+  # Rating Cache Queries (reactive)
+  # Ratings are pre-computed and stored in cache tables for performance.
+  # Cache is refreshed when results are entered/modified.
   # ---------------------------------------------------------------------------
 
-  # Reactive: Calculate competitive ratings for all players
+  # Reactive: Get cached competitive ratings for all players
   player_competitive_ratings <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
       return(data.frame(player_id = integer(), competitive_rating = numeric()))
     }
-    # Invalidate when results change
-    rv$results_refresh
-    calculate_competitive_ratings(rv$db_con)
+    rv$data_refresh  # Invalidate when cache is refreshed
+    safe_query(rv$db_con,
+      "SELECT player_id, competitive_rating FROM player_ratings_cache",
+      default = data.frame(player_id = integer(), competitive_rating = numeric()))
   })
 
-  # Reactive: Calculate achievement scores for all players
+  # Reactive: Get cached achievement scores for all players
   player_achievement_scores <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
       return(data.frame(player_id = integer(), achievement_score = numeric()))
     }
-    rv$results_refresh
-    calculate_achievement_scores(rv$db_con)
+    rv$data_refresh
+    safe_query(rv$db_con,
+      "SELECT player_id, achievement_score FROM player_ratings_cache",
+      default = data.frame(player_id = integer(), achievement_score = numeric()))
   })
 
-  # Reactive: Calculate average player rating per store (weighted by participation)
+  # Reactive: Get cached average player rating per store
   store_avg_ratings <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
       return(data.frame(store_id = integer(), avg_player_rating = numeric()))
     }
-    rv$results_refresh
-    player_rtgs <- player_competitive_ratings()
-    calculate_store_avg_player_rating(rv$db_con, player_rtgs)
+    rv$data_refresh
+    safe_query(rv$db_con,
+      "SELECT store_id, avg_player_rating FROM store_ratings_cache",
+      default = data.frame(store_id = integer(), avg_player_rating = numeric()))
   })
 
 

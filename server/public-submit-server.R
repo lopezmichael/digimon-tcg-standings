@@ -15,7 +15,7 @@ rv$submit_refresh_trigger <- NULL
 # Populate store dropdown
 observe({
   req(rv$db_con)
-  stores <- dbGetQuery(rv$db_con, "
+  stores <- safe_query(rv$db_con, "
     SELECT store_id, name FROM stores
     WHERE is_active = TRUE
     ORDER BY name
@@ -28,7 +28,7 @@ observe({
 # Populate format dropdown - sorted by release_date DESC (most recent first)
 observe({
   req(rv$db_con)
-  formats <- dbGetQuery(rv$db_con, "
+  formats <- safe_query(rv$db_con, "
     SELECT format_id, display_name FROM formats
     WHERE is_active = TRUE
     ORDER BY release_date DESC, sort_order ASC
@@ -45,7 +45,7 @@ output$submit_duplicate_warning <- renderUI({
   req(input$submit_date, !is.na(input$submit_date))
 
   # Check for existing tournaments on this store/date
-  existing <- dbGetQuery(rv$db_con, "
+  existing <- safe_query(rv$db_con, "
     SELECT t.tournament_id, t.event_type, t.player_count, s.name as store_name
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
@@ -320,7 +320,7 @@ observeEvent(input$submit_process_ocr, {
 
       # First try to match by member number (skip if GUEST ID - those aren't real)
       if (!is_guest_id && !is.null(member_num) && !is.na(member_num) && nchar(member_num) > 0) {
-        player_by_member <- dbGetQuery(rv$db_con, "
+        player_by_member <- safe_query(rv$db_con, "
           SELECT player_id, display_name FROM players
           WHERE member_number = ?
           LIMIT 1
@@ -341,7 +341,7 @@ observeEvent(input$submit_process_ocr, {
 
       # Try to match by username
       if (!is.null(username) && !is.na(username) && nchar(username) > 0) {
-        player_by_name <- dbGetQuery(rv$db_con, "
+        player_by_name <- safe_query(rv$db_con, "
           SELECT player_id, display_name, member_number FROM players
           WHERE LOWER(display_name) = LOWER(?)
           LIMIT 1
@@ -402,7 +402,7 @@ output$submit_summary_banner <- renderUI({
   # Get store name
   store_name <- "Not selected"
   if (!is.null(input$submit_store) && input$submit_store != "") {
-    store <- dbGetQuery(rv$db_con, "SELECT name FROM stores WHERE store_id = ?",
+    store <- safe_query(rv$db_con, "SELECT name FROM stores WHERE store_id = ?",
                         params = list(as.integer(input$submit_store)))
     if (nrow(store) > 0) store_name <- store$name[1]
   }
@@ -496,26 +496,18 @@ output$submit_results_table <- renderUI({
   results <- rv$submit_ocr_results
 
   # Get deck choices
-  decks <- if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    dbGetQuery(rv$db_con, "
-      SELECT archetype_id, archetype_name FROM deck_archetypes
-      WHERE is_active = TRUE
-      ORDER BY archetype_name
-    ")
-  } else {
-    data.frame(archetype_id = integer(), archetype_name = character())
-  }
+  decks <- safe_query(rv$db_con, "
+    SELECT archetype_id, archetype_name FROM deck_archetypes
+    WHERE is_active = TRUE
+    ORDER BY archetype_name
+  ", default = data.frame(archetype_id = integer(), archetype_name = character()))
 
   # Get pending deck requests
-  pending_requests <- if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    dbGetQuery(rv$db_con, "
-      SELECT request_id, deck_name FROM deck_requests
-      WHERE status = 'pending'
-      ORDER BY deck_name
-    ")
-  } else {
-    data.frame(request_id = integer(), deck_name = character())
-  }
+  pending_requests <- safe_query(rv$db_con, "
+    SELECT request_id, deck_name FROM deck_requests
+    WHERE status = 'pending'
+    ORDER BY deck_name
+  ", default = data.frame(request_id = integer(), deck_name = character()))
 
   # Build deck choices with request option and pending requests
   deck_choices <- c("Unknown" = "")
@@ -1035,7 +1027,7 @@ rv$match_total_rounds <- 0
 # Populate store dropdown for match history
 observe({
   req(rv$db_con)
-  stores <- dbGetQuery(rv$db_con, "
+  stores <- safe_query(rv$db_con, "
     SELECT store_id, name FROM stores
     WHERE is_active = TRUE
     ORDER BY name
@@ -1049,20 +1041,27 @@ observe({
 observe({
   req(rv$db_con)
 
-  store_filter <- if (!is.null(input$match_store) && input$match_store != "") {
-    paste0(" AND t.store_id = ", as.integer(input$match_store))
-  } else {
-    ""
-  }
+  # Use parameterized query for store filter
+  has_store_filter <- !is.null(input$match_store) && input$match_store != ""
 
-  tournaments <- dbGetQuery(rv$db_con, paste0("
-    SELECT t.tournament_id, t.event_date, t.event_type, s.name as store_name
-    FROM tournaments t
-    JOIN stores s ON t.store_id = s.store_id
-    WHERE 1=1 ", store_filter, "
-    ORDER BY t.event_date DESC
-    LIMIT 50
-  "))
+  if (has_store_filter) {
+    tournaments <- safe_query(rv$db_con, "
+      SELECT t.tournament_id, t.event_date, t.event_type, s.name as store_name
+      FROM tournaments t
+      JOIN stores s ON t.store_id = s.store_id
+      WHERE t.store_id = ?
+      ORDER BY t.event_date DESC
+      LIMIT 50
+    ", params = list(as.integer(input$match_store)))
+  } else {
+    tournaments <- safe_query(rv$db_con, "
+      SELECT t.tournament_id, t.event_date, t.event_type, s.name as store_name
+      FROM tournaments t
+      JOIN stores s ON t.store_id = s.store_id
+      ORDER BY t.event_date DESC
+      LIMIT 50
+    ")
+  }
 
   if (nrow(tournaments) > 0) {
     labels <- paste0(tournaments$store_name, " - ",
@@ -1083,7 +1082,7 @@ output$match_tournament_info <- renderUI({
   req(input$match_tournament != "")
   req(rv$db_con)
 
-  tournament <- dbGetQuery(rv$db_con, "
+  tournament <- safe_query(rv$db_con, "
     SELECT t.*, s.name as store_name
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
@@ -1169,7 +1168,7 @@ observeEvent(input$match_process_ocr, {
   }
 
   # Get the round count from the selected tournament
-  tournament <- dbGetQuery(rv$db_con, "
+  tournament <- safe_query(rv$db_con, "
     SELECT rounds FROM tournaments WHERE tournament_id = ?
   ", params = list(as.integer(input$match_tournament)))
 

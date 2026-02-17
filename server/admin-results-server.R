@@ -173,6 +173,10 @@ observeEvent(input$clear_results_only, {
     rv$current_results <- data.frame()
     rv$results_refresh <- (rv$results_refresh %||% 0) + 1
 
+    # Recalculate ratings cache
+    recalculate_ratings_cache(rv$db_con)
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
     shinyjs::runjs("$('#start_over_modal').modal('hide');")
     showNotification("Results cleared. Tournament kept for re-entry.", type = "message")
 
@@ -203,6 +207,9 @@ observeEvent(input$delete_tournament_confirm, {
 
     shinyjs::runjs("$('#start_over_modal').modal('hide');")
     showNotification("Tournament deleted.", type = "message")
+
+    # Recalculate ratings cache
+    recalculate_ratings_cache(rv$db_con)
 
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
@@ -535,6 +542,9 @@ add_result_logic <- function() {
 
     showNotification("Result added!", type = "message")
 
+    # Recalculate ratings cache
+    recalculate_ratings_cache(rv$db_con)
+
     # Trigger table refresh (admin + public tables)
     rv$results_refresh <- rv$results_refresh + 1
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
@@ -667,7 +677,12 @@ observeEvent(input$delete_result_id, {
     dbExecute(rv$db_con, "DELETE FROM results WHERE result_id = ? AND tournament_id = ?",
               params = list(result_id, rv$active_tournament_id))
     showNotification("Result removed", type = "message")
+
+    # Recalculate ratings cache
+    recalculate_ratings_cache(rv$db_con)
+
     rv$results_refresh <- rv$results_refresh + 1
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
@@ -758,6 +773,9 @@ observeEvent(input$save_edit_result, {
                      result_id, rv$active_tournament_id))
 
     showNotification("Result updated!", type = "message")
+
+    # Recalculate ratings cache
+    recalculate_ratings_cache(rv$db_con)
 
     # Hide modal and refresh table (admin + public tables)
     shinyjs::runjs("$('#edit_result_modal').modal('hide');")

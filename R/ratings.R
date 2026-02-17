@@ -251,3 +251,63 @@ calculate_store_avg_player_rating <- function(db_con, player_ratings) {
 
   store_avg[, c("store_id", "avg_player_rating")]
 }
+
+
+# -----------------------------------------------------------------------------
+# RATINGS CACHE MANAGEMENT
+# -----------------------------------------------------------------------------
+
+#' Recalculate and cache all player and store ratings
+#' Called after result submission to keep cache fresh
+#'
+#' @param db_con DuckDB connection
+#' @return TRUE on success, FALSE on error
+recalculate_ratings_cache <- function(db_con) {
+  tryCatch({
+    # Calculate fresh ratings
+    player_ratings <- calculate_competitive_ratings(db_con)
+    achievement_scores <- calculate_achievement_scores(db_con)
+    store_ratings <- calculate_store_avg_player_rating(db_con, player_ratings)
+
+    # Merge player data
+    if (nrow(player_ratings) > 0) {
+      player_cache <- merge(player_ratings, achievement_scores, by = "player_id", all = TRUE)
+      player_cache$competitive_rating[is.na(player_cache$competitive_rating)] <- 1500
+      player_cache$achievement_score[is.na(player_cache$achievement_score)] <- 0
+
+      # Count events per player
+      events <- DBI::dbGetQuery(db_con, "
+        SELECT player_id, COUNT(DISTINCT tournament_id) as events_played
+        FROM results GROUP BY player_id
+      ")
+      player_cache <- merge(player_cache, events, by = "player_id", all.x = TRUE)
+      player_cache$events_played[is.na(player_cache$events_played)] <- 0
+
+      # Clear and repopulate player cache
+      DBI::dbExecute(db_con, "DELETE FROM player_ratings_cache")
+      DBI::dbExecute(db_con, sprintf("
+        INSERT INTO player_ratings_cache (player_id, competitive_rating, achievement_score, events_played)
+        VALUES %s
+      ", paste(sprintf("(%d, %d, %d, %d)",
+               player_cache$player_id,
+               player_cache$competitive_rating,
+               player_cache$achievement_score,
+               player_cache$events_played), collapse = ", ")))
+    }
+
+    # Clear and repopulate store cache
+    if (nrow(store_ratings) > 0) {
+      DBI::dbExecute(db_con, "DELETE FROM store_ratings_cache")
+      DBI::dbExecute(db_con, sprintf("
+        INSERT INTO store_ratings_cache (store_id, avg_player_rating)
+        VALUES %s
+      ", paste(sprintf("(%d, %d)", store_ratings$store_id, store_ratings$avg_player_rating), collapse = ", ")))
+    }
+
+    message("[ratings] Cache updated: ", nrow(player_ratings), " players, ", nrow(store_ratings), " stores")
+    TRUE
+  }, error = function(e) {
+    message("[ratings] Cache update failed: ", e$message)
+    FALSE
+  })
+}

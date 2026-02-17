@@ -25,6 +25,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.21.1] - 2026-02-17 - Performance & Security Foundations
+
+### Security
+- **SQL Parameterization (PF5)**: All 41 public SQL queries now use parameterized queries
+  - Added `build_filters_param()` helper for safe WHERE clause construction
+  - Prevents SQL injection vulnerabilities across all public server modules
+
+### Added
+- **Graceful Error Handling (PF6)**: New `safe_query()` wrapper for all 58 public database queries
+  - Returns sensible defaults on database errors instead of crashing
+  - Improves resilience during connection issues or invalid queries
+- **Ratings Cache Tables (PF3)**: Pre-computed player and store ratings
+  - New `player_ratings_cache` and `store_ratings_cache` tables
+  - Cache auto-populates on startup if empty
+  - Recalculates after result entry/modification
+- **Visibility-Aware Keepalive (PF10)**: Connection stays alive while tab is active
+  - Pauses keepalive pings when tab is hidden (saves server resources)
+- **Custom Disconnect Overlay (PF11)**: Branded "Connection Lost" screen with reconnect button
+- **SEO Files (PF7-9)**: Added `robots.txt`, `sitemap.xml`, and og:image meta tags
+
+### Changed
+- **Faster Loading (PF1)**: Removed artificial 800ms delay, reduced JS timeout to 200ms
+- **Lazy-Load Admin Modules (PF4)**: Admin server code loads only when user logs in as admin
+- **Dashboard Caching (PF2)**: Added `bindCache()` to 20+ dashboard outputs for cross-session caching
+
+### Removed
+- **Unused Libraries**: Removed 5 packages from startup (tidygeocoder, sysfonts, showtext, brand.yml, httr)
+  - httr now lazy-loaded via namespacing in digimoncard_api.R
+  - Estimated 1-2 second faster cold start on Posit Connect
+
+---
+
 ## [0.21.0] - 2026-02-09 - Deep Linking & Shareable URLs
 
 ### Added

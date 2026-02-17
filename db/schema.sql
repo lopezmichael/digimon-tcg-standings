@@ -300,6 +300,28 @@ CREATE TABLE IF NOT EXISTS ingestion_log (
 );
 
 -- =============================================================================
+-- PLAYER RATINGS CACHE TABLE
+-- Pre-computed player ratings for performance (recomputed on result submission)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS player_ratings_cache (
+    player_id INTEGER PRIMARY KEY,
+    competitive_rating INTEGER NOT NULL DEFAULT 1500,
+    achievement_score INTEGER NOT NULL DEFAULT 0,
+    events_played INTEGER NOT NULL DEFAULT 0,
+    last_computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================================================
+-- STORE RATINGS CACHE TABLE
+-- Pre-computed store ratings for performance (recomputed on result submission)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS store_ratings_cache (
+    store_id INTEGER PRIMARY KEY,
+    avg_player_rating INTEGER NOT NULL DEFAULT 1500,
+    last_computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================================================
 -- VIEWS FOR COMMON QUERIES
 -- =============================================================================
 

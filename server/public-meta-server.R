@@ -14,22 +14,29 @@ output$archetype_stats <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  # Build filters
-  search_filter <- if (!is.null(input$meta_search) && nchar(trimws(input$meta_search)) > 0) {
-    sprintf("AND LOWER(da.archetype_name) LIKE LOWER('%%%s%%')", trimws(input$meta_search))
-  } else ""
+  # Build parameterized filters to prevent SQL injection
+  search_filters <- build_filters_param(
+    table_alias = "da",
+    search = input$meta_search,
+    search_column = "archetype_name"
+  )
 
-  format_filter <- if (!is.null(input$meta_format) && input$meta_format != "") {
-    sprintf("AND t.format = '%s'", input$meta_format)
-  } else ""
-
-  scene_filter <- build_scene_filter(rv$current_scene, "s")
+  format_filters <- build_filters_param(
+    table_alias = "t",
+    format = input$meta_format,
+    scene = rv$current_scene,
+    store_alias = "s"
+  )
 
   min_entries <- as.numeric(input$meta_min_entries)
   if (is.na(min_entries)) min_entries <- 0
 
+  # Combine filter SQL and params
+  combined_sql <- paste(search_filters$sql, format_filters$sql)
+  combined_params <- c(search_filters$params, format_filters$params, list(as.integer(min_entries)))
+
   # Exclude UNKNOWN archetype from analytics
-  result <- dbGetQuery(rv$db_con, sprintf("
+  result <- safe_query(rv$db_con, sprintf("
     SELECT da.archetype_id, da.archetype_name as Deck, da.primary_color as Color,
            COUNT(r.result_id) as Entries,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1sts',
@@ -39,11 +46,11 @@ output$archetype_stats <- renderReactable({
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id
-    WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s %s
+    WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s
     GROUP BY da.archetype_id, da.archetype_name, da.primary_color
-    HAVING COUNT(r.result_id) >= %d
+    HAVING COUNT(r.result_id) >= ?
     ORDER BY COUNT(r.result_id) DESC, COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
-  ", search_filter, format_filter, scene_filter, min_entries))
+  ", combined_sql), params = combined_params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No decks match the current filters"), compact = TRUE))
@@ -95,16 +102,23 @@ output$deck_detail_modal <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   # Get archetype info
-  archetype <- dbGetQuery(rv$db_con, sprintf("
+  archetype <- safe_query(rv$db_con, "
     SELECT archetype_name, primary_color, secondary_color, display_card_id, slug
     FROM deck_archetypes
-    WHERE archetype_id = %d
-  ", archetype_id))
+    WHERE archetype_id = ?
+  ", params = list(archetype_id), default = data.frame())
 
   if (nrow(archetype) == 0) return(NULL)
 
+  # Build scene filter for modal queries
+  scene_filters <- build_filters_param(
+    table_alias = "t",
+    scene = rv$current_scene,
+    store_alias = "s"
+  )
+
   # Get overall stats with meta share and conversion rate
-  stats <- dbGetQuery(rv$db_con, sprintf("
+  stats <- safe_query(rv$db_con, sprintf("
     WITH deck_stats AS (
       SELECT COUNT(r.result_id) as entries,
              COUNT(DISTINCT r.tournament_id) as tournaments,
@@ -114,19 +128,27 @@ output$deck_detail_modal <- renderUI({
              COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct
       FROM results r
-      WHERE r.archetype_id = %d
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      JOIN stores s ON t.store_id = s.store_id
+      WHERE r.archetype_id = ? %s
     ),
     total_entries AS (
-      SELECT COUNT(*) as total FROM results
+      SELECT COUNT(*) as total
+      FROM results r
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      JOIN stores s ON t.store_id = s.store_id
+      WHERE 1=1 %s
     )
     SELECT ds.*,
            ROUND(ds.entries * 100.0 / NULLIF(te.total, 0), 1) as meta_pct,
            ROUND(ds.top3 * 100.0 / NULLIF(ds.entries, 0), 1) as conv_pct
     FROM deck_stats ds, total_entries te
-  ", archetype_id))
+  ", scene_filters$sql, scene_filters$sql),
+  params = c(list(archetype_id), scene_filters$params, scene_filters$params),
+  default = data.frame())
 
   # Get top pilots (include player_id for clickable links)
-  top_pilots <- dbGetQuery(rv$db_con, sprintf("
+  top_pilots <- safe_query(rv$db_con, sprintf("
     SELECT p.player_id,
            p.display_name as Player,
            COUNT(*) as Times,
@@ -134,25 +156,26 @@ output$deck_detail_modal <- renderUI({
            ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
     FROM results r
     JOIN players p ON r.player_id = p.player_id
-    WHERE r.archetype_id = %d
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    JOIN stores s ON t.store_id = s.store_id
+    WHERE r.archetype_id = ? %s
     GROUP BY p.player_id, p.display_name
     ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(*) DESC
     LIMIT 5
-  ", archetype_id))
+  ", scene_filters$sql), params = c(list(archetype_id), scene_filters$params), default = data.frame())
 
-  # Get recent results with this deck (filtered by scene)
-  scene_filter <- build_scene_filter(rv$current_scene, "s")
-  recent_results <- dbGetQuery(rv$db_con, sprintf("
+  # Get recent results with this deck
+  recent_results <- safe_query(rv$db_con, sprintf("
     SELECT t.event_date as Date, s.name as Store, p.display_name as Player,
            r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id
     JOIN players p ON r.player_id = p.player_id
-    WHERE r.archetype_id = %d %s
+    WHERE r.archetype_id = ? %s
     ORDER BY t.event_date DESC, r.placement ASC
     LIMIT 10
-  ", archetype_id, scene_filter))
+  ", scene_filters$sql), params = c(list(archetype_id), scene_filters$params), default = data.frame())
 
   # Card image URL
   card_img_url <- if (!is.na(archetype$display_card_id) && archetype$display_card_id != "") {

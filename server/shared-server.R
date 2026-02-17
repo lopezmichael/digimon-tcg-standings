@@ -10,14 +10,30 @@
 observe({
   rv$db_con <- connect_db()
 
-  # Once database is connected, hide the loading screen
+  # Once database is connected, check and populate ratings cache if empty
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    # Small delay to let initial data queries complete
-    shinyjs::delay(800, {
-      session$sendCustomMessage("hideLoading", list())
+    # Check if ratings cache is empty and populate if needed
+    tryCatch({
+      cache_count <- DBI::dbGetQuery(rv$db_con,
+        "SELECT COUNT(*) as n FROM player_ratings_cache")$n
+      if (is.na(cache_count) || cache_count == 0) {
+        message("[startup] Ratings cache empty, populating...")
+        recalculate_ratings_cache(rv$db_con)
+        message("[startup] Ratings cache populated")
+      }
+    }, error = function(e) {
+      message("[startup] Could not check/populate ratings cache: ", e$message)
     })
+
+    # Hide loading screen - data is ready after cache check
+    session$sendCustomMessage("hideLoading", list())
   }
 })
+
+# Keepalive handler - receiving the input is enough to keep connection alive
+observeEvent(input$keepalive_ping, {
+  # No-op: just receiving this keeps the WebSocket active
+}, ignoreInit = TRUE)
 
 onStop(function() {
   isolate({
@@ -371,6 +387,44 @@ observeEvent(input$logout_btn, {
 # Helper Functions
 # ---------------------------------------------------------------------------
 
+#' Safe Database Query Wrapper
+#'
+#' Executes a database query with error handling, returning a sensible default
+#' instead of crashing the app if the query fails. Useful for public-facing
+#' queries where graceful degradation is preferred over error screens.
+#'
+#' @param db_con Database connection object from DBI
+#' @param query Character. SQL query string (can include ? placeholders for params)
+#' @param params List or NULL. Parameters for parameterized query (default: NULL)
+#' @param default Default value to return on error (default: empty data.frame)
+#'
+#' @return Query result on success, or default value on error
+#'
+#' @examples
+#' # Simple query
+#' result <- safe_query(rv$db_con, "SELECT * FROM players")
+#'
+#' # Parameterized query
+#' result <- safe_query(rv$db_con, "SELECT * FROM players WHERE player_id = ?",
+#'                      params = list(42))
+#'
+#' # Custom default for aggregations
+#' result <- safe_query(rv$db_con, "SELECT COUNT(*) as n FROM results",
+#'                      default = data.frame(n = 0))
+safe_query <- function(db_con, query, params = NULL, default = data.frame()) {
+  tryCatch({
+    if (is.null(db_con) || !DBI::dbIsValid(db_con)) return(default)
+    if (is.null(params)) {
+      DBI::dbGetQuery(db_con, query)
+    } else {
+      DBI::dbGetQuery(db_con, query, params = params)
+    }
+  }, error = function(e) {
+    message(sprintf("[safe_query] Error: %s\nQuery: %s", e$message, substr(query, 1, 200)))
+    default
+  })
+}
+
 get_store_choices <- function(con, include_none = FALSE) {
   if (is.null(con) || !dbIsValid(con)) return(c("Loading..." = ""))
   stores <- dbGetQuery(con, "SELECT store_id, name FROM stores WHERE is_active = TRUE ORDER BY name")
@@ -435,3 +489,107 @@ observe({
     updateSelectInput(session, "tournament_format", choices = format_choices)
   }
 })
+
+#' Build Parameterized SQL Filters
+#'
+#' Creates SQL WHERE clause fragments with parameterized placeholders to prevent
+#' SQL injection. Returns both the SQL fragment and corresponding parameter values.
+#'
+#' @param table_alias Character. Table alias to use in SQL (e.g., "t" for "t.format")
+#' @param format Character or NULL. Format value for exact match filter
+#' @param event_type Character or NULL. Event type value for exact match filter
+#' @param search Character or NULL. Search term for LIKE filter (will be wrapped with %)
+#' @param search_column Character. Column name for search filter (default: "display_name")
+#' @param id Integer or NULL. ID value for exact match filter
+#' @param id_column Character. Column name for ID filter (default: "id")
+#' @param scene Character or NULL. Scene slug for filtering ("all" = no filter, "online" = is_online stores)
+#' @param store_alias Character or NULL. Table alias for stores table when filtering by scene
+#'
+#' @return List with:
+#'   - sql: SQL fragment with ? placeholders (e.g., "AND t.format = ?")
+#'   - params: List of parameter values in order
+#'   - any_active: Boolean indicating if any filters are active
+#'
+#' @examples
+#' filters <- build_filters_param(
+#'   table_alias = "t",
+#'   format = "BT-19",
+#'   event_type = "locals",
+#'   scene = "dfw",
+#'   store_alias = "s"
+#' )
+#' # filters$sql: "AND t.format = ? AND t.event_type = ? AND s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)"
+#' # filters$params: list("BT-19", "locals", "dfw")
+#'
+#' query <- paste("SELECT * FROM tournaments t JOIN stores s ON t.store_id = s.store_id WHERE 1=1", filters$sql)
+#' dbGetQuery(con, query, params = filters$params)
+build_filters_param <- function(table_alias = "t",
+                                 format = NULL,
+                                 event_type = NULL,
+                                 search = NULL,
+                                 search_column = "display_name",
+                                 id = NULL,
+                                 id_column = "id",
+                                 scene = NULL,
+                                 store_alias = NULL) {
+  sql_parts <- character(0)
+  params <- list()
+
+  # Format filter (exact match)
+  if (!is.null(format) && format != "") {
+    sql_parts <- c(sql_parts, sprintf("AND %s.format = ?", table_alias))
+    params <- c(params, list(format))
+  }
+
+  # Event type filter (exact match)
+  if (!is.null(event_type) && event_type != "") {
+    sql_parts <- c(sql_parts, sprintf("AND %s.event_type = ?", table_alias))
+    params <- c(params, list(event_type))
+  }
+
+  # Search filter (LIKE match, case-insensitive)
+  if (!is.null(search) && trimws(search) != "") {
+    search_term <- trimws(search)
+    # Use table alias if search_column doesn't contain a dot (allowing "p.display_name" override)
+    col_ref <- if (grepl("\\.", search_column)) {
+      search_column
+    } else {
+      sprintf("%s.%s", table_alias, search_column)
+    }
+    sql_parts <- c(sql_parts, sprintf("AND LOWER(%s) LIKE LOWER(?)", col_ref))
+    params <- c(params, list(paste0("%", search_term, "%")))
+  }
+
+  # ID filter (exact match)
+  if (!is.null(id) && !is.na(id)) {
+    # Use table alias if id_column doesn't contain a dot
+    col_ref <- if (grepl("\\.", id_column)) {
+      id_column
+    } else {
+      sprintf("%s.%s", table_alias, id_column)
+    }
+    sql_parts <- c(sql_parts, sprintf("AND %s = ?", col_ref))
+    params <- c(params, list(as.integer(id)))
+  }
+
+  # Scene filter (requires store_alias to be set)
+  if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
+    if (scene == "online") {
+      # Online scene filters by is_online flag (no parameter needed)
+      sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
+    } else {
+      # Regular scene filters by scene_id via slug lookup
+      sql_parts <- c(sql_parts, sprintf(
+        "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
+        store_alias
+      ))
+      params <- c(params, list(scene))
+    }
+  }
+
+  list(
+    sql = paste(sql_parts, collapse = " "),
+    params = params,
+    any_active = length(params) > 0
+  )
+}
