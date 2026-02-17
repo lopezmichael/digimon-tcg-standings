@@ -88,7 +88,15 @@ export function TopPlayers({ queryString }: TopPlayersProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top Players</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>Top Players</CardTitle>
+          <span
+            className="text-muted-foreground cursor-help"
+            title="Rating: Elo-style skill rating (1200-2000+) based on tournament placements and opponent strength. Achv: Achievement score based on placements, store diversity, and deck variety."
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          </span>
+        </div>
       </CardHeader>
       <CardContent className="px-0">
         <Table>

@@ -24,6 +24,7 @@ interface MostPopularDeck {
 interface HotDeck {
   insufficient_data: boolean
   no_trending?: boolean
+  tournament_count?: number
   archetype_name?: string
   display_card_id?: string | null
   delta?: number
@@ -82,22 +83,26 @@ export function StatBoxes({ queryString }: StatBoxesProps) {
       image: null,
     },
     {
-      label: 'Top Deck',
-      value: topDeck?.archetype_name ?? '-',
-      borderColor: 'border-l-orange-500',
-      subtitle: topDeck ? `${topDeck.meta_share}% meta share` : null,
-      image: cardImgUrl(topDeck?.display_card_id),
-    },
-    {
       label: 'Hot Deck',
       value: hotDeck?.insufficient_data
-        ? 'N/A'
+        ? 'Tracking...'
         : hotDeck?.no_trending
           ? 'No trend'
           : hotDeck?.archetype_name ?? '-',
-      borderColor: 'border-l-purple-500',
-      subtitle: hotDeck?.delta ? `+${hotDeck.delta}% meta share` : null,
+      borderColor: 'border-l-orange-500',
+      subtitle: hotDeck?.insufficient_data
+        ? `${10 - (hotDeck?.tournament_count ?? 0)} more events needed`
+        : hotDeck?.no_trending
+          ? 'stable meta'
+          : hotDeck?.delta ? `+${hotDeck.delta}% share` : null,
       image: cardImgUrl(hotDeck?.display_card_id),
+    },
+    {
+      label: 'Top Deck',
+      value: topDeck?.archetype_name ?? '-',
+      borderColor: 'border-l-purple-500',
+      subtitle: topDeck ? `${topDeck.meta_share}% of meta` : null,
+      image: cardImgUrl(topDeck?.display_card_id),
     },
   ]
 

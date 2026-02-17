@@ -9,6 +9,9 @@ import type {
   ConversionData,
   ColorDistData,
   TrendData,
+  RisingStar,
+  MetaDiversity,
+  PlayerGrowthMonth,
 } from '@/lib/types'
 import { DECK_COLORS, COLOR_ORDER } from '@/lib/types'
 
@@ -315,13 +318,13 @@ export async function getColorDistribution(
 
   return query<ColorDistData>(`
     SELECT
-      CASE WHEN da.secondary_color IS NOT NULL THEN 'Multi' ELSE da.primary_color END as color,
+      da.primary_color as color,
       COUNT(r.result_id) as count
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     WHERE 1=1 AND da.archetype_name != 'UNKNOWN' ${f.format} ${f.eventType} ${f.store}
-    GROUP BY CASE WHEN da.secondary_color IS NOT NULL THEN 'Multi' ELSE da.primary_color END
+    GROUP BY da.primary_color
     ORDER BY count DESC
   `)
 }
@@ -659,6 +662,144 @@ export async function getStoreRatings(): Promise<{ store_id: number; store_ratin
 
     return { store_id: store.store_id, store_rating: storeRating }
   })
+}
+
+// --- Rising Stars ---
+
+export async function getRisingStars(
+  filters: { format?: string; eventType?: string }
+): Promise<RisingStar[]> {
+  const f = buildFilterClauses(filters)
+
+  const today = new Date()
+  const date30Ago = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const cutoff = date30Ago.toISOString().split('T')[0]
+
+  const result = await query<{
+    player_id: number
+    display_name: string
+    recent_wins: number
+    recent_top3: number
+    recent_events: number
+  }>(`
+    SELECT
+      p.player_id,
+      p.display_name,
+      COUNT(CASE WHEN r.placement = 1 THEN 1 END) as recent_wins,
+      COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as recent_top3,
+      COUNT(*) as recent_events
+    FROM results r
+    JOIN players p ON r.player_id = p.player_id
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE t.event_date >= '${cutoff}' ${f.format} ${f.eventType} ${f.store}
+    GROUP BY p.player_id, p.display_name
+    HAVING COUNT(CASE WHEN r.placement <= 3 THEN 1 END) > 0
+    ORDER BY
+      COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC,
+      COUNT(CASE WHEN r.placement <= 3 THEN 1 END) DESC,
+      COUNT(*) DESC
+    LIMIT 4
+  `)
+
+  if (result.length === 0) return []
+
+  const compRatings = await getCompetitiveRatings()
+  const ratingMap = new Map(compRatings.map(r => [r.player_id, r.competitive_rating]))
+
+  return result.map(r => ({
+    ...r,
+    competitive_rating: ratingMap.get(r.player_id) ?? 1500,
+  }))
+}
+
+// --- Meta Diversity ---
+
+export async function getMetaDiversity(
+  filters: { format?: string; eventType?: string }
+): Promise<MetaDiversity> {
+  const f = buildFilterClauses(filters)
+
+  const result = await query<{
+    archetype_name: string
+    wins: number
+  }>(`
+    SELECT da.archetype_name,
+           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as wins
+    FROM results r
+    JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE da.archetype_name != 'UNKNOWN' ${f.format} ${f.eventType} ${f.store}
+    GROUP BY da.archetype_id, da.archetype_name
+    HAVING COUNT(CASE WHEN r.placement = 1 THEN 1 END) > 0
+  `)
+
+  if (result.length === 0) return { score: null, decks_with_wins: 0, total_wins: 0 }
+
+  const totalWins = result.reduce((sum, r) => sum + r.wins, 0)
+  if (totalWins === 0) return { score: null, decks_with_wins: 0, total_wins: 0 }
+
+  // Calculate HHI (sum of squared market shares)
+  const hhi = result.reduce((sum, r) => {
+    const share = r.wins / totalWins
+    return sum + share * share
+  }, 0)
+
+  // Convert to diversity score (0-100, higher = more diverse)
+  const score = Math.round((1 - hhi) * 100)
+
+  return { score, decks_with_wins: result.length, total_wins: totalWins }
+}
+
+// --- Player Growth & Retention ---
+
+export async function getPlayerGrowth(
+  filters: { format?: string; eventType?: string }
+): Promise<PlayerGrowthMonth[]> {
+  const f = buildFilterClauses(filters)
+
+  const result = await query<PlayerGrowthMonth>(`
+    WITH player_first AS (
+      SELECT r.player_id,
+             MIN(t.event_date) as first_date,
+             strftime(MIN(t.event_date), '%Y-%m') as first_month
+      FROM results r
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      GROUP BY r.player_id
+    ),
+    player_monthly AS (
+      SELECT DISTINCT
+        strftime(t.event_date, '%Y-%m') as month,
+        r.player_id,
+        pf.first_month,
+        pf.first_date
+      FROM results r
+      JOIN tournaments t ON r.tournament_id = t.tournament_id
+      JOIN player_first pf ON r.player_id = pf.player_id
+      WHERE 1=1 ${f.format} ${f.eventType} ${f.store}
+    ),
+    player_cumulative AS (
+      SELECT
+        pm.month,
+        pm.player_id,
+        pm.first_month,
+        (SELECT COUNT(DISTINCT t2.tournament_id)
+         FROM results r2
+         JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
+         WHERE r2.player_id = pm.player_id
+           AND strftime(t2.event_date, '%Y-%m') < pm.month) as prior_events
+      FROM player_monthly pm
+    )
+    SELECT
+      month,
+      COUNT(CASE WHEN first_month = month THEN 1 END) as new_players,
+      COUNT(CASE WHEN first_month < month AND prior_events < 3 THEN 1 END) as returning_players,
+      COUNT(CASE WHEN prior_events >= 3 THEN 1 END) as regulars
+    FROM player_cumulative
+    GROUP BY month
+    ORDER BY month
+  `)
+
+  return result
 }
 
 // --- Format List ---

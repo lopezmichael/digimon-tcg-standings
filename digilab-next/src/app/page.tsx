@@ -4,6 +4,9 @@ import { useDashboardFilters } from '@/hooks/use-dashboard-filters'
 import { TitleStrip } from '@/components/dashboard/title-strip'
 import { StatBoxes } from '@/components/dashboard/stat-boxes'
 import { TopDecks } from '@/components/dashboard/top-decks'
+import { RisingStars } from '@/components/dashboard/rising-stars'
+import { MetaDiversityGauge } from '@/components/dashboard/meta-diversity'
+import { PlayerGrowthChart } from '@/components/dashboard/player-growth'
 import { Charts } from '@/components/dashboard/charts'
 import { RecentTournaments } from '@/components/dashboard/recent-tournaments'
 import { TopPlayers } from '@/components/dashboard/top-players'
@@ -26,6 +29,15 @@ export default function Dashboard() {
 
       {/* Top Decks Card */}
       <TopDecks queryString={queryString} />
+
+      {/* Rising Stars */}
+      <RisingStars queryString={queryString} />
+
+      {/* Scene Health: Meta Diversity + Player Growth side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-4 mb-4">
+        <MetaDiversityGauge queryString={queryString} />
+        <PlayerGrowthChart queryString={queryString} />
+      </div>
 
       {/* Charts - 3 column grid */}
       <Charts queryString={queryString} />

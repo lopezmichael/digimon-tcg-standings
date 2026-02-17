@@ -141,6 +141,31 @@ export interface MetaTimelineData {
   share: number
 }
 
+// Rising Stars - players with recent top finishes
+export interface RisingStar {
+  player_id: number
+  display_name: string
+  recent_wins: number
+  recent_top3: number
+  recent_events: number
+  competitive_rating: number
+}
+
+// Meta Diversity (HHI-based)
+export interface MetaDiversity {
+  score: number | null
+  decks_with_wins: number
+  total_wins: number
+}
+
+// Player Growth & Retention (monthly breakdown)
+export interface PlayerGrowthMonth {
+  month: string
+  new_players: number
+  returning_players: number
+  regulars: number
+}
+
 export const DECK_COLORS: Record<string, string> = {
   Red: '#E5383B',
   Blue: '#2D7DD2',
