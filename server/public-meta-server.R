@@ -34,7 +34,7 @@ output$archetype_stats <- renderReactable({
   combined_params <- c(search_filters$params, format_filters$params, list(as.integer(min_entries)))
 
   # Exclude UNKNOWN archetype from analytics
-  result <- dbGetQuery(rv$db_con, sprintf("
+  result <- safe_query(rv$db_con, sprintf("
     SELECT da.archetype_id, da.archetype_name as Deck, da.primary_color as Color,
            COUNT(r.result_id) as Entries,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1sts',
@@ -47,7 +47,7 @@ output$archetype_stats <- renderReactable({
     GROUP BY da.archetype_id, da.archetype_name, da.primary_color
     HAVING COUNT(r.result_id) >= ?
     ORDER BY COUNT(r.result_id) DESC, COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
-  ", combined_sql), params = combined_params)
+  ", combined_sql), params = combined_params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No decks match the current filters"), compact = TRUE))
@@ -99,16 +99,16 @@ output$deck_detail_modal <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   # Get archetype info
-  archetype <- dbGetQuery(rv$db_con, "
+  archetype <- safe_query(rv$db_con, "
     SELECT archetype_name, primary_color, secondary_color, display_card_id, slug
     FROM deck_archetypes
     WHERE archetype_id = ?
-  ", params = list(archetype_id))
+  ", params = list(archetype_id), default = data.frame())
 
   if (nrow(archetype) == 0) return(NULL)
 
   # Get overall stats with meta share and conversion rate
-  stats <- dbGetQuery(rv$db_con, "
+  stats <- safe_query(rv$db_con, "
     WITH deck_stats AS (
       SELECT COUNT(r.result_id) as entries,
              COUNT(DISTINCT r.tournament_id) as tournaments,
@@ -127,10 +127,10 @@ output$deck_detail_modal <- renderUI({
            ROUND(ds.entries * 100.0 / NULLIF(te.total, 0), 1) as meta_pct,
            ROUND(ds.top3 * 100.0 / NULLIF(ds.entries, 0), 1) as conv_pct
     FROM deck_stats ds, total_entries te
-  ", params = list(archetype_id))
+  ", params = list(archetype_id), default = data.frame())
 
   # Get top pilots (include player_id for clickable links)
-  top_pilots <- dbGetQuery(rv$db_con, "
+  top_pilots <- safe_query(rv$db_con, "
     SELECT p.player_id,
            p.display_name as Player,
            COUNT(*) as Times,
@@ -142,10 +142,10 @@ output$deck_detail_modal <- renderUI({
     GROUP BY p.player_id, p.display_name
     ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(*) DESC
     LIMIT 5
-  ", params = list(archetype_id))
+  ", params = list(archetype_id), default = data.frame())
 
   # Get recent results with this deck
-  recent_results <- dbGetQuery(rv$db_con, "
+  recent_results <- safe_query(rv$db_con, "
     SELECT t.event_date as Date, s.name as Store, p.display_name as Player,
            r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
     FROM results r
@@ -155,7 +155,7 @@ output$deck_detail_modal <- renderUI({
     WHERE r.archetype_id = ?
     ORDER BY t.event_date DESC, r.placement ASC
     LIMIT 10
-  ", params = list(archetype_id))
+  ", params = list(archetype_id), default = data.frame())
 
   # Card image URL
   card_img_url <- if (!is.na(archetype$display_card_id) && archetype$display_card_id != "") {
