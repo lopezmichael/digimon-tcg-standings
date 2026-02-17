@@ -288,6 +288,8 @@ ui <- page_fillable(
       gtag('config', 'G-NJ3SMG8HGG');
     ")),
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
+    # Deep linking URL routing
+    tags$script(src = "url-routing.js"),
     # JavaScript to handle active nav state and loading screen
     tags$script(HTML("
       $(document).on('click', '.nav-link-sidebar', function() {
@@ -585,16 +587,16 @@ server <- function(input, output, session) {
 
     # === NAVIGATION ===
     current_nav = "dashboard",
+    current_scene = NULL,              # Scene filter for deep linking (e.g., "dfw")
     navigate_to_tournament_id = NULL,
 
     # === MODAL STATE ===
-    # Pattern: selected_{entity}_id (singular), selected_{entity}_ids (plural/multiple)
+    # Pattern: selected_{entity}_id (singular)
     selected_store_id = NULL,
     selected_online_store_id = NULL,
     selected_player_id = NULL,
     selected_archetype_id = NULL,
     selected_tournament_id = NULL,
-    selected_store_ids = NULL,  # Map region filter (multiple stores)
 
     # === FORM/WIZARD STATE ===
     wizard_step = 1,
@@ -614,6 +616,10 @@ server <- function(input, output, session) {
     format_refresh = 0,
     tournament_refresh = 0,
     modal_results_refresh = 0,
+    schedules_refresh = 0,
+
+    # === STORE FORM STATE ===
+    pending_schedules = list(),  # Schedules to add when creating new store
 
     # === DELETE PERMISSION STATE ===
     # Pattern: can_delete_{entity} + {entity}_{related}_count
@@ -643,6 +649,7 @@ server <- function(input, output, session) {
   # ---------------------------------------------------------------------------
 
   source("server/shared-server.R", local = TRUE)
+  source("server/url-routing-server.R", local = TRUE)
   source("server/admin-results-server.R", local = TRUE)
   source("server/admin-tournaments-server.R", local = TRUE)
   source("server/admin-decks-server.R", local = TRUE)
@@ -681,14 +688,14 @@ server <- function(input, output, session) {
     calculate_achievement_scores(rv$db_con)
   })
 
-  # Reactive: Calculate store ratings
-  store_ratings <- reactive({
+  # Reactive: Calculate average player rating per store (weighted by participation)
+  store_avg_ratings <- reactive({
     if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
-      return(data.frame(store_id = integer(), store_rating = numeric()))
+      return(data.frame(store_id = integer(), avg_player_rating = numeric()))
     }
     rv$results_refresh
     player_rtgs <- player_competitive_ratings()
-    calculate_store_ratings(rv$db_con, player_rtgs)
+    calculate_store_avg_player_rating(rv$db_con, player_rtgs)
   })
 
 

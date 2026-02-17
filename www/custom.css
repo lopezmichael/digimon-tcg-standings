@@ -3,6 +3,61 @@
 /* Layout: Sidebar + Header */
 
 /* =============================================================================
+   CUSTOM SCROLLBARS - Digital Aesthetic
+   ============================================================================= */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 76, 129, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.5) 0%, rgba(15, 76, 129, 0.6) 100%);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 200, 255, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.7) 0%, rgba(15, 76, 129, 0.8) 100%);
+  border-color: rgba(0, 200, 255, 0.4);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark mode scrollbars */
+[data-bs-theme="dark"] ::-webkit-scrollbar-track {
+  background: rgba(0, 200, 255, 0.05);
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.4) 0%, rgba(15, 76, 129, 0.5) 100%);
+  border-color: rgba(0, 200, 255, 0.3);
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.6) 0%, rgba(15, 76, 129, 0.7) 100%);
+  border-color: rgba(0, 200, 255, 0.5);
+}
+
+/* Firefox scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 200, 255, 0.5) rgba(15, 76, 129, 0.1);
+}
+
+[data-bs-theme="dark"] * {
+  scrollbar-color: rgba(0, 200, 255, 0.4) rgba(0, 200, 255, 0.05);
+}
+
+/* =============================================================================
    APP HEADER
    ============================================================================= */
 
@@ -1016,7 +1071,7 @@ body.bslib-gap-spacing {
 
 .vb-label-icon {
   font-size: 0.75rem;
-  color: #F7941D;
+  color: #D97706;
 }
 
 /* Value styling */
@@ -1208,6 +1263,132 @@ body.bslib-gap-spacing {
   .vb-image-showcase img {
     max-height: 55px;
   }
+}
+
+/* =============================================================================
+   SCENE HEALTH INDICATORS
+   ============================================================================= */
+
+.scene-health-section {
+  padding: 0.75rem;
+}
+
+.rising-stars-section {
+  padding: 0.75rem;
+}
+
+/* Rising Stars Grid */
+.rising-stars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.rising-star-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rising-star-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rising-star-rank {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0F4C81 0%, #00C8FF 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rising-star-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rising-star-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rising-star-badges {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.rising-star-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.rising-star-badge.badge-gold {
+  background: linear-gradient(135deg, #F5B700 0%, #FFD700 100%);
+  color: #1a1a1a;
+}
+
+.rising-star-badge.badge-silver {
+  background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%);
+  color: #1a1a1a;
+}
+
+.rising-star-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.rising-star-rating .rating-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #0F4C81;
+}
+
+.rising-star-rating .rating-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
+/* Dark mode for scene health */
+[data-bs-theme="dark"] .rising-star-card {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .rising-star-name {
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .rising-star-rating .rating-value {
+  color: #00C8FF;
+}
+
+[data-bs-theme="dark"] .rising-star-rating .rating-label {
+  color: #94a3b8;
 }
 
 /* =============================================================================
@@ -1485,7 +1666,7 @@ body.bslib-gap-spacing {
 
 /* Orange accent on interactive elements */
 a:hover, .nav-link:hover {
-  color: #F7941D !important;
+  color: #D97706 !important;
 }
 
 /* Primary button with orange hover */
@@ -1608,6 +1789,13 @@ a:hover, .nav-link:hover {
   border: 1px solid rgba(0, 200, 255, 0.2);
 }
 
+/* Enable text selection in modals */
+.modal-body,
+.modal-body * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Dark mode modal */
 [data-bs-theme="dark"] .modal-header {
   background-image:
@@ -1670,7 +1858,7 @@ a:hover, .nav-link:hover {
 }
 
 .modal-stat-value.stat-highlight {
-  color: #F7941D;
+  color: #D97706;
 }
 
 .modal-stat-label {
@@ -1695,6 +1883,69 @@ a:hover, .nav-link:hover {
 
 [data-bs-theme="dark"] .modal-stat-label {
   color: #a0aec0;
+}
+
+/* =============================================================================
+   INFO HINT BOX - Digital Styled Explanatory Text
+   ============================================================================= */
+
+.info-hint-box {
+  position: relative;
+  background:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 12px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.03) 0px, transparent 1px, transparent 12px),
+    linear-gradient(135deg, rgba(15, 76, 129, 0.08) 0%, rgba(0, 200, 255, 0.05) 100%);
+  border: 1px solid rgba(0, 200, 255, 0.35);
+  border-radius: 6px;
+  padding: 0.625rem 0.875rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+/* Corner accent - top left horizontal */
+.info-hint-box::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(0, 200, 255, 0.7), transparent);
+}
+
+/* Corner accent - top left vertical */
+.info-hint-box::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 2px;
+  height: 16px;
+  background: linear-gradient(180deg, rgba(0, 200, 255, 0.7), transparent);
+}
+
+/* Icon styling within info hint */
+.info-hint-box .info-hint-icon {
+  color: #0F4C81;
+  margin-right: 0.375rem;
+  opacity: 0.8;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] .info-hint-box {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 12px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.04) 0px, transparent 1px, transparent 12px),
+    linear-gradient(135deg, rgba(0, 200, 255, 0.12) 0%, rgba(15, 76, 129, 0.08) 100%);
+  border-color: rgba(0, 200, 255, 0.4);
+  color: #a0aec0;
+}
+
+[data-bs-theme="dark"] .info-hint-box .info-hint-icon {
+  color: rgba(0, 200, 255, 0.9);
+  opacity: 1;
 }
 
 /* =============================================================================
@@ -1960,190 +2211,153 @@ a:hover, .nav-link:hover {
   border-radius: 0 0 8px 8px;
 }
 
-/* Style all map control buttons including draw controls */
-.mapboxgl-ctrl-group,
-.maplibregl-ctrl-group {
-  background: #0F4C81 !important;
-  border-radius: 6px !important;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-.mapboxgl-ctrl-group button,
-.maplibregl-ctrl-group button {
-  background-color: #0F4C81 !important;
-  border: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-  width: 36px !important;
-  height: 36px !important;
-}
-
-.mapboxgl-ctrl-group button:last-child,
-.maplibregl-ctrl-group button:last-child {
-  border-bottom: none !important;
-}
-
-.mapboxgl-ctrl-group button:hover,
-.maplibregl-ctrl-group button:hover {
-  background-color: #F7941D !important;
-}
-
-.mapboxgl-ctrl-group button.active,
-.maplibregl-ctrl-group button.active {
-  background-color: #F7941D !important;
-}
-
-/* Mapbox GL Draw - style the draw control buttons */
-.mapboxgl-ctrl-group button.mapbox-gl-draw_ctrl-draw-btn,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_polygon,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_trash,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_line,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_point,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_combine,
-.mapboxgl-ctrl-group button.mapbox-gl-draw_uncombine {
-  background-color: #0F4C81 !important;
-}
-
-/* Make ALL button background images (icons) white by inverting */
-.mapboxgl-ctrl-group button {
-  filter: none !important;
-}
-
-/* Target the actual SVG/image icons inside buttons */
-.mapboxgl-ctrl button.mapboxgl-ctrl-icon,
-.maplibregl-ctrl button.maplibregl-ctrl-icon {
-  filter: brightness(0) invert(1) !important;
-}
-
-/* Mapbox GL Draw uses background-image for icons - invert them */
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_line,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_point,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_combine,
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_uncombine,
-button.mapbox-gl-draw_polygon,
-button.mapbox-gl-draw_trash,
-button.mapbox-gl-draw_line,
-button.mapbox-gl-draw_point {
-  filter: invert(1) !important;
-  background-color: transparent !important;
-}
-
-/* Override to keep background but invert icon */
-.mapboxgl-ctrl-group button.mapbox-gl-draw_ctrl-draw-btn {
-  position: relative;
-}
-
-/* Alternative: Use CSS to style the buttons with custom colors */
-.mapboxgl-ctrl-group button::before {
-  filter: brightness(0) invert(1);
-}
-
-/* Ensure the draw control group has proper styling */
-.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group {
-  background: #0F4C81 !important;
-}
-
-/* =============================================================================
-   MAPBOX GL DRAW CONTROLS - Light Mode
-   ============================================================================= */
-
-/* Control group container */
-.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group,
-.mapboxgl-ctrl-group {
-  background-color: #FFFFFF !important;
-  border: 2px solid #0F4C81 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-}
-
-/* All buttons in control groups */
-.mapboxgl-ctrl-group > button,
-.mapboxgl-ctrl button {
-  background-color: #FFFFFF !important;
-  border: none !important;
-  border-bottom: 1px solid #E5E7EB !important;
-  width: 30px !important;
-  height: 30px !important;
-}
-
-.mapboxgl-ctrl-group > button:last-child {
-  border-bottom: none !important;
-}
-
-/* Hover state */
-.mapboxgl-ctrl-group > button:hover,
-.mapboxgl-ctrl button:hover {
-  background-color: #FEF3E2 !important;
-}
-
-/* Active/selected state - orange */
-.mapboxgl-ctrl-group > button.active,
-.mapboxgl-ctrl button.active {
-  background-color: #F7941D !important;
-}
-
-/* Active + hover */
-.mapboxgl-ctrl-group > button.active:hover,
-.mapboxgl-ctrl button.active:hover {
-  background-color: #E8842C !important;
-}
-
-/* =============================================================================
-   MAPBOX GL DRAW CONTROLS - Dark Mode
-   ============================================================================= */
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group,
-[data-bs-theme="dark"] .mapboxgl-ctrl-group {
-  background-color: #2D3748 !important;
-  border-color: #4A5568 !important;
-}
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-group > button,
-[data-bs-theme="dark"] .mapboxgl-ctrl button {
-  background-color: #2D3748 !important;
-  border-bottom-color: #4A5568 !important;
-  /* Invert icons to white for dark mode */
-  filter: invert(1) !important;
-}
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-group > button:hover,
-[data-bs-theme="dark"] .mapboxgl-ctrl button:hover {
-  background-color: #4A5568 !important;
-}
-
-[data-bs-theme="dark"] .mapboxgl-ctrl-group > button.active,
-[data-bs-theme="dark"] .mapboxgl-ctrl button.active {
-  background-color: #F7941D !important;
-  filter: none !important;
-}
-
-/* Drawn polygon styling on map */
+/* Remove focus outline from map canvas */
 .mapboxgl-canvas {
   outline: none;
 }
 
-/* Dark mode map controls */
-[data-bs-theme="dark"] .mapboxgl-ctrl-group,
-[data-bs-theme="dark"] .maplibregl-ctrl-group {
-  background: #2D3748 !important;
+/* Collapse attribution by default - show only the info button */
+.mapboxgl-ctrl-attrib:not(.mapboxgl-compact-show),
+.maplibregl-ctrl-attrib:not(.maplibregl-compact-show) {
+  padding: 0;
+  background: transparent;
 }
 
-[data-bs-theme="dark"] .mapboxgl-ctrl-group button,
-[data-bs-theme="dark"] .maplibregl-ctrl-group button {
-  background-color: #2D3748 !important;
-  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+.mapboxgl-ctrl-attrib:not(.mapboxgl-compact-show) .mapboxgl-ctrl-attrib-inner,
+.maplibregl-ctrl-attrib:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-inner {
+  display: none;
 }
 
-[data-bs-theme="dark"] .mapboxgl-ctrl-group button:hover,
-[data-bs-theme="dark"] .maplibregl-ctrl-group button:hover {
-  background-color: #F7941D !important;
+.mapboxgl-ctrl-attrib.mapboxgl-compact,
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  min-height: 20px;
 }
 
-[data-bs-theme="dark"] .mapboxgl-ctrl-group button[class*="mapbox-gl-draw"] {
-  filter: invert(0.8) hue-rotate(180deg) !important;
-  background-color: #2D3748 !important;
+/* =============================================================================
+   HIGHCHARTS COLOR OVERRIDES
+   Override atomtemplates theme colors to use dark blue instead of burgundy
+   ============================================================================= */
+
+/* Axis labels - force dark blue text */
+.highcharts-axis-labels text,
+.highcharts-xaxis-labels text,
+.highcharts-yaxis-labels text {
+  fill: #0F4C81 !important;
+}
+
+/* Axis titles */
+.highcharts-axis-title {
+  fill: #0F4C81 !important;
+}
+
+/* Legend text */
+.highcharts-legend-item text {
+  fill: #334155 !important;
+}
+
+/* Tooltip text */
+.highcharts-tooltip text {
+  fill: #1e293b !important;
+}
+
+/* Chart title and subtitle */
+.highcharts-title,
+.highcharts-subtitle {
+  fill: #0F4C81 !important;
+}
+
+/* Data labels */
+.highcharts-data-label text {
+  fill: #334155 !important;
+}
+
+/* Dark mode overrides */
+[data-bs-theme="dark"] .highcharts-axis-labels text,
+[data-bs-theme="dark"] .highcharts-xaxis-labels text,
+[data-bs-theme="dark"] .highcharts-yaxis-labels text {
+  fill: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-axis-title {
+  fill: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-legend-item text {
+  fill: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-title,
+[data-bs-theme="dark"] .highcharts-subtitle {
+  fill: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .highcharts-data-label text {
+  fill: #e2e8f0 !important;
+}
+
+/* =============================================================================
+   MAPBOX POPUP COLOR OVERRIDES
+   Override atomtemplates popup colors to use dark blue instead of burgundy
+   ============================================================================= */
+
+/* Force all text in popup to dark blue/slate */
+.mapboxgl-popup-content,
+.maplibregl-popup-content,
+.mapboxgl-popup-content *,
+.maplibregl-popup-content * {
+  color: #1e293b !important;
+}
+
+/* Popup header/title - stronger selectors */
+.mapboxgl-popup-content h1,
+.mapboxgl-popup-content h2,
+.mapboxgl-popup-content h3,
+.mapboxgl-popup-content h4,
+.mapboxgl-popup-content h5,
+.mapboxgl-popup-content h6,
+.mapboxgl-popup-content [class*="title"],
+.mapboxgl-popup-content [class*="header"],
+.mapboxgl-popup-content strong,
+.mapboxgl-popup-content b,
+.maplibregl-popup-content h1,
+.maplibregl-popup-content h2,
+.maplibregl-popup-content h3,
+.maplibregl-popup-content h4,
+.maplibregl-popup-content h5,
+.maplibregl-popup-content h6,
+.maplibregl-popup-content [class*="title"],
+.maplibregl-popup-content [class*="header"],
+.maplibregl-popup-content strong,
+.maplibregl-popup-content b {
+  color: #0F4C81 !important;
+}
+
+/* Popup subtitle and labels - muted */
+.mapboxgl-popup-content [class*="subtitle"],
+.mapboxgl-popup-content [class*="label"],
+.mapboxgl-popup-content small,
+.maplibregl-popup-content [class*="subtitle"],
+.maplibregl-popup-content [class*="label"],
+.maplibregl-popup-content small {
+  color: #64748b !important;
+}
+
+/* Popup metric values */
+.mapboxgl-popup-content [class*="value"],
+.mapboxgl-popup-content [class*="metric"],
+.maplibregl-popup-content [class*="value"],
+.maplibregl-popup-content [class*="metric"] {
+  color: #0F4C81 !important;
+}
+
+/* Override any inline styles on spans and divs */
+.mapboxgl-popup-content span,
+.mapboxgl-popup-content div,
+.mapboxgl-popup-content p,
+.maplibregl-popup-content span,
+.maplibregl-popup-content div,
+.maplibregl-popup-content p {
+  color: #334155 !important;
 }
 
 /* =============================================================================
@@ -2359,7 +2573,7 @@ button.mapbox-gl-draw_point {
 }
 
 [data-bs-theme="dark"] .deck-pct {
-  color: #F7941D;
+  color: #FBBF24;
 }
 
 /* Responsive - single column on small screens */
@@ -2411,7 +2625,7 @@ button.mapbox-gl-draw_point {
 }
 
 [data-bs-theme="dark"] .rating-info-icon:hover {
-  color: #F7941D;
+  color: #FBBF24;
 }
 
 /* =============================================================================
@@ -2832,7 +3046,7 @@ button.mapbox-gl-draw_point {
    ============================================================================= */
 
 .editing-mode .form-label {
-  color: #F7941D;
+  color: #D97706;
 }
 
 .editing-mode .card-header {
@@ -5031,7 +5245,7 @@ div.player-match-indicator.new {
   }
 
   .mobile-tab-bar .tab-bar-item.active {
-    color: #F7941D;
+    color: #FBBF24;
   }
 
   .mobile-tab-bar .tab-bar-item:hover {
@@ -5087,7 +5301,7 @@ div.player-match-indicator.new {
   [data-bs-theme="dark"] .admin-modal-link:hover {
     background: rgba(247, 148, 29, 0.12);
     border-color: rgba(247, 148, 29, 0.3);
-    color: #F7941D;
+    color: #FBBF24;
   }
 
   .admin-modal-link .bi {
@@ -5098,7 +5312,7 @@ div.player-match-indicator.new {
 
   .admin-modal-link:hover .bi {
     opacity: 1;
-    color: #F7941D;
+    color: #D97706;
   }
 
   .admin-modal-section {
@@ -5114,5 +5328,105 @@ div.player-match-indicator.new {
 [data-bs-theme="dark"] .mobile-tab-bar {
   background: linear-gradient(135deg, #0A1F33 0%, #0A3055 100%);
   border-top-color: rgba(0, 200, 255, 0.2);
+}
+
+/* =============================================================================
+   STORES SCHEDULE VIEW
+   ============================================================================= */
+
+/* Schedule day section */
+.schedule-day-section {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 0.75rem;
+}
+
+.schedule-day-section:last-of-type {
+  border-bottom: none;
+}
+
+/* Day header */
+.schedule-day-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.schedule-day-today {
+  color: var(--bs-primary) !important;
+}
+
+/* Store item in schedule */
+.schedule-store-item {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.schedule-store-item:hover {
+  background: rgba(15, 76, 129, 0.08);
+}
+
+.schedule-store-item:active {
+  background: rgba(15, 76, 129, 0.12);
+}
+
+/* Dark mode schedule styles */
+[data-bs-theme="dark"] .schedule-day-section {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .schedule-store-item {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-bs-theme="dark"] .schedule-store-item:hover {
+  background: rgba(0, 200, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .schedule-store-item:active {
+  background: rgba(0, 200, 255, 0.12);
+}
+
+/* View toggle active state */
+.btn-group .btn-outline-primary.active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+/* =============================================================================
+   STORE MINI MAP (Modal)
+   ============================================================================= */
+
+.store-mini-map {
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.15);
+  transition: box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.store-mini-map:hover {
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.3);
+}
+
+.store-mini-map .mapboxgl-map {
+  border-radius: inherit;
+}
+
+/* Hide map controls in mini map */
+.store-mini-map .mapboxgl-ctrl-bottom-left,
+.store-mini-map .mapboxgl-ctrl-bottom-right,
+.store-mini-map .mapboxgl-ctrl-top-left,
+.store-mini-map .mapboxgl-ctrl-top-right {
+  display: none;
+}
+
+[data-bs-theme="dark"] .store-mini-map {
+  border-color: rgba(0, 200, 255, 0.4);
+  box-shadow: 0 0 12px rgba(0, 200, 255, 0.2);
 }
 

@@ -93,7 +93,7 @@ output$deck_detail_modal <- renderUI({
 
   # Get archetype info
   archetype <- dbGetQuery(rv$db_con, sprintf("
-    SELECT archetype_name, primary_color, secondary_color, display_card_id
+    SELECT archetype_name, primary_color, secondary_color, display_card_id, slug
     FROM deck_archetypes
     WHERE archetype_id = %d
   ", archetype_id))
@@ -158,6 +158,14 @@ output$deck_detail_modal <- renderUI({
   # Color badge
   color_class <- paste0("deck-badge-", tolower(archetype$primary_color))
 
+  # Update URL for deep linking
+  deck_slug <- if (!is.null(archetype$slug) && !is.na(archetype$slug) && archetype$slug != "") {
+    archetype$slug
+  } else {
+    slugify(archetype$archetype_name)  # Fallback to generating from name
+  }
+  update_url_for_deck(session, archetype_id, deck_slug)
+
   # Build modal
   showModal(modalDialog(
     title = div(
@@ -166,7 +174,15 @@ output$deck_detail_modal <- renderUI({
     ),
     size = "l",
     easyClose = TRUE,
-    footer = modalButton("Close"),
+    footer = tagList(
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-secondary me-auto",
+        onclick = "copyCurrentUrl()",
+        bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      modalButton("Close")
+    ),
 
     # Card image and stats side by side
     div(

@@ -104,6 +104,7 @@ Pattern: `selected_{entity}_id` for single selection, `selected_{entity}_ids` fo
 | `selected_archetype_id` | integer | Archetype ID for deck modal |
 | `selected_tournament_id` | integer | Tournament ID for detail modal |
 | `selected_store_ids` | integer[] | Store IDs from map region filter |
+| `modal_store_coords` | list | Store coordinates for modal mini map (lat, lng, name) |
 
 ### Form/Wizard State
 
@@ -118,6 +119,7 @@ Pattern: `selected_{entity}_id` for single selection, `selected_{entity}_ids` fo
 | `editing_archetype` | list | Archetype being edited (edit mode) |
 | `card_search_results` | data.frame | Card search results for deck management |
 | `card_search_page` | integer | Current page in card search pagination |
+| `schedule_to_delete_id` | integer | Schedule ID pending delete confirmation |
 
 ### Refresh Triggers
 
@@ -130,6 +132,7 @@ Pattern: `{scope}_refresh` - increment to trigger reactive invalidation.
 | `format_refresh` | integer | Refresh format dropdowns |
 | `tournament_refresh` | integer | Refresh tournament tables |
 | `modal_results_refresh` | integer | Refresh results in edit modal |
+| `schedules_refresh` | integer | Refresh store schedules table in admin |
 
 **Usage:**
 ```r

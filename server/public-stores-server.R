@@ -5,19 +5,196 @@
 # This is kept here for now due to physical proximity; could move to shared-server.R later.
 # Also contains reset_dashboard_filters which should ideally be in Dashboard server.
 
-# Store list (uses filtered stores from map selection)
+# =============================================================================
+# View Toggle (Schedule / All Stores)
+# =============================================================================
+
+# Day of week labels
+WEEKDAY_LABELS <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+# Handle Schedule view button click
+observeEvent(input$stores_view_schedule, {
+  shinyjs::runjs("
+    document.getElementById('stores_view_mode').value = 'schedule';
+    Shiny.setInputValue('stores_view_mode', 'schedule');
+    document.getElementById('stores_view_schedule').classList.add('active');
+    document.getElementById('stores_view_all').classList.remove('active');
+  ")
+})
+
+# Handle All Stores view button click
+observeEvent(input$stores_view_all, {
+  shinyjs::runjs("
+    document.getElementById('stores_view_mode').value = 'all';
+    Shiny.setInputValue('stores_view_mode', 'all');
+    document.getElementById('stores_view_all').classList.add('active');
+    document.getElementById('stores_view_schedule').classList.remove('active');
+  ")
+})
+
+# View hint text
+output$stores_view_hint <- renderUI({
+  view_mode <- input$stores_view_mode
+  if (is.null(view_mode) || view_mode != "all") {
+    span(class = "small text-muted", "Click a store for details")
+  } else {
+    span(class = "small text-muted", "Click a row for details")
+  }
+})
+
+# Schedule view content
+output$stores_schedule_content <- renderUI({
+  req(rv$db_con)
+  rv$data_refresh  # Trigger refresh on admin changes
+
+  # Get current day of week (0=Sunday in JS, but R's wday returns 1=Sunday)
+  today_wday <- as.integer(format(Sys.Date(), "%w"))  # 0=Sunday, 6=Saturday
+
+  # Query schedules with store info and tournament stats
+  schedules <- dbGetQuery(rv$db_con, "
+    WITH store_stats AS (
+      SELECT store_id,
+             COALESCE(ROUND(AVG(player_count), 0), 0) as avg_players
+      FROM tournaments
+      GROUP BY store_id
+    )
+    SELECT ss.day_of_week, ss.start_time, ss.frequency,
+           s.store_id, s.name as store_name, s.city,
+           COALESCE(st.avg_players, 0) as avg_players
+    FROM store_schedules ss
+    JOIN stores s ON ss.store_id = s.store_id
+    LEFT JOIN store_stats st ON s.store_id = st.store_id
+    WHERE ss.is_active = TRUE
+      AND s.is_active = TRUE
+      AND (s.is_online = FALSE OR s.is_online IS NULL)
+    ORDER BY ss.day_of_week, ss.start_time, s.name
+  ")
+
+  # Get stores without schedules
+  stores_without_schedules <- dbGetQuery(rv$db_con, "
+    SELECT s.store_id, s.name, s.city
+    FROM stores s
+    WHERE s.is_active = TRUE
+      AND (s.is_online = FALSE OR s.is_online IS NULL)
+      AND s.store_id NOT IN (
+        SELECT DISTINCT store_id FROM store_schedules WHERE is_active = TRUE
+      )
+    ORDER BY s.name
+  ")
+
+  # Build day sections, sorted starting from today
+  day_order <- c(today_wday:6, if (today_wday > 0) 0:(today_wday - 1) else integer(0))
+
+  day_sections <- lapply(day_order, function(day_idx) {
+    day_name <- WEEKDAY_LABELS[day_idx + 1]
+    is_today <- day_idx == today_wday
+
+    day_schedules <- schedules[schedules$day_of_week == day_idx, ]
+
+    # Format time for display (24h to 12h)
+    if (nrow(day_schedules) > 0) {
+      day_schedules$time_display <- sapply(day_schedules$start_time, function(t) {
+        parts <- strsplit(t, ":")[[1]]
+        hour <- as.integer(parts[1])
+        minute <- parts[2]
+        ampm <- if (hour >= 12) "PM" else "AM"
+        hour12 <- if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        sprintf("%d:%s %s", hour12, minute, ampm)
+      })
+    }
+
+    div(
+      class = "schedule-day-section mb-3",
+      # Day header
+      div(
+        class = paste("schedule-day-header", if (is_today) "schedule-day-today" else ""),
+        style = if (is_today) "font-weight: bold; color: var(--bs-primary);" else "",
+        span(day_name),
+        if (is_today) span(class = "badge bg-primary ms-2", "Today")
+      ),
+      # Store list for this day
+      if (nrow(day_schedules) > 0) {
+        div(
+          class = "schedule-day-stores",
+          lapply(1:nrow(day_schedules), function(i) {
+            sched <- day_schedules[i, ]
+            tags$button(
+              type = "button",
+              class = "schedule-store-item d-flex justify-content-between align-items-center w-100 text-start border-0 p-2 mb-1",
+              onclick = sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", sched$store_id),
+              div(
+                span(class = "fw-medium", sched$store_name),
+                if (!is.na(sched$city)) span(class = "text-muted small ms-2", sched$city)
+              ),
+              div(
+                class = "d-flex align-items-center gap-2",
+                span(
+                  class = "text-muted small",
+                  title = "Average tournament size",
+                  if (sched$avg_players > 0) paste0("~", sched$avg_players, " Average Turnout") else "Turnout Data Unavailable"
+                ),
+                span(class = "text-muted", sched$time_display)
+              )
+            )
+          })
+        )
+      } else {
+        div(
+          class = "text-muted small ps-2 py-1",
+          "No scheduled events"
+        )
+      }
+    )
+  })
+
+  # Stores without schedules section
+  no_schedule_section <- if (nrow(stores_without_schedules) > 0) {
+    div(
+      class = "mt-4 pt-3 border-top",
+      div(
+        class = "text-muted small mb-2",
+        bsicons::bs_icon("question-circle"),
+        sprintf(" %d store%s without regular schedules",
+                nrow(stores_without_schedules),
+                if (nrow(stores_without_schedules) == 1) "" else "s")
+      ),
+      div(
+        class = "d-flex flex-wrap gap-1",
+        lapply(1:nrow(stores_without_schedules), function(i) {
+          store <- stores_without_schedules[i, ]
+          tags$button(
+            type = "button",
+            class = "btn btn-sm btn-outline-secondary",
+            onclick = sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", store$store_id),
+            store$name
+          )
+        })
+      )
+    )
+  } else {
+    NULL
+  }
+
+  # Combine all sections
+  tagList(
+    day_sections,
+    no_schedule_section
+  )
+})
+
+# Store list
 output$store_list <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
-  stores <- filtered_stores()
+  stores <- stores_data()
 
   if (is.null(stores) || nrow(stores) == 0) {
     return(reactable(data.frame(Message = "No stores yet"), compact = TRUE))
   }
 
-  # Join with store ratings
-  str_ratings <- store_ratings()
-  stores <- merge(stores, str_ratings, by = "store_id", all.x = TRUE)
-  stores$store_rating[is.na(stores$store_rating)] <- 0
+  # Join with average player ratings per store
+  avg_ratings <- store_avg_ratings()
+  stores <- merge(stores, avg_ratings, by = "store_id", all.x = TRUE)
+  stores$avg_player_rating[is.na(stores$avg_player_rating)] <- 0
 
   # Format last event date
   stores$last_event_display <- sapply(stores$last_event, function(d) {
@@ -30,10 +207,10 @@ output$store_list <- renderReactable({
     else format(as.Date(d), "%b %d")
   })
 
-  # Format for display - include activity metrics and rating
-  data <- stores[order(-stores$store_rating, -stores$tournament_count, stores$city, stores$name),
-                 c("name", "city", "tournament_count", "avg_players", "store_rating", "last_event_display", "store_id")]
-  names(data) <- c("Store", "City", "Events", "Avg Players", "Rating", "Last Event", "store_id")
+  # Format for display - sort by events then avg players
+  data <- stores[order(-stores$tournament_count, -stores$avg_players, stores$city, stores$name),
+                 c("name", "city", "tournament_count", "avg_players", "avg_player_rating", "last_event_display", "store_id")]
+  names(data) <- c("Store", "City", "Events", "Avg Event Size", "Avg Rating", "Last Event", "store_id")
 
   reactable(
     data,
@@ -41,7 +218,7 @@ output$store_list <- renderReactable({
     striped = TRUE,
     pagination = TRUE,
     defaultPageSize = 32,
-    defaultSorted = list(Rating = "desc"),
+    defaultSorted = list(Events = "desc"),
     rowStyle = list(cursor = "pointer"),
     onClick = JS("function(rowInfo, column) {
       if (rowInfo) {
@@ -58,15 +235,15 @@ output$store_list <- renderReactable({
           if (value == 0) "-" else value
         }
       ),
-      `Avg Players` = colDef(
-        minWidth = 90,
+      `Avg Event Size` = colDef(
+        minWidth = 80,
         align = "center",
         cell = function(value) {
           if (value == 0) "-" else value
         }
       ),
-      Rating = colDef(
-        minWidth = 70,
+      `Avg Rating` = colDef(
+        minWidth = 90,
         align = "center",
         cell = function(value) {
           if (value == 0) "-" else value
@@ -146,10 +323,10 @@ output$store_detail_modal <- renderUI({
     ", store_id))
   }
 
-  # Get store rating
-  str_ratings <- store_ratings()
-  store_rating <- str_ratings$store_rating[str_ratings$store_id == store_id]
-  if (length(store_rating) == 0) store_rating <- 0
+  # Get average player rating for this store
+  avg_ratings <- store_avg_ratings()
+  avg_player_rating <- avg_ratings$avg_player_rating[avg_ratings$store_id == store_id]
+  if (length(avg_player_rating) == 0) avg_player_rating <- 0
 
   # Get total unique players
   unique_players <- 0
@@ -162,18 +339,14 @@ output$store_detail_modal <- renderUI({
     ", store_id))$cnt
   }
 
-  # Get most popular deck at this store
-  popular_deck <- NULL
+  # Get store schedules
+  store_schedules <- NULL
   if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-    popular_deck <- dbGetQuery(rv$db_con, sprintf("
-      SELECT da.archetype_name, da.primary_color, COUNT(*) as cnt
-      FROM results r
-      JOIN tournaments t ON r.tournament_id = t.tournament_id
-      JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-      WHERE t.store_id = %d AND da.archetype_name != 'UNKNOWN'
-      GROUP BY da.archetype_id, da.archetype_name, da.primary_color
-      ORDER BY COUNT(*) DESC
-      LIMIT 1
+    store_schedules <- dbGetQuery(rv$db_con, sprintf("
+      SELECT day_of_week, start_time, frequency
+      FROM store_schedules
+      WHERE store_id = %d AND is_active = TRUE
+      ORDER BY day_of_week, start_time
     ", store_id))
   }
 
@@ -189,66 +362,146 @@ output$store_detail_modal <- renderUI({
            et)
   }
 
+  # Store coordinates for mini map (used by renderMapboxgl below)
+  rv$modal_store_coords <- list(
+    lat = store$latitude,
+    lng = store$longitude,
+    name = store$name
+
+  )
+
+
+  # Build address string for header (standard format: street, city, state zip)
+  address_parts <- c()
+  if (!is.na(store$address) && store$address != "") address_parts <- c(address_parts, store$address)
+  # City, State ZIP as one unit
+  city_state_zip <- c()
+  if (!is.na(store$city) && store$city != "") city_state_zip <- c(city_state_zip, store$city)
+  if (!is.na(store$state) && store$state != "") city_state_zip <- c(city_state_zip, store$state)
+  city_state_part <- paste(city_state_zip, collapse = ", ")
+  if (!is.na(store$zip_code) && store$zip_code != "") city_state_part <- paste(city_state_part, store$zip_code)
+  if (nchar(city_state_part) > 0) address_parts <- c(address_parts, city_state_part)
+  address_display <- if (length(address_parts) > 0) paste(address_parts, collapse = ", ") else NULL
+  has_website <- !is.na(store$website) && store$website != ""
+
+  # Update URL for deep linking
+  store_slug <- if (!is.null(store$slug) && !is.na(store$slug) && store$slug != "") {
+    store$slug
+  } else {
+    slugify(store$name)  # Fallback to generating from name
+  }
+  update_url_for_store(session, store_id, store_slug)
+
   # Build modal content
   showModal(modalDialog(
     title = div(
       class = "d-flex align-items-center gap-2",
       bsicons::bs_icon("shop"),
-      store$name
+      span(store$name),
+      if (!is.null(address_display))
+        span(class = "text-muted fw-normal ms-2", style = "font-size: 0.7rem;", address_display),
+      if (has_website)
+        tags$a(href = store$website, target = "_blank", class = "text-primary ms-1",
+               style = "font-size: 0.75rem;", title = "Visit website",
+               bsicons::bs_icon("link-45deg"))
     ),
     size = "l",
     easyClose = TRUE,
-    footer = modalButton("Close"),
+    footer = tagList(
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-secondary me-auto",
+        onclick = "copyCurrentUrl()",
+        bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      modalButton("Close")
+    ),
 
-    # Store info
+    # Two-column layout: Stats (left) + Mini map (right)
     div(
-      class = "mb-3",
-      if (!is.na(store$city) && store$city != "") p(bsicons::bs_icon("geo-alt"), " ", store$city),
-      if (!is.na(store$address) && store$address != "") p(class = "text-muted small", store$address),
-      if (!is.na(store$website) && store$website != "") p(
-        tags$a(href = store$website, target = "_blank",
-               bsicons::bs_icon("globe"), " Website")
+      class = "row mb-3",
+      # Left column: Vertical stats list with box styling
+      div(
+        class = "col-md-5",
+        div(
+          class = "modal-stats-box p-3",
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Events"),
+            span(store$tournament_count)
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Avg Event Size"),
+            span(if (store$avg_players > 0) store$avg_players else "-")
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Unique Players"),
+            span(unique_players)
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Avg Player Rating"),
+            span(if (avg_player_rating > 0) avg_player_rating else "-")
+          ),
+          div(
+            class = "d-flex justify-content-between py-2",
+            span(class = "fw-semibold", "Last Event"),
+            span(if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-")
+          )
+        )
+      ),
+      # Right column: Mini map (height matched to stats box)
+      div(
+        class = "col-md-7",
+        if (!is.na(store$latitude) && !is.na(store$longitude)) {
+          div(
+            class = "store-mini-map rounded",
+            mapboxglOutput("store_modal_map", height = "218px")
+          )
+        } else {
+          div(
+            class = "text-muted small p-3 bg-light rounded text-center d-flex align-items-center justify-content-center",
+            style = "height: 218px;",
+            "Map not available"
+          )
+        }
       )
     ),
 
-    # Activity stats with Store Rating, unique players
-    div(
-      class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", if (store_rating > 0) store_rating else "-"),
-        div(class = "modal-stat-label", "Store Rating")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", store$tournament_count),
-        div(class = "modal-stat-label", "Events")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", unique_players),
-        div(class = "modal-stat-label", "Players")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", if (store$avg_players > 0) store$avg_players else "-"),
-        div(class = "modal-stat-label", "Avg Size")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value",
-            if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-"),
-        div(class = "modal-stat-label", "Last Event")
-      )
-    ),
+    # Regular Schedule
+    if (!is.null(store_schedules) && nrow(store_schedules) > 0) {
+      # Format schedules for display
+      schedule_rows <- lapply(1:nrow(store_schedules), function(i) {
+        sched <- store_schedules[i, ]
+        day_name <- WEEKDAY_LABELS[sched$day_of_week + 1]
+        # Format time (24h to 12h)
+        parts <- strsplit(sched$start_time, ":")[[1]]
+        hour <- as.integer(parts[1])
+        minute <- parts[2]
+        ampm <- if (hour >= 12) "PM" else "AM"
+        hour12 <- if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        time_display <- sprintf("%d:%s %s", hour12, minute, ampm)
 
-    # Most popular deck
-    if (!is.null(popular_deck) && nrow(popular_deck) > 0) {
-      div(
-        class = "mb-3",
-        span(class = "text-muted small", "Most played deck: "),
-        span(class = paste("deck-badge deck-badge-", tolower(popular_deck$primary_color), sep = ""),
-             popular_deck$archetype_name)
+        tags$tr(
+          tags$td(day_name),
+          tags$td(time_display),
+          tags$td(tools::toTitleCase(sched$frequency))
+        )
+      })
+
+      tagList(
+        h6(class = "modal-section-header", "Regular Schedule"),
+        tags$table(
+          class = "table table-sm table-striped mb-3",
+          tags$thead(
+            tags$tr(
+              tags$th("Day"), tags$th("Time"), tags$th("Frequency")
+            )
+          ),
+          tags$tbody(schedule_rows)
+        )
       )
     },
 
@@ -317,6 +570,39 @@ output$store_detail_modal <- renderUI({
       )
     }
   ))
+})
+
+# Mini map for store modal
+output$store_modal_map <- renderMapboxgl({
+  req(rv$modal_store_coords)
+  coords <- rv$modal_store_coords
+
+  if (is.null(coords$lat) || is.null(coords$lng) || is.na(coords$lat) || is.na(coords$lng)) {
+    return(NULL)
+  }
+
+  # Create point for the store
+  store_point <- sf::st_sf(
+    name = coords$name,
+    geometry = sf::st_sfc(sf::st_point(c(coords$lng, coords$lat)), crs = 4326)
+  )
+
+  # Build mini map with digital theme
+
+  atom_mapgl(theme = "digital") |>
+    mapgl::add_circle_layer(
+      id = "store-pin",
+      source = store_point,
+      circle_color = "#F7941D",
+      circle_radius = 10,
+      circle_stroke_color = "#FFFFFF",
+      circle_stroke_width = 2,
+      circle_opacity = 0.9
+    ) |>
+    mapgl::set_view(
+      center = c(coords$lng, coords$lat),
+      zoom = 13
+    )
 })
 
 # Online Tournament Organizers section
@@ -507,225 +793,24 @@ stores_data <- reactive({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   stores <- dbGetQuery(rv$db_con, "
-    SELECT s.store_id, s.name, s.address, s.city, s.latitude, s.longitude,
-           s.website, s.schedule_info,
+    SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+           s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
            COUNT(t.tournament_id) as tournament_count,
            COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
            MAX(t.event_date) as last_event
     FROM stores s
     LEFT JOIN tournaments t ON s.store_id = t.store_id
     WHERE s.is_active = TRUE AND (s.is_online = FALSE OR s.is_online IS NULL)
-    GROUP BY s.store_id, s.name, s.address, s.city, s.latitude, s.longitude,
-             s.website, s.schedule_info
+    GROUP BY s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+             s.latitude, s.longitude, s.website, s.schedule_info, s.slug
   ")
   stores
 })
 
-# Reactive: Filtered stores based on drawn region
-filtered_stores <- reactive({
-  stores <- stores_data()
-  if (is.null(stores) || nrow(stores) == 0) {
-    return(stores)
-  }
-
-  # If no stores are selected, return all
-  if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
-    return(stores)
-  }
-
-  # Return only selected stores
-  stores[stores$store_id %in% rv$selected_store_ids, ]
-})
-
-# Apply region filter button handler
-observeEvent(input$apply_region_filter, {
-  stores <- stores_data()
-  if (is.null(stores) || nrow(stores) == 0) {
-    showNotification("No stores to filter", type = "warning")
-    return()
-  }
-
-  # Filter stores with valid coordinates
-  stores_with_coords <- stores[!is.na(stores$latitude) & !is.na(stores$longitude), ]
-  if (nrow(stores_with_coords) == 0) {
-    showNotification("No stores have coordinates", type = "warning")
-    return()
-  }
-
-  # Convert stores to sf
-  stores_sf <- st_as_sf(stores_with_coords, coords = c("longitude", "latitude"), crs = 4326)
-
-  # Get drawn features as sf
-  tryCatch({
-    proxy <- mapboxgl_proxy("stores_map")
-    drawn_sf <- get_drawn_features(proxy)
-    if (is.null(drawn_sf) || nrow(drawn_sf) == 0) {
-      showNotification("Draw a region on the map first", type = "warning")
-      return()
-    }
-
-    # Filter to polygons only
-    drawn_polygons <- drawn_sf[st_geometry_type(drawn_sf) %in% c("POLYGON", "MULTIPOLYGON"), ]
-    if (nrow(drawn_polygons) == 0) {
-      showNotification("Draw a polygon region on the map", type = "warning")
-      return()
-    }
-
-    # Union all polygons
-    region <- st_union(drawn_polygons)
-    # Filter stores within the region
-    within_region <- st_filter(stores_sf, region)
-
-    if (nrow(within_region) == 0) {
-      showNotification("No stores found in drawn region", type = "warning")
-      return()
-    }
-
-    # Update selected store IDs
-    rv$selected_store_ids <- within_region$store_id
-
-    # Update map to highlight selected stores
-    # Use a match expression to color selected stores differently
-    selected_ids <- within_region$store_id
-    mapboxgl_proxy("stores_map") |>
-      set_paint_property(
-        layer_id = "stores-layer",
-        name = "circle-color",
-        value = list(
-          "case",
-          list("in", list("get", "store_id"), list("literal", selected_ids)),
-          "#16A34A",  # Green for selected
-          "#999999"   # Gray for non-selected
-        )
-      ) |>
-      set_paint_property(
-        layer_id = "stores-layer",
-        name = "circle-opacity",
-        value = list(
-          "case",
-          list("in", list("get", "store_id"), list("literal", selected_ids)),
-          1.0,  # Full opacity for selected
-          0.4   # Faded for non-selected
-        )
-      )
-
-    showNotification(sprintf("Filtered to %d stores", nrow(within_region)), type = "message")
-
-  }, error = function(e) {
-    showNotification(paste("Error applying filter:", e$message), type = "error")
-  })
-})
-
-# Clear region button handler
-observeEvent(input$clear_region, {
-  mapboxgl_proxy("stores_map") |>
-    clear_drawn_features() |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-color",
-      value = "#F7941D"  # Reset to orange
-    ) |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-opacity",
-      value = 1  # Reset to original opacity
-    )
-  rv$selected_store_ids <- NULL
-  showNotification("Region filter cleared", type = "message")
-})
-
-# Filter active banner for Stores tab
-output$stores_filter_active_banner <- renderUI({
-  if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
-    return(NULL)
-  }
-
-  n_stores <- length(rv$selected_store_ids)
-
-  div(
-    class = "alert alert-success d-flex align-items-center mb-3 store-filter-badge--success",
-    bsicons::bs_icon("check-circle-fill"),
-    span(
-      class = "ms-2",
-      sprintf(" Region filter active: %d store%s selected. ",
-              n_stores, if (n_stores == 1) "" else "s"),
-      tags$strong("Dashboard, Players, and Meta tabs are now filtered to these stores.")
-    )
-  )
-})
-
-# Filter badge showing how many stores are filtered
-output$stores_filter_badge <- renderUI({
-  all_stores <- stores_data()
-  filtered <- filtered_stores()
-
-  if (is.null(all_stores) || is.null(filtered)) return(NULL)
-
-  total <- nrow(all_stores)
-  showing <- nrow(filtered)
-
-  if (showing < total) {
-    span(
-      class = "badge bg-warning text-dark",
-      sprintf("Showing %d of %d stores", showing, total)
-    )
-  } else {
-    span(class = "badge bg-secondary", sprintf("%d stores", total))
-  }
-})
-
-# Region filter indicator for dashboard
-output$region_filter_indicator <- renderUI({
-  if (is.null(rv$selected_store_ids) || length(rv$selected_store_ids) == 0) {
-    return(NULL)
-  }
-
-  # Get names of selected stores
-  stores <- stores_data()
-  if (is.null(stores)) return(NULL)
-
-  selected_names <- stores$name[stores$store_id %in% rv$selected_store_ids]
-  store_list <- if (length(selected_names) <= 3) {
-    paste(selected_names, collapse = ", ")
-  } else {
-    paste(c(selected_names[1:3], sprintf("and %d more", length(selected_names) - 3)), collapse = ", ")
-  }
-
-  div(
-    class = "alert alert-info d-flex justify-content-between align-items-center mb-3 store-filter-badge--info",
-    div(
-      bsicons::bs_icon("funnel-fill"),
-      sprintf(" Filtered by region: %s", store_list)
-    ),
-    actionButton("clear_region_from_dashboard", "Clear Filter",
-                 class = "btn btn-sm btn-outline-primary")
-  )
-})
-
-# Clear region from dashboard button
-observeEvent(input$clear_region_from_dashboard, {
-  mapboxgl_proxy("stores_map") |>
-    clear_drawn_features() |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-color",
-      value = "#F7941D"  # Reset to orange
-    ) |>
-    set_paint_property(
-      layer_id = "stores-layer",
-      name = "circle-opacity",
-      value = 1  # Reset to original opacity
-    )
-  rv$selected_store_ids <- NULL
-  showNotification("Region filter cleared", type = "message")
-})
-
-# Reset dashboard filters (reset to defaults: first format + locals)
+# Reset dashboard filters (reset to defaults: all formats + locals)
 # Note: This should ideally be in Dashboard server, kept here due to physical proximity
 observeEvent(input$reset_dashboard_filters, {
-  format_choices <- get_format_choices(rv$db_con)
-  first_format <- if (length(format_choices) > 0) format_choices[1] else ""
-  updateSelectInput(session, "dashboard_format", selected = first_format)
+  updateSelectInput(session, "dashboard_format", selected = "")
   updateSelectInput(session, "dashboard_event_type", selected = "locals")
   showNotification("Filters reset to defaults", type = "message")
 })
@@ -740,17 +825,9 @@ output$stores_map <- renderMapboxgl({
   # Default DFW center if no stores or no valid coordinates
   if (is.null(stores) || nrow(stores) == 0) {
     return(
-      atom_mapgl(theme = "minimal") |>
+      atom_mapgl(theme = "digital") |>
         mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
-        add_atom_popup_style(theme = "light") |>
-        mapgl::add_draw_control(
-          position = "top-left",
-          freehand = TRUE,
-          point = FALSE,
-          line_string = FALSE,
-          polygon = TRUE,
-          trash = TRUE
-        )
+        add_atom_popup_style(theme = "light")
     )
   }
 
@@ -759,28 +836,25 @@ output$stores_map <- renderMapboxgl({
 
   if (nrow(stores_with_coords) == 0) {
     return(
-      atom_mapgl(theme = "minimal") |>
+      atom_mapgl(theme = "digital") |>
         mapgl::set_view(center = c(-96.8, 32.8), zoom = 9) |>
-        add_atom_popup_style(theme = "light") |>
-        mapgl::add_draw_control(
-          position = "top-left",
-          freehand = TRUE,
-          point = FALSE,
-          line_string = FALSE,
-          polygon = TRUE,
-          trash = TRUE
-        )
+        add_atom_popup_style(theme = "light")
     )
   }
 
   # Convert to sf object
   stores_sf <- st_as_sf(stores_with_coords, coords = c("longitude", "latitude"), crs = 4326)
 
-  # Calculate bubble size based on tournament activity (min 8, max 20)
-  max_tournaments <- max(stores_with_coords$tournament_count, na.rm = TRUE)
-  if (is.na(max_tournaments) || max_tournaments == 0) max_tournaments <- 1
-
-  stores_sf$bubble_size <- 8 + (stores_with_coords$tournament_count / max_tournaments) * 12
+  # Calculate bubble size based on average event size (tiered)
+  # No events: 5px, <8: 10px, 8-12: 14px, 13-18: 18px, 19-24: 22px, 25+: 26px
+  stores_sf$bubble_size <- sapply(stores_with_coords$avg_players, function(avg) {
+    if (is.na(avg) || avg == 0) return(5)      # No events
+    if (avg < 8) return(10)                     # Small/casual
+    if (avg <= 12) return(14)                   # Typical locals
+    if (avg <= 18) return(18)                   # Active locals
+    if (avg <= 24) return(22)                   # Popular store
+    return(26)                                  # Major events (25+)
+  })
 
   # Create popup content with activity metrics
   stores_sf$popup <- sapply(1:nrow(stores_sf), function(i) {
@@ -820,10 +894,10 @@ output$stores_map <- renderMapboxgl({
     )
   })
 
-  # Create the map with draw controls
-  # Using minimal theme for basemap, light theme for popups
-  # Bubble size based on tournament activity
-  map <- atom_mapgl(theme = "minimal") |>
+  # Create the map
+  # Using digital theme for basemap, light theme for popups
+  # Bubble size based on average event size
+  map <- atom_mapgl(theme = "digital") |>
     add_atom_popup_style(theme = "light") |>
     mapgl::add_circle_layer(
       id = "stores-layer",
@@ -834,14 +908,6 @@ output$stores_map <- renderMapboxgl({
       circle_stroke_width = 2,
       circle_opacity = 0.85,
       popup = "popup"
-    ) |>
-    mapgl::add_draw_control(
-      position = "top-left",
-      freehand = TRUE,
-      point = FALSE,
-      line_string = FALSE,
-      polygon = TRUE,
-      trash = TRUE
     ) |>
     mapgl::fit_bounds(stores_sf, padding = 50)
 

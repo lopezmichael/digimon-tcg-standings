@@ -4,6 +4,257 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-09: Deep Linking & Shareable URLs (v0.21.0)
+
+### Summary
+Implemented full deep linking system enabling shareable URLs for all entities. URLs update when modals open and browser back/forward navigation works correctly.
+
+### URL Structure
+- Players: `?player=atomshell` (uses slugified display_name)
+- Decks: `?deck=blue-flare` (uses slug column)
+- Stores: `?store=sci-fi-factory` (uses slug column)
+- Tournaments: `?tournament=123` (uses ID, names not unique)
+- Tabs: `?tab=meta`, `?tab=players`, `?tab=about`, etc.
+- Scene: `?scene=dfw` (foundation for v0.23 multi-region)
+
+### Technical Implementation
+
+**Browser Side (`www/url-routing.js`):**
+- `popstate` event listener for back/forward buttons
+- Custom message handlers: `pushUrl`, `replaceUrl`, `historyBack`
+- `hidden.bs.modal` listener to clear URL when modals close
+- `copyCurrentUrl()` function for Copy Link button
+
+**Server Side (`server/url-routing-server.R`):**
+- `slugify()` helper for URL-friendly text conversion
+- `parse_url_params()` / `build_url_query()` for URL handling
+- `open_entity_from_url()` resolves slugs to entity IDs
+- `update_url_for_*()` functions called when modals open
+- Tab change observer updates URL (replace, not push)
+
+### Schema Changes
+- Added `scenes` table with hierarchy (Global → USA → Texas → DFW, plus Online)
+- Added `slug` column to `stores` and `deck_archetypes`
+- Added `scene_id` column to `stores` (all assigned to DFW scene)
+
+### Key Decisions
+
+**FK Constraints:**
+- Removed FK constraints from local DuckDB (UPDATE = DELETE + INSERT causes violations)
+- Kept FK constraints in MotherDuck for production data integrity
+- Application-level integrity is sufficient for this use case
+
+**Admin Pages:**
+- Admin tabs clear URL to base (no shareable links)
+- Prevents accidental sharing of admin state
+
+**Cross-Modal Navigation:**
+- Modal close detection uses 100ms delay
+- Checks if another modal is visible before clearing URL
+- Prevents URL flicker during modal-to-modal navigation
+
+### Files Created/Modified
+- `server/url-routing-server.R` (new) - 373 lines
+- `www/url-routing.js` (new) - 144 lines
+- `app.R` - Added script include and current_scene reactive
+- `db/schema.sql` - scenes table, slug columns
+- `server/public-*.R` - Added URL update calls and Copy Link buttons
+- `scripts/sync_*.py` - Added scenes to table list
+
+---
+
+## 2026-02-09: Store Modal Polish & Map Improvements (v0.20.2)
+
+### Summary
+Completed stores tab improvements with modal redesign, rating system changes, and map enhancements.
+
+### Store Modal Redesign
+
+**Layout Changes:**
+- Two-column layout: vertical stats list (left) + mini map (right)
+- Address moved to modal header (street, city, state, zip format)
+- Website link as icon in header (beside store name)
+- Stats labels in bold for readability
+- Mini map height matches stats box (218px)
+
+**Rating Change:**
+- Removed "Store Rating" (confusing 0-100 score that looked like quality judgment)
+- Replaced with "Avg Player Rating" - weighted Elo average of players who compete there
+- Weighting: players who attend more frequently count more toward the average
+- Renamed "Avg Size" to "Avg Event Size" for clarity
+
+### Map Improvements
+
+**Bubble Sizing:**
+- Changed from event count to tiered avg event size
+- Tiers: 5px (no events), 10px (<8 players), 14px (8-12), 18px (13-18), 22px (19-24), 26px (25+)
+
+**Removed Region Filter:**
+- Removed lasso/draw filter functionality (~260 lines of code)
+- Will be replaced by scene selection dropdown in v0.23
+
+### Other Changes
+- Enabled text selection in modals (CSS `user-select: text`)
+- Synced store_schedules schema to MotherDuck
+
+### Files Changed
+- `R/ratings.R` - New `calculate_store_avg_player_rating()` function
+- `app.R` - Renamed reactive from `store_ratings` to `store_avg_ratings`
+- `server/public-stores-server.R` - Modal redesign, bubble sizing, removed region filter
+- `server/public-dashboard-server.R` - Removed store_rating from recent tournaments
+- `server/public-tournaments-server.R` - Removed store_rating from tournament modal
+- `views/stores-ui.R` - Removed filter buttons and banner
+- `www/custom.css` - Text selection, minor modal styling
+- `CHANGELOG.md` - v0.20.2 release notes
+
+---
+
+## 2026-02-09: Store Schedules & Modal Improvements
+
+### Summary
+Implemented comprehensive Stores tab improvements: recurring schedule management, weekly calendar view, and enhanced store modal with mini map.
+
+### Store Schedules Feature
+
+**New Schema:** `store_schedules` table
+- Tracks recurring event times (day_of_week, start_time, frequency)
+- One row per day/time slot (stores with multiple events have multiple rows)
+- Frequency options: weekly, biweekly, monthly
+- Kept existing `schedule_info` as general notes field
+
+**Admin UI:** Schedule management in Edit Stores
+- Add/delete schedules when editing a physical store
+- Shows day, time, frequency in a table
+- Click to delete with confirmation
+
+**Public View:** Schedule/All Stores toggle
+- Schedule view: Weekly calendar sorted from current day ("Today" first)
+- Shows stores with events each day + time
+- "Stores without regular schedules" section at bottom
+- All Stores view: Original store list with sorting
+
+### Store Modal Improvements
+
+**Layout Reorganization:**
+- Stats box moved to top (right below store name)
+- Two-column layout: store info (left) + mini map (right)
+- Regular Schedule section shows store's recurring events
+
+**Mini Map:**
+- Interactive `atom_mapgl` with digital theme
+- Orange circle marker at store location
+- Hidden map controls for cleaner look
+- Falls back gracefully if no coordinates
+
+**Removed:** "Most Popular Deck" section (low value)
+
+### Technical Notes
+
+- Used `mapboxglOutput` inside modal by storing coords in `rv$modal_store_coords`
+- `renderMapboxgl` reacts to coordinate changes and renders the map
+- CSS hides map controls in mini map context
+
+### Files Changed
+- `db/schema.sql` - Added store_schedules table
+- `scripts/migrate_add_store_schedules.R` - Migration script
+- `scripts/sync_to_motherduck.py` - Added store_schedules to sync
+- `scripts/sync_from_motherduck.py` - Added store_schedules to sync
+- `server/admin-stores-server.R` - Schedule CRUD handlers
+- `views/admin-stores-ui.R` - Schedule management UI
+- `server/public-stores-server.R` - Schedule view + modal mini map
+- `views/stores-ui.R` - View toggle UI
+- `www/custom.css` - Schedule view + mini map styling
+- `ARCHITECTURE.md` - New reactive values
+- `docs/plans/2026-02-08-stores-tab-improvements.md` - Updated to complete
+
+---
+
+## 2026-02-08: Mapbox Geocoding & Stores Tab Planning
+
+### Summary
+Switched from OSM/Nominatim geocoding to Mapbox Geocoding API for more accurate store coordinates. Created comprehensive design document for future Stores tab improvements.
+
+### Geocoding Change
+
+**Problem:** OSM/Nominatim via tidygeocoder was producing inaccurate coordinates for some store addresses.
+
+**Solution:** Replaced with Mapbox Geocoding API (already have token for map display).
+
+**Implementation:**
+- Added `geocode_with_mapbox()` helper function to `server/admin-stores-server.R`
+- Uses httr2 for API calls (already a project dependency)
+- Returns `list(lat, lng)` or `NA` values on failure
+- Both add and update store handlers now use Mapbox
+
+**Migration Script:** `scripts/migrate_geocode_stores.R`
+- Re-geocodes all existing physical stores
+- Dry run mode by default to preview changes
+- Shows distance change from old to new coordinates
+- Rate limited to avoid API throttling
+
+### Future Stores Tab Improvements
+
+Created design doc: `docs/plans/2026-02-08-stores-tab-improvements.md`
+
+Planned features:
+1. **Store Schedules Schema** - Structured table for recurring tournament schedules (day, time, event type, frequency)
+2. **Upcoming Tournaments Display** - Table showing expected events this week based on schedules
+3. **Store Modal Improvements** - Add mini map, show regular schedule, remove "most played deck"
+4. **Store Rating Adjustments** - Potential changes to the 50/30/20 weighting
+5. **Map Bubble Sizing** - Consider alternatives to current linear scaling
+
+### Files Changed
+- `server/admin-stores-server.R` - Mapbox geocoding helper + replaced tidygeocoder calls
+- `scripts/migrate_geocode_stores.R` - New migration script
+- `docs/plans/2026-02-08-stores-tab-improvements.md` - New design document
+
+---
+
+## 2026-02-07: Scene Health Dashboard Section
+
+### Summary
+Added a new "Scene Health" section to the dashboard providing competition health metrics at a glance. Includes a Highcharts gauge, player growth chart, and Rising Stars feature.
+
+### Components Added
+
+**Meta Diversity Gauge**
+- Highcharts solidgauge showing diversity score (0-100)
+- Based on Herfindahl-Hirschman Index (HHI) of win distribution across decks
+- Color stops: red (0-40), yellow (40-70), green (70-100)
+- Shows "X decks with wins" as subtitle
+
+**Player Growth & Retention Chart**
+- Stacked bar chart by month
+- Three categories: New (first tournament), Returning (<3 events), Regulars (3+ events)
+- Uses strftime instead of DATE_TRUNC for Windows DuckDB compatibility
+
+**Rising Stars** (separate card)
+- Shows top 4 players with most top-3 finishes in last 30 days
+- Own card section below Scene Health for cleaner layout
+- Card layout with rank badge, name, trophy/medal counts, and current rating
+- Limited to 4 for consistent display across screen sizes
+
+### Removed Components
+
+**Event Health Indicator** - Removed as redundant with existing "Tournament Player Counts Over Time" chart
+
+### Technical Notes
+
+**Windows DuckDB Compatibility**
+- `DATE_TRUNC` and `INTERVAL` require ICU extension (not available on Windows mingw builds)
+- Replaced with `strftime('%Y-%m', date)` for month truncation
+- Date arithmetic done in R and passed as formatted strings
+
+**Highcharts solidgauge**
+- Uses `hc_pane()` for semi-circular arc configuration
+- Color stops defined via `hc_yAxis(stops = ...)` for gradient effect
+- Data labels positioned with `y = -25` to center in gauge
+
+### Design Doc
+Full design documented in `docs/plans/2026-02-07-scene-health-dashboard-design.md`
+
+---
+
 ## 2026-02-06: Mobile Navigation & Pre-Merge Polish
 
 ### Summary

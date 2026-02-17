@@ -54,6 +54,7 @@
 </head>
 <body>
   <iframe
+    id="digilab-iframe"
     src="https://019bfe6c-c032-7134-a060-84ceec5e089d.share.connect.posit.cloud/"
     title="DigiLab - Digimon TCG Locals Tracker"
     allow="fullscreen"
@@ -67,5 +68,72 @@
       </a>
     </div>
   </noscript>
+
+  <script>
+    (function() {
+      'use strict';
+
+      var IFRAME_ORIGIN = 'https://019bfe6c-c032-7134-a060-84ceec5e089d.share.connect.posit.cloud';
+      var iframe = document.getElementById('digilab-iframe');
+      var iframeReady = false;
+      var pendingInitialUrl = null;
+
+      // Listen for messages from iframe
+      window.addEventListener('message', function(event) {
+        if (event.origin !== IFRAME_ORIGIN) return;
+        if (!event.data || !event.data.type) return;
+
+        switch (event.data.type) {
+          case 'digilab-iframe-ready':
+            // Iframe is ready, send initial URL if we have params
+            iframeReady = true;
+            var initialSearch = window.location.search;
+            if (initialSearch) {
+              iframe.contentWindow.postMessage({
+                type: 'digilab-initial-url',
+                search: initialSearch
+              }, IFRAME_ORIGIN);
+            }
+            break;
+
+          case 'digilab-url-update':
+            // Iframe is updating the URL
+            var url = event.data.url || '';
+            var replace = event.data.replace || false;
+
+            // Build full URL
+            var newUrl = url || window.location.pathname;
+
+            if (replace) {
+              history.replaceState({ search: url }, '', newUrl);
+            } else {
+              // Only push if different
+              if (window.location.search !== url) {
+                history.pushState({ search: url }, '', newUrl);
+              }
+            }
+            break;
+        }
+      });
+
+      // Handle browser back/forward in parent
+      window.addEventListener('popstate', function(event) {
+        var search = window.location.search;
+        // Tell iframe to navigate
+        if (iframeReady) {
+          iframe.contentWindow.postMessage({
+            type: 'digilab-url-navigate',
+            search: search
+          }, IFRAME_ORIGIN);
+        }
+      });
+
+      // If page loaded with URL params, store them for when iframe is ready
+      if (window.location.search) {
+        pendingInitialUrl = window.location.search;
+      }
+
+    })();
+  </script>
 </body>
 </html>

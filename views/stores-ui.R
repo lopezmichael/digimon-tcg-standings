@@ -1,8 +1,8 @@
 # views/stores-ui.R
-# Stores tab UI with interactive map and draw-to-filter
+# Stores tab UI with interactive map
 
 stores_ui <- tagList(
-  # Title strip with integrated controls
+  # Title strip
   div(
     class = "page-title-strip mb-3",
     div(
@@ -12,23 +12,9 @@ stores_ui <- tagList(
         class = "title-strip-context",
         bsicons::bs_icon("geo-alt-fill", class = "title-strip-icon"),
         tags$span(class = "title-strip-text", "Store Directory")
-      ),
-      # Right side: map controls
-      div(
-        class = "title-strip-controls",
-        actionButton("apply_region_filter",
-                     tagList(bsicons::bs_icon("funnel"), " Apply"),
-                     class = "btn-sm btn-primary"),
-        actionButton("clear_region",
-                     tagList(bsicons::bs_icon("x-circle"), " Clear"),
-                     class = "btn-sm btn-outline-secondary"),
-        span(class = "small text-muted d-none d-md-inline", "Draw a region to filter")
       )
     )
   ),
-
-  # Filter active indicator
-  uiOutput("stores_filter_active_banner"),
 
   # Map card with digital scanner styling
   card(
@@ -39,7 +25,7 @@ stores_ui <- tagList(
         class = "d-flex align-items-center gap-2 map-circuit-node",
         bsicons::bs_icon("map"),
         span("Location Scanner"),
-        span(class = "small text-muted", "(larger nodes = more events)")
+        span(class = "small text-muted", "(larger nodes = bigger events)")
       )
     ),
     card_body(
@@ -50,17 +36,41 @@ stores_ui <- tagList(
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",
-      span("Store List"),
+      # View toggle buttons
       div(
-        class = "d-flex align-items-center gap-2",
-        span(class = "small text-muted", "Click a row for details"),
-        uiOutput("stores_filter_badge")
-      )
+        class = "btn-group btn-group-sm",
+        role = "group",
+        `aria-label` = "Store view toggle",
+        actionButton(
+          "stores_view_schedule",
+          tagList(bsicons::bs_icon("calendar-week"), " Schedule"),
+          class = "btn-outline-primary active"
+        ),
+        actionButton(
+          "stores_view_all",
+          tagList(bsicons::bs_icon("list-ul"), " All Stores"),
+          class = "btn-outline-primary"
+        )
+      ),
+      uiOutput("stores_view_hint")
     ),
     card_body(
-      reactableOutput("store_list")
+      # Schedule view (default)
+      conditionalPanel(
+        condition = "input.stores_view_mode != 'all'",
+        id = "stores_schedule_view",
+        uiOutput("stores_schedule_content")
+      ),
+      # All Stores view
+      conditionalPanel(
+        condition = "input.stores_view_mode == 'all'",
+        id = "stores_all_view",
+        reactableOutput("store_list")
+      )
     )
   ),
+  # Hidden input to track view mode
+  tags$input(type = "hidden", id = "stores_view_mode", value = "schedule", class = "shiny-input-text"),
 
   # Store detail modal (rendered dynamically)
   uiOutput("store_detail_modal"),

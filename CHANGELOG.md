@@ -9,6 +9,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.21.0] - 2026-02-09 - Deep Linking & Shareable URLs
+
+### Added
+- **Shareable URLs**: Opening a modal updates the browser URL for easy sharing
+  - Players: `?player=atomshell`
+  - Decks: `?deck=blue-flare`
+  - Stores: `?store=sci-fi-factory`
+  - Tournaments: `?tournament=123`
+- **Tab URLs**: Tab navigation reflected in URL (`?tab=meta`, `?tab=about`, etc.)
+- **Scene Foundation**: URL supports scene parameter (`?scene=dfw`) for future multi-region
+- **Copy Link Button**: All modals now have "Copy Link" button in footer
+- **Browser History Support**: Back/forward buttons work with modal navigation
+
+### Changed
+- **URL Routing**: Admin pages clear URL to base (no shareable links for admin)
+- **Schema**: Added `slug` column to `stores` and `deck_archetypes` tables
+- **Schema**: Added `scenes` table with hierarchy (Global → Country → State → Metro)
+- **Schema**: Added `scene_id` column to `stores` table
+
+### Technical
+- New `server/url-routing-server.R` for URL parsing and entity resolution
+- New `www/url-routing.js` for browser history management (pushState/popstate)
+- Slug-based entity resolution with fallback to slugified names
+
+---
+
+## [0.20.2] - 2026-02-09 - Store Modal & Map Improvements
+
+### Added
+- **Text Selection in Modals**: Can now select and copy text from all modals
+
+### Changed
+- **Store Modal Redesign**:
+  - Stats list (left) + mini map (right) side-by-side layout
+  - Address moved to header in standard format (street, city, state zip)
+  - Website link as icon in header
+  - Stats reordered: Events, Avg Event Size, Unique Players, Avg Player Rating, Last Event
+- **Store Rating → Avg Player Rating**:
+  - Removed confusing 0-100 "Store Rating" score
+  - Replaced with weighted average player Elo (regulars count more)
+  - Clearer meaning: shows competitive level of players at each store
+- **Map Bubble Sizing**: Now tiered by avg event size instead of event count
+  - No events: 5px (tiny dot)
+  - < 8 players: 10px
+  - 8-12 players: 14px
+  - 13-18 players: 18px
+  - 19-24 players: 22px
+  - 25+ players: 26px
+- **Store List Table**: Sorted by Events (not rating), renamed "Avg Size" to "Avg Event Size"
+
+### Removed
+- **Region Filter**: Removed draw-to-filter lasso functionality (will be replaced by scene selection in v0.23)
+- **Store Rating from Tournament Modal**: No longer shows store rating stat
+
+---
+
+## [0.20.1] - 2026-02-09 - Scene Health Dashboard & Stores Tab Improvements
+
+### Added
+- **Scene Health Dashboard**: New analytics section on Overview tab
+  - Meta Diversity gauge showing how evenly distributed tournament wins are (HHI-based)
+  - Player Growth & Retention chart (new/returning/regular players by month)
+  - Rising Stars section highlighting players with recent top finishes
+  - Explanatory descriptions for user understanding
+- **Store Schedules**: Stores now have structured recurring schedules
+  - New `store_schedules` table for day/time/frequency data
+  - Admin UI for managing store schedules in Edit Stores
+  - Schedule view on Stores tab (weekly calendar sorted from today)
+- **Store Modal Improvements**:
+  - Mini map showing store location (Mapbox GL)
+  - Regular Schedule section displaying store's weekly events
+  - Removed low-value "Most Popular Deck" section
+
+### Changed
+- **Overview Tab Layout Improvements**:
+  - Reorganized section order: Top Decks → Rising Stars → Scene Health → Charts → Tables
+  - Split Meta Diversity and Player Growth into separate cards
+  - Added icons to all section headers throughout Overview
+  - Added consistent spacing between major sections
+  - Renamed "Tournament Player Counts Over Time" to "Player Attendance"
+- **Stores Tab View Toggle**: Switch between Schedule view and All Stores view
+- **Color Distribution Chart**: Now shows decks by primary color (dual-color decks grouped by primary)
+- **Orange Text Colors**: Darkened to #D97706 for better readability on light backgrounds
+- **Map Styling**: Removed custom toolbar button styling, collapsed attribution by default
+- **Geocoding**: Switched from OSM/Nominatim to Mapbox Geocoding API for better accuracy
+
+### Fixed
+- Highcharts axis labels, legends, and tooltips now use dark blue instead of burgundy (atomtemplates override)
+- Mapbox popup text colors now use dark blue/slate instead of burgundy
+
+---
+
 ## [0.20.0] - 2026-02-06 - Public Submissions, OCR & Mobile Navigation
 
 ### Added

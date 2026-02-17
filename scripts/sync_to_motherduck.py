@@ -28,7 +28,9 @@ MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
 
 # Tables in order (respects foreign key dependencies)
 TABLES = [
+    "scenes",
     "stores",
+    "store_schedules",
     "formats",
     "cards",
     "players",
@@ -159,6 +161,18 @@ def main():
     print(f"\n[5/5] Syncing table data...")
     total_rows = 0
 
+    # First, delete all data in REVERSE order (children before parents) to respect FK constraints
+    print("    Clearing cloud tables (reverse FK order)...")
+    for table in reversed(TABLES):
+        try:
+            conn.execute(f"DELETE FROM {MOTHERDUCK_DB}.{table}")
+        except Exception as e:
+            err_str = str(e).lower()
+            # Table might not exist yet, that's OK
+            if "does not exist" not in err_str and "not found" not in err_str:
+                print(f"    Warning: Could not clear {table}: {str(e)[:60]}")
+
+    # Then insert data in FORWARD order (parents before children)
     for table in TABLES:
         try:
             # Check if table has data locally
@@ -175,9 +189,6 @@ def main():
                 continue
 
             cols_str = ", ".join(local_cols)
-
-            # Delete existing data in cloud table
-            conn.execute(f"DELETE FROM {MOTHERDUCK_DB}.{table}")
 
             # Copy data using explicit column list
             conn.execute(f"INSERT INTO {MOTHERDUCK_DB}.{table} ({cols_str}) SELECT {cols_str} FROM local_db.{table}")

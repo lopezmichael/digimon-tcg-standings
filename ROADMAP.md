@@ -2,29 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.20.0
+**Current Version:** v0.21.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.21 - Deep Linking
-
-**Design:** `docs/plans/2026-02-04-deep-linking-design.md`
-
-| ID | Type | Description |
-|----|------|-------------|
-| DL1 | FEATURE | Shareable URLs for entities (`?player=atomshell`, `?deck=blue-flare`, `?store=sci-fi-factory`) |
-| DL2 | FEATURE | Tab navigation via URL (`?tab=meta`, `?tab=players`) |
-| DL3 | FEATURE | Scene/region in URL (`?scene=dfw`) |
-| DL4 | FEATURE | Browser back button closes modals (pushState/popstate) |
-| DL5 | FEATURE | "Copy Link" button in all modals |
-| DL6 | SCHEMA | Add `slug` column to stores, deck_archetypes tables |
-
-**Technical Notes:**
-- Uses `parseQueryString(session$clientData$url_search)` for reading URLs
-- Uses JavaScript `history.pushState()` for updating URLs without reload
-- Slug resolution: exact match opens modal, multiple matches show search results
 
 ---
 
@@ -124,12 +104,29 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
+## Stores Tab Improvements (v0.20.1-v0.20.2) - COMPLETE
+
+**Design:** `docs/plans/2026-02-08-stores-tab-improvements.md`
+
+| ID | Type | Description |
+|----|------|-------------|
+| ST1 | DONE | Switch to Mapbox geocoding (replaces OSM/Nominatim) |
+| ST2 | DONE | Store schedules schema (recurring day/time/event type) |
+| ST3 | DONE | Weekly calendar view with schedule/all stores toggle |
+| ST4 | DONE | Store modal improvements (mini map, two-column stats layout) |
+| ST5 | DONE | Replaced Store Rating with Avg Player Rating (weighted Elo) |
+| ST6 | DONE | Tiered bubble sizing based on avg event size |
+| ST7 | DONE | Removed region filter (replaced by scene selection in v0.23) |
+
+---
+
 ## Parking Lot
 
 Items for future consideration, not scheduled:
 
 | ID | Type | Description | Notes |
 |----|------|-------------|-------|
+| FD1 | IMPROVEMENT | Smart format default | Instead of "All Formats", default to current format group (e.g., BT24+EX11+AD01 until BT25 releases). Avoids empty results on new format release while keeping data relevant. |
 | F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification |
 | F8 | FEATURE | Embed widgets for stores | Let stores embed tournament history on their sites |
 | P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration in v0.23 |
@@ -157,6 +154,29 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.21.0 - Deep Linking & Shareable URLs
+- Shareable URLs for players, decks, stores, tournaments
+- Tab navigation via URL (`?tab=meta`, `?tab=about`, etc.)
+- Scene parameter foundation (`?scene=dfw`)
+- Copy Link button in all modal footers
+- Browser back/forward support for modal navigation
+- Schema: `slug` columns on stores and deck_archetypes
+- Schema: `scenes` table with hierarchy for future multi-region
+
+### v0.20.2 - Store Modal Polish & Map Improvements
+- Store modal redesign: two-column layout (stats + mini map)
+- Replaced Store Rating with Avg Player Rating (weighted Elo)
+- Tiered bubble sizing based on avg event size
+- Removed region filter (to be replaced by scene selection in v0.23)
+- Text selection enabled in modals
+
+### v0.20.1 - Store Schedules & Calendar
+- Store schedules schema (recurring day/time/frequency)
+- Admin UI for schedule management
+- Weekly calendar view with schedule/all stores toggle
+- Store modal mini map with interactive Mapbox display
+- Mapbox geocoding (replaces OSM/Nominatim)
 
 ### v0.20.0 - Public Submissions & OCR
 - Public "Upload Results" tab with screenshot-based submission

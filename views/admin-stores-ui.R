@@ -30,7 +30,7 @@ admin_stores_ui <- tagList(
             textInput("store_address", "Street Address"),
             textInput("store_city", "City"),
             selectInput("store_state", "State", choices = c("TX" = "TX"), selected = "TX"),
-            textInput("store_zip", "ZIP Code (optional)")
+            textInput("store_zip", "ZIP Code")
           ),
 
           # Online store fields (shown when checkbox checked)
@@ -42,9 +42,6 @@ admin_stores_ui <- tagList(
 
           # Common fields for both
           textInput("store_website", "Website (optional)"),
-          textAreaInput("store_schedule", "Schedule Info (optional)",
-                        rows = 2,
-                        placeholder = "e.g., Locals every Friday at 7pm"),
 
           # Geocode message only for physical stores
           conditionalPanel(
@@ -54,6 +51,65 @@ admin_stores_ui <- tagList(
               bsicons::bs_icon("geo-alt"), " Location will be automatically geocoded from address"
             )
           ),
+
+          # Schedule management section (for physical stores - both new and editing)
+          conditionalPanel(
+            condition = "!input.store_is_online",
+            hr(),
+            h5("Regular Schedule"),
+            # Show existing schedules when editing
+            conditionalPanel(
+              condition = "input.editing_store_id && input.editing_store_id != ''",
+              p(class = "text-muted small", "Click a schedule to delete it"),
+              reactableOutput("store_schedules_table")
+            ),
+            # Show pending schedules when adding new store
+            conditionalPanel(
+              condition = "!input.editing_store_id || input.editing_store_id == ''",
+              uiOutput("pending_schedules_display")
+            ),
+            div(
+              class = "mt-3",
+              layout_columns(
+                col_widths = c(4, 3, 3, 2),
+                selectInput(
+                  "schedule_day", "Day",
+                  choices = list(
+                    "Sunday" = "0",
+                    "Monday" = "1",
+                    "Tuesday" = "2",
+                    "Wednesday" = "3",
+                    "Thursday" = "4",
+                    "Friday" = "5",
+                    "Saturday" = "6"
+                  ),
+                  selected = "1",
+                  selectize = FALSE
+                ),
+                textInput(
+                  "schedule_time", "Time",
+                  value = "19:00",
+                  placeholder = "HH:MM (e.g., 19:00)"
+                ),
+                selectInput(
+                  "schedule_frequency", "Frequency",
+                  choices = list(
+                    "Weekly" = "weekly",
+                    "Biweekly" = "biweekly",
+                    "Monthly" = "monthly"
+                  ),
+                  selected = "weekly",
+                  selectize = FALSE
+                ),
+                div(
+                  style = "padding-top: 32px;",
+                  actionButton("add_schedule", "Add", class = "btn-outline-primary btn-sm")
+                )
+              )
+            )
+          ),
+
+          hr(),
           div(
             class = "d-flex gap-2",
             actionButton("add_store", "Add Store", class = "btn-primary"),
@@ -66,7 +122,18 @@ admin_stores_ui <- tagList(
         card_header(
           class = "d-flex justify-content-between align-items-center",
           "Current Stores",
-          span(class = "small text-muted", "Click a row to edit")
+          div(
+            class = "d-flex align-items-center gap-3",
+            span(class = "small text-muted", "Click to edit"),
+            div(
+              class = "d-flex align-items-center gap-2 small",
+              span(
+                style = "width: 12px; height: 12px; background: rgba(245, 183, 0, 0.3); border-left: 2px solid #F5B700; display: inline-block;",
+                title = "Missing schedule or ZIP"
+              ),
+              span(class = "text-muted", "Incomplete")
+            )
+          )
         ),
         card_body(
           reactableOutput("admin_store_list")

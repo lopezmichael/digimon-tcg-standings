@@ -115,11 +115,6 @@ output$tournament_detail_modal <- renderUI({
 
   if (nrow(tournament) == 0) return(NULL)
 
-  # Calculate Store Rating for this store
-  store_rating <- tryCatch({
-    calculate_store_rating(rv$db_con, tournament$store_id)
-  }, error = function(e) NA_real_)
-
   # Get all results for this tournament
   results <- dbGetQuery(rv$db_con, "
     SELECT r.placement as Place, p.display_name as Player, da.archetype_name as Deck,
@@ -140,6 +135,9 @@ output$tournament_detail_modal <- renderUI({
                                 "online" = "Online",
                                 tournament$event_type)
 
+  # Update URL for deep linking
+  update_url_for_tournament(session, tournament_id)
+
   # Build modal
   showModal(modalDialog(
     title = div(
@@ -156,7 +154,15 @@ output$tournament_detail_modal <- renderUI({
     ),
     size = "l",
     easyClose = TRUE,
-    footer = modalButton("Close"),
+    footer = tagList(
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-secondary me-auto",
+        onclick = "copyCurrentUrl()",
+        bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      modalButton("Close")
+    ),
 
     # Tournament info
     div(
@@ -180,11 +186,6 @@ output$tournament_detail_modal <- renderUI({
         class = "modal-stat-item",
         div(class = "modal-stat-value", if (!is.na(tournament$rounds)) tournament$rounds else "-"),
         div(class = "modal-stat-label", "Rounds")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", if (!is.na(store_rating)) round(store_rating, 0) else "-"),
-        div(class = "modal-stat-label", "Store Rating")
       )
     ),
 
