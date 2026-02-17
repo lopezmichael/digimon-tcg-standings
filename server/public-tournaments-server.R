@@ -15,20 +15,28 @@ output$tournament_history <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  # Build filters
-  search_filter <- if (!is.null(input$tournaments_search) && nchar(trimws(input$tournaments_search)) > 0) {
-    sprintf("AND LOWER(s.name) LIKE LOWER('%%%s%%')", trimws(input$tournaments_search))
-  } else ""
+  # Build parameterized filters to prevent SQL injection
+  search_filters <- build_filters_param(
+    table_alias = "s",
+    search = input$tournaments_search,
+    search_column = "name"
+  )
 
-  format_filter <- if (!is.null(input$tournaments_format) && input$tournaments_format != "") {
-    sprintf("AND t.format = '%s'", input$tournaments_format)
-  } else ""
+  format_filters <- build_filters_param(
+    table_alias = "t",
+    format = input$tournaments_format
+  )
 
-  event_type_filter <- if (!is.null(input$tournaments_event_type) && input$tournaments_event_type != "") {
-    sprintf("AND t.event_type = '%s'", input$tournaments_event_type)
-  } else ""
+  event_type_filters <- build_filters_param(
+    table_alias = "t",
+    event_type = input$tournaments_event_type
+  )
 
-  result <- dbGetQuery(rv$db_con, sprintf("
+  # Combine filter SQL and params
+  filter_sql <- paste(search_filters$sql, format_filters$sql, event_type_filters$sql)
+  filter_params <- c(search_filters$params, format_filters$params, event_type_filters$params)
+
+  query <- paste0("
     SELECT t.tournament_id, t.event_date as Date, s.name as Store, t.event_type as Type,
            t.format as Format, t.player_count as Players, t.rounds as Rounds,
            p.display_name as Winner, da.archetype_name as 'Winning Deck'
@@ -37,9 +45,11 @@ output$tournament_history <- renderReactable({
     LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
     LEFT JOIN players p ON r.player_id = p.player_id
     LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-    WHERE 1=1 %s %s %s
+    WHERE 1=1 ", filter_sql, "
     ORDER BY t.event_date DESC
-  ", search_filter, format_filter, event_type_filter))
+  ")
+
+  result <- dbGetQuery(rv$db_con, query, params = filter_params)
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No tournaments match filters"), compact = TRUE))
