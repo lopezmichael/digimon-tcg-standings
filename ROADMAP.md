@@ -8,13 +8,42 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.22 - User Accounts & Permissions
+## v0.21.1 - Performance & Foundations
 
-**Design:** `docs/plans/2026-02-05-user-accounts-design.md` (to be created)
+**Design:** `docs/plans/2026-02-17-performance-foundations-design.md`
+
+Quick wins and foundational improvements to prepare for user accounts (v0.22) and multi-region (v0.23). No new features — focused on speed, security, resilience, and discoverability.
 
 | ID | Type | Description |
 |----|------|-------------|
-| UA1 | FEATURE | Discord OAuth login ("Login with Discord") |
+| PF1 | PERFORMANCE | Remove forced 800ms loading delay after DB connection |
+| PF2 | PERFORMANCE | Add `bindCache()` to all dashboard reactives (keyed by format + event type) |
+| PF3 | PERFORMANCE | Pre-compute player ratings into cache table (recalc on result entry, not page load) |
+| PF4 | PERFORMANCE | Lazy-load admin server modules behind `observeEvent(rv$is_admin)` |
+| PF5 | SECURITY | Parameterize all SQL queries (replace sprintf/paste0 with `?` placeholders) |
+| PF6 | RESILIENCE | Add `safe_query()` wrapper with tryCatch + graceful UI fallbacks |
+| PF7 | SEO | Add `robots.txt` to digilab.cards wrapper |
+| PF8 | SEO | Add `sitemap.xml` to digilab.cards wrapper |
+| PF9 | SEO | Add `og:image` meta tag (branded 1200x630 social preview image) |
+| PF10 | UX | Visibility-aware keepalive script (prevents timeout while tab is active) |
+| PF11 | UX | Custom branded disconnect overlay with deep-link resume button |
+| PF12 | UX | "Last updated" timestamp on dashboard |
+
+**Technical Notes:**
+- `bindCache()` cache key: format + event_type (+ scene_id in v0.23)
+- Ratings cache table recomputed via trigger in admin-results-server after result submission
+- Keepalive only fires when tab is visible (Page Visibility API) — avoids burning Posit Connect hours
+- Disconnect overlay leverages existing deep linking (v0.21) to restore exact state on resume
+
+---
+
+## v0.22 - User Accounts & Permissions
+
+**Design:** `docs/plans/2026-02-05-user-accounts-design.md`
+
+| ID | Type | Description |
+|----|------|-------------|
+| UA1 | FEATURE | Discord OAuth login ("Login with Discord") via `httr2` |
 | UA2 | FEATURE | Users table with Discord ID, username, role, scene assignment |
 | UA3 | FEATURE | Permission levels: Viewer (default, no login), Scene Admin, Super Admin |
 | UA4 | FEATURE | Scene Admin can manage data for their assigned scene only |
@@ -22,12 +51,17 @@ This document outlines the planned features, improvements, and bug fixes for the
 | UA6 | FEATURE | Admin invite links (Super Admin generates link, recipient becomes Scene Admin) |
 | UA7 | FEATURE | Direct user promotion (Super Admin promotes existing users) |
 | UA8 | UI | Permission-scoped admin tabs (hidden unless logged in with appropriate role) |
+| UA9 | SECURITY | Cookie-based session persistence (survives page refresh) |
+| UA10 | SECURITY | Permission middleware — check auth at data level on every admin mutation |
+| UA11 | SECURITY | `admin_actions` audit log table (who, what, when, before/after values) |
+| UA12 | SECURITY | Rate limiting on admin mutations (prevent accidental bulk operations) |
 
 **Technical Notes:**
 - Discord OAuth is free and widely used in TCG communities
 - localStorage for scene preference (no login required for viewers)
-- Session management via secure cookies
+- Session management via secure HTTP-only cookies
 - First Super Admin seeded via database during deployment
+- Admin modules lazy-loaded after Discord OAuth confirms permissions (building on PF4)
 
 ---
 
@@ -45,6 +79,15 @@ This document outlines the planned features, improvements, and bug fixes for the
 | MR6 | FEATURE | "All Scenes" / Global toggle for cross-region viewing |
 | MR7 | SCHEMA | Add `scene_id` to stores table |
 | MR8 | SCHEMA | Add `tier` to tournaments table (local, regional, national, international) |
+| MR9 | FEATURE | Player "home scene" inference (mode of tournament scenes played) |
+| MR10 | FEATURE | Scene comparison page (DFW vs Houston side-by-side stats) |
+| MR11 | FEATURE | Cross-scene badges in player modal ("Competed in: DFW, Houston, Austin") |
+| MR12 | FEATURE | Scene health dashboard for Scene Admins (trends, retention, store activity) |
+| MR13 | PERFORMANCE | Query builder abstraction for consistent scene filtering across all queries |
+| MR14 | PERFORMANCE | Connection pooling via `pool` package |
+| MR15 | PERFORMANCE | Batch dashboard queries (reduce from 8 separate to 2-3 combined) |
+| MR16 | PERFORMANCE | Pre-computed dashboard stats cache table (recalc on data change) |
+| MR17 | PERFORMANCE | Profile with `shinyloadtest` and size Posit Connect tier |
 | L1 | FEATURE | Limitless API exploration for online tournament data |
 
 **Key Design Decisions:**
@@ -52,18 +95,30 @@ This document outlines the planned features, improvements, and bug fixes for the
 - Stores belong to scenes; players appear on leaderboards based on where they've competed
 - Rating is global; leaderboards are filtered views
 - Scene Admins can only manage their assigned scene's data
+- Player "home scene" inferred from tournament history (most-played scene)
+- Scene comparison builds community rivalry and engagement
 
 ---
 
-## v0.24 - Onboarding & Help
+## v0.24 - Onboarding, Help & UX Polish
 
 | ID | Type | Description |
 |----|------|-------------|
-| F7 | FEATURE | Contextual help - "Click a row for details" hint text above clickable tables |
+| F7 | FEATURE | Contextual help — "Click a row for details" hint text above clickable tables |
 | F7b | FEATURE | Info icons on Rating/Score column headers → link to FAQ methodology section |
 | F7c | FEATURE | Light hints on admin pages explaining how to use each function |
 | OH1 | FEATURE | First-visit scene selection modal (stored in localStorage) |
 | OH2 | FEATURE | Guided tour for new users (optional, dismissible) |
+| UX1 | UX | Player table minimum-events filter (5+ / 10+ / All, default 5+, pill buttons) |
+| UX2 | UX | Global search bar in header (players, decks, stores, tournaments) |
+| UX3 | UX | Player modal: rating trend sparkline (mini line chart) |
+| UX4 | UX | Player modal: deck history (which decks they've played) |
+| UX5 | UX | Deck modal: matchup matrix (win/loss vs top 5 other decks) |
+| UX6 | UX | Deck modal: pilots leaderboard (best players of this deck) |
+| UX7 | UX | Stores tab: "Next Event" prominently shown per store |
+| UX8 | UX | Dashboard: community pulse ("3 tournaments this week, 47 active players") |
+| UX9 | UX | Dashboard: new format callout banner when a new set drops |
+| UX10 | UX | Custom GA4 events (track tab visits, filter usage, modal opens) |
 
 ---
 
@@ -71,8 +126,10 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 | ID | Type | Description |
 |----|------|-------------|
-| I9 | FEATURE | Simple player merge tool - admin can merge duplicate players (e.g., "John Smith" and "J. Smith") |
-| F10 | FEATURE | Player achievement badges - auto-calculated, displayed in player modal, top 3-5 shown with "show all" expansion |
+| I9 | FEATURE | Simple player merge tool — admin can merge duplicate players |
+| F10 | FEATURE | Player achievement badges — auto-calculated, displayed in player modal |
+| UX11 | UX | Player modal: head-to-head teaser ("Best record vs: PlayerX (3-0)") |
+| UX12 | UX | Tournament table: result distribution mini-chart (top 3 deck colors inline) |
 
 **Achievement Badge Categories:**
 - Wins: First Win, 5 Wins, 10 Wins, 25 Wins
@@ -89,18 +146,39 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 | ID | Type | Description |
 |----|------|-------------|
-| W1 | FEATURE | Website landing page - about the tool, who it's for, geographic scope, how to use |
-| W2 | FEATURE | Methodology pages - simple rating overview + detailed formula breakdown |
-| W3 | FEATURE | Weekly Meta Report page - auto-generated from tournament data |
+| W1 | FEATURE | Website landing page — about the tool, who it's for, geographic scope |
+| W2 | FEATURE | Methodology pages — simple rating overview + detailed formula breakdown |
+| W3 | FEATURE | Weekly Meta Report page — auto-generated from tournament data |
+| SEO1 | SEO | Static landing pages outside iframe (crawlable About/FAQ for Google) |
+| SEO2 | SEO | Structured data (JSON-LD) on wrapper site |
+| SEO3 | SEO | Search Console integration |
 | I7 | IMPROVEMENT | Replace header cards icon with Digivice SVG |
-| M1 | IMPROVEMENT | Mobile table column prioritization - determine which columns to show/hide on small screens |
+| M1 | IMPROVEMENT | Mobile table column prioritization |
 | X1 | IMPROVEMENT | Remove BETA badge |
 | DC1 | COMMUNITY | Discord server for community coordination, admin requests, feedback |
+| ERR1 | RESILIENCE | Error tracking (Sentry R SDK or similar) |
+| PWA1 | FEATURE | PWA manifest + service worker for mobile "install" and offline shell |
 
 **Website Requirements:**
 - Digital Digimon aesthetic matching the app
 - Static site (GitHub Pages or similar)
 - Custom domain already set up (digilab.cards)
+
+---
+
+## Post-v1.0 Decision Point: Platform Evaluation
+
+After v1.0 launch data, evaluate whether to begin a Next.js migration based on:
+
+| Question | If Yes → Next.js | If No → Stay Shiny |
+|----------|------------------|---------------------|
+| Is organic search traffic a growth priority? | SSR pages are crawlable | Word-of-mouth via Discord is enough |
+| Hitting Posit Connect scaling limits? | Stateless architecture scales better | Caching solved the problem |
+| Want standalone API for bots/tools? | API routes are native | Manual data sharing is fine |
+| Want mobile app / PWA features? | Native strengths | Basic PWA on Shiny is sufficient |
+| Multiple regions need fast edge loading? | CDN + edge rendering | Single-region performance is adequate |
+
+The React PoC on `explore/react-rewrite` branch serves as a reference for future migration decisions.
 
 ---
 
@@ -126,15 +204,17 @@ Items for future consideration, not scheduled:
 
 | ID | Type | Description | Notes |
 |----|------|-------------|-------|
-| FD1 | IMPROVEMENT | Smart format default | Instead of "All Formats", default to current format group (e.g., BT24+EX11+AD01 until BT25 releases). Avoids empty results on new format release while keeping data relevant. |
+| FD1 | IMPROVEMENT | Smart format default | Default to current format group instead of "All Formats" |
 | F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification |
 | F8 | FEATURE | Embed widgets for stores | Let stores embed tournament history on their sites |
 | P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration in v0.23 |
 | P2 | FEATURE | Discord bot for result reporting | Could integrate with user accounts system |
 | P3 | FEATURE | Expand to other Texas regions | After multi-region foundation works |
 | P4 | FEATURE | One Piece TCG support | Multi-game expansion |
-| P5 | FEATURE | Mobile-first data entry PWA | Consider platform rewrite if scaling demands it |
-| RA1 | FEATURE | Regional Admin role | Middle tier between Scene Admin and Super Admin, if needed |
+| P5 | FEATURE | Mobile-first data entry PWA | Consider after v1.0 platform evaluation |
+| RA1 | FEATURE | Regional Admin role | Middle tier between Scene Admin and Super Admin |
+| UX13 | UX | Distance-based store sorting | Sort stores by proximity using localStorage scene |
+| UX14 | UX | Tournament "upcoming" section | Show future events from store schedules above recent results |
 
 ---
 
@@ -142,14 +222,16 @@ Items for future consideration, not scheduled:
 
 | Description | Reason |
 |-------------|--------|
-| Date range filtering on dashboard | Not needed - format filter is sufficient |
+| Date range filtering on dashboard | Not needed — format filter is sufficient |
 | Detailed player profile views | Modals already cover this |
 | Detailed deck profile views | Modals already cover this |
-| Matchup analysis (deck A vs deck B) | Revisit after v0.20 - will have round-by-round data |
+| Matchup analysis (deck A vs deck B) | Revisit after v0.20 — will have round-by-round data |
 | Event calendar page | Bandai TCG Plus already covers this |
 | Store directory page | Bandai TCG Plus already covers this |
 | Data export for users | Handle manually on request |
 | Season/format archive view | Format filter already covers this |
+| GitHub Action keepalive ping | Burns Posit Connect hours 24/7 for minimal benefit |
+| Aggressive idle timeout increases | Wastes Posit Connect hours on zombie sessions |
 
 ---
 
