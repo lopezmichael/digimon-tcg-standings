@@ -3559,6 +3559,122 @@ a:hover, .nav-link:hover {
 }
 
 /* =============================================================================
+   DISCONNECT OVERLAY - Custom branded reconnect screen
+   ============================================================================= */
+
+.disconnect-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(10, 48, 85, 0.98) 0%, rgba(15, 76, 129, 0.98) 100%);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 40px),
+    linear-gradient(135deg, rgba(10, 48, 85, 0.98) 0%, rgba(15, 76, 129, 0.98) 100%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.disconnect-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.disconnect-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+/* Broken connection rings */
+.disconnect-icon::before,
+.disconnect-icon::after {
+  content: '';
+  position: absolute;
+  border: 3px solid;
+  border-radius: 50%;
+}
+
+.disconnect-icon::before {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-color: rgba(247, 148, 29, 0.4);
+  border-top-color: transparent;
+  border-right-color: transparent;
+  animation: disconnect-pulse 2s ease-in-out infinite;
+}
+
+.disconnect-icon::after {
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  border-color: rgba(0, 200, 255, 0.4);
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  animation: disconnect-pulse 2s ease-in-out infinite 0.5s;
+}
+
+@keyframes disconnect-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.disconnect-title {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.disconnect-message {
+  color: rgba(0, 200, 255, 0.9);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  max-width: 280px;
+}
+
+.disconnect-btn {
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.2) 0%, rgba(15, 76, 129, 0.3) 100%);
+  border: 1px solid rgba(0, 200, 255, 0.5);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 0.75rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.disconnect-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.3) 0%, rgba(15, 76, 129, 0.4) 100%);
+  border-color: rgba(0, 200, 255, 0.7);
+  transform: translateY(-1px);
+}
+
+.disconnect-btn:active {
+  transform: translateY(0);
+}
+
+/* Hide default Shiny reconnect UI */
+#shiny-disconnected-overlay {
+  display: none !important;
+}
+
+/* =============================================================================
    DIGITAL EMPTY STATES
    ============================================================================= */
 

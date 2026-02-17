@@ -44,7 +44,10 @@ TABLES = [
     "tournaments",
     "results",
     "matches",
-    "ingestion_log"
+    "ingestion_log",
+    # Cache tables (computed, but synced for consistency)
+    "player_ratings_cache",
+    "store_ratings_cache"
 ]
 
 
