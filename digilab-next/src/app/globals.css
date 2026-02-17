@@ -122,3 +122,99 @@
     @apply bg-background text-foreground;
     }
 }
+
+/* ==========================================================================
+   DigiLab Digital Aesthetic - Ported from www/custom.css
+   ========================================================================== */
+
+/* --- Title Strip --- */
+.title-strip {
+  background: linear-gradient(135deg, #0A3055 0%, #0D3B66 50%, #0F4C81 100%);
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.title-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255, 255, 255, 0.03) 19px, rgba(255, 255, 255, 0.03) 20px),
+    repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(255, 255, 255, 0.03) 19px, rgba(255, 255, 255, 0.03) 20px);
+  pointer-events: none;
+}
+
+/* --- Title Strip Select Dropdowns --- */
+.title-strip-select {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #1a202c;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  cursor: pointer;
+  appearance: auto;
+  min-width: 0;
+}
+
+.title-strip-select:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 1px;
+}
+
+.dark .title-strip-select {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* --- Pulse glow animation for Hot Deck --- */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(247, 148, 29, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(247, 148, 29, 0.6); }
+}
+
+/* --- Recharts dark mode text --- */
+.dark .recharts-cartesian-axis-tick text,
+.dark .recharts-legend-item-text {
+  fill: #a0aec0 !important;
+}
+
+.dark .recharts-cartesian-grid line {
+  stroke: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* --- Table dark mode tweaks --- */
+.dark table th {
+  color: #a0aec0;
+}
+
+/* --- Scrollbar styling for meta timeline legend --- */
+.recharts-legend-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.recharts-legend-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.dark .recharts-legend-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- Responsive title strip --- */
+@media (max-width: 640px) {
+  .title-strip .flex {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .title-strip-select {
+    flex: 1;
+    min-width: 0;
+  }
+}
