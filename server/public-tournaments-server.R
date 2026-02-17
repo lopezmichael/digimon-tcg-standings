@@ -49,7 +49,7 @@ output$tournament_history <- renderReactable({
     ORDER BY t.event_date DESC
   ")
 
-  result <- dbGetQuery(rv$db_con, query, params = filter_params)
+  result <- safe_query(rv$db_con, query, params = filter_params, default = data.frame())
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No tournaments match filters"), compact = TRUE))
@@ -115,18 +115,18 @@ output$tournament_detail_modal <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   # Get tournament info (include store_id for clickable link)
-  tournament <- dbGetQuery(rv$db_con, "
+  tournament <- safe_query(rv$db_con, "
     SELECT t.event_date, t.event_type, t.format, t.player_count, t.rounds,
            s.store_id, s.name as store_name
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
     WHERE t.tournament_id = ?
-  ", params = list(tournament_id))
+  ", params = list(tournament_id), default = data.frame())
 
   if (nrow(tournament) == 0) return(NULL)
 
   # Get all results for this tournament
-  results <- dbGetQuery(rv$db_con, "
+  results <- safe_query(rv$db_con, "
     SELECT r.placement as Place, p.display_name as Player, da.archetype_name as Deck,
            da.primary_color as color, r.wins as W, r.losses as L, r.ties as T, r.decklist_url
     FROM results r
@@ -134,7 +134,7 @@ output$tournament_detail_modal <- renderUI({
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     WHERE r.tournament_id = ?
     ORDER BY r.placement ASC
-  ", params = list(tournament_id))
+  ", params = list(tournament_id), default = data.frame())
 
   # Format event type
   event_type_display <- switch(tournament$event_type,
