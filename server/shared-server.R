@@ -371,6 +371,44 @@ observeEvent(input$logout_btn, {
 # Helper Functions
 # ---------------------------------------------------------------------------
 
+#' Safe Database Query Wrapper
+#'
+#' Executes a database query with error handling, returning a sensible default
+#' instead of crashing the app if the query fails. Useful for public-facing
+#' queries where graceful degradation is preferred over error screens.
+#'
+#' @param db_con Database connection object from DBI
+#' @param query Character. SQL query string (can include ? placeholders for params)
+#' @param params List or NULL. Parameters for parameterized query (default: NULL)
+#' @param default Default value to return on error (default: empty data.frame)
+#'
+#' @return Query result on success, or default value on error
+#'
+#' @examples
+#' # Simple query
+#' result <- safe_query(rv$db_con, "SELECT * FROM players")
+#'
+#' # Parameterized query
+#' result <- safe_query(rv$db_con, "SELECT * FROM players WHERE player_id = ?",
+#'                      params = list(42))
+#'
+#' # Custom default for aggregations
+#' result <- safe_query(rv$db_con, "SELECT COUNT(*) as n FROM results",
+#'                      default = data.frame(n = 0))
+safe_query <- function(db_con, query, params = NULL, default = data.frame()) {
+  tryCatch({
+    if (is.null(db_con) || !DBI::dbIsValid(db_con)) return(default)
+    if (is.null(params)) {
+      DBI::dbGetQuery(db_con, query)
+    } else {
+      DBI::dbGetQuery(db_con, query, params = params)
+    }
+  }, error = function(e) {
+    message(sprintf("[safe_query] Error: %s\nQuery: %s", e$message, substr(query, 1, 200)))
+    default
+  })
+}
+
 get_store_choices <- function(con, include_none = FALSE) {
   if (is.null(con) || !dbIsValid(con)) return(c("Loading..." = ""))
   stores <- dbGetQuery(con, "SELECT store_id, name FROM stores WHERE is_active = TRUE ORDER BY name")
