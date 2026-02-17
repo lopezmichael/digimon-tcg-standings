@@ -14,17 +14,24 @@ output$archetype_stats <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  # Build filters
-  search_filter <- if (!is.null(input$meta_search) && nchar(trimws(input$meta_search)) > 0) {
-    sprintf("AND LOWER(da.archetype_name) LIKE LOWER('%%%s%%')", trimws(input$meta_search))
-  } else ""
+  # Build parameterized filters to prevent SQL injection
+  search_filters <- build_filters_param(
+    table_alias = "da",
+    search = input$meta_search,
+    search_column = "archetype_name"
+  )
 
-  format_filter <- if (!is.null(input$meta_format) && input$meta_format != "") {
-    sprintf("AND t.format = '%s'", input$meta_format)
-  } else ""
+  format_filters <- build_filters_param(
+    table_alias = "t",
+    format = input$meta_format
+  )
 
   min_entries <- as.numeric(input$meta_min_entries)
   if (is.na(min_entries)) min_entries <- 0
+
+  # Combine filter SQL and params
+  combined_sql <- paste(search_filters$sql, format_filters$sql)
+  combined_params <- c(search_filters$params, format_filters$params, list(as.integer(min_entries)))
 
   # Exclude UNKNOWN archetype from analytics
   result <- dbGetQuery(rv$db_con, sprintf("
@@ -36,11 +43,11 @@ output$archetype_stats <- renderReactable({
     FROM deck_archetypes da
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s %s
+    WHERE 1=1 AND da.archetype_name != 'UNKNOWN' %s
     GROUP BY da.archetype_id, da.archetype_name, da.primary_color
-    HAVING COUNT(r.result_id) >= %d
+    HAVING COUNT(r.result_id) >= ?
     ORDER BY COUNT(r.result_id) DESC, COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
-  ", search_filter, format_filter, min_entries))
+  ", combined_sql), params = combined_params)
 
   if (nrow(result) == 0) {
     return(reactable(data.frame(Message = "No decks match the current filters"), compact = TRUE))
@@ -92,16 +99,16 @@ output$deck_detail_modal <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
   # Get archetype info
-  archetype <- dbGetQuery(rv$db_con, sprintf("
+  archetype <- dbGetQuery(rv$db_con, "
     SELECT archetype_name, primary_color, secondary_color, display_card_id, slug
     FROM deck_archetypes
-    WHERE archetype_id = %d
-  ", archetype_id))
+    WHERE archetype_id = ?
+  ", params = list(archetype_id))
 
   if (nrow(archetype) == 0) return(NULL)
 
   # Get overall stats with meta share and conversion rate
-  stats <- dbGetQuery(rv$db_con, sprintf("
+  stats <- dbGetQuery(rv$db_con, "
     WITH deck_stats AS (
       SELECT COUNT(r.result_id) as entries,
              COUNT(DISTINCT r.tournament_id) as tournaments,
@@ -111,7 +118,7 @@ output$deck_detail_modal <- renderUI({
              COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3,
              ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as win_pct
       FROM results r
-      WHERE r.archetype_id = %d
+      WHERE r.archetype_id = ?
     ),
     total_entries AS (
       SELECT COUNT(*) as total FROM results
@@ -120,35 +127,35 @@ output$deck_detail_modal <- renderUI({
            ROUND(ds.entries * 100.0 / NULLIF(te.total, 0), 1) as meta_pct,
            ROUND(ds.top3 * 100.0 / NULLIF(ds.entries, 0), 1) as conv_pct
     FROM deck_stats ds, total_entries te
-  ", archetype_id))
+  ", params = list(archetype_id))
 
   # Get top pilots (include player_id for clickable links)
-  top_pilots <- dbGetQuery(rv$db_con, sprintf("
+  top_pilots <- dbGetQuery(rv$db_con, "
     SELECT p.player_id,
            p.display_name as Player,
            COUNT(*) as Times,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins,
-           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
+           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %'
     FROM results r
     JOIN players p ON r.player_id = p.player_id
-    WHERE r.archetype_id = %d
+    WHERE r.archetype_id = ?
     GROUP BY p.player_id, p.display_name
     ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC, COUNT(*) DESC
     LIMIT 5
-  ", archetype_id))
+  ", params = list(archetype_id))
 
   # Get recent results with this deck
-  recent_results <- dbGetQuery(rv$db_con, sprintf("
+  recent_results <- dbGetQuery(rv$db_con, "
     SELECT t.event_date as Date, s.name as Store, p.display_name as Player,
            r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id
     JOIN players p ON r.player_id = p.player_id
-    WHERE r.archetype_id = %d
+    WHERE r.archetype_id = ?
     ORDER BY t.event_date DESC, r.placement ASC
     LIMIT 10
-  ", archetype_id))
+  ", params = list(archetype_id))
 
   # Card image URL
   card_img_url <- if (!is.na(archetype$display_card_id) && archetype$display_card_id != "") {
