@@ -435,3 +435,86 @@ observe({
     updateSelectInput(session, "tournament_format", choices = format_choices)
   }
 })
+
+#' Build Parameterized SQL Filters
+#'
+#' Creates SQL WHERE clause fragments with parameterized placeholders to prevent
+#' SQL injection. Returns both the SQL fragment and corresponding parameter values.
+#'
+#' @param table_alias Character. Table alias to use in SQL (e.g., "t" for "t.format")
+#' @param format Character or NULL. Format value for exact match filter
+#' @param event_type Character or NULL. Event type value for exact match filter
+#' @param search Character or NULL. Search term for LIKE filter (will be wrapped with %)
+#' @param search_column Character. Column name for search filter (default: "display_name")
+#' @param id Integer or NULL. ID value for exact match filter
+#' @param id_column Character. Column name for ID filter (default: "id")
+#'
+#' @return List with:
+#'   - sql: SQL fragment with ? placeholders (e.g., "AND t.format = ?")
+#'   - params: List of parameter values in order
+#'   - any_active: Boolean indicating if any filters are active
+#'
+#' @examples
+#' filters <- build_filters_param(
+#'   table_alias = "t",
+#'   format = "BT-19",
+#'   event_type = "locals"
+#' )
+#' # filters$sql: "AND t.format = ? AND t.event_type = ?"
+#' # filters$params: list("BT-19", "locals")
+#'
+#' query <- paste("SELECT * FROM tournaments t WHERE 1=1", filters$sql)
+#' dbGetQuery(con, query, params = filters$params)
+build_filters_param <- function(table_alias = "t",
+                                 format = NULL,
+                                 event_type = NULL,
+                                 search = NULL,
+                                 search_column = "display_name",
+                                 id = NULL,
+                                 id_column = "id") {
+  sql_parts <- character(0)
+  params <- list()
+
+  # Format filter (exact match)
+  if (!is.null(format) && format != "") {
+    sql_parts <- c(sql_parts, sprintf("AND %s.format = ?", table_alias))
+    params <- c(params, list(format))
+  }
+
+  # Event type filter (exact match)
+  if (!is.null(event_type) && event_type != "") {
+    sql_parts <- c(sql_parts, sprintf("AND %s.event_type = ?", table_alias))
+    params <- c(params, list(event_type))
+  }
+
+  # Search filter (LIKE match, case-insensitive)
+  if (!is.null(search) && trimws(search) != "") {
+    search_term <- trimws(search)
+    # Use table alias if search_column doesn't contain a dot (allowing "p.display_name" override)
+    col_ref <- if (grepl("\\.", search_column)) {
+      search_column
+    } else {
+      sprintf("%s.%s", table_alias, search_column)
+    }
+    sql_parts <- c(sql_parts, sprintf("AND LOWER(%s) LIKE LOWER(?)", col_ref))
+    params <- c(params, list(paste0("%", search_term, "%")))
+  }
+
+  # ID filter (exact match)
+  if (!is.null(id) && !is.na(id)) {
+    # Use table alias if id_column doesn't contain a dot
+    col_ref <- if (grepl("\\.", id_column)) {
+      id_column
+    } else {
+      sprintf("%s.%s", table_alias, id_column)
+    }
+    sql_parts <- c(sql_parts, sprintf("AND %s = ?", col_ref))
+    params <- c(params, list(as.integer(id)))
+  }
+
+  list(
+    sql = paste(sql_parts, collapse = " "),
+    params = params,
+    any_active = length(params) > 0
+  )
+}
