@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // duckdb is a native addon that cannot be bundled by webpack
+  serverExternalPackages: ['duckdb'],
 };
 
 export default nextConfig;
