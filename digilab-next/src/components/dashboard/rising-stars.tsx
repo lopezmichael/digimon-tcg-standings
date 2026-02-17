@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { TrendingUp, Trophy, Medal } from 'lucide-react'
 import type { RisingStar } from '@/lib/types'
 
 interface RisingStarsProps {
@@ -24,11 +25,11 @@ export function RisingStars({ queryString }: RisingStarsProps) {
   }, [queryString])
 
   return (
-    <Card className="mb-4">
+    <Card className="card-hover mb-4">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <span className="text-green-500">&#x25B2;</span>
+            <TrendingUp className="w-4 h-4 text-green-500" />
             Rising Stars
           </CardTitle>
           <span className="text-xs text-muted-foreground">Top finishes (last 30 days)</span>
@@ -48,7 +49,7 @@ export function RisingStars({ queryString }: RisingStarsProps) {
             {data.map((player, index) => (
               <div
                 key={player.player_id}
-                className="flex items-center gap-3 rounded-lg border p-3 bg-card"
+                className="rising-star-card flex items-center gap-3 rounded-lg border p-3 bg-card"
               >
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
                   {index + 1}
@@ -58,12 +59,12 @@ export function RisingStars({ queryString }: RisingStarsProps) {
                   <div className="flex gap-2 mt-0.5">
                     {player.recent_wins > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                        &#x1F3C6; {player.recent_wins}
+                        <Trophy className="w-3 h-3" /> {player.recent_wins}
                       </span>
                     )}
                     {player.recent_top3 - player.recent_wins > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                        &#x1F3C5; {player.recent_top3 - player.recent_wins}
+                        <Medal className="w-3 h-3" /> {player.recent_top3 - player.recent_wins}
                       </span>
                     )}
                   </div>

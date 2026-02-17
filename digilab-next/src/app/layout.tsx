@@ -17,7 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <ThemeProvider>
           <Header />
-          {children}
+          <div className="lg:pl-56">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

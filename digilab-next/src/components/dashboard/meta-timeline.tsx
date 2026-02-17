@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Activity } from 'lucide-react'
 
 interface MetaTimelineProps {
   queryString: string
@@ -32,8 +33,8 @@ export function MetaTimeline({ queryString }: MetaTimelineProps) {
 
   if (loading) {
     return (
-      <Card className="mb-4">
-        <CardHeader><CardTitle>Meta Share Over Time</CardTitle></CardHeader>
+      <Card className="card-hover mb-4">
+        <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="w-4 h-4 text-muted-foreground" />Meta Share Over Time</CardTitle></CardHeader>
         <CardContent><Skeleton className="h-80 rounded-lg" /></CardContent>
       </Card>
     )
@@ -41,8 +42,8 @@ export function MetaTimeline({ queryString }: MetaTimelineProps) {
 
   if (!timeline || timeline.weeks.length === 0 || timeline.series.length === 0) {
     return (
-      <Card className="mb-4">
-        <CardHeader><CardTitle>Meta Share Over Time</CardTitle></CardHeader>
+      <Card className="card-hover mb-4">
+        <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="w-4 h-4 text-muted-foreground" />Meta Share Over Time</CardTitle></CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-8">No meta timeline data available.</p>
         </CardContent>
@@ -61,9 +62,9 @@ export function MetaTimeline({ queryString }: MetaTimelineProps) {
   })
 
   return (
-    <Card className="mb-4">
+    <Card className="card-hover mb-4">
       <CardHeader>
-        <CardTitle>Meta Share Over Time</CardTitle>
+        <CardTitle className="flex items-center gap-2"><Activity className="w-4 h-4 text-muted-foreground" />Meta Share Over Time</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>

@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Info } from 'lucide-react'
 import type { TopPlayer } from '@/lib/types'
 
 interface TopPlayersProps {
@@ -86,7 +87,7 @@ export function TopPlayers({ queryString }: TopPlayersProps) {
   }
 
   return (
-    <Card>
+    <Card className="card-hover">
       <CardHeader>
         <div className="flex items-center gap-2">
           <CardTitle>Top Players</CardTitle>
@@ -94,7 +95,7 @@ export function TopPlayers({ queryString }: TopPlayersProps) {
             className="text-muted-foreground cursor-help"
             title="Rating: Elo-style skill rating (1200-2000+) based on tournament placements and opponent strength. Achv: Achievement score based on placements, store diversity, and deck variety."
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <Info className="w-3.5 h-3.5" />
           </span>
         </div>
       </CardHeader>
@@ -122,7 +123,7 @@ export function TopPlayers({ queryString }: TopPlayersProps) {
               </TableRow>
             ) : (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} className="cursor-pointer hover:bg-muted/50">
+                <TableRow key={row.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id} className="text-sm py-2">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { UsersRound } from 'lucide-react'
 import type { PlayerGrowthMonth } from '@/lib/types'
 
 interface PlayerGrowthProps {
@@ -29,10 +30,10 @@ export function PlayerGrowthChart({ queryString }: PlayerGrowthProps) {
   if (loading) return <Skeleton className="h-[280px] rounded-lg" />
 
   return (
-    <Card className="h-full">
+    <Card className="card-hover h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <span className="text-green-500">&#x1F465;</span>
+          <UsersRound className="w-4 h-4 text-green-500" />
           Player Growth & Retention
         </CardTitle>
       </CardHeader>

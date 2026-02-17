@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Palette } from 'lucide-react'
 import type { MetaDiversity as MetaDiversityType } from '@/lib/types'
 
 interface MetaDiversityProps {
@@ -34,10 +35,10 @@ export function MetaDiversityGauge({ queryString }: MetaDiversityProps) {
 
   if (!data || data.score === null) {
     return (
-      <Card className="h-full">
+      <Card className="card-hover h-full">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <span className="text-blue-400">&#x25CF;</span>
+            <Palette className="w-4 h-4 text-blue-400" />
             Meta Diversity
           </CardTitle>
         </CardHeader>
@@ -55,11 +56,11 @@ export function MetaDiversityGauge({ queryString }: MetaDiversityProps) {
   ]
 
   return (
-    <Card className="h-full">
+    <Card className="card-hover h-full">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <span className="text-blue-400">&#x25CF;</span>
+            <Palette className="w-4 h-4 text-blue-400" />
             Meta Diversity
           </CardTitle>
           <span className="text-xs text-muted-foreground">

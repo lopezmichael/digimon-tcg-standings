@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { LayoutGrid, RotateCcw } from 'lucide-react'
 import type { DashboardFilters } from '@/hooks/use-dashboard-filters'
 
 interface TitleStripProps {
@@ -38,10 +39,7 @@ export function TitleStrip({ filters, onFormatChange, onEventTypeChange, onReset
     <div className="title-strip mb-2">
       <div className="flex justify-between items-center gap-4">
         <div className="flex items-center gap-2 text-white">
-          <svg className="w-5 h-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-          </svg>
+          <LayoutGrid className="w-5 h-5 opacity-80" />
           <span className="font-semibold whitespace-nowrap">
             {formatDisplay} <span className="opacity-60">&middot;</span> {eventDisplay}
           </span>
@@ -68,13 +66,10 @@ export function TitleStrip({ filters, onFormatChange, onEventTypeChange, onReset
           </select>
           <button
             onClick={onReset}
-            className="p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all duration-200"
             title="Reset filters"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+            <RotateCcw className="w-4 h-4" />
           </button>
         </div>
       </div>

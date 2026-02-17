@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { CalendarDays } from 'lucide-react'
 import type { RecentTournament } from '@/lib/types'
 
 interface RecentTournamentsProps {
@@ -88,9 +89,12 @@ export function RecentTournaments({ queryString }: RecentTournamentsProps) {
   }
 
   return (
-    <Card>
+    <Card className="card-hover">
       <CardHeader>
-        <CardTitle>Recent Tournaments</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-muted-foreground" />
+          Recent Tournaments
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-0">
         <Table>
@@ -116,7 +120,7 @@ export function RecentTournaments({ queryString }: RecentTournamentsProps) {
               </TableRow>
             ) : (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} className="cursor-pointer hover:bg-muted/50">
+                <TableRow key={row.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id} className="text-sm py-2">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

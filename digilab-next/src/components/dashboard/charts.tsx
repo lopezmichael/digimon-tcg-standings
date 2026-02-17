@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ArrowRightLeft, PieChart as PieChartIcon, TrendingUp } from 'lucide-react'
 import { DECK_COLORS } from '@/lib/types'
 import type { ConversionData, ColorDistData, TrendData } from '@/lib/types'
 
@@ -149,25 +150,34 @@ function TrendChart({ queryString }: { queryString: string }) {
 export function Charts({ queryString }: ChartsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Top 3 Conversion Rate</CardTitle>
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+            Top 3 Conversion Rate
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ConversionChart queryString={queryString} />
         </CardContent>
       </Card>
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Color Distribution</CardTitle>
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <PieChartIcon className="w-4 h-4 text-muted-foreground" />
+            Color Distribution
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ColorDistChart queryString={queryString} />
         </CardContent>
       </Card>
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Player Counts Over Time</CardTitle>
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            Player Counts Over Time
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <TrendChart queryString={queryString} />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Swords } from 'lucide-react'
 import { DECK_COLORS, type TopDeck } from '@/lib/types'
 
 interface TopDecksProps {
@@ -50,9 +51,12 @@ export function TopDecks({ queryString }: TopDecksProps) {
   }
 
   return (
-    <Card className="mb-4">
+    <Card className="card-hover mb-4">
       <CardHeader>
-        <CardTitle>Top Decks</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Swords className="w-4 h-4 text-muted-foreground" />
+          Top Decks
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -63,7 +67,7 @@ export function TopDecks({ queryString }: TopDecksProps) {
               : null
 
             return (
-              <div key={deck.archetype_name} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <div key={deck.archetype_name} className="deck-item flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 {imgUrl && (
                   <img
                     src={imgUrl}
