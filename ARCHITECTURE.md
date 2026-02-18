@@ -2,7 +2,7 @@
 
 Technical reference for the DigiLab codebase. Consult this document before adding new server modules, reactive values, or modifying core patterns.
 
-**Last Updated:** February 2026 (v0.21.1)
+**Last Updated:** February 2026 (v0.23.0)
 
 > **Note:** Always keep this document in sync with code changes. Update when adding new reactive values, server modules, or patterns.
 
@@ -85,11 +85,12 @@ All reactive values are initialized in `app.R`. **Never create new reactive valu
 | `is_admin` | logical | Whether user is authenticated as admin or superadmin |
 | `is_superadmin` | logical | Whether user is authenticated as superadmin (Edit Stores, Edit Formats) |
 
-### Navigation
+### Navigation & Scene
 
 | Name | Type | Description |
 |------|------|-------------|
 | `current_nav` | character | Current active tab ID |
+| `current_scene` | character | Selected scene slug ("all", "dfw", "online", etc.) |
 | `navigate_to_tournament_id` | integer | Tournament ID for cross-tab navigation |
 
 ### Modal State
@@ -357,6 +358,76 @@ result <- safe_query(rv$db_con, query, params = filters$params, default = data.f
 | `store_alias` | Alias for stores table (required for scene filtering) |
 
 **Returns:** `list(sql = "AND ... AND ...", params = list(...))`
+
+### Batch Dashboard Reactives (v0.23+)
+
+Dashboard queries are consolidated into batch reactives to reduce database calls:
+
+```r
+# In public-dashboard-server.R
+deck_analytics <- reactive({
+  # Single query for all deck data: entries, wins, meta share, colors
+  # Replaces 5+ separate queries
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+
+core_metrics <- reactive({
+  # Tournament + player counts in one query
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+```
+
+Downstream outputs read from these batch reactives instead of running their own queries.
+
+### Community vs Format Filters (v0.23+)
+
+Dashboard has two filter modes:
+- **Format filters** (`build_dashboard_filters`): format + event_type + scene — used for Top Decks, Meta Diversity, Conversion, Color Distribution, Meta Share
+- **Community filters** (`build_community_filters`): scene-only — used for Rising Stars, Player Attendance, Player Growth, Recent Tournaments, Top Players
+
+### Rating Snapshots (v0.23+)
+
+Historical format ratings are frozen as snapshots at era boundaries:
+
+```r
+# R/ratings.R — key functions
+calculate_competitive_ratings(db_con, format_filter = NULL, date_cutoff = NULL)
+generate_format_snapshot(db_con, format_id, end_date)
+backfill_rating_snapshots(db_con)
+```
+
+- `rating_snapshots` table stores per-player ratings frozen at the end of each format era
+- Players tab checks if selected format is historical via `get_latest_format_id()` reactive
+- If historical and snapshots exist, shows snapshot ratings; otherwise falls back to live cache
+
+### Pill Toggle Component (v0.23+)
+
+Custom JS/CSS pill toggle for filter controls (no shinyWidgets dependency):
+
+```r
+# UI (in views/*.R)
+div(
+  class = "pill-toggle",
+  `data-input-id` = "players_min_events",
+  tags$button("All", class = "pill-option", `data-value` = "0"),
+  tags$button("5+", class = "pill-option active", `data-value` = "5"),
+  tags$button("10+", class = "pill-option", `data-value` = "10")
+)
+
+# Server reset
+session$sendCustomMessage("resetPillToggle", list(inputId = "players_min_events", value = "5"))
+```
+
+JS in `www/pill-toggle.js` handles click events and `Shiny.setInputValue()`.
+
+### Auto-Reconnection (v0.23+)
+
+`safe_query()` now detects stale connections and auto-reconnects:
+
+```r
+safe_query <- function(con, query, ...) {
+  # If connection invalid, reconnect via connect_db()
+  # Updates rv$db_con and retries the query
+}
+```
 
 ---
 

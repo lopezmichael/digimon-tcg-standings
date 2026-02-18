@@ -2,7 +2,7 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.21.1
+**Current Version:** v0.23.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
@@ -49,31 +49,35 @@ This document outlines the planned features, improvements, and bug fixes for the
 | MR5 | FEATURE | Leaderboards filtered by scene (players who competed there) | Done |
 | MR6 | FEATURE | "All Scenes" / Global toggle for cross-region viewing | Done |
 | MR7 | SCHEMA | Add `scene_id` to stores table | Done (v0.21) |
-| MR8 | SCHEMA | Add `tier` to tournaments table (local, regional, national, international) | Pending |
-| MR9 | FEATURE | Player "home scene" inference (mode of tournament scenes played) | Pending |
-| MR10 | FEATURE | Scene comparison page (DFW vs Houston side-by-side stats) | Pending |
-| MR11 | FEATURE | Cross-scene badges in player modal ("Competed in: DFW, Houston, Austin") | Pending |
-| MR12 | FEATURE | Scene health dashboard for Scene Admins (trends, retention, store activity) | Pending |
+| MR8 | SCHEMA | Add `tier` to tournaments table (local, regional, national, international) | Deferred to v0.24+ |
+| MR9 | FEATURE | Player "home scene" inference (mode of tournament scenes played) | Deferred to v0.24+ |
+| MR10 | FEATURE | Scene comparison page (DFW vs Houston side-by-side stats) | Deferred to v0.24+ |
+| MR11 | FEATURE | Cross-scene badges in player modal ("Competed in: DFW, Houston, Austin") | Deferred to v0.24+ |
+| MR12 | FEATURE | Scene health dashboard for Scene Admins (trends, retention, store activity) | Deferred to v0.24+ |
 | MR13 | PERFORMANCE | Query builder abstraction for consistent scene filtering across all queries | Done |
-| MR14 | PERFORMANCE | Connection pooling via `pool` package | Pending |
-| MR15 | PERFORMANCE | Batch dashboard queries (reduce from 8 separate to 2-3 combined) | Pending |
-| MR16 | PERFORMANCE | Pre-computed dashboard stats cache table (recalc on data change) | Pending |
-| MR17 | PERFORMANCE | Profile with `shinyloadtest` and size Posit Connect tier | Pending |
+| MR14 | PERFORMANCE | Connection auto-reconnection in safe_query (pool not needed for embedded DuckDB) | Done |
+| MR15 | PERFORMANCE | Batch dashboard queries (deck_analytics + core_metrics batch reactives) | Done |
+| MR16 | PERFORMANCE | Pre-computed dashboard stats cache table (recalc on data change) | Deferred |
+| MR17 | PERFORMANCE | Profile with `shinyloadtest` and size Posit Connect tier | Deferred |
 | L1 | FEATURE | Limitless API exploration for online tournament data | Deferred |
 
-**Remaining:**
-- Fix mobile header alignment (dark mode toggle, right alignment)
-- Testing and QA
-
-**Note:** Scene filtering now uses parameterized queries (merged from v0.21.1).
+**v0.23 Additional Features (implemented):**
+- Scene dropdown dynamically loaded from database
+- Onboarding collapsed to single step (welcome + scene picker combined)
+- Pill toggle filters on Players tab (5+/10+) and Deck Meta tab
+- Dashboard split into format-specific and community sections
+- Top Decks and Rising Stars clickable (open modals)
+- Admin button → lock icon, Ko-fi → header
+- Tab renamed: "Meta Analysis" → "Deck Meta"
+- Historical format rating snapshots (frozen Elo at era boundaries)
+- Mobile header alignment fixes
 
 **Key Design Decisions:**
 - Players don't belong to scenes (no accounts required for viewers)
 - Stores belong to scenes; players appear on leaderboards based on where they've competed
 - Rating is global; leaderboards are filtered views
-- Scene Admins can only manage their assigned scene's data
-- Player "home scene" inferred from tournament history (most-played scene)
-- Scene comparison builds community rivalry and engagement
+- Connection pooling skipped — DuckDB is embedded (in-process), auto-reconnection is sufficient
+- Historical ratings use date-cutoff Elo calculation, frozen as snapshots per format era
 
 ---
 
@@ -84,9 +88,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 | F7 | FEATURE | Contextual help — "Click a row for details" hint text above clickable tables |
 | F7b | FEATURE | Info icons on Rating/Score column headers → link to FAQ methodology section |
 | F7c | FEATURE | Light hints on admin pages explaining how to use each function |
-| OH1 | FEATURE | First-visit scene selection modal (stored in localStorage) |
 | OH2 | FEATURE | Guided tour for new users (optional, dismissible) |
-| UX1 | UX | Player table minimum-events filter (5+ / 10+ / All, default 5+, pill buttons) |
 | UX2 | UX | Global search bar in header (players, decks, stores, tournaments) |
 | UX3 | UX | Player modal: rating trend sparkline (mini line chart) |
 | UX4 | UX | Player modal: deck history (which decks they've played) |
@@ -96,6 +98,8 @@ This document outlines the planned features, improvements, and bug fixes for the
 | UX8 | UX | Dashboard: community pulse ("3 tournaments this week, 47 active players") |
 | UX9 | UX | Dashboard: new format callout banner when a new set drops |
 | UX10 | UX | Custom GA4 events (track tab visits, filter usage, modal opens) |
+
+**Note:** OH1 (onboarding modal) and UX1 (player min-events filter) completed in v0.23.
 
 ---
 
@@ -213,6 +217,19 @@ Items for future consideration, not scheduled:
 ---
 
 ## Completed
+
+### v0.23.0 - Multi-Region, Polish & Performance
+- Scene selector with dynamic DB loading, onboarding modal, localStorage persistence
+- Geolocation "Find My Scene" support
+- Scene filtering across all tabs
+- Dashboard split: format-specific meta + community health sections
+- Pill toggle filters on Players and Deck Meta tabs
+- Top Decks and Rising Stars clickable (open modals)
+- Historical format rating snapshots (frozen Elo at era boundaries)
+- Batched dashboard queries (deck_analytics + core_metrics)
+- Connection auto-reconnection, clean shutdown handler
+- Admin lock icon, Ko-fi to header, tab rename to "Deck Meta"
+- Mobile header alignment fixes, onboarding UX improvements
 
 ### v0.21.1 - Performance & Security Foundations
 - SQL parameterization for all public queries (security)

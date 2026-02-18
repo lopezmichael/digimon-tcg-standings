@@ -4,6 +4,28 @@
 # Note: Contains overview_player_clicked handler which is triggered from
 # the Dashboard tab to open player details from "Top Players" table.
 
+# Shared reactive: fetch snapshot ratings for historical format (or NULL)
+historical_snapshot_data <- reactive({
+  selected_format <- input$players_format
+  latest_format <- get_latest_format_id()
+
+  is_historical <- !is.null(selected_format) && selected_format != "" &&
+                   !is.null(latest_format) && selected_format != latest_format
+
+  if (!is_historical || is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) {
+    return(NULL)
+  }
+
+  result <- safe_query(rv$db_con,
+    "SELECT player_id, competitive_rating, achievement_score
+     FROM rating_snapshots WHERE format_id = ?",
+    params = list(selected_format),
+    default = data.frame(player_id = integer(), competitive_rating = integer(),
+                         achievement_score = integer()))
+
+  if (nrow(result) > 0) result else NULL
+})
+
 # Reset players filters
 observeEvent(input$reset_players_filters, {
   updateTextInput(session, "players_search", value = "")
@@ -14,22 +36,12 @@ observeEvent(input$reset_players_filters, {
 
 # Historical rating indicator
 output$historical_rating_badge <- renderUI({
-  selected_format <- input$players_format
-  latest_format <- get_latest_format_id()
-
-  if (!is.null(selected_format) && selected_format != "" &&
-      !is.null(latest_format) && selected_format != latest_format) {
-    # Check if snapshots exist for this format
-    count <- safe_query(rv$db_con,
-      "SELECT COUNT(*) as n FROM rating_snapshots WHERE format_id = ?",
-      params = list(selected_format),
-      default = data.frame(n = 0))
-
-    if (count$n[1] > 0) {
-      div(class = "historical-rating-badge",
-          bsicons::bs_icon("clock-history"),
-          sprintf(" Ratings from end of %s era", selected_format))
-    }
+  snapshot <- historical_snapshot_data()
+  if (!is.null(snapshot)) {
+    selected_format <- input$players_format
+    div(class = "historical-rating-badge",
+        bsicons::bs_icon("clock-history"),
+        sprintf("Ratings from end of %s era", selected_format))
   }
 })
 
@@ -102,33 +114,14 @@ output$player_standings <- renderReactable({
     return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
   }
 
-  # Determine if we're looking at a historical format
-  selected_format <- input$players_format
-  latest_format <- get_latest_format_id()
-  using_historical <- !is.null(selected_format) && selected_format != "" &&
-                      !is.null(latest_format) && selected_format != latest_format
+  # Determine rating source: historical snapshot or live cache
+  snapshot <- historical_snapshot_data()
 
-  if (using_historical) {
-    # Historical format: use snapshot ratings if available
-    snapshot_ratings <- safe_query(rv$db_con,
-      "SELECT player_id, competitive_rating, achievement_score
-       FROM rating_snapshots WHERE format_id = ?",
-      params = list(selected_format),
-      default = data.frame(player_id = integer(), competitive_rating = integer(),
-                           achievement_score = integer()))
-
-    if (nrow(snapshot_ratings) > 0) {
-      result <- merge(result, snapshot_ratings, by = "player_id", all.x = TRUE)
-    } else {
-      # No snapshots for this format, fall back to live cache
-      using_historical <- FALSE
-      comp_ratings <- player_competitive_ratings()
-      result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
-      ach_scores <- player_achievement_scores()
-      result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
-    }
+  if (!is.null(snapshot)) {
+    # Historical format with available snapshots
+    result <- merge(result, snapshot, by = "player_id", all.x = TRUE)
   } else {
-    # Current format or All Formats: use live cache
+    # Current format or no snapshots: use live cache
     comp_ratings <- player_competitive_ratings()
     result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
     ach_scores <- player_achievement_scores()

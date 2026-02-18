@@ -559,7 +559,7 @@ get_latest_format_id <- reactive({
     "SELECT format_id FROM formats WHERE is_active = TRUE ORDER BY release_date DESC NULLS LAST LIMIT 1",
     default = data.frame(format_id = character()))
   if (nrow(result) > 0) result$format_id[1] else NULL
-})
+}) |> bindCache(rv$data_refresh)
 
 #' Build Parameterized SQL Filters
 #'

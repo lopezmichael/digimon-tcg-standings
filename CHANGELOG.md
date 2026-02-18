@@ -5,23 +5,35 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.23.0] - 2026-02-18 - Multi-Region, Polish & Performance
 
-### Added (v0.23 - Multi-Region Scene Selection)
-- **Scene Selector**: Dropdown in header to filter by scene (All Scenes, Dallas-Fort Worth, Online)
-- **First-Visit Onboarding Modal**: Two-step welcome flow with map-based scene picker
-  - Step 1: Welcome to DigiLab with feature cards
-  - Step 2: Interactive map with scene markers, "Find My Scene" geolocation, Online/All options
+### Added
+- **Scene Selector**: Dropdown in header to filter by scene, dynamically loaded from database
+- **First-Visit Onboarding Modal**: Single-step welcome flow with interactive map-based scene picker
+  - "Find My Scene" geolocation, Online/Webcam and All Scenes options
 - **Scene Filtering**: All data queries (dashboard, players, meta, tournaments, stores) filter by selected scene
 - **localStorage Persistence**: Scene preference saved locally for return visits
-- **Geolocation Support**: "Find My Scene" button uses browser location to find nearest scene
+- **Pill Toggle Filters**: Players tab (All/5+/10+ events, default 5+) and Deck Meta tab (All/5+/10+ entries)
+- **Clickable Top Decks & Rising Stars**: Dashboard cards now open deck/player modals on click
+- **Dashboard Section Split**: Format-specific meta section (top) + Community health section (bottom) with divider
+- **Historical Format Ratings**: Rating snapshots frozen at format-era boundaries
+  - `rating_snapshots` table stores competitive rating, achievement score, rank per format
+  - Players tab shows historical ratings when a past format is selected (with visual badge)
+  - Backfill support via `backfill_rating_snapshots()` in `R/ratings.R`
+- **Connection Auto-Reconnection**: `safe_query()` detects stale connections and reconnects automatically
+- **Clean Shutdown Handler**: `onStop()` properly disconnects database on app exit
 
 ### Changed
-- **Header Layout**: Moved GitHub and Ko-fi links to footer for cleaner mobile experience
-- **Footer**: Now includes GitHub and Ko-fi icon links alongside About, FAQ, For Organizers
+- **Batched Dashboard Queries**: Consolidated ~18 queries into batch reactives (`deck_analytics`, `core_metrics`)
+- **Admin Button**: Simplified to lock icon only (no text)
+- **Ko-fi Link**: Moved from footer to header as coffee icon button
+- **Tab Rename**: "Meta Analysis" → "Deck Meta"
+- **Onboarding**: Collapsed from two-step (welcome + scene picker) to single step
+- **Community Queries**: Rising Stars, Player Attendance, Player Growth, and tables use scene-only filters (no format/event)
 
-### Known Issues
-- Mobile header alignment needs adjustment (dark mode toggle, right alignment)
+### Fixed
+- Mobile header alignment and dark mode toggle visibility
+- Onboarding feature cards no longer show non-clickable hover states (removed entirely)
 
 ---
 

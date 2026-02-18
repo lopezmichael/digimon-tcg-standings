@@ -4,6 +4,43 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-18: v0.23 Polish, Performance & Pre-v0.22 Improvements
+
+### Summary
+Closed out v0.23 with 15 tasks across 6 phases: data sync, UI quick wins, dashboard improvements, performance optimizations, historical rating snapshots, and documentation. All work on the `develop` branch.
+
+### Key Technical Decisions
+
+**Connection pooling skipped:** Originally planned to use the `pool` R package for connection pooling. After analysis, determined DuckDB is embedded (in-process, not client-server), so pooling provides no benefit. Instead, enhanced `safe_query()` with auto-reconnection: detects invalid connection via `DBI::dbIsValid()`, calls `connect_db()` to get a fresh connection, updates `rv$db_con`, and retries the query.
+
+**Dashboard query batching:** Consolidated ~18 individual dashboard queries into two batch reactives:
+- `deck_analytics()` — single query for all deck data (entries, wins, meta share, colors)
+- `core_metrics()` — tournament + player counts in one query
+Downstream outputs read from these batch reactives instead of running their own queries.
+
+**Community vs format sections:** Dashboard now splits into format-specific (top) and community (bottom) sections with a visual divider. Community queries (Rising Stars, Player Attendance, Player Growth, Recent Tournaments, Top Players) use scene-only filters via `build_community_filters()`, while format queries use full format+event+scene filters.
+
+**Pill toggle component:** Created a reusable custom JS/CSS pill toggle instead of adding shinyWidgets dependency. Works via `Shiny.setInputValue()` on click, with server-side reset via `session$sendCustomMessage("resetPillToggle", ...)`.
+
+**Historical rating snapshots:** Added `date_cutoff` parameter to `calculate_competitive_ratings()` for computing Elo as of a specific date. Snapshots are frozen at format-era boundaries (day before next format's release). Only BT24 had tournament data for its era in our dataset. Players tab automatically shows snapshot ratings when a historical format is selected.
+
+### Commits (15 on develop)
+- `e853aba` feat: load scene dropdown dynamically from database
+- `8954505` feat: pill toggle filter for player minimum events (default 5+)
+- `fa42eaf` feat: pill toggle for meta min entries, rename tab to Deck Meta
+- `29a2149` feat: admin as lock icon only, move Ko-fi to header
+- `933ea04` feat: collapse onboarding to single step (welcome + scene picker)
+- `e14123a` feat: split dashboard into format-specific and community sections
+- `b313bd4` fix: mobile header alignment and dark mode toggle visibility
+- `3e0abc7` feat: make Top Decks and Rising Stars clickable (open modals)
+- `850afd4` perf: add auto-reconnection to safe_query and clean shutdown handler
+- `fcd9222` perf: batch dashboard queries (deck analytics + core metrics)
+- `68aa007` schema: add rating_snapshots table for historical format ratings
+- `6e79670` feat: add historical rating snapshots with backfill support
+- `eb6aeb2` feat: show historical format ratings in player leaderboard
+
+---
+
 ## 2026-02-17: Merge v0.21.1 Security Improvements into Multi-Region Branch
 
 ### Summary
