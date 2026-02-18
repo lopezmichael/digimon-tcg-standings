@@ -11,7 +11,7 @@ meta_ui <- tagList(
       div(
         class = "title-strip-context",
         bsicons::bs_icon("stack", class = "title-strip-icon"),
-        tags$span(class = "title-strip-text", "Deck Meta Analysis")
+        tags$span(class = "title-strip-text", "Deck Meta")
       ),
       # Right side: compact filters
       div(
@@ -29,12 +29,11 @@ meta_ui <- tagList(
                       selectize = FALSE)
         ),
         div(
-          class = "title-strip-select",
-          selectInput("meta_min_entries", NULL,
-                      choices = list("Any Size" = "", "2+ Entries" = "2", "5+ Entries" = "5", "10+ Entries" = "10", "20+ Entries" = "20"),
-                      selected = "",
-                      width = "120px",
-                      selectize = FALSE)
+          class = "pill-toggle",
+          `data-input-id` = "meta_min_entries",
+          tags$button("All", class = "pill-option", `data-value` = "0"),
+          tags$button("5+", class = "pill-option active", `data-value` = "5"),
+          tags$button("10+", class = "pill-option", `data-value` = "10")
         ),
         actionButton("reset_meta_filters", NULL,
                      icon = icon("rotate-right"),

@@ -6,7 +6,7 @@
 observeEvent(input$reset_meta_filters, {
   updateTextInput(session, "meta_search", value = "")
   updateSelectInput(session, "meta_format", selected = "")
-  updateSelectInput(session, "meta_min_entries", selected = "")
+  session$sendCustomMessage("resetPillToggle", list(inputId = "meta_min_entries", value = "5"))
 })
 
 # Archetype stats

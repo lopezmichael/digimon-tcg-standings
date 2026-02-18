@@ -506,7 +506,7 @@ ui <- page_fillable(
                    tagList(bsicons::bs_icon("people"), " Players"),
                    class = "nav-link-sidebar"),
         actionLink("nav_meta",
-                   tagList(bsicons::bs_icon("stack"), " Meta Analysis"),
+                   tagList(bsicons::bs_icon("stack"), " Deck Meta"),
                    class = "nav-link-sidebar"),
         actionLink("nav_tournaments",
                    tagList(bsicons::bs_icon("trophy"), " Tournaments"),
