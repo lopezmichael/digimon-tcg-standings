@@ -12,6 +12,27 @@ observeEvent(input$reset_players_filters, {
   session$sendCustomMessage("resetPillToggle", list(inputId = "players_min_events", value = "5"))
 })
 
+# Historical rating indicator
+output$historical_rating_badge <- renderUI({
+  selected_format <- input$players_format
+  latest_format <- get_latest_format_id()
+
+  if (!is.null(selected_format) && selected_format != "" &&
+      !is.null(latest_format) && selected_format != latest_format) {
+    # Check if snapshots exist for this format
+    count <- safe_query(rv$db_con,
+      "SELECT COUNT(*) as n FROM rating_snapshots WHERE format_id = ?",
+      params = list(selected_format),
+      default = data.frame(n = 0))
+
+    if (count$n[1] > 0) {
+      div(class = "historical-rating-badge",
+          bsicons::bs_icon("clock-history"),
+          sprintf(" Ratings from end of %s era", selected_format))
+    }
+  }
+})
+
 output$player_standings <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
@@ -81,14 +102,39 @@ output$player_standings <- renderReactable({
     return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
   }
 
-  # Join with competitive ratings
-  comp_ratings <- player_competitive_ratings()
-  result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
-  result$competitive_rating[is.na(result$competitive_rating)] <- 1500
+  # Determine if we're looking at a historical format
+  selected_format <- input$players_format
+  latest_format <- get_latest_format_id()
+  using_historical <- !is.null(selected_format) && selected_format != "" &&
+                      !is.null(latest_format) && selected_format != latest_format
 
-  # Join with achievement scores
-  ach_scores <- player_achievement_scores()
-  result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
+  if (using_historical) {
+    # Historical format: use snapshot ratings if available
+    snapshot_ratings <- safe_query(rv$db_con,
+      "SELECT player_id, competitive_rating, achievement_score
+       FROM rating_snapshots WHERE format_id = ?",
+      params = list(selected_format),
+      default = data.frame(player_id = integer(), competitive_rating = integer(),
+                           achievement_score = integer()))
+
+    if (nrow(snapshot_ratings) > 0) {
+      result <- merge(result, snapshot_ratings, by = "player_id", all.x = TRUE)
+    } else {
+      # No snapshots for this format, fall back to live cache
+      using_historical <- FALSE
+      comp_ratings <- player_competitive_ratings()
+      result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
+      ach_scores <- player_achievement_scores()
+      result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
+    }
+  } else {
+    # Current format or All Formats: use live cache
+    comp_ratings <- player_competitive_ratings()
+    result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
+    ach_scores <- player_achievement_scores()
+    result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
+  }
+  result$competitive_rating[is.na(result$competitive_rating)] <- 1500
   result$achievement_score[is.na(result$achievement_score)] <- 0
 
   # Join with main decks

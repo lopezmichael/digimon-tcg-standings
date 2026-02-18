@@ -1899,6 +1899,27 @@ a:hover, .nav-link:hover {
 [data-bs-theme="dark"] .deck-badge-white { background-color: #A0AEC0; color: #1A202C; border-color: #718096; }
 [data-bs-theme="dark"] .deck-badge-yellow { background-color: #D69E2E; }
 
+/* Historical rating badge */
+.historical-rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 0.5rem;
+  color: #b8860b;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+[data-bs-theme="dark"] .historical-rating-badge {
+  background: rgba(255, 193, 7, 0.08);
+  border-color: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
 /* =============================================================================
    MODAL HEADERS - Digital Theming
    ============================================================================= */

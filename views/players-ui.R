@@ -43,6 +43,9 @@ players_ui <- tagList(
     )
   ),
 
+  # Historical rating indicator (shown when viewing past format)
+  uiOutput("historical_rating_badge"),
+
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",

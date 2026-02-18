@@ -552,6 +552,15 @@ observe({
   }
 })
 
+# Reactive: get the latest (current) format_id
+get_latest_format_id <- reactive({
+  if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
+  result <- safe_query(rv$db_con,
+    "SELECT format_id FROM formats WHERE is_active = TRUE ORDER BY release_date DESC NULLS LAST LIMIT 1",
+    default = data.frame(format_id = character()))
+  if (nrow(result) > 0) result$format_id[1] else NULL
+})
+
 #' Build Parameterized SQL Filters
 #'
 #' Creates SQL WHERE clause fragments with parameterized placeholders to prevent
