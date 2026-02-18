@@ -315,13 +315,38 @@ build_dashboard_filters <- function(table_alias = "t", store_alias = NULL) {
   )
 }
 
-# Recent tournaments (filters by selected stores, format, date range)
+# Community section: scene-only filtering (no format, no event type)
+build_community_filters <- function(table_alias = "t", store_alias = NULL) {
+  sql_parts <- character(0)
+  params <- list()
+
+  scene <- rv$current_scene
+  if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
+    if (scene == "online") {
+      sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
+    } else {
+      sql_parts <- c(sql_parts, sprintf(
+        "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
+        store_alias
+      ))
+      params <- c(params, list(scene))
+    }
+  }
+
+  list(
+    sql = paste(sql_parts, collapse = " "),
+    params = params,
+    any_active = length(params) > 0
+  )
+}
+
+# Recent tournaments (community section - scene-only filtering)
 # Shows Winner column, formatted Type, and Store Rating
 output$recent_tournaments <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
-  filters <- build_dashboard_filters("t", "s")
+  filters <- build_community_filters("t", "s")
 
   # Query with winner (player who got placement = 1) and store_id for rating join
   query <- paste("
@@ -364,15 +389,15 @@ output$recent_tournaments <- renderReactable({
       Winner = colDef(minWidth = 120)
     )
   )
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(rv$current_scene, rv$data_refresh)
 
-# Top players (filters by selected stores, format, date range)
+# Top players (community section - scene-only filtering)
 # Shows: Player, Events, Event Wins, Top 3, Rating (Elo), Achievement
 output$top_players <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
 
-  filters <- build_dashboard_filters("t", "s")
+  filters <- build_community_filters("t", "s")
 
   # Query players with basic stats (parameterized)
   result <- safe_query(rv$db_con, paste("
@@ -433,7 +458,7 @@ output$top_players <- renderReactable({
       )
     )
   )
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(rv$current_scene, rv$data_refresh)
 
 # Meta Share Timeline - curved area chart showing deck popularity over time
 # Shows top 5 or all decks based on toggle
@@ -843,7 +868,7 @@ output$color_dist_chart <- renderHighchart({
     hc_add_theme(hc_theme_atom_switch(chart_mode))
 }) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
 
-# Tournament Activity Chart (avg players per event with rolling average, no title)
+# Tournament Activity Chart (community section - scene-only filtering)
 output$tournaments_trend_chart <- renderHighchart({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
     return(highchart() |> hc_add_theme(hc_theme_atom_switch("light")))
@@ -851,8 +876,8 @@ output$tournaments_trend_chart <- renderHighchart({
 
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
 
-  # Build filter conditions using helper function
-  filters <- build_dashboard_filters("t", "s")
+  # Build community filter conditions (scene-only)
+  filters <- build_community_filters("t", "s")
 
   # Query tournaments aggregated by day with avg players (parameterized)
   result <- safe_query(rv$db_con, paste("
@@ -921,7 +946,7 @@ output$tournaments_trend_chart <- renderHighchart({
       pointFormat = "<b>{series.name}:</b> {point.y} players<br/>"
     ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(rv$current_scene, input$dark_mode, rv$data_refresh)
 
 # ---------------------------------------------------------------------------
 # Scene Health Section
@@ -1107,14 +1132,14 @@ output$meta_diversity_gauge <- renderHighchart({
     hc_add_theme(hc_theme_atom_switch(chart_mode))
 }) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
 
-# Player Growth & Retention Chart
+# Player Growth & Retention Chart (community section - scene-only filtering)
 output$player_growth_chart <- renderHighchart({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
     return(highchart() |> hc_add_theme(hc_theme_atom_switch("light")))
   }
 
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
-  filters <- build_dashboard_filters("t", "s")
+  filters <- build_community_filters("t", "s")
 
   # Get player participation by month with their first ever tournament (parameterized)
   # Using strftime instead of DATE_TRUNC to avoid ICU extension on Windows
@@ -1203,15 +1228,15 @@ output$player_growth_chart <- renderHighchart({
       verticalAlign = "bottom"
     ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(rv$current_scene, input$dark_mode, rv$data_refresh)
 
-# Rising Stars - players with strong recent performance
+# Rising Stars - players with strong recent performance (community section - scene-only filtering)
 output$rising_stars_cards <- renderUI({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) {
     return(div(class = "text-muted", "No data available"))
   }
 
-  filters <- build_dashboard_filters("t", "s")
+  filters <- build_community_filters("t", "s")
   today <- Sys.Date()
   date_30_ago <- format(today - 30, "%Y-%m-%d")
 
@@ -1290,4 +1315,4 @@ output$rising_stars_cards <- renderUI({
       )
     })
   )
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(rv$current_scene, rv$data_refresh)

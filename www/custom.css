@@ -840,6 +840,38 @@ body.bslib-gap-spacing {
   color: #0A3055;
 }
 
+/* ===== Dashboard Section Divider ===== */
+.dashboard-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 0 0.5rem;
+}
+
+.dashboard-section-divider .divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15, 76, 129, 0.2), transparent);
+}
+
+[data-bs-theme="dark"] .dashboard-section-divider .divider-line {
+  background: linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.2), transparent);
+}
+
+.dashboard-section-divider .divider-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(15, 76, 129, 0.4);
+  white-space: nowrap;
+}
+
+[data-bs-theme="dark"] .dashboard-section-divider .divider-label {
+  color: rgba(255, 255, 255, 0.3);
+}
+
 /* Dark mode title strip */
 [data-bs-theme="dark"] .dashboard-title-strip {
   background-image:
