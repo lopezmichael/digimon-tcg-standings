@@ -322,6 +322,24 @@ CREATE TABLE IF NOT EXISTS store_ratings_cache (
 );
 
 -- =============================================================================
+-- RATING SNAPSHOTS TABLE
+-- Historical ratings frozen at the end of each format era
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS rating_snapshots (
+    player_id INTEGER NOT NULL,
+    format_id VARCHAR NOT NULL,
+    competitive_rating INTEGER NOT NULL DEFAULT 1500,
+    achievement_score INTEGER NOT NULL DEFAULT 0,
+    events_played INTEGER NOT NULL DEFAULT 0,
+    player_rank INTEGER,
+    snapshot_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (player_id, format_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rating_snapshots_format ON rating_snapshots(format_id);
+
+-- =============================================================================
 -- VIEWS FOR COMMON QUERIES
 -- =============================================================================
 
