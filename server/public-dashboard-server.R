@@ -666,7 +666,7 @@ output$top_decks_with_images <- renderUI({
   # Query top decks with 1st place finishes (parameterized)
   # Exclude UNKNOWN archetype from analytics
   result <- safe_query(rv$db_con, paste("
-    SELECT da.archetype_name, da.display_card_id, da.primary_color,
+    SELECT da.archetype_id, da.archetype_name, da.display_card_id, da.primary_color,
            COUNT(r.result_id) as times_played,
            COUNT(CASE WHEN r.placement = 1 THEN 1 END) as first_places
     FROM deck_archetypes da
@@ -705,6 +705,8 @@ output$top_decks_with_images <- renderUI({
     bar_width <- min(row$win_rate, 100)  # Cap at 100%
 
     div(class = "deck-item",
+      style = "cursor: pointer;",
+      onclick = sprintf("Shiny.setInputValue('overview_deck_clicked', %d, {priority: 'event'})", row$archetype_id),
       div(class = "deck-card-img",
         tags$img(src = img_url, alt = row$archetype_name, loading = "lazy")
       ),
@@ -725,6 +727,15 @@ output$top_decks_with_images <- renderUI({
 
   div(class = "top-decks-grid", deck_items)
 }) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+
+# Top Decks click -> Deck Meta tab + deck modal
+observeEvent(input$overview_deck_clicked, {
+  req(input$overview_deck_clicked)
+  rv$selected_archetype_id <- input$overview_deck_clicked
+  nav_select("main_content", "meta")
+  rv$current_nav <- "meta"
+  session$sendCustomMessage("updateSidebarNav", "nav_meta")
+})
 
 # ---------------------------------------------------------------------------
 # Dashboard Charts (Highcharter)
@@ -1303,6 +1314,8 @@ output$rising_stars_cards <- renderUI({
       }
 
       div(class = "rising-star-card",
+        style = "cursor: pointer;",
+        onclick = sprintf("Shiny.setInputValue('overview_rising_star_clicked', %d, {priority: 'event'})", player$player_id),
         div(class = "rising-star-rank", i),
         div(class = "rising-star-info",
           div(class = "rising-star-name", player$display_name),
@@ -1316,3 +1329,12 @@ output$rising_stars_cards <- renderUI({
     })
   )
 }) |> bindCache(rv$current_scene, rv$data_refresh)
+
+# Rising Stars click -> Players tab + player modal
+observeEvent(input$overview_rising_star_clicked, {
+  req(input$overview_rising_star_clicked)
+  rv$selected_player_id <- input$overview_rising_star_clicked
+  nav_select("main_content", "players")
+  rv$current_nav <- "players"
+  session$sendCustomMessage("updateSidebarNav", "nav_players")
+})
