@@ -296,6 +296,8 @@ ui <- page_fillable(
     tags$script(src = "url-routing.js"),
     # Scene selection and localStorage
     tags$script(src = "scene-selector.js"),
+    # Pill toggle segmented controls
+    tags$script(src = "pill-toggle.js"),
     # JavaScript to handle active nav state and loading screen
     tags$script(HTML("
       $(document).on('click', '.nav-link-sidebar', function() {

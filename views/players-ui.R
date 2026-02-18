@@ -29,12 +29,11 @@ players_ui <- tagList(
                       selectize = FALSE)
         ),
         div(
-          class = "title-strip-select",
-          selectInput("players_min_events", NULL,
-                      choices = list("Any Events" = "", "2+ Events" = "2", "3+ Events" = "3", "5+ Events" = "5", "10+ Events" = "10"),
-                      selected = "",
-                      width = "120px",
-                      selectize = FALSE)
+          class = "pill-toggle",
+          `data-input-id` = "players_min_events",
+          tags$button("All", class = "pill-option", `data-value` = "0"),
+          tags$button("5+", class = "pill-option active", `data-value` = "5"),
+          tags$button("10+", class = "pill-option", `data-value` = "10")
         ),
         actionButton("reset_players_filters", NULL,
                      icon = icon("rotate-right"),

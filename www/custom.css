@@ -801,6 +801,45 @@ body.bslib-gap-spacing {
   color: #FFFFFF;
 }
 
+/* ===== Pill Toggle Controls ===== */
+.pill-toggle {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.pill-option {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.pill-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.pill-option.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #0A3055;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+[data-bs-theme="dark"] .pill-option.active {
+  background: rgba(255, 255, 255, 0.85);
+  color: #0A3055;
+}
+
 /* Dark mode title strip */
 [data-bs-theme="dark"] .dashboard-title-strip {
   background-image:

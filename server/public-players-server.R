@@ -8,7 +8,8 @@
 observeEvent(input$reset_players_filters, {
   updateTextInput(session, "players_search", value = "")
   updateSelectInput(session, "players_format", selected = "")
-  updateSelectInput(session, "players_min_events", selected = "")
+  # Reset pill toggle to default (5+)
+  session$sendCustomMessage("resetPillToggle", list(inputId = "players_min_events", value = "5"))
 })
 
 output$player_standings <- renderReactable({
