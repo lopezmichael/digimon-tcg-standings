@@ -11,13 +11,22 @@
 #'
 #' @param db_con DuckDB connection
 #' @param format_filter Optional format filter (e.g., "BT19")
+#' @param date_cutoff Optional date cutoff (character "YYYY-MM-DD") to limit
+#'   which tournaments are included. Only tournaments on or before this date
+#'   are used for rating calculation.
 #' @return Data frame with player_id and competitive_rating
-calculate_competitive_ratings <- function(db_con, format_filter = NULL) {
+calculate_competitive_ratings <- function(db_con, format_filter = NULL, date_cutoff = NULL) {
 
-  # Build format condition
-  format_condition <- if (!is.null(format_filter) && format_filter != "") {
-    sprintf("AND t.format = '%s'", format_filter)
-  } else ""
+  # Build conditions
+  conditions <- character(0)
+  if (!is.null(format_filter) && format_filter != "") {
+    conditions <- c(conditions, sprintf("AND t.format = '%s'", format_filter))
+  }
+  if (!is.null(date_cutoff)) {
+    if (!grepl("^\\d{4}-\\d{2}-\\d{2}$", date_cutoff)) stop("Invalid date_cutoff format")
+    conditions <- c(conditions, sprintf("AND t.event_date <= '%s'", date_cutoff))
+  }
+  extra_conditions <- paste(conditions, collapse = " ")
 
   # Get all tournament results with player counts and dates
   results <- DBI::dbGetQuery(db_con, sprintf("
@@ -32,7 +41,7 @@ calculate_competitive_ratings <- function(db_con, format_filter = NULL) {
       AND t.player_count >= 4
       %s
     ORDER BY t.event_date ASC, r.tournament_id, r.placement
-  ", format_condition))
+  ", extra_conditions))
 
   if (nrow(results) == 0) {
     return(data.frame(player_id = integer(), competitive_rating = numeric()))
@@ -310,4 +319,105 @@ recalculate_ratings_cache <- function(db_con) {
     message("[ratings] Cache update failed: ", e$message)
     FALSE
   })
+}
+
+
+# -----------------------------------------------------------------------------
+# RATING SNAPSHOTS (Historical format-era snapshots)
+# -----------------------------------------------------------------------------
+
+#' Generate rating snapshot for a specific format era
+#' Computes ratings using all tournaments up to the format's end date
+#'
+#' @param db_con DuckDB connection
+#' @param format_id Format identifier (e.g., "BT18")
+#' @param end_date Date cutoff (last day of this format era)
+#' @return Number of player snapshots created
+generate_format_snapshot <- function(db_con, format_id, end_date) {
+  tryCatch({
+    # Calculate global cumulative ratings up to this date (Elo accumulates across format eras)
+    ratings <- calculate_competitive_ratings(db_con, date_cutoff = end_date)
+    scores <- calculate_achievement_scores(db_con)  # Achievement is cumulative
+
+    if (nrow(ratings) == 0) return(0L)
+
+    # Merge ratings with achievement scores
+    snapshot <- merge(ratings, scores, by = "player_id", all.x = TRUE)
+    snapshot$achievement_score[is.na(snapshot$achievement_score)] <- 0
+
+    # Count events per player up to cutoff
+    events <- DBI::dbGetQuery(db_con,
+      "SELECT r.player_id, COUNT(DISTINCT r.tournament_id) as events_played
+       FROM results r
+       JOIN tournaments t ON r.tournament_id = t.tournament_id
+       WHERE t.event_date <= ?
+       GROUP BY r.player_id",
+      params = list(end_date))
+
+    snapshot <- merge(snapshot, events, by = "player_id", all.x = TRUE)
+    snapshot$events_played[is.na(snapshot$events_played)] <- 0
+
+    # Add rank
+    snapshot <- snapshot[order(-snapshot$competitive_rating), ]
+    snapshot$player_rank <- seq_len(nrow(snapshot))
+
+    # Delete existing snapshot for this format (idempotent)
+    DBI::dbExecute(db_con, "DELETE FROM rating_snapshots WHERE format_id = ?",
+                   params = list(format_id))
+
+    # Insert snapshot
+    if (nrow(snapshot) > 0) {
+      DBI::dbExecute(db_con, sprintf("
+        INSERT INTO rating_snapshots (player_id, format_id, competitive_rating,
+                                       achievement_score, events_played, player_rank, snapshot_date)
+        VALUES %s
+      ", paste(sprintf("(%d, '%s', %d, %d, %d, %d, '%s')",
+               snapshot$player_id, format_id,
+               snapshot$competitive_rating, snapshot$achievement_score,
+               snapshot$events_played, snapshot$player_rank,
+               end_date), collapse = ", ")))
+    }
+
+    message(sprintf("[snapshots] Generated %d player snapshots for %s (cutoff: %s)",
+                    nrow(snapshot), format_id, end_date))
+    nrow(snapshot)
+  }, error = function(e) {
+    message(sprintf("[snapshots] ERROR generating snapshot for %s: %s", format_id, e$message))
+    0L
+  })
+}
+
+
+#' Backfill rating snapshots for all historical formats
+#' Uses format release dates to determine era boundaries
+#'
+#' @param db_con DuckDB connection
+backfill_rating_snapshots <- function(db_con) {
+  # Get formats ordered by release date
+  formats <- DBI::dbGetQuery(db_con, "
+    SELECT format_id, set_name, release_date
+    FROM formats
+    WHERE release_date IS NOT NULL
+    ORDER BY release_date ASC
+  ")
+
+  if (nrow(formats) < 2) {
+    message("[snapshots] Need at least 2 formats to compute snapshots")
+    return(invisible(NULL))
+  }
+
+  # Each format's "end date" is the day before the next format's release
+  # Last format is excluded — the current era uses live player_ratings_cache, not frozen snapshots
+  for (i in 1:(nrow(formats) - 1)) {
+    format_id <- formats$format_id[i]
+    end_date <- as.Date(formats$release_date[i + 1]) - 1
+
+    message(sprintf("[snapshots] Processing %s (end date: %s)...", format_id, end_date))
+    n <- generate_format_snapshot(db_con, format_id, as.character(end_date))
+    if (n == 0) {
+      message(sprintf("[snapshots] No players rated for %s - snapshot skipped", format_id))
+    }
+  }
+
+  message("[snapshots] Backfill complete")
 }
