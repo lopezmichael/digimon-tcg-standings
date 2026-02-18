@@ -462,11 +462,7 @@ ui <- page_fillable(
       div(
         class = "header-scene-selector",
         selectInput("scene_selector", NULL,
-                    choices = list(
-                      "All Scenes" = "all",
-                      "Dallas-Fort Worth" = "dfw",
-                      "Online" = "online"
-                    ),
+                    choices = list("All Scenes" = "all"),
                     selected = "all",
                     width = "140px",
                     selectize = FALSE)

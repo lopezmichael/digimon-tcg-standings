@@ -14,17 +14,15 @@ get_scene_choices <- function(db_con) {
   choices <- list("All Scenes" = "all")
 
   # Get metro scenes from database
-  if (!is.null(db_con) && dbIsValid(db_con)) {
-    scenes <- dbGetQuery(db_con,
-      "SELECT slug, display_name FROM scenes
-       WHERE scene_type = 'metro' AND is_active = TRUE
-       ORDER BY display_name"
-    )
+  scenes <- safe_query(db_con,
+    "SELECT slug, display_name FROM scenes
+     WHERE scene_type = 'metro' AND is_active = TRUE
+     ORDER BY display_name"
+  )
 
-    if (nrow(scenes) > 0) {
-      for (i in seq_len(nrow(scenes))) {
-        choices[[scenes$display_name[i]]] <- scenes$slug[i]
-      }
+  if (nrow(scenes) > 0) {
+    for (i in seq_len(nrow(scenes))) {
+      choices[[scenes$display_name[i]]] <- scenes$slug[i]
     }
   }
 
@@ -48,6 +46,27 @@ get_scenes_for_map <- function(db_con) {
 }
 
 # -----------------------------------------------------------------------------
+# Populate Scene Dropdown from Database
+# -----------------------------------------------------------------------------
+
+observeEvent(rv$db_con, {
+  req(rv$db_con)
+
+  choices <- get_scene_choices(rv$db_con)
+
+  # Use stored scene preference if available and valid
+  stored <- input$scene_from_storage
+  selected <- "all"
+  if (!is.null(stored) && !is.null(stored$scene) && stored$scene != "") {
+    if (stored$scene %in% unlist(choices)) {
+      selected <- stored$scene
+    }
+  }
+
+  updateSelectInput(session, "scene_selector", choices = choices, selected = selected)
+}, once = TRUE)
+
+# -----------------------------------------------------------------------------
 # Initialize Scene from localStorage
 # -----------------------------------------------------------------------------
 
@@ -67,9 +86,12 @@ observeEvent(input$scene_from_storage, {
 
   # If there's a stored scene preference, apply it
   if (!is.null(stored$scene) && stored$scene != "") {
-    rv$current_scene <- stored$scene
-    # Update the header selector to match
-    updateSelectInput(session, "scene_selector", selected = stored$scene)
+    # Rebuild choices to ensure they include all DB scenes
+    choices <- get_scene_choices(rv$db_con)
+    if (stored$scene %in% unlist(choices)) {
+      rv$current_scene <- stored$scene
+      updateSelectInput(session, "scene_selector", choices = choices, selected = stored$scene)
+    }
   }
 }, once = TRUE)
 
