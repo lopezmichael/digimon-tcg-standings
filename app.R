@@ -458,9 +458,20 @@ ui <- page_fillable(
     ),
     div(
       class = "header-actions",
+      # Admin - lock icon only
       actionLink("admin_login_link",
-                 tagList(bsicons::bs_icon("lock"), span("Admin", class = "admin-text")),
-                 class = "header-action-btn"),
+                 bsicons::bs_icon("lock"),
+                 class = "header-action-btn",
+                 title = "Admin Login"),
+      # Ko-fi support (moved from footer)
+      tags$a(
+        href = "https://ko-fi.com/atomshell",
+        target = "_blank",
+        class = "header-action-btn header-coffee-btn",
+        title = "Support on Ko-fi",
+        bsicons::bs_icon("cup-hot")
+      ),
+      # Scene selector
       div(
         class = "header-scene-selector",
         selectInput("scene_selector", NULL,
@@ -596,13 +607,6 @@ ui <- page_fillable(
         class = "footer-link footer-icon-link",
         title = "View on GitHub",
         bsicons::bs_icon("github")
-      ),
-      tags$a(
-        href = "https://ko-fi.com/atomshell",
-        target = "_blank",
-        class = "footer-link footer-icon-link",
-        title = "Support on Ko-fi",
-        bsicons::bs_icon("cup-hot")
       )
     ),
     tags$div(
