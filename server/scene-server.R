@@ -80,7 +80,7 @@ observeEvent(input$scene_from_storage, {
   if (isTRUE(stored$needsOnboarding)) {
     # Show onboarding modal after a brief delay
     shinyjs::delay(500, {
-      show_onboarding_modal("welcome")
+      show_onboarding_modal()
     })
   }
 
@@ -118,39 +118,17 @@ observeEvent(input$scene_selector, {
 # Onboarding Modal Functions
 # -----------------------------------------------------------------------------
 
-#' Show onboarding modal at specified step
-#' @param step Either "welcome" or "scene_picker"
-show_onboarding_modal <- function(step = "welcome") {
-  if (step == "welcome") {
-    showModal(modalDialog(
-      onboarding_welcome_ui(),
-      title = NULL,
-      footer = NULL,
-      size = "m",
-      easyClose = FALSE,
-      class = "onboarding-modal"
-    ))
-  } else if (step == "scene_picker") {
-    showModal(modalDialog(
-      onboarding_scene_picker_ui(),
-      title = NULL,
-      footer = NULL,
-      size = "m",
-      easyClose = FALSE,
-      class = "onboarding-modal"
-    ))
-  }
+#' Show single-step onboarding modal (welcome + scene picker combined)
+show_onboarding_modal <- function() {
+  showModal(modalDialog(
+    onboarding_ui(),
+    title = NULL,
+    footer = NULL,
+    size = "m",
+    easyClose = FALSE,
+    class = "onboarding-modal"
+  ))
 }
-
-# Handle "Get Started" button (step 1 -> step 2)
-observeEvent(input$onboarding_get_started, {
-  show_onboarding_modal("scene_picker")
-})
-
-# Handle back button (step 2 -> step 1)
-observeEvent(input$onboarding_back, {
-  show_onboarding_modal("welcome")
-})
 
 # Handle close onboarding (from links to About/FAQ)
 observeEvent(input$close_onboarding, {
