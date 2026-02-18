@@ -35,10 +35,16 @@ observeEvent(input$keepalive_ping, {
   # No-op: just receiving this keeps the WebSocket active
 }, ignoreInit = TRUE)
 
+# Clean shutdown: close database connection when app stops
 onStop(function() {
   isolate({
-    if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
-      disconnect(rv$db_con)
+    if (!is.null(rv$db_con) && DBI::dbIsValid(rv$db_con)) {
+      tryCatch({
+        DBI::dbDisconnect(rv$db_con)
+        message("[shutdown] Database connection closed")
+      }, error = function(e) {
+        message("[shutdown] Error closing connection: ", conditionMessage(e))
+      })
     }
   })
 })
@@ -412,16 +418,72 @@ observeEvent(input$logout_btn, {
 #' result <- safe_query(rv$db_con, "SELECT COUNT(*) as n FROM results",
 #'                      default = data.frame(n = 0))
 safe_query <- function(db_con, query, params = NULL, default = data.frame()) {
-  tryCatch({
-    if (is.null(db_con) || !DBI::dbIsValid(db_con)) return(default)
-    if (is.null(params)) {
-      DBI::dbGetQuery(db_con, query)
-    } else {
+  # Try the query
+  result <- tryCatch({
+    if (!is.null(params) && length(params) > 0) {
       DBI::dbGetQuery(db_con, query, params = params)
+    } else {
+      DBI::dbGetQuery(db_con, query)
     }
   }, error = function(e) {
-    message(sprintf("[safe_query] Error: %s\nQuery: %s", e$message, substr(query, 1, 200)))
-    default
+    msg <- conditionMessage(e)
+    # Log the error with truncated query
+    query_preview <- substr(gsub("\\s+", " ", query), 1, 200)
+    message("[safe_query] Error: ", msg, " | Query: ", query_preview)
+
+    # Attempt reconnection if connection is invalid
+    if (!DBI::dbIsValid(db_con)) {
+      message("[safe_query] Connection invalid, attempting reconnection...")
+      tryCatch({
+        new_con <- connect_db()
+        # Update the shared reactive connection
+        rv$db_con <- new_con
+        message("[safe_query] Reconnected successfully")
+
+        # Retry the query with new connection
+        if (!is.null(params) && length(params) > 0) {
+          return(DBI::dbGetQuery(new_con, query, params = params))
+        } else {
+          return(DBI::dbGetQuery(new_con, query))
+        }
+      }, error = function(e2) {
+        message("[safe_query] Reconnection failed: ", conditionMessage(e2))
+        return(NULL)
+      })
+    }
+
+    NULL
+  })
+
+  if (is.null(result)) default else result
+}
+
+#' Safe Database Execute Wrapper
+#'
+#' Executes a database write operation (INSERT, UPDATE, DELETE) with error
+#' handling. Returns 0 rows affected instead of crashing on error.
+#'
+#' @param db_con Database connection object from DBI
+#' @param query Character. SQL statement string (can include ? placeholders for params)
+#' @param params List or NULL. Parameters for parameterized query (default: NULL)
+#'
+#' @return Number of rows affected on success, or 0 on error
+#'
+#' @examples
+#' # Simple execute
+#' rows <- safe_execute(rv$db_con, "DELETE FROM results WHERE result_id = ?",
+#'                      params = list(42))
+safe_execute <- function(db_con, query, params = NULL) {
+  tryCatch({
+    if (!is.null(params) && length(params) > 0) {
+      DBI::dbExecute(db_con, query, params = params)
+    } else {
+      DBI::dbExecute(db_con, query)
+    }
+  }, error = function(e) {
+    message("[safe_execute] Error: ", conditionMessage(e))
+    message("[safe_execute] Query: ", substr(gsub("\\s+", " ", query), 1, 200))
+    0  # Return 0 rows affected on error
   })
 }
 
