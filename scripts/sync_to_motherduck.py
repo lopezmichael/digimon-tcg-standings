@@ -43,7 +43,8 @@ TABLES = [
     "ingestion_log",
     # Cache tables (computed, but synced for consistency)
     "player_ratings_cache",
-    "store_ratings_cache"
+    "store_ratings_cache",
+    "rating_snapshots"
 ]
 
 def read_schema():
