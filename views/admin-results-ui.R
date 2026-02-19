@@ -74,7 +74,7 @@ admin_results_ui <- tagList(
       )
   ),
 
-  # Step 2: Add Results (hidden initially)
+  # Step 2: Enter Results Grid (hidden initially)
   shinyjs::hidden(
     div(
       id = "wizard_step2",
@@ -82,114 +82,38 @@ admin_results_ui <- tagList(
       # Tournament summary bar
       uiOutput("tournament_summary_bar"),
 
-      layout_columns(
-        col_widths = c(5, 7),
-        # Left: Add result form
-        card(
-          card_header("Add Player Result"),
-          card_body(
-            # Player selection with quick add
-            selectizeInput("result_player", "Player Name",
-                           choices = NULL,
-                           options = list(create = FALSE, placeholder = "Select a player...")),
-            shinyjs::hidden(
-              div(
-                id = "quick_add_player_form",
-                class = "card-search-results-container p-3 mb-3",
-                tags$label(class = "form-label small text-muted",
-                           bsicons::bs_icon("person-plus"), " Add New Player"),
-                textInput("quick_player_name", NULL, placeholder = "Enter player name..."),
-                textInput("quick_player_member", NULL, placeholder = "Member # (optional, e.g., 0000123456)"),
-                div(
-                  class = "d-flex gap-2 mt-2",
-                  actionButton("quick_add_player_submit", "Add Player",
-                               class = "btn-sm btn-quick-add", icon = icon("plus")),
-                  actionButton("quick_add_player_cancel", "Cancel",
-                               class = "btn-sm btn-outline-secondary")
-                )
-              )
-            ),
-            actionLink("show_quick_add_player", "+ New Player", class = "small text-primary"),
-
-            hr(),
-
-            # Deck selection with quick add (hidden for release events)
-            div(
-              id = "deck_selection_section",
-              selectizeInput("result_deck", "Deck Archetype",
-                             choices = NULL,
-                             options = list(create = FALSE, placeholder = "Select a deck...")),
-              shinyjs::hidden(
-                div(
-                  id = "quick_add_deck_form",
-                  class = "card-search-results-container p-3 mb-3",
-                  tags$label(class = "form-label small text-muted",
-                             bsicons::bs_icon("collection"), " Add New Deck"),
-                  textInput("quick_deck_name", NULL, placeholder = "e.g., New Archetype"),
-                  selectInput("quick_deck_color", "Primary Color",
-                              choices = c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White")),
-                  div(class = "small text-muted mb-2", "(Complete details in Manage Decks later)"),
-                  div(
-                    class = "d-flex gap-2",
-                    actionButton("quick_add_deck_submit", "Add Deck",
-                                 class = "btn-sm btn-quick-add", icon = icon("plus")),
-                    actionButton("quick_add_deck_cancel", "Cancel",
-                                 class = "btn-sm btn-outline-secondary")
-                  )
-                )
-              ),
-              actionLink("show_quick_add_deck", "+ New Deck", class = "small text-primary")
-            ),
-
-            # Release event notice (shown when deck selector is hidden)
-            shinyjs::hidden(
-              div(
-                id = "release_event_deck_notice",
-                class = "alert alert-info py-2 px-3 mb-0",
-                bsicons::bs_icon("info-circle"),
-                " Release events use sealed packs — deck archetype set to UNKNOWN automatically."
-              )
-            ),
-
-            hr(),
-
-            # Placement + Decklist URL row
-            layout_columns(
-              col_widths = c(4, 8),
-              numericInput("result_placement", "Placement", value = 1, min = 1),
-              textInput("result_decklist_url", "Decklist URL (optional)",
-                        placeholder = "e.g., digimonmeta.com/deck/...")
-            ),
-
-            # W/L/T with individual labels
-            layout_columns(
-              col_widths = c(4, 4, 4),
-              numericInput("result_wins", "Wins", value = 0, min = 0),
-              numericInput("result_losses", "Losses", value = 0, min = 0),
-              numericInput("result_ties", "Ties", value = 0, min = 0)
-            ),
-            actionButton("add_result", "Add Result", class = "btn-add-result w-100 mt-3")
+      card(
+        card_header(
+          class = "d-flex justify-content-between align-items-center",
+          div(
+            class = "d-flex align-items-center gap-2",
+            span("Enter Results"),
+            uiOutput("admin_record_format_badge", inline = TRUE)
+          ),
+          div(
+            class = "d-flex align-items-center gap-2",
+            uiOutput("admin_filled_count", inline = TRUE),
+            actionButton("admin_paste_btn", "Paste from Spreadsheet",
+                         class = "btn-sm btn-outline-primary",
+                         icon = icon("clipboard"))
           )
         ),
-        # Right: Results table
-        card(
-          card_header(
-            class = "d-flex justify-content-between align-items-center",
-            uiOutput("results_count_header"),
-            actionButton("clear_tournament", "Start Over", class = "btn-sm btn-outline-warning")
-          ),
-          card_body(
-            reactableOutput("current_results")
-          )
+        card_body(
+          uiOutput("admin_grid_table")
         )
       ),
 
       # Bottom navigation
       div(
         class = "d-flex justify-content-between mt-3",
-        actionButton("wizard_back", "Back to Details", class = "btn-secondary",
-                     icon = icon("arrow-left")),
-        actionButton("finish_tournament", "Mark Complete", class = "btn-primary btn-lg",
+        div(
+          class = "d-flex gap-2",
+          actionButton("wizard_back", "Back to Details", class = "btn-secondary",
+                       icon = icon("arrow-left")),
+          actionButton("clear_tournament", "Start Over", class = "btn-outline-warning",
+                       icon = icon("rotate-left"))
+        ),
+        actionButton("admin_submit_results", "Submit Results", class = "btn-primary btn-lg",
                      icon = icon("check"))
       )
     )
@@ -218,58 +142,6 @@ admin_results_ui <- tagList(
           actionButton("edit_existing_tournament", "View/Edit Existing", class = "btn-outline-primary"),
           actionButton("create_anyway", "Create Anyway", class = "btn-warning"),
           tags$button(type = "button", class = "btn btn-outline-secondary", `data-bs-dismiss` = "modal", "Cancel")
-        )
-      )
-    )
-  ),
-
-  # Edit result modal
-  tags$div(
-    id = "edit_result_modal",
-    class = "modal fade",
-    tabindex = "-1",
-    tags$div(
-      class = "modal-dialog",
-      tags$div(
-        class = "modal-content",
-        tags$div(
-          class = "modal-header modal-header-digital",
-          tags$h5(class = "modal-title", bsicons::bs_icon("pencil-square"), " Edit Result"),
-          tags$button(type = "button", class = "btn-close", `data-bs-dismiss` = "modal")
-        ),
-        tags$div(
-          class = "modal-body modal-form-inputs",
-          # Hidden field for result ID
-          textInput("editing_result_id", NULL, value = ""),
-          tags$script("document.getElementById('editing_result_id').parentElement.style.display = 'none';"),
-
-          selectizeInput("edit_result_player", "Player",
-                         choices = NULL,
-                         options = list(create = FALSE, placeholder = "Select a player...")),
-          selectizeInput("edit_result_deck", "Deck Archetype",
-                         choices = NULL,
-                         options = list(create = FALSE, placeholder = "Select a deck...")),
-          div(
-            class = "row g-2 mb-3",
-            div(class = "col-4",
-                numericInput("edit_result_placement", "Placement", value = 1, min = 1)),
-            div(class = "col-8",
-                textInput("edit_result_decklist_url", "Decklist URL (optional)"))
-          ),
-          div(
-            class = "row g-2",
-            div(class = "col-4",
-                numericInput("edit_result_wins", "Wins", value = 0, min = 0)),
-            div(class = "col-4",
-                numericInput("edit_result_losses", "Losses", value = 0, min = 0)),
-            div(class = "col-4",
-                numericInput("edit_result_ties", "Ties", value = 0, min = 0))
-          )
-        ),
-        tags$div(
-          class = "modal-footer",
-          tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel"),
-          actionButton("save_edit_result", "Save Changes", class = "btn-primary")
         )
       )
     )
@@ -305,6 +177,40 @@ admin_results_ui <- tagList(
                        icon = icon("trash")),
           uiOutput("delete_tournament_warning"),
           tags$button(type = "button", class = "btn btn-secondary mt-2", `data-bs-dismiss` = "modal", "Cancel")
+        )
+      )
+    )
+  ),
+
+  # Paste from spreadsheet modal
+  tags$div(
+    id = "paste_spreadsheet_modal",
+    class = "modal fade",
+    tabindex = "-1",
+    tags$div(
+      class = "modal-dialog modal-lg",
+      tags$div(
+        class = "modal-content",
+        tags$div(
+          class = "modal-header",
+          tags$h5(class = "modal-title", bsicons::bs_icon("clipboard"), " Paste from Spreadsheet"),
+          tags$button(type = "button", class = "btn-close", `data-bs-dismiss` = "modal")
+        ),
+        tags$div(
+          class = "modal-body",
+          p(class = "text-muted", "Paste tab-separated data. Supported formats:"),
+          tags$ul(class = "text-muted small",
+            tags$li("Player names only (one per line)"),
+            tags$li("Player name [tab] Points"),
+            tags$li("Player name [tab] W [tab] L [tab] T")
+          ),
+          tags$textarea(id = "paste_data", class = "form-control", rows = "12",
+                        placeholder = "Paste data here...")
+        ),
+        tags$div(
+          class = "modal-footer",
+          tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel"),
+          actionButton("paste_apply", "Fill Grid", class = "btn-primary", icon = icon("table"))
         )
       )
     )
