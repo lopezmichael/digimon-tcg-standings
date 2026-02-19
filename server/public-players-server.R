@@ -157,7 +157,7 @@ output$player_standings <- renderReactable({
     } else {
       "deck-badge"
     }
-    sprintf("<span class='%s'>%s</span>", color_class, deck)
+    sprintf("<span class='%s'>%s</span>", htmltools::htmlEscape(color_class), htmltools::htmlEscape(deck))
   })
 
   # Sort by competitive rating

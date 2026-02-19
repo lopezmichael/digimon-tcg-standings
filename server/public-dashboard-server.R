@@ -192,7 +192,7 @@ output$hot_deck_name <- renderUI({
     return(HTML("<span style='opacity: 0.7;'>No trend</span>"))
   }
 
-  HTML(hd$archetype_name)
+  HTML(htmltools::htmlEscape(hd$archetype_name))
 }) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
 
 output$hot_deck_trend <- renderUI({
