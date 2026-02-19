@@ -57,6 +57,14 @@ admin_results_ui <- tagList(
             div(class = "col-md-6",
                 numericInput("tournament_rounds", "Number of Rounds", value = 3, min = 1))
           ),
+          # Row 4: Record Format
+          div(
+            class = "row g-3 mb-3",
+            div(class = "col-md-6",
+                radioButtons("admin_record_format", "Record Format",
+                             choices = c("Points" = "points", "W-L-T" = "wlt"),
+                             selected = "points", inline = TRUE))
+          ),
           div(
             class = "d-flex justify-content-end mt-3",
             actionButton("create_tournament", "Create Tournament", class = "btn-primary btn-lg",
