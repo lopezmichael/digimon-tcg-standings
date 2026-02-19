@@ -229,9 +229,6 @@ observeEvent(input$add_archetype, {
     updateCheckboxInput(session, "deck_multi_color", value = FALSE)
     output$card_search_results <- renderUI({ NULL })
 
-    # Update archetype dropdown
-    updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
-
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
@@ -392,9 +389,6 @@ observeEvent(input$update_archetype, {
     shinyjs::hide("update_archetype")
     shinyjs::hide("delete_archetype")
 
-    # Update dropdown
-    updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
-
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
@@ -497,9 +491,6 @@ observeEvent(input$confirm_delete_archetype, {
     shinyjs::show("add_archetype")
     shinyjs::hide("update_archetype")
     shinyjs::hide("delete_archetype")
-
-    # Update archetype dropdown
-    updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
 
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
@@ -812,9 +803,6 @@ create_deck_from_request <- function(req_id, deck_name, primary_color, secondary
     # Refresh
     rv$deck_requests_refresh <- Sys.time()
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
-
-    # Update archetype dropdown
-    updateSelectizeInput(session, "result_deck", choices = get_archetype_choices(rv$db_con))
 
   }, error = function(e) {
     showNotification(paste("Error approving deck:", e$message), type = "error")

@@ -370,11 +370,6 @@ observeEvent(input$login_btn, {
   # Update dropdowns with data
   updateSelectInput(session, "tournament_store",
                     choices = get_store_choices(rv$db_con, include_none = TRUE))
-  updateSelectizeInput(session, "result_deck",
-                    choices = get_archetype_choices(rv$db_con))
-  updateSelectizeInput(session, "result_player",
-                       choices = get_player_choices(rv$db_con),
-                       server = TRUE)
 })
 
 # Handle logout

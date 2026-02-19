@@ -193,9 +193,6 @@ observeEvent(input$update_player, {
     shinyjs::hide("update_player")
     shinyjs::hide("delete_player")
 
-    # Update player dropdown in results entry
-    updateSelectizeInput(session, "result_player", choices = get_player_choices(rv$db_con))
-
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
@@ -272,9 +269,6 @@ observeEvent(input$confirm_delete_player, {
 
     shinyjs::hide("update_player")
     shinyjs::hide("delete_player")
-
-    # Update player dropdown
-    updateSelectizeInput(session, "result_player", choices = get_player_choices(rv$db_con))
 
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
@@ -359,9 +353,6 @@ observeEvent(input$confirm_merge_players, {
     # Reset dropdowns
     updateSelectizeInput(session, "merge_source_player", selected = "")
     updateSelectizeInput(session, "merge_target_player", selected = "")
-
-    # Update player dropdown
-    updateSelectizeInput(session, "result_player", choices = get_player_choices(rv$db_con))
 
     # Trigger refresh of public tables
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1

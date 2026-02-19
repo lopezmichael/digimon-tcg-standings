@@ -32,6 +32,22 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 **Design doc:** `docs/plans/2026-02-19-limitless-integration-design.md`
 
 ---
+
+## 2026-02-19: Admin Grid Entry
+
+**Problem:** Adding 16+ players via the admin Enter Results tab required 16+ cycles of select-player, select-deck, enter-WLT, click-Add. Non-Bandai sources sometimes provide total points instead of W-L-T records, requiring mental conversion.
+
+**Solution:** Replaced one-at-a-time entry with a full-width editable grid. N blank rows (based on player count) appear after tournament creation. Admins type directly into the grid, see inline player match feedback, and submit all results at once.
+
+**Key decisions:**
+- Record Format toggle at tournament level: Points mode auto-converts to W-L-T on submit (`wins = pts / 3`, `ties = pts % 3`, `losses = rounds - wins - ties`)
+- Player matching: exact case-insensitive name match on blur, auto-create new players on submit
+- Paste from Spreadsheet: auto-detects format (names only, name+points, name+W+L+T)
+- Deck request modal reuses the pattern from Upload Results tab
+- Grid replaces old flow entirely (no toggle back)
+- Edit/delete after submission stays in Edit Tournaments tab
+
+---
 ## 2026-02-19: Upload Results Row Management Fix
 
 **Problem:** OCR sometimes creates more rows than `total_players` because the truncation logic filtered by placement value (`combined$placement <= total_players`) instead of position. Duplicate placements let extra rows through. No way to delete spurious rows.

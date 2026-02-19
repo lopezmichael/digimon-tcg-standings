@@ -7,11 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Admin Enter Results: grid-based bulk entry replacing one-at-a-time flow
+- Record Format toggle (Points or W-L-T) on tournament creation
+- Paste from Spreadsheet modal for bulk data fill
+- Inline player matching badges (matched with member #, new player)
+- Auto-create new players on grid submit
+- Upload results: delete row button (X) on each row in review table — removes row, auto-renumbers placements, maintains total player count
+
+### Changed
+- Admin Enter Results Step 2: full-width grid replaces left-form + right-table layout
+- Submit Results button replaces per-row Add Result + Mark Complete flow
+
 ### Fixed
 - Upload results: row count now always matches user-entered total players (was allowing extra rows when OCR produced duplicate placements)
 
-### Added
-- Upload results: delete row button (X) on each row in review table — removes row, auto-renumbers placements, maintains total player count
+### Removed
+- Quick-add player/deck inline forms in admin results entry (replaced by grid auto-create and deck request modal)
+- Per-row edit/delete in admin results step 2 (use Edit Tournaments tab instead)
 
 ## [0.23.1] - 2026-02-18 - Multi-Region, Polish & Performance
 
