@@ -470,18 +470,19 @@ ui <- page_fillable(
         class = "header-action-btn header-coffee-btn",
         title = "Support on Ko-fi",
         bsicons::bs_icon("cup-hot")
-      ),
-      # Scene selector
-      div(
-        class = "header-scene-selector",
-        selectInput("scene_selector", NULL,
-                    choices = list("All Scenes" = "all"),
-                    selected = "all",
-                    width = "140px",
-                    selectize = FALSE)
-      ),
-      input_dark_mode(id = "dark_mode", mode = "light")
-    )
+      )
+    ),
+    # Scene selector (separate child so it can wrap to its own row on mobile)
+    div(
+      class = "header-scene-selector",
+      selectInput("scene_selector", NULL,
+                  choices = list("All Scenes" = "all"),
+                  selected = "all",
+                  width = "140px",
+                  selectize = FALSE)
+    ),
+    # Dark mode toggle (after scene selector)
+    input_dark_mode(id = "dark_mode", mode = "light")
   ),
 
   # Main Layout with Sidebar
