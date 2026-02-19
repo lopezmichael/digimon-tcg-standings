@@ -88,9 +88,9 @@ The architecture doc contains:
 
 ## Current Work
 
-### Latest Release: v0.23.0 - Multi-Region, Polish & Performance
+### Latest Release: v0.23.1 - Multi-Region, Polish & Performance
 
-Multi-region scene selection, dashboard improvements (section split, clickable cards, batch queries), pill toggle filters, historical format rating snapshots, onboarding simplification, mobile fixes.
+Multi-region scene selection, dashboard improvements (layout rearrangement, chart fixes, in-place modals, batch queries), pill toggle filters, historical format rating snapshots, release event handling, mobile navbar improvements, XSS prevention.
 
 See `ROADMAP.md` for the full version plan through v1.0.
 
@@ -345,6 +345,6 @@ See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
-**v0.23.0** - Multi-Region, Polish & Performance (Scene selection, dashboard improvements, batch queries, historical rating snapshots)
+**v0.23.1** - Multi-Region, Polish & Performance (Scene selection, dashboard polish, release events, mobile navbar, XSS fixes, batch queries, historical rating snapshots)
 
 See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.

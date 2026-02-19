@@ -5,7 +5,7 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.23.0] - 2026-02-18 - Multi-Region, Polish & Performance
+## [0.23.1] - 2026-02-18 - Multi-Region, Polish & Performance
 
 ### Added
 - **Scene Selector**: Dropdown in header to filter by scene, dynamically loaded from database
@@ -36,12 +36,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Overview Modals**: Clicking Top Decks, Rising Stars, or Recent Tournaments on dashboard now opens modals in-place instead of switching tabs
 - **Mobile Navbar**: Scene selector wraps to full-width row below title on mobile; BETA badge hidden; dark mode toggle positioned after scene selector; circuit line preserved on all screen sizes
 
+### Security
+- **XSS Prevention**: HTML-escape database-sourced deck names before rendering as raw HTML in dashboard and player tables
+
 ### Fixed
 - Mobile header alignment and dark mode toggle visibility
 - Onboarding feature cards no longer show non-clickable hover states (removed entirely)
 - Event type filter defaulting to "Locals" instead of "All Events" on dashboard
 - Missing event type display formatting for Regionals, Regulation Battle, Release Event, and Other
 - Release events auto-assign UNKNOWN deck archetype (sealed packs don't have archetypes), with deck selector hidden during entry
+- Mobile whitespace between navbar and content reduced
 
 ---
 

@@ -2,7 +2,7 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.23.0
+**Current Version:** v0.23.1
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
@@ -218,18 +218,25 @@ Items for future consideration, not scheduled:
 
 ## Completed
 
-### v0.23.0 - Multi-Region, Polish & Performance
+### v0.23.1 - Multi-Region, Polish & Performance
 - Scene selector with dynamic DB loading, onboarding modal, localStorage persistence
 - Geolocation "Find My Scene" support
 - Scene filtering across all tabs
 - Dashboard split: format-specific meta + community health sections
+- Dashboard layout: removed Top Players table, rearranged into Meta Diversity + Recent Tournaments row
+- Player Growth chart switched from monthly to weekly granularity
+- Meta Share chart uses percent stacking (always sums to 100%)
+- Overview modals open in-place instead of switching tabs
 - Pill toggle filters on Players and Deck Meta tabs
 - Top Decks and Rising Stars clickable (open modals)
 - Historical format rating snapshots (frozen Elo at era boundaries)
 - Batched dashboard queries (deck_analytics + core_metrics)
 - Connection auto-reconnection, clean shutdown handler
 - Admin lock icon, Ko-fi to header, tab rename to "Deck Meta"
-- Mobile header alignment fixes, onboarding UX improvements
+- Release events auto-assign UNKNOWN deck archetype (sealed packs)
+- Mobile navbar: scene selector wraps to own row, circuit line preserved, whitespace reduced
+- XSS prevention: HTML-escape database-sourced strings in dashboard and player tables
+- Event type filter defaults and display formatting fixes
 
 ### v0.21.1 - Performance & Security Foundations
 - SQL parameterization for all public queries (security)
