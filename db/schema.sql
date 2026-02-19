@@ -1,8 +1,8 @@
 -- DigiLab - Digimon TCG Tournament Tracker
 -- Database Schema for MotherDuck (Cloud DuckDB)
--- Version: 1.3.0
+-- Version: 1.4.0
 -- Created: January 2026
--- Updated: 2026-02-09 - Added scenes table, slugs for deep linking
+-- Updated: 2026-02-19 - Added Limitless TCG integration tables
 
 -- =============================================================================
 -- SCENES TABLE
@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS stores (
     phone VARCHAR,
     is_active BOOLEAN DEFAULT TRUE,
     is_online BOOLEAN DEFAULT FALSE,
+    limitless_organizer_id INTEGER,  -- Limitless TCG organizer ID for auto-sync
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS stores (
 -- Create index for store slug lookups
 CREATE INDEX IF NOT EXISTS idx_stores_slug ON stores(slug);
 CREATE INDEX IF NOT EXISTS idx_stores_scene ON stores(scene_id);
+CREATE INDEX IF NOT EXISTS idx_stores_limitless ON stores(limitless_organizer_id);
 
 -- =============================================================================
 -- STORE SCHEDULES TABLE
@@ -338,6 +340,28 @@ CREATE TABLE IF NOT EXISTS rating_snapshots (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rating_snapshots_format ON rating_snapshots(format_id);
+
+-- =============================================================================
+-- LIMITLESS DECK MAP TABLE
+-- Maps Limitless TCG deck archetype identifiers to local deck_archetypes
+-- Populated during sync; unmapped decks create deck_requests for admin review
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS limitless_deck_map (
+    limitless_deck_id VARCHAR NOT NULL PRIMARY KEY,  -- e.g., "imperialdramon"
+    limitless_deck_name VARCHAR,                     -- Human-readable name from Limitless
+    archetype_id INTEGER                             -- References deck_archetypes(archetype_id)
+);
+
+-- =============================================================================
+-- LIMITLESS SYNC STATE TABLE
+-- Tracks per-organizer sync progress for incremental imports
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS limitless_sync_state (
+    organizer_id INTEGER NOT NULL PRIMARY KEY,       -- Limitless organizer ID
+    last_synced_at TIMESTAMP,                        -- When sync last ran
+    last_tournament_date TIMESTAMP,                  -- Most recent tournament date synced
+    tournaments_synced INTEGER DEFAULT 0             -- Total tournaments imported
+);
 
 -- =============================================================================
 -- VIEWS FOR COMMON QUERIES
