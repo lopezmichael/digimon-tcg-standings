@@ -4,6 +4,30 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-18: Dashboard Polish, Release Events & Mobile Navbar
+
+### Summary
+Continued v0.23 polish on the `develop` branch. Three areas: dashboard chart/layout improvements, release event handling for sealed-pack tournaments, and mobile navbar responsiveness.
+
+### Key Technical Decisions
+
+**Meta Share percent stacking:** The Meta Share Over Time chart was pre-calculating percentages with `round(..., 1)`, which caused rounding errors where weekly shares didn't always sum to exactly 100%. Switched to passing raw entry counts with Highcharts `stacking = "percent"` — Highcharts auto-normalizes to 100% internally. Tooltip uses `point.percentage` (available in percent stacking mode) instead of `point.y`.
+
+**Cross-tab modal rendering:** Clicking dashboard items (Top Decks, Rising Stars, Recent Tournaments) previously switched tabs then opened modals. Changed to open modals in-place on the dashboard. This required `outputOptions(output, "..._detail_modal", suspendWhenHidden = FALSE)` on all three modal renderUI outputs — Shiny suspends uiOutput on hidden tabs by default, so modals wouldn't render without this.
+
+**Release event UNKNOWN auto-assign:** Release events use sealed packs, so deck archetype is meaningless. Rather than filtering UNKNOWN from every meta query (most already exclude it), the cleanest fix was at the entry point: auto-assign UNKNOWN archetype when `event_type == "release_event"`, hide the deck selector, and show an info notice. Server looks up UNKNOWN archetype_id via DB query at entry time.
+
+**Mobile navbar flex-wrap:** Moved scene selector and dark mode toggle from inside `header-actions` to direct children of `.app-header`. This allows CSS `flex-wrap: wrap` with `order` to push the scene selector to a full-width row on mobile (<768px) while keeping the dark mode toggle in the top row. Circuit line preserved on all screen sizes (scales down on small phones instead of hiding).
+
+**Mobile whitespace investigation:** The gap between navbar and content on mobile comes from bslib's `--bslib-spacer` CSS variable on `.bslib-sidebar-layout` grid. Overriding it to 0 removed the gap but also killed all internal card/component spacing. Left as-is for now — bslib's internal gap is not easily overridable without side effects. Tightened `padding-top` and `margin-bottom` where possible.
+
+### Commits
+- `add0c16` feat: dashboard polish - layout, charts, modals, and event type fixes
+- `df93d05` feat: auto-assign UNKNOWN archetype for release events
+- `d280d5f` style: improve mobile navbar layout and reduce whitespace
+
+---
+
 ## 2026-02-18: v0.23 Polish, Performance & Pre-v0.22 Improvements
 
 ### Summary

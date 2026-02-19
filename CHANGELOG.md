@@ -30,10 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tab Rename**: "Meta Analysis" → "Deck Meta"
 - **Onboarding**: Collapsed from two-step (welcome + scene picker) to single step
 - **Community Queries**: Rising Stars, Player Attendance, Player Growth, and tables use scene-only filters (no format/event)
+- **Dashboard Layout**: Removed redundant Top Players table; Recent Tournaments now shares row with Meta Diversity (4/8 split); Rising Stars moved below Top Decks; removed Community section divider
+- **Player Growth Chart**: Switched from monthly to weekly granularity for better visibility while community is small
+- **Meta Share Chart**: Uses raw counts with Highcharts percent stacking instead of pre-calculated percentages, ensuring shares always sum to 100%
+- **Overview Modals**: Clicking Top Decks, Rising Stars, or Recent Tournaments on dashboard now opens modals in-place instead of switching tabs
+- **Mobile Navbar**: Scene selector wraps to full-width row below title on mobile; BETA badge hidden; dark mode toggle positioned after scene selector; circuit line preserved on all screen sizes
 
 ### Fixed
 - Mobile header alignment and dark mode toggle visibility
 - Onboarding feature cards no longer show non-clickable hover states (removed entirely)
+- Event type filter defaulting to "Locals" instead of "All Events" on dashboard
+- Missing event type display formatting for Regionals, Regulation Battle, Release Event, and Other
+- Release events auto-assign UNKNOWN deck archetype (sealed packs don't have archetypes), with deck selector hidden during entry
 
 ---
 
