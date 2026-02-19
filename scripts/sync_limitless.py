@@ -52,7 +52,7 @@ MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
 LOCAL_DB = "data/local.duckdb"
 
 API_BASE = "https://play.limitlesstcg.com/api"
-REQUEST_DELAY = 0.5  # seconds between API calls
+REQUEST_DELAY = 1.5  # seconds between API calls
 
 # Tier 1 organizers for --all-tier1 flag
 TIER1_ORGANIZERS = {
