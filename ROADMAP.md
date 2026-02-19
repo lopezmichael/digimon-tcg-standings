@@ -59,7 +59,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 | MR15 | PERFORMANCE | Batch dashboard queries (deck_analytics + core_metrics batch reactives) | Done |
 | MR16 | PERFORMANCE | Pre-computed dashboard stats cache table (recalc on data change) | Deferred |
 | MR17 | PERFORMANCE | Profile with `shinyloadtest` and size Posit Connect tier | Deferred |
-| L1 | FEATURE | Limitless API exploration for online tournament data | Deferred |
+| L1 | FEATURE | Limitless API exploration for online tournament data | Done (design doc) |
 
 **v0.23 Additional Features (implemented):**
 - Scene dropdown dynamically loaded from database
@@ -81,7 +81,36 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.24 - Onboarding, Help & UX Polish
+## v0.24 - Limitless Integration & UX Polish
+
+**Design:** `docs/plans/2026-02-19-limitless-integration-design.md`
+
+### Limitless TCG Online Tournament Sync
+
+| ID | Type | Description |
+|----|------|-------------|
+| LI1 | SCHEMA | Add `limitless_organizer_id` to stores, create `limitless_deck_map` and `limitless_sync_state` tables |
+| LI2 | FEATURE | Sync script (`scripts/sync_limitless.py`) — fetches tournaments, standings, pairings from Limitless API |
+| LI3 | FEATURE | Player matching by `limitless_username`, auto-create new players from Limitless data |
+| LI4 | FEATURE | Deck archetype mapping — known decks auto-mapped, unknown routed to deck request queue |
+| LI5 | FEATURE | Format inference — regex parse from tournament name, date-based fallback from `formats` table |
+| LI6 | DATA | Seed Tier 1 organizers: Eagle's Nest (452), PHOENIX REBORN (281), DMV Drakes (559), MasterRukasu (578) |
+| LI7 | DATA | Initial historical sync (BT23 era onward, ~Oct 2025) |
+| LI8 | FEATURE | GitHub Actions workflow for daily automated sync (`.github/workflows/sync-limitless.yml`) |
+| LI9 | IMPROVEMENT | Enhance player merge tool — add matches transfer + `limitless_username` copy + ratings recalc |
+| LI10 | FUTURE | Stores page adaptation for online organizers (Discord/YouTube links instead of address/map) |
+
+**Tier 1 Organizers (launch):** Eagle's Nest (USA, 111 events), PHOENIX REBORN (Argentina, 146+ events), DMV Drakes (USA, 50+ events), MasterRukasu (Brazil, 44 events)
+
+**Key Decisions:**
+- Organizer = virtual store (`is_online = TRUE`, Online scene)
+- `event_type = "online"` for all Limitless tournaments
+- Online tournaments feed same Elo rating pool as locals
+- Unmapped decks route through existing deck request queue
+- No decklist storage (card-by-card data deferred)
+- GitHub Actions daily cron for ongoing sync (mirrors `sync-cards.yml` pattern)
+
+### Onboarding & Help
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -107,7 +136,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 | ID | Type | Description |
 |----|------|-------------|
-| I9 | FEATURE | Simple player merge tool — admin can merge duplicate players |
+| I9 | DONE | Simple player merge tool — admin can merge duplicate players |
 | F10 | FEATURE | Player achievement badges — auto-calculated, displayed in player modal |
 | UX11 | UX | Player modal: head-to-head teaser ("Best record vs: PlayerX (3-0)") |
 | UX12 | UX | Tournament table: result distribution mini-chart (top 3 deck colors inline) |
@@ -188,7 +217,7 @@ Items for future consideration, not scheduled:
 | FD1 | IMPROVEMENT | Smart format default | Default to current format group instead of "All Formats" |
 | F2c | FEATURE | Error flagging | "Report Error" link in modals → creates admin notification |
 | F8 | FEATURE | Embed widgets for stores | Let stores embed tournament history on their sites |
-| P1 | FEATURE | Limitless TCG API deep integration | Beyond basic exploration in v0.23 |
+| P1 | FEATURE | ~~Limitless TCG API deep integration~~ | Moved to v0.24 — design doc complete |
 | P2 | FEATURE | Discord bot for result reporting | Could integrate with user accounts system |
 | P3 | FEATURE | Expand to other Texas regions | After multi-region foundation works |
 | P4 | FEATURE | One Piece TCG support | Multi-game expansion |
