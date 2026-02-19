@@ -269,34 +269,26 @@ observeEvent(input$submit_process_ocr, {
   # Track how many were parsed from OCR
   parsed_count <- nrow(combined)
 
-  # Ensure we have exactly total_players rows
-  # Create empty rows for any missing placements
-  if (nrow(combined) < total_players) {
-    # Create blank rows for missing placements
-    existing_placements <- combined$placement
-    for (p in seq_len(total_players)) {
-      if (!(p %in% existing_placements)) {
-        blank_row <- data.frame(
-          placement = p,
-          username = "",
-          member_number = "",
-          points = 0,
-          wins = 0,
-          losses = total_rounds,
-          ties = 0,
-          stringsAsFactors = FALSE
-        )
-        combined <- rbind(combined, blank_row)
-      }
+  # Enforce exactly total_players rows
+  if (nrow(combined) > total_players) {
+    # Truncate to declared count (keep top N after sort by placement)
+    combined <- combined[1:total_players, ]
+  } else if (nrow(combined) < total_players) {
+    # Pad with blank rows to reach total_players
+    for (p in (nrow(combined) + 1):total_players) {
+      blank_row <- data.frame(
+        placement = p,
+        username = "",
+        member_number = "",
+        points = 0,
+        wins = 0,
+        losses = total_rounds,
+        ties = 0,
+        stringsAsFactors = FALSE
+      )
+      combined <- rbind(combined, blank_row)
     }
-  } else if (nrow(combined) > total_players) {
-    # More players than declared - truncate to declared count
-    # (keep the top N by placement)
-    combined <- combined[combined$placement <= total_players, ]
   }
-
-  # Re-sort by placement after adding blank rows
-  combined <- combined[order(combined$placement), ]
 
   # Re-assign placements sequentially (1 to N)
   combined$placement <- seq_len(nrow(combined))
@@ -486,6 +478,79 @@ ordinal <- function(n) {
   return(paste0(n, suffix[(n %% 10) + 1]))
 }
 
+# Helper: sync current input values back into rv$submit_ocr_results
+# Called before mutations (delete row) so user edits survive re-render
+sync_submit_inputs <- function() {
+  results <- rv$submit_ocr_results
+  if (is.null(results) || nrow(results) == 0) return()
+
+  for (i in seq_len(nrow(results))) {
+    # Player name
+    player_val <- input[[paste0("submit_player_", i)]]
+    if (!is.null(player_val)) results$username[i] <- player_val
+
+    # Member number
+    member_val <- input[[paste0("submit_member_", i)]]
+    if (!is.null(member_val)) results$member_number[i] <- member_val
+
+    # Points
+    points_val <- input[[paste0("submit_points_", i)]]
+    if (!is.null(points_val) && !is.na(points_val)) results$points[i] <- as.integer(points_val)
+  }
+
+  rv$submit_ocr_results <- results
+}
+
+# Handle delete row in upload results review
+observeEvent(input$submit_delete_row, {
+  req(rv$submit_ocr_results)
+
+  row_idx <- as.integer(input$submit_delete_row)
+  results <- rv$submit_ocr_results
+  total_players <- rv$submit_total_players
+  total_rounds <- input$submit_rounds
+
+  if (is.null(row_idx) || row_idx < 1 || row_idx > nrow(results)) return()
+
+  # Sync current input values before mutation
+  sync_submit_inputs()
+  results <- rv$submit_ocr_results
+
+  # Remove the row
+  results <- results[-row_idx, ]
+
+  # Pad with blank row at bottom to maintain total_players count
+  if (nrow(results) < total_players) {
+    blank_row <- data.frame(
+      placement = nrow(results) + 1,
+      username = "",
+      member_number = "",
+      points = 0,
+      wins = 0,
+      losses = if (!is.null(total_rounds) && !is.na(total_rounds)) total_rounds else 4,
+      ties = 0,
+      deck_id = NA_integer_,
+      matched_player_id = NA_integer_,
+      match_status = "new",
+      matched_player_name = NA_character_,
+      stringsAsFactors = FALSE
+    )
+    results <- rbind(results, blank_row)
+  }
+
+  # Re-assign placements sequentially
+  results$placement <- seq_len(nrow(results))
+
+  # Update reactive value (triggers re-render)
+  rv$submit_ocr_results <- results
+
+  showNotification(
+    paste("Row removed. Players renumbered 1-", nrow(results), ".", sep = ""),
+    type = "message",
+    duration = 3
+  )
+})
+
 # Render results table using layout_columns
 output$submit_results_table <- renderUI({
   req(rv$submit_ocr_results)
@@ -531,8 +596,9 @@ output$submit_results_table <- renderUI({
   tagList(
     # Header row
     layout_columns(
-      col_widths = c(1, 4, 2, 2, 3),
+      col_widths = c(1, 1, 3, 2, 2, 3),
       class = "results-header-row",
+      div(""),
       div("#"),
       div("Player"),
       div("Member #"),
@@ -580,8 +646,18 @@ output$submit_results_table <- renderUI({
       )
 
       layout_columns(
-        col_widths = c(1, 4, 2, 2, 3),
+        col_widths = c(1, 1, 3, 2, 2, 3),
         class = "upload-result-row",
+        # Delete button
+        div(
+          class = "upload-result-delete",
+          htmltools::tags$button(
+            onclick = sprintf("Shiny.setInputValue('submit_delete_row', %d, {priority: 'event'})", i),
+            class = "btn btn-sm btn-outline-danger p-0 result-action-btn",
+            title = "Remove row",
+            shiny::icon("xmark")
+          )
+        ),
         # Placement + match status
         div(
           class = "upload-result-placement",

@@ -5109,6 +5109,23 @@ a:hover, .nav-link:hover {
   border-bottom: none;
 }
 
+/* Upload result delete button */
+.upload-result-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.45rem;
+}
+
+.upload-result-delete .result-action-btn {
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+
+.upload-result-row:hover .upload-result-delete .result-action-btn {
+  opacity: 1;
+}
+
 .upload-result-row .form-group {
   margin-bottom: 0;
 }
