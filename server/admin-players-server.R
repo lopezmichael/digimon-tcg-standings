@@ -308,14 +308,36 @@ output$merge_preview <- renderUI({
     return(div(class = "alert alert-danger", "Source and target players cannot be the same."))
   }
 
+  src <- as.integer(source_id)
+  tgt <- as.integer(target_id)
+
   source_count <- dbGetQuery(rv$db_con, "
     SELECT COUNT(*) as cnt FROM results WHERE player_id = ?
-  ", params = list(as.integer(source_id)))$cnt
+  ", params = list(src))$cnt
 
-  div(
-    class = "alert alert-warning",
-    bsicons::bs_icon("exclamation-triangle"),
-    sprintf(" %d result(s) will be moved to the target player.", source_count)
+  match_count <- dbGetQuery(rv$db_con, "
+    SELECT COUNT(*) as cnt FROM matches WHERE player_id = ? OR opponent_id = ?
+  ", params = list(src, src))$cnt
+
+  conflict_count <- dbGetQuery(rv$db_con, "
+    SELECT COUNT(*) as cnt
+    FROM results r1 INNER JOIN results r2 ON r1.tournament_id = r2.tournament_id
+    WHERE r1.player_id = ? AND r2.player_id = ?
+  ", params = list(src, tgt))$cnt
+
+  tagList(
+    div(
+      class = "alert alert-warning",
+      bsicons::bs_icon("exclamation-triangle"),
+      sprintf(" %d result(s) and %d match record(s) will be moved to the target player.",
+              source_count, match_count)
+    ),
+    if (conflict_count > 0) div(
+      class = "alert alert-danger",
+      bsicons::bs_icon("x-circle"),
+      sprintf(" %d conflicting result(s) found (both players in same tournament). Source results will be dropped.",
+              conflict_count)
+    )
   )
 })
 
@@ -337,10 +359,51 @@ observeEvent(input$confirm_merge_players, {
   }
 
   tryCatch({
-    # Move all results from source to target
+    # Check for conflicting results (both players in same tournament)
+    conflicts <- dbGetQuery(rv$db_con, "
+      SELECT r1.tournament_id
+      FROM results r1
+      INNER JOIN results r2 ON r1.tournament_id = r2.tournament_id
+      WHERE r1.player_id = ? AND r2.player_id = ?
+    ", params = list(source_id, target_id))
+
+    if (nrow(conflicts) > 0) {
+      # Delete source results that conflict (target's result takes priority)
+      dbExecute(rv$db_con, "
+        DELETE FROM results
+        WHERE player_id = ? AND tournament_id IN (
+          SELECT r2.tournament_id FROM results r2 WHERE r2.player_id = ?
+        )
+      ", params = list(source_id, target_id))
+      showNotification(
+        sprintf("Note: %d conflicting result(s) removed from source player", nrow(conflicts)),
+        type = "warning", duration = 5
+      )
+    }
+
+    # Move remaining results from source to target
     dbExecute(rv$db_con, "
       UPDATE results SET player_id = ? WHERE player_id = ?
     ", params = list(target_id, source_id))
+
+    # Transfer matches (as player)
+    dbExecute(rv$db_con, "
+      UPDATE matches SET player_id = ? WHERE player_id = ?
+    ", params = list(target_id, source_id))
+
+    # Transfer matches (as opponent)
+    dbExecute(rv$db_con, "
+      UPDATE matches SET opponent_id = ? WHERE opponent_id = ?
+    ", params = list(target_id, source_id))
+
+    # Copy limitless_username from source to target (if target doesn't have one)
+    dbExecute(rv$db_con, "
+      UPDATE players
+      SET limitless_username = (
+        SELECT limitless_username FROM players WHERE player_id = ?
+      )
+      WHERE player_id = ? AND (limitless_username IS NULL OR limitless_username = '')
+    ", params = list(source_id, target_id))
 
     # Delete source player
     dbExecute(rv$db_con, "DELETE FROM players WHERE player_id = ?",
