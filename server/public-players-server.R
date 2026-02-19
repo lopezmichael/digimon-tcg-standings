@@ -217,12 +217,9 @@ observeEvent(input$player_clicked, {
   rv$selected_player_id <- input$player_clicked
 })
 
-# Handle Overview player click - switch to Players tab and open modal
+# Handle Overview player click - open modal on overview
 observeEvent(input$overview_player_clicked, {
   rv$selected_player_id <- input$overview_player_clicked
-  nav_select("main_content", "players")
-  rv$current_nav <- "players"
-  session$sendCustomMessage("updateSidebarNav", "nav_players")
 })
 
 # Render player detail modal
@@ -429,3 +426,4 @@ output$player_detail_modal <- renderUI({
     }
   ))
 })
+outputOptions(output, "player_detail_modal", suspendWhenHidden = FALSE)

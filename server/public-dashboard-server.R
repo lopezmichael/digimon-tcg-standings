@@ -407,75 +407,6 @@ output$recent_tournaments <- renderReactable({
   )
 }) |> bindCache(rv$current_scene, rv$data_refresh)
 
-# Top players (community section - scene-only filtering)
-# Shows: Player, Events, Event Wins, Top 3, Rating (Elo), Achievement
-output$top_players <- renderReactable({
-  rv$data_refresh  # Trigger refresh on admin changes
-  if (is.null(rv$db_con) || !DBI::dbIsValid(rv$db_con)) return(NULL)
-
-  filters <- build_community_filters("t", "s")
-
-  # Query players with basic stats (parameterized)
-  result <- safe_query(rv$db_con, paste("
-    SELECT p.player_id,
-           p.display_name as Player,
-           COUNT(DISTINCT r.tournament_id) as Events,
-           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as event_wins,
-           COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as top3_placements
-    FROM players p
-    JOIN results r ON p.player_id = r.player_id
-    JOIN tournaments t ON r.tournament_id = t.tournament_id
-    JOIN stores s ON t.store_id = s.store_id
-    WHERE 1=1", filters$sql, "
-    GROUP BY p.player_id, p.display_name
-    HAVING COUNT(DISTINCT r.tournament_id) > 0
-  "), params = filters$params, default = data.frame())
-
-  if (nrow(result) == 0) {
-    return(reactable(data.frame(Message = "No player data yet"), compact = TRUE))
-  }
-
-  # Join with competitive ratings
-  comp_ratings <- player_competitive_ratings()
-  result <- merge(result, comp_ratings, by = "player_id", all.x = TRUE)
-  result$competitive_rating[is.na(result$competitive_rating)] <- 1500
-
-  # Join with achievement scores
-  ach_scores <- player_achievement_scores()
-  result <- merge(result, ach_scores, by = "player_id", all.x = TRUE)
-  result$achievement_score[is.na(result$achievement_score)] <- 0
-
-  # Sort by competitive rating
-  result <- result[order(-result$competitive_rating), ]
-  result <- head(result, 10)
-
-  reactable(result, compact = TRUE, striped = TRUE,
-    rowStyle = list(cursor = "pointer"),
-    onClick = JS("function(rowInfo, column) {
-      if (rowInfo) {
-        Shiny.setInputValue('overview_player_clicked', rowInfo.row.player_id, {priority: 'event'})
-      }
-    }"),
-    columns = list(
-      player_id = colDef(show = FALSE),
-      Player = colDef(minWidth = 120),
-      Events = colDef(minWidth = 60, align = "center"),
-      event_wins = colDef(name = "Wins", minWidth = 60, align = "center"),
-      top3_placements = colDef(name = "Top 3", minWidth = 60, align = "center"),
-      competitive_rating = colDef(
-        name = "Rating",
-        minWidth = 70,
-        align = "center"
-      ),
-      achievement_score = colDef(
-        name = "Achv",
-        minWidth = 60,
-        align = "center"
-      )
-    )
-  )
-}) |> bindCache(rv$current_scene, rv$data_refresh)
-
 # Meta Share Timeline - curved area chart showing deck popularity over time
 # Shows top 5 or all decks based on toggle
 
@@ -516,10 +447,6 @@ output$meta_share_timeline <- renderHighchart({
     result$week_start <- as.Date(as.character(result$week_start))
   }
 
-  # Calculate week totals for percentage
-  week_totals <- aggregate(entries ~ week_start, data = result, FUN = sum)
-  names(week_totals)[2] <- "week_total"
-
   # Calculate overall share and sort decks by color then popularity
   overall <- aggregate(entries ~ archetype_name + primary_color, data = result, FUN = sum)
   overall$overall_share <- overall$entries / sum(overall$entries) * 100
@@ -532,10 +459,6 @@ output$meta_share_timeline <- renderHighchart({
 
   # Show all decks (sorted by color for visual grouping in legend)
   selected_decks <- overall$archetype_name
-
-  # Merge with week totals
-  result <- merge(result, week_totals, by = "week_start")
-  result$share <- round(result$entries / result$week_total * 100, 1)
 
   # Get unique weeks
   weeks <- sort(unique(result$week_start))
@@ -558,7 +481,7 @@ output$meta_share_timeline <- renderHighchart({
     # Build data points for all weeks (fill missing with 0 for continuous area)
     data_points <- sapply(weeks, function(w) {
       row <- deck_data[deck_data$week_start == w, ]
-      if (nrow(row) > 0) round(row$share[1], 1) else 0
+      if (nrow(row) > 0) row$entries[1] else 0
     })
 
     list(
@@ -568,15 +491,15 @@ output$meta_share_timeline <- renderHighchart({
     )
   })
 
-  # Custom tooltip formatter: filter 0% values and sort by value descending
+  # Custom tooltip formatter: filter 0% values and sort by percentage descending
   tooltip_formatter <- JS("
     function() {
-      var points = this.points.filter(function(p) { return p.y > 0; });
-      points.sort(function(a, b) { return b.y - a.y; });
+      var points = this.points.filter(function(p) { return p.percentage > 0; });
+      points.sort(function(a, b) { return b.percentage - a.percentage; });
       var html = '<b>' + this.x + '</b><br/>';
       points.forEach(function(p) {
         html += '<span style=\"color:' + p.series.color + '\">\u25CF</span> ' +
-                p.series.name + ': <b>' + p.y + '%</b><br/>';
+                p.series.name + ': <b>' + Highcharts.numberFormat(p.percentage, 1) + '%</b><br/>';
       });
       if (points.length === 0) {
         html += '<em>No data for this week</em>';
@@ -590,7 +513,7 @@ output$meta_share_timeline <- renderHighchart({
     hc_chart(type = "areaspline") |>
     hc_plotOptions(
       areaspline = list(
-        stacking = "normal",
+        stacking = "percent",
         lineWidth = 1.5,
         fillOpacity = 0.5,
         marker = list(
@@ -615,8 +538,7 @@ output$meta_share_timeline <- renderHighchart({
     hc_yAxis(
       title = list(text = "Meta Share"),
       labels = list(format = "{value}%"),
-      min = 0,
-      max = 100
+      min = 0
     ) |>
     hc_tooltip(
       shared = TRUE,
@@ -714,13 +636,10 @@ output$top_decks_with_images <- renderUI({
   div(class = "top-decks-grid", deck_items)
 })
 
-# Top Decks click -> Deck Meta tab + deck modal
+# Top Decks click -> open deck modal on overview
 observeEvent(input$overview_deck_clicked, {
   req(input$overview_deck_clicked)
   rv$selected_archetype_id <- input$overview_deck_clicked
-  nav_select("main_content", "meta")
-  rv$current_nav <- "meta"
-  session$sendCustomMessage("updateSidebarNav", "nav_meta")
 })
 
 # ---------------------------------------------------------------------------
@@ -1093,22 +1012,21 @@ output$player_growth_chart <- renderHighchart({
   chart_mode <- if (!is.null(input$dark_mode) && input$dark_mode == "dark") "dark" else "light"
   filters <- build_community_filters("t", "s")
 
-  # Get player participation by month with their first ever tournament (parameterized)
-  # Using strftime instead of DATE_TRUNC to avoid ICU extension on Windows
+  # Get player participation by week with their first ever tournament (parameterized)
   result <- safe_query(rv$db_con, paste("
     WITH player_first AS (
       SELECT r.player_id,
              MIN(t.event_date) as first_date,
-             strftime(MIN(t.event_date), '%Y-%m') as first_month
+             date_trunc('week', MIN(t.event_date)) as first_week
       FROM results r
       JOIN tournaments t ON r.tournament_id = t.tournament_id
       GROUP BY r.player_id
     ),
-    player_monthly AS (
+    player_weekly AS (
       SELECT DISTINCT
-        strftime(t.event_date, '%Y-%m') as month,
+        date_trunc('week', t.event_date) as week,
         r.player_id,
-        pf.first_month,
+        pf.first_week,
         pf.first_date
       FROM results r
       JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -1118,24 +1036,24 @@ output$player_growth_chart <- renderHighchart({
     ),
     player_cumulative AS (
       SELECT
-        pm.month,
-        pm.player_id,
-        pm.first_month,
+        pw.week,
+        pw.player_id,
+        pw.first_week,
         (SELECT COUNT(DISTINCT t2.tournament_id)
          FROM results r2
          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
-         WHERE r2.player_id = pm.player_id
-           AND strftime(t2.event_date, '%Y-%m') < pm.month) as prior_events
-      FROM player_monthly pm
+         WHERE r2.player_id = pw.player_id
+           AND date_trunc('week', t2.event_date) < pw.week) as prior_events
+      FROM player_weekly pw
     )
     SELECT
-      month,
-      COUNT(CASE WHEN first_month = month THEN 1 END) as new_players,
-      COUNT(CASE WHEN first_month < month AND prior_events < 3 THEN 1 END) as returning_players,
+      week,
+      COUNT(CASE WHEN first_week = week THEN 1 END) as new_players,
+      COUNT(CASE WHEN first_week < week AND prior_events < 3 THEN 1 END) as returning_players,
       COUNT(CASE WHEN prior_events >= 3 THEN 1 END) as regulars
     FROM player_cumulative
-    GROUP BY month
-    ORDER BY month
+    GROUP BY week
+    ORDER BY week
   "), params = filters$params, default = data.frame())
 
   if (nrow(result) == 0) {
@@ -1146,14 +1064,16 @@ output$player_growth_chart <- renderHighchart({
     )
   }
 
-  # Convert month string (YYYY-MM) to date (first of month)
-  result$month <- as.Date(paste0(result$month, "-01"))
+  # Convert week to Date if needed (date_trunc returns Date directly in DuckDB)
+  if (!inherits(result$week, "Date")) {
+    result$week <- as.Date(as.character(result$week))
+  }
 
   highchart() |>
     hc_chart(type = "column") |>
     hc_title(text = NULL) |>
     hc_xAxis(
-      categories = format(result$month, "%b %Y"),
+      categories = format(result$week, "%b %d"),
       title = list(text = NULL)
     ) |>
     hc_yAxis(
@@ -1271,11 +1191,8 @@ output$rising_stars_cards <- renderUI({
   )
 }) |> bindCache(rv$current_scene, rv$data_refresh)
 
-# Rising Stars click -> Players tab + player modal
+# Rising Stars click -> open player modal on overview
 observeEvent(input$overview_rising_star_clicked, {
   req(input$overview_rising_star_clicked)
   rv$selected_player_id <- input$overview_rising_star_clicked
-  nav_select("main_content", "players")
-  rv$current_nav <- "players"
-  session$sendCustomMessage("updateSidebarNav", "nav_players")
 })

@@ -31,7 +31,7 @@ dashboard_ui <- tagList(
                         "All Events" = "",
                         "Event Types" = EVENT_TYPES
                       ),
-                      selected = "locals",
+                      selected = "",
                       width = "120px",
                       selectize = FALSE)
         ),
@@ -133,7 +133,27 @@ dashboard_ui <- tagList(
   # Spacer
   div(class = "mb-3"),
 
-  # Scene Health row: Meta Diversity + Conversion + Color Distribution
+  # Rising Stars section
+  card(
+    card_header(
+      class = "d-flex justify-content-between align-items-center",
+      div(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("graph-up-arrow", class = "text-success"),
+        "Rising Stars"
+      ),
+      tags$span(class = "text-muted small", "Top finishes (last 30 days)")
+    ),
+    card_body(
+      class = "rising-stars-section",
+      uiOutput("rising_stars_cards")
+    )
+  ),
+
+  # Spacer
+  div(class = "mb-3"),
+
+  # Meta Diversity + Recent Tournaments row
   layout_columns(
     col_widths = breakpoints(
       sm = c(12, 12),
@@ -163,30 +183,45 @@ dashboard_ui <- tagList(
         )
       )
     ),
-    # Charts column: Conversion + Color Distribution (2-column)
-    layout_columns(
-      col_widths = c(6, 6),
-      card(
-        card_header(
-          class = "d-flex align-items-center gap-2",
-          bsicons::bs_icon("bullseye", class = "text-warning"),
-          "Top 3 Conversion"
-        ),
-        card_body(
-          class = "p-0",
-          highchartOutput("conversion_rate_chart", height = "280px")
-        )
+    # Recent Tournaments table
+    card(
+      card_header(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("calendar-event", class = "text-primary"),
+        "Recent Tournaments"
       ),
-      card(
-        card_header(
-          class = "d-flex align-items-center gap-2",
-          bsicons::bs_icon("palette", class = "text-info"),
-          "Color Distribution"
-        ),
-        card_body(
-          class = "p-0",
-          highchartOutput("color_dist_chart", height = "280px")
-        )
+      card_body(
+        reactableOutput("recent_tournaments")
+      )
+    )
+  ),
+
+  # Spacer
+  div(class = "mb-3"),
+
+  # Top 3 Conversion + Color Distribution row
+  layout_columns(
+    col_widths = c(6, 6),
+    card(
+      card_header(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("bullseye", class = "text-warning"),
+        "Top 3 Conversion"
+      ),
+      card_body(
+        class = "p-0",
+        highchartOutput("conversion_rate_chart", height = "280px")
+      )
+    ),
+    card(
+      card_header(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("palette", class = "text-info"),
+        "Color Distribution"
+      ),
+      card_body(
+        class = "p-0",
+        highchartOutput("color_dist_chart", height = "280px")
       )
     )
   ),
@@ -207,34 +242,10 @@ dashboard_ui <- tagList(
     )
   ),
 
-  # Section divider
-  div(class = "dashboard-section-divider",
-    div(class = "divider-line"),
-    span(class = "divider-label", "Community"),
-    div(class = "divider-line")
-  ),
-
-  # Rising Stars section
-  card(
-    card_header(
-      class = "d-flex justify-content-between align-items-center",
-      div(
-        class = "d-flex align-items-center gap-2",
-        bsicons::bs_icon("graph-up-arrow", class = "text-success"),
-        "Rising Stars"
-      ),
-      tags$span(class = "text-muted small", "Top finishes (last 30 days)")
-    ),
-    card_body(
-      class = "rising-stars-section",
-      uiOutput("rising_stars_cards")
-    )
-  ),
-
   # Spacer
   div(class = "mb-3"),
 
-  # Player Attendance chart (community - scene only)
+  # Player Attendance chart
   card(
     card_header(
       class = "d-flex align-items-center gap-2",
@@ -250,7 +261,7 @@ dashboard_ui <- tagList(
   # Spacer
   div(class = "mb-3"),
 
-  # Player Growth & Retention (community - scene only)
+  # Player Growth & Retention
   card(
     card_header(
       class = "d-flex align-items-center gap-2",
@@ -260,39 +271,6 @@ dashboard_ui <- tagList(
     card_body(
       class = "p-2",
       highchartOutput("player_growth_chart", height = "200px")
-    )
-  ),
-
-  # Spacer
-  div(class = "mb-3"),
-
-  # Tables row (community - scene only)
-  layout_columns(
-    col_widths = c(6, 6),
-    card(
-      card_header(
-        class = "d-flex align-items-center gap-2",
-        bsicons::bs_icon("calendar-event", class = "text-primary"),
-        "Recent Tournaments"
-      ),
-      card_body(
-        reactableOutput("recent_tournaments")
-      )
-    ),
-    card(
-      card_header(
-        class = "d-flex align-items-center gap-2",
-        bsicons::bs_icon("person-badge", class = "text-success"),
-        "Top Players",
-        tags$span(
-          class = "rating-info-icon",
-          title = "Rating: Elo-style skill rating (1200-2000+) based on tournament placements and opponent strength. Achv: Achievement score based on placements, store diversity, and deck variety.",
-          bsicons::bs_icon("info-circle", size = "0.9rem")
-        )
-      ),
-      card_body(
-        reactableOutput("top_players")
-      )
     )
   )
 )

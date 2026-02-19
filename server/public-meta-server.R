@@ -344,3 +344,4 @@ output$deck_detail_modal <- renderUI({
     }
   ))
 })
+outputOptions(output, "deck_detail_modal", suspendWhenHidden = FALSE)

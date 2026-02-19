@@ -65,7 +65,11 @@ output$tournament_history <- renderReactable({
            "evo_cup" = "Evo Cup",
            "store_championship" = "Store Champ",
            "regional" = "Regional",
+           "regionals" = "Regionals",
            "online" = "Online",
+           "regulation_battle" = "Reg Battle",
+           "release_event" = "Release Event",
+           "other" = "Other",
            et)
   })
 
@@ -101,12 +105,9 @@ observeEvent(input$tournament_clicked, {
   rv$selected_tournament_id <- input$tournament_clicked
 })
 
-# Handle Overview tournament click - switch to Tournaments tab and open modal
+# Handle Overview tournament click - open modal on overview
 observeEvent(input$overview_tournament_clicked, {
   rv$selected_tournament_id <- input$overview_tournament_clicked
-  nav_select("main_content", "tournaments")
-  rv$current_nav <- "tournaments"
-  session$sendCustomMessage("updateSidebarNav", "nav_tournaments")
 })
 
 # Render tournament detail modal
@@ -247,3 +248,4 @@ output$tournament_detail_modal <- renderUI({
     }
   ))
 })
+outputOptions(output, "tournament_detail_modal", suspendWhenHidden = FALSE)
