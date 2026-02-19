@@ -2,6 +2,29 @@
 # Admin: Tournament Entry & Results Server Logic
 # =============================================================================
 
+# Grid data for bulk entry
+rv$admin_grid_data <- NULL
+rv$admin_record_format <- "points"
+rv$admin_player_matches <- list()
+rv$admin_deck_request_row <- NULL
+
+# Initialize blank grid data frame
+init_admin_grid <- function(player_count) {
+  data.frame(
+    placement = seq_len(player_count),
+    player_name = rep("", player_count),
+    points = rep(0L, player_count),
+    wins = rep(0L, player_count),
+    losses = rep(0L, player_count),
+    ties = rep(0L, player_count),
+    deck_id = rep(NA_integer_, player_count),
+    match_status = rep("", player_count),
+    matched_player_id = rep(NA_integer_, player_count),
+    matched_member_number = rep(NA_character_, player_count),
+    stringsAsFactors = FALSE
+  )
+}
+
 # Wizard step management
 observe({
   if (rv$wizard_step == 1) {
@@ -132,6 +155,9 @@ observeEvent(input$create_tournament, {
 
     showNotification("Tournament created!", type = "message")
     rv$wizard_step <- 2
+    rv$admin_record_format <- input$admin_record_format %||% "points"
+    rv$admin_grid_data <- init_admin_grid(player_count)
+    rv$admin_player_matches <- list()
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -181,6 +207,11 @@ observeEvent(input$clear_results_only, {
       params = list(rv$active_tournament_id))
 
     rv$current_results <- data.frame()
+    # Re-initialize grid with blank rows
+    player_count <- dbGetQuery(rv$db_con, "SELECT player_count FROM tournaments WHERE tournament_id = ?",
+                               params = list(rv$active_tournament_id))$player_count
+    rv$admin_grid_data <- init_admin_grid(player_count)
+    rv$admin_player_matches <- list()
     rv$results_refresh <- (rv$results_refresh %||% 0) + 1
 
     # Recalculate ratings cache
@@ -213,6 +244,8 @@ observeEvent(input$delete_tournament_confirm, {
     # Reset state
     rv$active_tournament_id <- NULL
     rv$current_results <- data.frame()
+    rv$admin_grid_data <- NULL
+    rv$admin_player_matches <- list()
     rv$wizard_step <- 1
 
     shinyjs::runjs("$('#start_over_modal').modal('hide');")
@@ -291,6 +324,9 @@ observeEvent(input$create_anyway, {
 
     showNotification("Tournament created!", type = "message")
     rv$wizard_step <- 2
+    rv$admin_record_format <- input$admin_record_format %||% "points"
+    rv$admin_grid_data <- init_admin_grid(player_count)
+    rv$admin_player_matches <- list()
 
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
@@ -818,6 +854,8 @@ observeEvent(input$finish_tournament, {
   rv$active_tournament_id <- NULL
   rv$wizard_step <- 1
   rv$current_results <- data.frame()
+  rv$admin_grid_data <- NULL
+  rv$admin_player_matches <- list()
 
   # Clear result entry forms
   updateSelectizeInput(session, "result_player", selected = "")
