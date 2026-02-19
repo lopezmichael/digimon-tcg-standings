@@ -12,6 +12,16 @@ observe({
     shinyjs::hide("wizard_step1")
     shinyjs::show("wizard_step2")
     shinyjs::runjs("$('#step2_indicator').addClass('active'); $('#step1_indicator').removeClass('active').addClass('completed');")
+
+    # Hide deck selector for release events (sealed packs, no archetype)
+    is_release <- !is.null(input$tournament_type) && input$tournament_type == "release_event"
+    if (is_release) {
+      shinyjs::hide("deck_selection_section")
+      shinyjs::show("release_event_deck_notice")
+    } else {
+      shinyjs::show("deck_selection_section")
+      shinyjs::hide("release_event_deck_notice")
+    }
   }
 })
 
@@ -456,15 +466,26 @@ add_result_logic <- function() {
     return()
   }
 
-  if (is.null(archetype_id) || nchar(trimws(archetype_id)) == 0) {
-    showNotification("Please select a deck archetype", type = "error")
-    return()
-  }
+  # For release events, auto-assign UNKNOWN archetype (sealed packs, no deck archetype)
+  is_release <- !is.null(input$tournament_type) && input$tournament_type == "release_event"
+  if (is_release) {
+    unknown_id <- dbGetQuery(rv$db_con, "SELECT archetype_id FROM deck_archetypes WHERE archetype_name = 'UNKNOWN' LIMIT 1")
+    if (nrow(unknown_id) == 0) {
+      showNotification("UNKNOWN archetype not found in database", type = "error")
+      return()
+    }
+    archetype_id <- unknown_id$archetype_id[1]
+  } else {
+    if (is.null(archetype_id) || nchar(trimws(archetype_id)) == 0) {
+      showNotification("Please select a deck archetype", type = "error")
+      return()
+    }
 
-  archetype_id <- as.integer(archetype_id)
-  if (is.na(archetype_id)) {
-    showNotification("Invalid deck selection", type = "error")
-    return()
+    archetype_id <- as.integer(archetype_id)
+    if (is.na(archetype_id)) {
+      showNotification("Invalid deck selection", type = "error")
+      return()
+    }
   }
 
   if (is.na(placement) || placement < 1) {

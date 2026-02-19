@@ -105,30 +105,43 @@ admin_results_ui <- tagList(
 
             hr(),
 
-            # Deck selection with quick add
-            selectizeInput("result_deck", "Deck Archetype",
-                           choices = NULL,
-                           options = list(create = FALSE, placeholder = "Select a deck...")),
+            # Deck selection with quick add (hidden for release events)
+            div(
+              id = "deck_selection_section",
+              selectizeInput("result_deck", "Deck Archetype",
+                             choices = NULL,
+                             options = list(create = FALSE, placeholder = "Select a deck...")),
+              shinyjs::hidden(
+                div(
+                  id = "quick_add_deck_form",
+                  class = "card-search-results-container p-3 mb-3",
+                  tags$label(class = "form-label small text-muted",
+                             bsicons::bs_icon("collection"), " Add New Deck"),
+                  textInput("quick_deck_name", NULL, placeholder = "e.g., New Archetype"),
+                  selectInput("quick_deck_color", "Primary Color",
+                              choices = c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White")),
+                  div(class = "small text-muted mb-2", "(Complete details in Manage Decks later)"),
+                  div(
+                    class = "d-flex gap-2",
+                    actionButton("quick_add_deck_submit", "Add Deck",
+                                 class = "btn-sm btn-quick-add", icon = icon("plus")),
+                    actionButton("quick_add_deck_cancel", "Cancel",
+                                 class = "btn-sm btn-outline-secondary")
+                  )
+                )
+              ),
+              actionLink("show_quick_add_deck", "+ New Deck", class = "small text-primary")
+            ),
+
+            # Release event notice (shown when deck selector is hidden)
             shinyjs::hidden(
               div(
-                id = "quick_add_deck_form",
-                class = "card-search-results-container p-3 mb-3",
-                tags$label(class = "form-label small text-muted",
-                           bsicons::bs_icon("collection"), " Add New Deck"),
-                textInput("quick_deck_name", NULL, placeholder = "e.g., New Archetype"),
-                selectInput("quick_deck_color", "Primary Color",
-                            choices = c("Red", "Blue", "Yellow", "Green", "Purple", "Black", "White")),
-                div(class = "small text-muted mb-2", "(Complete details in Manage Decks later)"),
-                div(
-                  class = "d-flex gap-2",
-                  actionButton("quick_add_deck_submit", "Add Deck",
-                               class = "btn-sm btn-quick-add", icon = icon("plus")),
-                  actionButton("quick_add_deck_cancel", "Cancel",
-                               class = "btn-sm btn-outline-secondary")
-                )
+                id = "release_event_deck_notice",
+                class = "alert alert-info py-2 px-3 mb-0",
+                bsicons::bs_icon("info-circle"),
+                " Release events use sealed packs — deck archetype set to UNKNOWN automatically."
               )
             ),
-            actionLink("show_quick_add_deck", "+ New Deck", class = "small text-primary"),
 
             hr(),
 
