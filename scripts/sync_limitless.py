@@ -15,6 +15,7 @@ Usage:
     python scripts/sync_limitless.py --organizer 452 --since 2025-10-01 --local
     python scripts/sync_limitless.py --all-tier1 --since 2025-10-01
     python scripts/sync_limitless.py --all-tier1 --since 2025-10-01 --limit 5
+    python scripts/sync_limitless.py --repair --local  (re-fetch missing standings)
 
 Arguments:
     --organizer ID     Limitless organizer ID to sync
@@ -23,6 +24,7 @@ Arguments:
     --dry-run          Show what would be synced without writing to DB
     --local            Sync to local DuckDB (data/local.duckdb) instead of MotherDuck
     --limit N          Max tournaments to sync (useful for testing)
+    --repair           Re-fetch standings/pairings for tournaments missing results
 
 Prerequisites:
     pip install duckdb python-dotenv requests
@@ -283,6 +285,10 @@ def resolve_player(conn, limitless_username, display_name, player_cache):
 # Deck Mapping
 # =============================================================================
 
+# UNKNOWN archetype ID - used for "other" deck type and unmapped decks
+UNKNOWN_ARCHETYPE_ID = 50
+
+
 def resolve_deck(conn, deck_info, deck_map_cache):
     """Map a Limitless deck to a local archetype, creating deck_request if needed.
 
@@ -303,9 +309,9 @@ def resolve_deck(conn, deck_info, deck_map_cache):
     if not deck_id:
         return None, None
 
-    # Skip "other" deck — don't create deck requests for it
+    # Map "other" deck to UNKNOWN archetype (no deck request needed)
     if deck_id == "other":
-        return None, None
+        return UNKNOWN_ARCHETYPE_ID, None
 
     # Check cache
     if deck_id in deck_map_cache:
@@ -812,6 +818,292 @@ def sync_organizer(conn, organizer_id, since_date, dry_run=False, limit=None):
 
 
 # =============================================================================
+# Repair Mode
+# =============================================================================
+
+def repair_tournament(conn, tournament_id, limitless_id):
+    """Re-fetch standings and pairings for a tournament missing results.
+
+    Args:
+        conn: DuckDB connection
+        tournament_id: Local tournament ID
+        limitless_id: Limitless tournament ID
+
+    Returns:
+        Dict with repair stats
+    """
+    print(f"\n  --- Repairing tournament_id={tournament_id} (limitless: {limitless_id}) ---")
+
+    player_cache = {}
+    deck_map_cache = {}
+
+    # Pre-load player cache
+    existing_players = conn.execute(
+        "SELECT limitless_username, player_id FROM players WHERE limitless_username IS NOT NULL"
+    ).fetchall()
+    for row in existing_players:
+        player_cache[row[0]] = row[1]
+
+    # Pre-load deck map cache
+    existing_maps = conn.execute(
+        "SELECT limitless_deck_id, archetype_id FROM limitless_deck_map"
+    ).fetchall()
+    for row in existing_maps:
+        deck_map_cache[row[0]] = row[1]
+
+    results_inserted = 0
+    players_created = 0
+    deck_requests_created = 0
+    matches_inserted = 0
+    players_before = len(player_cache)
+
+    # Fetch and process standings
+    print("      Fetching standings...", end=" ", flush=True)
+    standings = fetch_tournament_standings(limitless_id)
+    print(f"got {len(standings)}")
+
+    if len(standings) == 0:
+        print("      No standings returned (still rate limited?)")
+        return {"results": 0, "matches": 0, "error": "No standings"}
+
+    for standing in standings:
+        limitless_username = standing.get("player", "")
+        display_name = standing.get("name", limitless_username)
+        placement = standing.get("placing")
+        record = standing.get("record", {})
+        wins = record.get("wins", 0)
+        losses = record.get("losses", 0)
+        ties = record.get("ties", 0)
+        deck_info = standing.get("deck")
+        drop_info = standing.get("drop")
+
+        if not limitless_username:
+            continue
+
+        # Resolve player
+        player_id = resolve_player(conn, limitless_username, display_name, player_cache)
+
+        # Resolve deck
+        archetype_id, pending_request_id = resolve_deck(conn, deck_info, deck_map_cache)
+        if pending_request_id:
+            deck_requests_created += 1
+
+        # Build notes
+        notes = None
+        if drop_info:
+            notes = f"Dropped at round {drop_info}" if isinstance(drop_info, int) else f"Dropped: {drop_info}"
+
+        # Check if result already exists
+        existing = conn.execute(
+            "SELECT result_id FROM results WHERE tournament_id = ? AND player_id = ?",
+            [tournament_id, player_id]
+        ).fetchone()
+
+        if existing:
+            continue  # Already have this result
+
+        # Insert result
+        next_result_id = conn.execute(
+            "SELECT COALESCE(MAX(result_id), 0) + 1 FROM results"
+        ).fetchone()[0]
+
+        try:
+            conn.execute("""
+                INSERT INTO results
+                    (result_id, tournament_id, player_id, archetype_id, pending_deck_request_id,
+                     placement, wins, losses, ties, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """, [
+                next_result_id,
+                tournament_id,
+                player_id,
+                archetype_id,
+                pending_request_id,
+                placement,
+                wins,
+                losses,
+                ties,
+                notes,
+            ])
+            results_inserted += 1
+        except Exception as e:
+            if "unique" not in str(e).lower() and "duplicate" not in str(e).lower():
+                print(f"      Error inserting result for {limitless_username}: {e}")
+
+    players_created = len(player_cache) - players_before
+    print(f"      Results: {results_inserted} inserted, {players_created} new players, {deck_requests_created} deck requests")
+
+    # Fetch and process pairings
+    print("      Fetching pairings...", end=" ", flush=True)
+    pairings = fetch_tournament_pairings(limitless_id)
+    print(f"got {len(pairings)}")
+
+    for pairing in pairings:
+        round_number = pairing.get("round")
+        player1_username = pairing.get("player1", "")
+        player2_username = pairing.get("player2", "")
+        winner = str(pairing.get("winner", ""))
+
+        if not player2_username:
+            continue
+
+        if player1_username not in player_cache or player2_username not in player_cache:
+            continue
+
+        player1_id = player_cache[player1_username]
+        player2_id = player_cache[player2_username]
+
+        # Check if match already exists
+        existing = conn.execute(
+            "SELECT match_id FROM matches WHERE tournament_id = ? AND round_number = ? AND player_id = ? AND opponent_id = ?",
+            [tournament_id, round_number, player1_id, player2_id]
+        ).fetchone()
+
+        if existing:
+            continue
+
+        # Derive match points
+        if winner == player1_username:
+            p1_points, p2_points = 3, 0
+        elif winner == player2_username:
+            p1_points, p2_points = 0, 3
+        elif winner == "0":
+            p1_points, p2_points = 1, 1
+        elif winner == "-1":
+            p1_points, p2_points = 0, 0
+        else:
+            p1_points, p2_points = 1, 1
+
+        next_match_id = conn.execute(
+            "SELECT COALESCE(MAX(match_id), 0) + 1 FROM matches"
+        ).fetchone()[0]
+
+        try:
+            conn.execute("""
+                INSERT INTO matches
+                    (match_id, tournament_id, round_number, player_id, opponent_id,
+                     games_won, games_lost, games_tied, match_points, submitted_at)
+                VALUES (?, ?, ?, ?, ?, 0, 0, 0, ?, CURRENT_TIMESTAMP)
+            """, [next_match_id, tournament_id, round_number, player1_id, player2_id, p1_points])
+
+            conn.execute("""
+                INSERT INTO matches
+                    (match_id, tournament_id, round_number, player_id, opponent_id,
+                     games_won, games_lost, games_tied, match_points, submitted_at)
+                VALUES (?, ?, ?, ?, ?, 0, 0, 0, ?, CURRENT_TIMESTAMP)
+            """, [next_match_id + 1, tournament_id, round_number, player2_id, player1_id, p2_points])
+
+            matches_inserted += 2
+        except Exception as e:
+            if "unique" not in str(e).lower() and "duplicate" not in str(e).lower():
+                print(f"      Error inserting match: {e}")
+
+    print(f"      Matches: {matches_inserted} rows inserted ({matches_inserted // 2} pairings)")
+
+    return {
+        "results": results_inserted,
+        "matches": matches_inserted,
+        "players_created": players_created,
+        "deck_requests": deck_requests_created,
+    }
+
+
+def run_repair_mode(conn):
+    """Find and repair tournaments with missing results/pairings.
+
+    Args:
+        conn: DuckDB connection
+
+    Returns:
+        Dict with overall repair stats
+    """
+    print("\n" + "=" * 60)
+    print("REPAIR MODE: Finding tournaments with missing data")
+    print("=" * 60)
+
+    # Find tournaments with limitless_id but 0 results
+    missing_results = conn.execute("""
+        SELECT t.tournament_id, t.limitless_id, t.player_count, t.event_date,
+               COUNT(r.result_id) as result_count
+        FROM tournaments t
+        LEFT JOIN results r ON t.tournament_id = r.tournament_id
+        WHERE t.limitless_id IS NOT NULL
+        GROUP BY t.tournament_id, t.limitless_id, t.player_count, t.event_date
+        HAVING COUNT(r.result_id) = 0
+        ORDER BY t.event_date DESC
+    """).fetchall()
+
+    # Find tournaments with results but 0 matches
+    missing_matches = conn.execute("""
+        SELECT t.tournament_id, t.limitless_id, t.player_count, t.event_date,
+               COUNT(r.result_id) as result_count, COUNT(m.match_id) as match_count
+        FROM tournaments t
+        LEFT JOIN results r ON t.tournament_id = r.tournament_id
+        LEFT JOIN matches m ON t.tournament_id = m.tournament_id
+        WHERE t.limitless_id IS NOT NULL
+        GROUP BY t.tournament_id, t.limitless_id, t.player_count, t.event_date
+        HAVING COUNT(r.result_id) > 0 AND COUNT(m.match_id) = 0
+        ORDER BY t.event_date DESC
+    """).fetchall()
+
+    print(f"\nTournaments missing results: {len(missing_results)}")
+    for t in missing_results:
+        print(f"  t{t[0]} | {t[1][:20]}... | {t[2]} players | {t[3]}")
+
+    print(f"\nTournaments missing matches (have results): {len(missing_matches)}")
+    for t in missing_matches:
+        print(f"  t{t[0]} | {t[1][:20]}... | {t[4]} results, 0 matches | {t[3]}")
+
+    if not missing_results and not missing_matches:
+        print("\nNo tournaments need repair!")
+        return {"repaired": 0}
+
+    print(f"\nRepairing {len(missing_results) + len(missing_matches)} tournaments...")
+
+    total_results = 0
+    total_matches = 0
+    total_players = 0
+    total_decks = 0
+    repaired = 0
+
+    # Repair tournaments missing results
+    for t in missing_results:
+        tournament_id, limitless_id = t[0], t[1]
+        stats = repair_tournament(conn, tournament_id, limitless_id)
+        if stats.get("results", 0) > 0 or stats.get("matches", 0) > 0:
+            repaired += 1
+            total_results += stats.get("results", 0)
+            total_matches += stats.get("matches", 0)
+            total_players += stats.get("players_created", 0)
+            total_decks += stats.get("deck_requests", 0)
+
+    # Repair tournaments missing only matches
+    for t in missing_matches:
+        tournament_id, limitless_id = t[0], t[1]
+        stats = repair_tournament(conn, tournament_id, limitless_id)
+        if stats.get("matches", 0) > 0:
+            repaired += 1
+            total_matches += stats.get("matches", 0)
+
+    print("\n" + "=" * 60)
+    print("REPAIR COMPLETE")
+    print("=" * 60)
+    print(f"Tournaments repaired: {repaired}")
+    print(f"Results inserted: {total_results}")
+    print(f"Matches inserted: {total_matches}")
+    print(f"New players: {total_players}")
+    print(f"Deck requests: {total_decks}")
+
+    return {
+        "repaired": repaired,
+        "results": total_results,
+        "matches": total_matches,
+        "players": total_players,
+        "deck_requests": total_decks,
+    }
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -823,8 +1115,8 @@ def main():
                         help="Limitless organizer ID to sync")
     parser.add_argument("--all-tier1", action="store_true",
                         help="Sync all Tier 1 organizers")
-    parser.add_argument("--since", required=True,
-                        help="Only sync tournaments on or after this date (YYYY-MM-DD)")
+    parser.add_argument("--since",
+                        help="Only sync tournaments on or after this date (YYYY-MM-DD, required except for --repair)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Show what would be synced without writing to DB")
     parser.add_argument("--local", action="store_true", default=True,
@@ -833,23 +1125,22 @@ def main():
                         help="Sync to MotherDuck instead of local DuckDB")
     parser.add_argument("--limit", type=int, default=None,
                         help="Max tournaments to sync (useful for testing)")
+    parser.add_argument("--repair", action="store_true",
+                        help="Re-fetch standings/pairings for tournaments missing results")
     args = parser.parse_args()
 
     # Validate arguments
-    if not args.organizer and not args.all_tier1:
-        parser.error("Either --organizer ID or --all-tier1 is required")
+    if not args.organizer and not args.all_tier1 and not args.repair:
+        parser.error("Either --organizer ID, --all-tier1, or --repair is required")
 
-    # Validate date format
-    try:
-        datetime.strptime(args.since, "%Y-%m-%d")
-    except ValueError:
-        parser.error(f"Invalid date format: {args.since} (expected YYYY-MM-DD)")
-
-    # Determine organizers to sync
-    if args.all_tier1:
-        organizer_ids = list(TIER1_ORGANIZERS.keys())
-    else:
-        organizer_ids = [args.organizer]
+    # Validate date format (not required for repair mode)
+    if not args.repair:
+        if not args.since:
+            parser.error("--since DATE is required (except in --repair mode)")
+        try:
+            datetime.strptime(args.since, "%Y-%m-%d")
+        except ValueError:
+            parser.error(f"Invalid date format: {args.since} (expected YYYY-MM-DD)")
 
     # Determine database target
     use_local = not args.motherduck
@@ -858,6 +1149,42 @@ def main():
     print("LimitlessTCG Sync")
     print("=" * 60)
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Handle repair mode separately
+    if args.repair:
+        print("Mode: REPAIR (re-fetch missing standings/pairings)")
+
+        if use_local:
+            db_path = LOCAL_DB
+            print(f"Database: {db_path} (local)")
+        else:
+            if not MOTHERDUCK_TOKEN:
+                print("Error: MOTHERDUCK_TOKEN not set in .env")
+                sys.exit(1)
+            print(f"Database: {MOTHERDUCK_DB} (MotherDuck)")
+
+        print(f"\nConnecting to database...", end=" ", flush=True)
+        try:
+            if use_local:
+                conn = duckdb.connect(db_path)
+            else:
+                conn = duckdb.connect(f"md:{MOTHERDUCK_DB}?motherduck_token={MOTHERDUCK_TOKEN}")
+            print("OK")
+        except Exception as e:
+            print(f"FAILED: {e}")
+            sys.exit(1)
+
+        run_repair_mode(conn)
+        conn.close()
+        print("=" * 60)
+        return
+
+    # Normal sync mode
+    if args.all_tier1:
+        organizer_ids = list(TIER1_ORGANIZERS.keys())
+    else:
+        organizer_ids = [args.organizer]
+
     print(f"Since: {args.since}")
     print(f"Organizers: {', '.join(str(o) for o in organizer_ids)}")
     if args.limit:
