@@ -45,6 +45,9 @@ TABLES = [
     "results",
     "matches",
     "ingestion_log",
+    # Limitless integration tables
+    "limitless_deck_map",
+    "limitless_sync_state",
     # Cache tables (computed, but synced for consistency)
     "player_ratings_cache",
     "store_ratings_cache",
