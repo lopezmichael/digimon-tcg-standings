@@ -198,13 +198,24 @@ admin_results_ui <- tagList(
         ),
         tags$div(
           class = "modal-body",
-          p(class = "text-muted", "Paste tab-separated data. Supported formats:"),
-          tags$ul(class = "text-muted small",
-            tags$li("Player names only (one per line)"),
-            tags$li("Player name [tab] Points"),
-            tags$li("Player name [tab] W [tab] L [tab] T")
+          p(class = "text-muted", "Paste data with one player per line. Columns separated by tabs (from a spreadsheet) or 2+ spaces."),
+          p(class = "text-muted small mb-2", "Supported formats:"),
+          tags$div(
+            class = "bg-body-secondary rounded p-2 mb-3",
+            style = "font-family: monospace; font-size: 0.8rem; white-space: pre-line;",
+            tags$div(class = "fw-bold mb-1", "Names only:"),
+            tags$div(class = "text-muted mb-2", "PlayerOne\nPlayerTwo\nPlayerThree"),
+            tags$div(class = "fw-bold mb-1", "Names + Points:"),
+            tags$div(class = "text-muted mb-2", "PlayerOne\t9\nPlayerTwo\t7\nPlayerThree\t6"),
+            tags$div(class = "fw-bold mb-1", "Names + Points + Deck:"),
+            tags$div(class = "text-muted mb-2", "PlayerOne\t9\tBlue Flare\nPlayerTwo\t7\tRed Hybrid\nPlayerThree\t6\tUNKNOWN"),
+            tags$div(class = "fw-bold mb-1", "Names + W/L/T:"),
+            tags$div(class = "text-muted mb-2", "PlayerOne\t3\t0\t0\nPlayerTwo\t2\t1\t1\nPlayerThree\t2\t2\t0"),
+            tags$div(class = "fw-bold mb-1", "Names + W/L/T + Deck:"),
+            tags$div(class = "text-muted", "PlayerOne\t3\t0\t0\tBlue Flare\nPlayerTwo\t2\t1\t1\tRed Hybrid")
           ),
-          tags$textarea(id = "paste_data", class = "form-control", rows = "12",
+          p(class = "text-muted small", "Deck names must match existing archetypes exactly (case-insensitive). Unrecognized decks default to Unknown."),
+          tags$textarea(id = "paste_data", class = "form-control", rows = "10",
                         placeholder = "Paste data here...")
         ),
         tags$div(

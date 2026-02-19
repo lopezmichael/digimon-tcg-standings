@@ -654,6 +654,9 @@ observeEvent(input$admin_player_blur, {
   if (is.null(row_num) || is.na(row_num)) return()
   if (row_num < 1 || row_num > nrow(rv$admin_grid_data)) return()
 
+  # Sync all inputs before modifying reactive (re-render preserves all typed values)
+  sync_admin_grid_inputs()
+
   if (nchar(name) == 0) {
     rv$admin_player_matches[[as.character(row_num)]] <- NULL
     rv$admin_grid_data$match_status[row_num] <- ""
@@ -714,6 +717,12 @@ observeEvent(input$paste_apply, {
   sync_admin_grid_inputs()
   grid <- rv$admin_grid_data
 
+  # Look up all deck archetypes for name matching
+  all_decks <- dbGetQuery(rv$db_con, "
+    SELECT archetype_id, archetype_name FROM deck_archetypes
+    WHERE is_active = TRUE
+  ")
+
   # Parse each line
   parsed <- lapply(lines, function(line) {
     parts <- strsplit(line, "\t")[[1]]
@@ -723,12 +732,19 @@ observeEvent(input$paste_apply, {
     parts <- trimws(parts)
 
     name <- parts[1]
-    pts <- 0L; w <- 0L; l <- 0L; t_val <- 0L
+    pts <- 0L; w <- 0L; l <- 0L; t_val <- 0L; deck_name <- ""
 
     if (length(parts) == 2) {
+      # Name + Points
       pts <- suppressWarnings(as.integer(parts[2]))
       if (is.na(pts)) pts <- 0L
-    } else if (length(parts) >= 4) {
+    } else if (length(parts) == 3) {
+      # Name + Points + Deck
+      pts <- suppressWarnings(as.integer(parts[2]))
+      if (is.na(pts)) pts <- 0L
+      deck_name <- parts[3]
+    } else if (length(parts) == 4) {
+      # Name + W + L + T
       w <- suppressWarnings(as.integer(parts[2]))
       l <- suppressWarnings(as.integer(parts[3]))
       t_val <- suppressWarnings(as.integer(parts[4]))
@@ -736,9 +752,28 @@ observeEvent(input$paste_apply, {
       if (is.na(l)) l <- 0L
       if (is.na(t_val)) t_val <- 0L
       pts <- w * 3L + t_val
+    } else if (length(parts) >= 5) {
+      # Name + W + L + T + Deck
+      w <- suppressWarnings(as.integer(parts[2]))
+      l <- suppressWarnings(as.integer(parts[3]))
+      t_val <- suppressWarnings(as.integer(parts[4]))
+      if (is.na(w)) w <- 0L
+      if (is.na(l)) l <- 0L
+      if (is.na(t_val)) t_val <- 0L
+      pts <- w * 3L + t_val
+      deck_name <- parts[5]
     }
 
-    list(name = name, points = pts, wins = w, losses = l, ties = t_val)
+    # Match deck name to archetype
+    deck_id <- NA_integer_
+    if (nchar(deck_name) > 0) {
+      match_idx <- which(tolower(all_decks$archetype_name) == tolower(deck_name))
+      if (length(match_idx) > 0) {
+        deck_id <- all_decks$archetype_id[match_idx[1]]
+      }
+    }
+
+    list(name = name, points = pts, wins = w, losses = l, ties = t_val, deck_id = deck_id)
   })
 
   fill_count <- 0L
@@ -750,6 +785,7 @@ observeEvent(input$paste_apply, {
     grid$wins[idx] <- p$wins
     grid$losses[idx] <- p$losses
     grid$ties[idx] <- p$ties
+    if (!is.na(p$deck_id)) grid$deck_id[idx] <- p$deck_id
     fill_count <- fill_count + 1L
   }
 
