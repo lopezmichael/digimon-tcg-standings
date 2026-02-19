@@ -4,6 +4,34 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-19: Limitless TCG API Integration Research
+
+**Context:** Explored using the [LimitlessTCG API](https://docs.limitlesstcg.com/developer/) to automatically ingest online Digimon tournament data into DigiLab's Online scene, replacing manual data entry for online organizers.
+
+**Findings:**
+- Limitless has ~2,500+ DCG tournaments dating back to mid-2022, but data quality varies by organizer
+- The `format` field is always null for DCG — must be inferred from tournament name (regex) or release date fallback
+- Deck archetype and full decklists are only available when organizers set `decklists: true`
+- Audited 20 DCG organizers: 8 have full deck data, 12 do not
+- 4 Tier 1 organizers identified for launch: Eagle's Nest (452, USA), PHOENIX REBORN (281, Argentina), DMV Drakes (559, USA), MasterRukasu (578, Brazil)
+
+**Key design decisions:**
+- Limitless organizer = DigiLab virtual store (`is_online = TRUE`, Online scene)
+- All synced tournaments use `event_type = "online"`
+- Online tournaments feed the same Elo rating pool as locals (no separation)
+- Unmapped Limitless deck IDs route through existing `deck_requests` queue for admin review
+- New `limitless_deck_map` table for one-time archetype mapping per Limitless deck ID
+- Players auto-created from Limitless display name + username; existing merge tool handles duplicates
+- Match pairings synced to `matches` table (`match_points` derived from winner, game scores NULL)
+- Not storing card-by-card decklists for now (no UI/feature plan)
+- Sync via Python script locally (Phase 1), then GitHub Actions daily cron (Phase 2) — mirrors existing `sync-cards.yml` pattern
+- Historical sync depth: BT23 era onward (~Oct 2025)
+
+**API key:** Requested from Limitless (pending approval). Not required for basic access but needed for higher rate limits and deck classification rules endpoint.
+
+**Design doc:** `docs/plans/2026-02-19-limitless-integration-design.md`
+
+---
 ## 2026-02-19: Upload Results Row Management Fix
 
 **Problem:** OCR sometimes creates more rows than `total_players` because the truncation logic filtered by placement value (`combined$placement <= total_players`) instead of position. Duplicate placements let extra rows through. No way to delete spurious rows.
