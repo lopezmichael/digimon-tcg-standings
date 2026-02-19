@@ -4,6 +4,41 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-19: Limitless Integration — Phase 1 Implementation
+
+**Context:** Implemented Phase 1 of the Limitless TCG integration (design doc: `docs/plans/2026-02-19-limitless-integration-design.md`).
+
+**What was built:**
+- `db/schema.sql` v1.4.0: Added `limitless_organizer_id` to stores, new `limitless_deck_map` and `limitless_sync_state` tables
+- `db/migrations/002_limitless_integration.sql`: Migration for existing databases
+- `scripts/sync_limitless.py` (943 lines): Full CLI sync tool — fetches tournaments, standings, pairings from Limitless API, resolves players, maps decks, infers formats, inserts results/matches
+- Enhanced player merge tool: Now transfers matches (player + opponent), copies `limitless_username`, handles UNIQUE conflicts on results
+- Updated `sync_from_motherduck.py` and `sync_to_motherduck.py` with new table names
+
+**Initial sync results (partial — PHOENIX REBORN still has ~13 remaining due to rate limits):**
+- Eagle's Nest (452): 35/35 tournaments synced (3 missing pairings from rate limits)
+- PHOENIX REBORN (281): 52/65 tournaments synced
+- DMV Drakes (559): 6/7 tournaments synced (1 Unicode error, data saved)
+- MasterRukasu (578): 4/4 tournaments synced
+- Totals: ~97 tournaments, ~1,700+ results, ~5,600+ matches, ~400+ new players, ~85 deck requests
+
+**Rate limiting lessons:**
+- Limitless API has aggressive rate limits without an API key
+- Bumped `REQUEST_DELAY` from 0.5s to 1.5s; still hit 429s on bulk syncs
+- Idempotent design means re-runs cleanly pick up where they left off
+- Tournaments with partial data (inserted but missing pairings/standings due to 429) need a "repair" mechanism in the future
+
+**Remaining work:**
+- Finish PHOENIX REBORN sync (re-run to pick up ~13 remaining tournaments)
+- Fill in missing pairings for tournaments that 429'd mid-sync
+- Map 85+ deck requests in admin panel
+- Recalculate ratings with new tournament data
+- Phase 2: GitHub Actions workflow for daily automated sync
+
+**Branch:** `feature/limitless-integration`
+
+---
+
 ## 2026-02-19: Limitless TCG API Integration Research
 
 **Context:** Explored using the [LimitlessTCG API](https://docs.limitlesstcg.com/developer/) to automatically ingest online Digimon tournament data into DigiLab's Online scene, replacing manual data entry for online organizers.
