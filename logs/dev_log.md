@@ -4,6 +4,18 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-19: Upload Results Row Management Fix
+
+**Problem:** OCR sometimes creates more rows than `total_players` because the truncation logic filtered by placement value (`combined$placement <= total_players`) instead of position. Duplicate placements let extra rows through. No way to delete spurious rows.
+
+**Solution:**
+- Changed truncation to positional: `combined[1:total_players, ]` after sort
+- Added delete button per row in review table with auto-renumber
+- Added input sync helper that reads current form values back into `rv$submit_ocr_results` before mutations so edits survive re-renders
+- Delete pads with blank row at bottom to maintain `total_players` count
+
+---
+
 ## 2026-02-18: Dashboard Polish, Release Events & Mobile Navbar
 
 ### Summary

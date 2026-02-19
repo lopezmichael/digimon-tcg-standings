@@ -5,6 +5,14 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Upload results: row count now always matches user-entered total players (was allowing extra rows when OCR produced duplicate placements)
+
+### Added
+- Upload results: delete row button (X) on each row in review table — removes row, auto-renumbers placements, maintains total player count
+
 ## [0.23.1] - 2026-02-18 - Multi-Region, Polish & Performance
 
 ### Added
