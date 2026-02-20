@@ -16,15 +16,17 @@ Usage:
     python scripts/sync_limitless.py --all-tier1 --since 2025-10-01
     python scripts/sync_limitless.py --all-tier1 --since 2025-10-01 --limit 5
     python scripts/sync_limitless.py --repair --local  (re-fetch missing standings)
+    python scripts/sync_limitless.py --all-tier1 --since 2025-01-01 --clean  (fresh re-import)
 
 Arguments:
     --organizer ID     Limitless organizer ID to sync
-    --all-tier1        Sync all Tier 1 organizers (452, 281, 559, 578)
+    --all-tier1        Sync all Tier 1 organizers (452, 281, 559, 578, 1906)
     --since DATE       Only sync tournaments on or after this date (YYYY-MM-DD)
     --dry-run          Show what would be synced without writing to DB
     --local            Sync to local DuckDB (data/local.duckdb) instead of MotherDuck
     --limit N          Max tournaments to sync (useful for testing)
     --repair           Re-fetch standings/pairings for tournaments missing results
+    --clean            Delete existing Limitless data before sync (for fresh re-import)
 
 Prerequisites:
     pip install duckdb python-dotenv requests
@@ -62,6 +64,7 @@ TIER1_ORGANIZERS = {
     281: "PHOENIX REBORN",
     559: "DMV Drakes",
     578: "MasterRukasu",
+    1906: "dK's Tournament",
 }
 
 
@@ -500,6 +503,7 @@ def sync_tournament(conn, tournament, organizer_id, store_id, dry_run=False):
         losses = record.get("losses", 0)
         ties = record.get("ties", 0)
         deck_info = standing.get("deck")
+        decklist_info = standing.get("decklist")  # Full decklist with cards
         drop_info = standing.get("drop")
 
         if not limitless_username:
@@ -518,6 +522,14 @@ def sync_tournament(conn, tournament, organizer_id, store_id, dry_run=False):
         if drop_info:
             notes = f"Dropped at round {drop_info}" if isinstance(drop_info, int) else f"Dropped: {drop_info}"
 
+        # Build decklist JSON (full card list from API)
+        decklist_json = None
+        if decklist_info and any(decklist_info.get(k) for k in ["digimon", "tamer", "option", "egg"]):
+            decklist_json = json.dumps(decklist_info)
+
+        # Build Limitless decklist URL
+        decklist_url = f"https://limitlesstcg.com/decks/{limitless_id}?player={limitless_username}" if decklist_json else None
+
         # Insert result
         next_result_id = conn.execute(
             "SELECT COALESCE(MAX(result_id), 0) + 1 FROM results"
@@ -527,8 +539,9 @@ def sync_tournament(conn, tournament, organizer_id, store_id, dry_run=False):
             conn.execute("""
                 INSERT INTO results
                     (result_id, tournament_id, player_id, archetype_id, pending_deck_request_id,
-                     placement, wins, losses, ties, notes, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                     placement, wins, losses, ties, decklist_json, decklist_url, notes,
+                     created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """, [
                 next_result_id,
                 next_tournament_id,
@@ -539,6 +552,8 @@ def sync_tournament(conn, tournament, organizer_id, store_id, dry_run=False):
                 wins,
                 losses,
                 ties,
+                decklist_json,
+                decklist_url,
                 notes,
             ])
             results_inserted += 1
@@ -1104,6 +1119,104 @@ def run_repair_mode(conn):
 
 
 # =============================================================================
+# Clean Mode
+# =============================================================================
+
+def clean_limitless_data(conn, organizer_ids=None):
+    """Delete all Limitless-imported data for a fresh re-sync.
+
+    Args:
+        conn: DuckDB connection
+        organizer_ids: Optional list of organizer IDs to clean (None = all Limitless data)
+    """
+    if organizer_ids:
+        # Get store_ids for these organizers
+        placeholders = ",".join(["?" for _ in organizer_ids])
+        store_ids = conn.execute(f"""
+            SELECT store_id FROM stores
+            WHERE limitless_organizer_id IN ({placeholders})
+        """, organizer_ids).fetchall()
+        store_ids = [r[0] for r in store_ids]
+
+        if not store_ids:
+            print("  No stores found for specified organizers")
+            return
+
+        store_placeholders = ",".join(["?" for _ in store_ids])
+
+        # Get tournament_ids for these stores
+        tournament_ids = conn.execute(f"""
+            SELECT tournament_id FROM tournaments
+            WHERE store_id IN ({store_placeholders})
+            AND limitless_id IS NOT NULL
+        """, store_ids).fetchall()
+        tournament_ids = [r[0] for r in tournament_ids]
+
+        if not tournament_ids:
+            print("  No Limitless tournaments found for specified organizers")
+            return
+
+        tournament_placeholders = ",".join(["?" for _ in tournament_ids])
+        print(f"  Cleaning {len(tournament_ids)} tournaments from {len(store_ids)} stores...")
+
+        # Delete in order: matches, results, tournaments, sync_state
+        deleted_matches = conn.execute(f"""
+            DELETE FROM matches WHERE tournament_id IN ({tournament_placeholders})
+        """, tournament_ids).fetchone()
+        print(f"    Deleted matches")
+
+        deleted_results = conn.execute(f"""
+            DELETE FROM results WHERE tournament_id IN ({tournament_placeholders})
+        """, tournament_ids).fetchone()
+        print(f"    Deleted results")
+
+        deleted_tournaments = conn.execute(f"""
+            DELETE FROM tournaments WHERE tournament_id IN ({tournament_placeholders})
+        """, tournament_ids).fetchone()
+        print(f"    Deleted tournaments")
+
+        # Clear sync state for these organizers
+        conn.execute(f"""
+            DELETE FROM limitless_sync_state WHERE organizer_id IN ({placeholders})
+        """, organizer_ids)
+        print(f"    Cleared sync state")
+
+    else:
+        # Clean ALL Limitless data
+        print("  Cleaning ALL Limitless data...")
+
+        # Get all Limitless tournament IDs
+        tournament_ids = conn.execute("""
+            SELECT tournament_id FROM tournaments WHERE limitless_id IS NOT NULL
+        """).fetchall()
+        tournament_ids = [r[0] for r in tournament_ids]
+
+        if tournament_ids:
+            tournament_placeholders = ",".join(["?" for _ in tournament_ids])
+
+            conn.execute(f"""
+                DELETE FROM matches WHERE tournament_id IN ({tournament_placeholders})
+            """, tournament_ids)
+            print(f"    Deleted matches from {len(tournament_ids)} tournaments")
+
+            conn.execute(f"""
+                DELETE FROM results WHERE tournament_id IN ({tournament_placeholders})
+            """, tournament_ids)
+            print(f"    Deleted results")
+
+            conn.execute("""
+                DELETE FROM tournaments WHERE limitless_id IS NOT NULL
+            """)
+            print(f"    Deleted {len(tournament_ids)} tournaments")
+
+        # Clear all sync state
+        conn.execute("DELETE FROM limitless_sync_state")
+        print(f"    Cleared sync state")
+
+    # Note: We keep limitless_deck_map and deck_requests as those are curated mappings
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -1127,6 +1240,8 @@ def main():
                         help="Max tournaments to sync (useful for testing)")
     parser.add_argument("--repair", action="store_true",
                         help="Re-fetch standings/pairings for tournaments missing results")
+    parser.add_argument("--clean", action="store_true",
+                        help="Delete ALL existing Limitless data before sync (for fresh re-import)")
     args = parser.parse_args()
 
     # Validate arguments
@@ -1213,6 +1328,12 @@ def main():
     except Exception as e:
         print(f"FAILED: {e}")
         sys.exit(1)
+
+    # Clean existing Limitless data if --clean flag is set
+    if args.clean:
+        print("\n*** CLEAN MODE: Deleting existing Limitless data ***")
+        clean_limitless_data(conn, organizer_ids if not args.all_tier1 else None)
+        print("Clean complete.\n")
 
     # Sync each organizer
     all_stats = []
