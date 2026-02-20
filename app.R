@@ -367,6 +367,24 @@ ui <- page_fillable(
 
         var loadingHTML = '<div class=\"app-loading-overlay\">' +
           '<div class=\"loading-scanline\"></div>' +
+          '<div class=\"loading-character\">' +
+            '<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" fill=\"none\">' +
+              '<circle cx=\"32\" cy=\"22\" r=\"14\" fill=\"#F7941D\" stroke=\"#E8842C\" stroke-width=\"1.5\"/>' +
+              '<ellipse cx=\"26\" cy=\"20\" rx=\"3\" ry=\"3.5\" fill=\"white\"/>' +
+              '<ellipse cx=\"38\" cy=\"20\" rx=\"3\" ry=\"3.5\" fill=\"white\"/>' +
+              '<circle cx=\"26\" cy=\"21\" r=\"1.5\" fill=\"#1A202C\"/>' +
+              '<circle cx=\"38\" cy=\"21\" r=\"1.5\" fill=\"#1A202C\"/>' +
+              '<path d=\"M26 28 Q32 33 38 28\" stroke=\"#1A202C\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"/>' +
+              '<ellipse cx=\"32\" cy=\"44\" rx=\"13\" ry=\"14\" fill=\"#F7941D\" stroke=\"#E8842C\" stroke-width=\"1.5\"/>' +
+              '<ellipse cx=\"32\" cy=\"48\" rx=\"8\" ry=\"6\" fill=\"#FDBA74\"/>' +
+              '<ellipse cx=\"18\" cy=\"40\" rx=\"6\" ry=\"3\" fill=\"#F7941D\" stroke=\"#E8842C\" stroke-width=\"1\" transform=\"rotate(-20 18 40)\"/>' +
+              '<ellipse cx=\"46\" cy=\"40\" rx=\"6\" ry=\"3\" fill=\"#F7941D\" stroke=\"#E8842C\" stroke-width=\"1\" transform=\"rotate(20 46 40)\"/>' +
+              '<circle cx=\"12\" cy=\"38\" r=\"2\" fill=\"#F7941D\"/><circle cx=\"11\" cy=\"36\" r=\"1.5\" fill=\"#F7941D\"/>' +
+              '<circle cx=\"52\" cy=\"38\" r=\"2\" fill=\"#F7941D\"/><circle cx=\"53\" cy=\"36\" r=\"1.5\" fill=\"#F7941D\"/>' +
+              '<ellipse cx=\"25\" cy=\"57\" rx=\"6\" ry=\"5\" fill=\"#F7941D\" stroke=\"#E8842C\" stroke-width=\"1.5\"/>' +
+              '<ellipse cx=\"39\" cy=\"57\" rx=\"6\" ry=\"5\" fill=\"#F7941D\" stroke=\"#E8842C\" stroke-width=\"1.5\"/>' +
+            '</svg>' +
+          '</div>' +
           '<div class=\"loading-gate\"><div class=\"loading-gate-center\"></div></div>' +
           '<div class=\"loading-message\">Opening Digital Gate...</div>' +
           '<div class=\"loading-submessage\">Establishing connection</div>' +
