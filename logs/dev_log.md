@@ -13,12 +13,16 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 - Added `country` column to stores table for international support
 - New "Cards" view replaces "All Stores" table - consistent across all scenes
 - `R/geo_utils.R` provides coordinate lookup for country/region combinations
+- Consolidated store modals: single modal handles both physical and online stores
+- Online store mini maps show region location (zoom level 3, green marker)
 
 **Community Links:**
 - `?community=store-slug` URL parameter filters entire app to single store
 - Banner appears when filter active with "View All" to clear
 - "Share Community View" button in store modals
 - All public tabs (Dashboard, Players, Meta, Tournaments) respect filter
+- Auto-switches Players/Meta pill toggles to "All" when community filter active (small datasets)
+- Resets to "5+" when community filter cleared
 
 **Admin Scene Filtering:**
 - Admin tables (Players, Tournaments, Stores) now respect scene selection
@@ -31,6 +35,9 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 - Used `build_dashboard_filters` and `build_community_filters` pattern
 - `bindCache` calls updated to include `rv$community_filter`
 - Admin filtering uses direct scene_id comparison for stores/tournaments, EXISTS subquery for players
+- Removed separate `online_store_detail_modal` in favor of unified `store_detail_modal`
+- Mini map renderer checks `coords$is_online` to determine zoom level and marker color
+- Pill toggle reset via `session$sendCustomMessage("setPillToggle", ...)` custom handler
 
 ---
 

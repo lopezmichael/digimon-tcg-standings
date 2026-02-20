@@ -17,13 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Filters Dashboard, Players, Meta, and Tournaments to single store's data
   - Banner shows active filter with "View All" to clear
   - "Share Community View" button in store modals
+  - Players and Meta tabs auto-switch to "All" filter (from "5+") when community filter active
 - **Admin Scene Filtering**: Edit Players, Tournaments, and Stores tables respect scene selection
   - Super admins have "Show all scenes" toggle to override
 - **Country Field**: Online stores can specify their country for map placement
+- **Region-Based Mini Maps**: Online store modals show mini map centered on country/region with green marker
 
 ### Changed
 - Stores tab view toggle renamed from "All Stores" to "Cards"
 - Online organizers section only shows when scene is "all" (not when viewing specific regions)
+- Unified store modal for both physical and online stores (consistent experience across Schedule/Cards views)
+- Online store modals use globe icon; physical stores use shop icon
 
 ### Schema
 - Added `country` column to stores table (default: 'USA')
