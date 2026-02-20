@@ -6039,7 +6039,7 @@ div.player-match-indicator.new {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--bs-secondary-color);
+  color: #4A5568;
   margin-bottom: 0.5rem;
   padding: 0.25rem 0;
 }
@@ -6080,6 +6080,32 @@ div.player-match-indicator.new {
 [data-bs-theme="dark"] .schedule-store-item:active {
   background: rgba(0, 200, 255, 0.12);
 }
+
+[data-bs-theme="dark"] .schedule-day-header {
+  color: #A0AEC0;
+}
+
+/* Force schedule item text to neutral colors */
+.schedule-store-item {
+  color: var(--bs-body-color);
+}
+
+.schedule-store-item .text-muted {
+  color: #64748B !important;
+}
+
+[data-bs-theme="dark"] .schedule-store-item .text-muted {
+  color: #94A3B8 !important;
+}
+
+/* Day-of-week color accents */
+.schedule-day--sun { border-left: 3px solid #E5383B; padding-left: 0.75rem; }
+.schedule-day--mon { border-left: 3px solid #2D7DD2; padding-left: 0.75rem; }
+.schedule-day--tue { border-left: 3px solid #38A169; padding-left: 0.75rem; }
+.schedule-day--wed { border-left: 3px solid #EAB308; padding-left: 0.75rem; }
+.schedule-day--thu { border-left: 3px solid #7C3AED; padding-left: 0.75rem; }
+.schedule-day--fri { border-left: 3px solid #0EA5E9; padding-left: 0.75rem; }
+.schedule-day--sat { border-left: 3px solid #EC4899; padding-left: 0.75rem; }
 
 /* View toggle active state */
 .btn-group .btn-outline-primary.active {

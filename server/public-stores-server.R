@@ -132,8 +132,11 @@ output$stores_schedule_content <- renderUI({
       })
     }
 
+    day_keys <- c("sun", "mon", "tue", "wed", "thu", "fri", "sat")
+    day_class <- paste0("schedule-day--", day_keys[day_idx + 1])
+
     div(
-      class = "schedule-day-section mb-3",
+      class = paste("schedule-day-section mb-3", day_class),
       # Day header
       div(
         class = paste("schedule-day-header", if (is_today) "schedule-day-today" else ""),
