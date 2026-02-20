@@ -4,6 +4,31 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-19: Deck Merge Tool & Admin Table Fixes
+
+**Context:** After bulk-syncing Limitless data, many similar deck archetypes needed consolidation (e.g., "Virus Imperialdramon" vs "Imperialdramon (RP)"). Also fixed admin table interaction bugs.
+
+**What was built:**
+- **Deck Archetype Merge Tool** (`views/admin-decks-ui.R`, `server/admin-decks-server.R`):
+  - New "Merge Decks" button and modal in Edit Decks admin tab
+  - Source/target deck selection with result count preview
+  - On merge: moves all results to target deck, updates `limitless_deck_map` entries, deletes source archetype
+  - Pattern mirrors existing player merge tool
+
+**Bugs fixed:**
+- **Row selection mismatch**: Clicking a row in Edit Decks or Edit Stores sometimes returned wrong data. Root cause: client-side column sorting caused index mismatch with server-side query order. Fix: Added `sortable = FALSE` to both reactable tables.
+- **Table not refreshing after merge**: Archetype list didn't update after merge. Fix: Added `input$confirm_merge_decks` and `rv$data_refresh` to reactable render triggers.
+
+**Data cleanup:**
+- Changed 158 results from NULL archetype to UNKNOWN (archetype_id = 50)
+- Current online data quality: 45/151 (29.8%) online tournaments have UNKNOWN 1st place deck
+  - PHOENIX REBORN: 30/93 (32%)
+  - Eagle's Nest: 9/33 (27%)
+  - dK's Tournament: 4/8 (50%)
+  - MasterRukasu: 2/4 (50%)
+  - DMV Drakes: 0/6 (0%) — complete deck data
+
+---
 ## 2026-02-19: Limitless Integration — Phase 1 Implementation
 
 **Context:** Implemented Phase 1 of the Limitless TCG integration (design doc: `docs/plans/2026-02-19-limitless-integration-design.md`).
