@@ -367,6 +367,21 @@ ui <- page_fillable(
 
         var loadingHTML = '<div class=\"app-loading-overlay\">' +
           '<div class=\"loading-scanline\"></div>' +
+          '<div class=\"loading-character\">' +
+            '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" viewBox=\"0 0 24 24\">' +
+              '<g transform=\"matrix(0.83 0 0 0.83 12 12)\"><g>' +
+                '<g transform=\"matrix(1 0 0 1 -1.37 -5.11)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-10.63, -6.89)\" d=\"M 11.7644 9.4961 L 9.18799 10.7838 C 8.91075 10.9225 8.60501 10.9948 8.29501 10.9948 L 4.24725 10.9948 C 3.80632 10.9948 3.37002 10.905 2.96493 10.7308 C 2.55985 10.5567 2.19447 10.3018 1.89107 9.98189 C 1.58767 9.66195 1.3526 9.28356 1.20018 8.86981 C 1.04777 8.45606 0.981209 8.01561 1.00456 7.57529 C 1.07944 6.7239 1.47496 5.93274 2.11109 5.36191 C 2.74721 4.79109 3.57642 4.48324 4.43093 4.50064 L 7.99897 4.50064 C 8.45142 3.62999 9.09522 2.87314 9.88204 2.28691 C 10.6689 1.70068 11.5783 1.3003 12.542 1.11583 C 13.5057 0.931367 14.4986 0.967605 15.4463 1.22183 C 16.394 1.47605 17.2718 1.94164 18.0138 2.58367 C 18.7558 3.22569 19.3427 4.02746 19.7305 4.92877 C 20.1183 5.83009 20.2969 6.80755 20.2528 7.78776 C 20.2088 8.76797 19.9433 9.72547 19.4762 10.5884 C 19.0091 11.4513 18.3527 12.1972 17.5561 12.7701\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 1.54 -6.6)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; fill: none;\" transform=\" translate(-13.54, -5.4)\" d=\"M 13.7203 5.76587 C 13.518 5.76587 13.3539 5.60184 13.3539 5.39949 C 13.3539 5.19714 13.518 5.03311 13.7203 5.03311\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 1.9 -6.6)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; fill: none;\" transform=\" translate(-13.9, -5.4)\" d=\"M 13.7203 5.76587 C 13.9227 5.76587 14.0867 5.60184 14.0867 5.39949 C 14.0867 5.19714 13.9227 5.03311 13.7203 5.03311\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 -5.73 -1.75)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-6.27, -10.25)\" d=\"M 6.26871 10.9948 L 6.26871 9.49609\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 -2.96 -0.54)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-9.04, -11.46)\" d=\"M 8.80695 10.9284 L 9.26614 11.9943\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 -4.31 8.75)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-7.69, -20.75)\" d=\"M 9.72048 18.51 C 8.13265 18.9942 6.76427 20.0187 5.8525 21.4058 C 5.74594 21.5552 5.68258 21.7311 5.66935 21.9141 C 5.65612 22.0972 5.69353 22.2803 5.77749 22.4435 C 5.86145 22.6066 5.98871 22.7436 6.14533 22.8392 C 6.30194 22.9348 6.48186 22.9855 6.66537 22.9857 L 9.65502 22.9857\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 -5.23 0.49)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-6.77, -12.49)\" d=\"M 10.2657 13.9923 L 5.26923 13.9923 C 5.00681 13.9924 4.74694 13.9408 4.50448 13.8405 C 4.26201 13.7401 4.04171 13.5929 3.85615 13.4074 C 3.6706 13.2218 3.52343 13.0015 3.42307 12.7591 C 3.3227 12.5166 3.27111 12.2567 3.27124 11.9943 L 3.27124 11.9943 C 3.27111 11.8631 3.29684 11.7332 3.34697 11.6119 C 3.39709 11.4906 3.47062 11.3805 3.56335 11.2876 C 3.65608 11.1948 3.7662 11.1212 3.88741 11.0709 C 4.00862 11.0207 4.13854 10.9948 4.26974 10.9948\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 3.78 5.88)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-15.78, -17.88)\" d=\"M 17.5561 12.7701 L 18.2918 14.1799 C 18.4788 14.5382 18.7379 14.854 19.0528 15.1073 C 19.3677 15.3607 19.7316 15.5462 20.1217 15.6522 C 20.5117 15.7582 20.9195 15.7823 21.3193 15.7231 C 21.7192 15.664 22.1024 15.5227 22.4451 15.3083 L 23 14.9615 C 23 18.51 21.7299 20.335 19.7583 20.4875 L 19.7583 21.9862 C 19.7583 22.2513 19.653 22.5055 19.4655 22.6929 C 19.2781 22.8804 19.0239 22.9857 18.7588 22.9857 L 13.2191 22.9857 C 13.0356 22.9855 12.8557 22.9348 12.6991 22.8392 C 12.5425 22.7436 12.4152 22.6066 12.3313 22.4435 C 12.2473 22.2803 12.2099 22.0972 12.2231 21.9141 C 12.2364 21.7311 12.2997 21.5552 12.4063 21.4058 L 12.758 20.9173 C 12.9076 20.7108 13.0768 20.519 13.2631 20.3448 C 11.5494 19.8944 8.57346 18.3488 8.57346 16.4934 L 8.56076 13.9952\"/></g>' +
+                '<g transform=\"matrix(1 0 0 1 3.05 3.98)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-15.05, -15.98)\" d=\"M 16.8282 16.4641 L 15.5581 17.2614 C 15.3913 17.3659 15.2056 17.4366 15.0115 17.4694 C 14.8173 17.5022 14.6187 17.4964 14.4268 17.4524 C 14.2349 17.4084 14.0536 17.327 13.8931 17.213 C 13.7327 17.0989 13.5963 16.9543 13.4917 16.7875 C 13.3872 16.6207 13.3165 16.435 13.2837 16.2409 C 13.2509 16.0467 13.2567 15.8481 13.3007 15.6562 C 13.3447 15.4643 13.4261 15.283 13.5402 15.1225 C 13.6542 14.9621 13.7988 14.8257 13.9656 14.7211 L 14.3564 14.4779\"/></g>' +
+              '</g></g>' +
+            '</svg>' +
+          '</div>' +
           '<div class=\"loading-gate\"><div class=\"loading-gate-center\"></div></div>' +
           '<div class=\"loading-message\">Opening Digital Gate...</div>' +
           '<div class=\"loading-submessage\">Establishing connection</div>' +
@@ -438,6 +453,30 @@ ui <- page_fillable(
           $('#custom-disconnect').addClass('active');
         });
       })();
+    ")),
+    # Auto-fit deck name text in value boxes
+    tags$script(HTML("
+      function fitDeckText() {
+        document.querySelectorAll('.vb-value-deck').forEach(function(el) {
+          var parent = el.parentElement;
+          if (!parent) return;
+          var maxWidth = parent.offsetWidth;
+          if (maxWidth === 0) return;
+          var fontSize = 1.1;
+          el.style.fontSize = fontSize + 'rem';
+          while (el.scrollWidth > maxWidth && fontSize > 0.6) {
+            fontSize -= 0.05;
+            el.style.fontSize = fontSize + 'rem';
+          }
+        });
+      }
+
+      $(document).on('shiny:value', function(e) {
+        if (e.name === 'hot_deck_name' || e.name === 'most_popular_deck_val') {
+          setTimeout(fitDeckText, 50);
+        }
+      });
+      $(window).on('resize', function() { setTimeout(fitDeckText, 100); });
     "))
   ),
 
@@ -446,13 +485,10 @@ ui <- page_fillable(
     class = "app-header",
     div(
       class = "header-title",
-      # Cards icon (placeholder until digivice icon is found)
+      # Digivice icon
       span(
         class = "header-icon",
-        HTML('<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14" height="20" width="20">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M6.54619 0.85725c0.06787 -0.253169 0.3281 -0.403409 0.58128 -0.335603L13.1479 2.13401c0.2533 0.06783 0.4036 0.32817 0.3357 0.58143l-2.3101 8.61726c-0.0679 0.2532 -0.3281 0.4034 -0.5813 0.3356l-6.02048 -1.6124c-0.25327 -0.06779 -0.40358 -0.32813 -0.33569 -0.58139L6.54619 0.85725Z" stroke-width="1"></path>
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M6.10793 2.53467 0.851879 3.94374c-0.253168 0.06787 -0.403409 0.32809 -0.335603 0.58128L2.82425 13.1429c0.06783 0.2532 0.32817 0.4035 0.58143 0.3356l3.01003 -0.8069" stroke-width="1"></path>
-        </svg>')
+        HTML('<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"><g transform="matrix(0.83 0 0 0.83 12 12)"><g><g transform="matrix(1 0 0 1 -7.85 0)"><path style="stroke: currentColor; stroke-width: 1.5; fill: none;" transform=" translate(-4.15, -12)" d="M 4.33798 12.3775 C 4.13088 12.3775 3.96298 12.2096 3.96298 12.0025 C 3.96298 11.7953 4.13088 11.6275 4.33798 11.6275" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 -7.47 0)"><path style="stroke: currentColor; stroke-width: 1.5; fill: none;" transform=" translate(-4.53, -12)" d="M 4.33798 12.3775 C 4.54509 12.3775 4.71298 12.2096 4.71298 12.0025 C 4.71298 11.7953 4.54509 11.6275 4.33798 11.6275" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 6.88 -1.64)"><path style="stroke: currentColor; stroke-width: 1.5; fill: none;" transform=" translate(-18.88, -10.36)" d="M 19.067 10.73 C 18.8599 10.73 18.692 10.5621 18.692 10.355 C 18.692 10.1479 18.8599 9.98 19.067 9.98" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 7.25 -1.64)"><path style="stroke: currentColor; stroke-width: 1.5; fill: none;" transform=" translate(-19.25, -10.36)" d="M 19.067 10.73 C 19.2741 10.73 19.442 10.5621 19.442 10.355 C 19.442 10.1479 19.2741 9.98 19.067 9.98" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 6.88 1.88)"><path style="stroke: currentColor; stroke-width: 1.5; fill: none;" transform=" translate(-18.88, -13.88)" d="M 19.067 14.254 C 18.8599 14.254 18.692 14.0861 18.692 13.879 C 18.692 13.6719 18.8599 13.504 19.067 13.504" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 7.25 1.88)"><path style="stroke: currentColor; stroke-width: 1.5; fill: none;" transform=" translate(-19.25, -13.88)" d="M 19.067 14.254 C 19.2741 14.254 19.442 14.0861 19.442 13.879 C 19.442 13.6719 19.2741 13.504 19.067 13.504" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 0 0)"><path style="stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;" transform=" translate(-12, -12)" d="M 23.25 12 C 23.2495 13.135 23.1492 14.2677 22.95 15.385 C 22.9142 15.5861 22.8177 15.7715 22.6734 15.9161 C 22.5291 16.0608 22.344 16.1577 22.143 16.194 C 21.099 16.3854 20.1225 16.8442 19.3087 17.5256 C 18.495 18.2071 17.8718 19.0879 17.5 20.082 C 17.4416 20.2395 17.3445 20.3798 17.2176 20.49 C 17.0908 20.6001 16.9382 20.6764 16.774 20.712 C 15.2045 21.0445 13.6043 21.2097 12 21.205 C 10.3957 21.2097 8.79544 21.0445 7.22599 20.712 C 7.0618 20.6764 6.90921 20.6001 6.78233 20.49 C 6.65544 20.3798 6.55834 20.2395 6.49999 20.082 C 6.12786 19.0873 5.50407 18.2062 4.68956 17.5248 C 3.87506 16.8433 2.8977 16.3848 1.85299 16.194 C 1.65194 16.1577 1.46683 16.0608 1.32255 15.9161 C 1.17828 15.7715 1.08176 15.5861 1.04599 15.385 C 0.651256 13.1456 0.651256 10.8544 1.04599 8.615 C 1.08176 8.41387 1.17828 8.22851 1.32255 8.08388 C 1.46683 7.93925 1.65194 7.84227 1.85299 7.806 C 2.8977 7.61523 3.87506 7.15671 4.68956 6.47524 C 5.50407 5.79377 6.12786 4.91266 6.49999 3.918 C 6.55834 3.76046 6.65544 3.62016 6.78233 3.51005 C 6.90921 3.39994 7.0618 3.32357 7.22599 3.288 C 8.79562 2.9572 10.3959 2.79362 12 2.8 C 13.6043 2.79526 15.2045 2.96052 16.774 3.293 C 16.9382 3.32857 17.0908 3.40494 17.2176 3.51505 C 17.3445 3.62516 17.4416 3.76546 17.5 3.923 C 17.8721 4.91766 18.4959 5.79877 19.3104 6.48024 C 20.1249 7.16171 21.1023 7.62023 22.147 7.811 C 22.348 7.84727 22.5331 7.94425 22.6774 8.08888 C 22.8217 8.23351 22.9182 8.41887 22.954 8.62 C 23.1515 9.73581 23.2506 10.8668 23.25 12 L 23.25 12 Z" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 0 0)"><path style="stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;" transform=" translate(-12, -12)" d="M 14.974 9.5 L 9.02499 9.5 L 9.02499 14.5 L 14.974 14.5 L 14.974 9.5 Z" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 -8.37 -6.85)"><path style="stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;" transform=" translate(-3.63, -5.15)" d="M 2.53799 3.846 L 4.71299 6.456" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 0 5.34)"><path style="stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;" transform=" translate(-12, -17.34)" d="M 15.873 16.634 C 14.7865 17.5417 13.4158 18.0389 12 18.0389 C 10.5843 18.0389 9.21351 17.5417 8.12701 16.634" stroke-linecap="round"/></g><g transform="matrix(1 0 0 1 0 -5.34)"><path style="stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;" transform=" translate(-12, -6.66)" d="M 15.873 7.366 C 14.7865 6.45834 13.4158 5.96111 12 5.96111 C 10.5843 5.96111 9.21351 6.45834 8.12701 7.366" stroke-linecap="round"/></g></g></g></svg>')
       ),
       span("DigiLab", class = "header-title-text"),
       span(class = "header-badge", "BETA"),

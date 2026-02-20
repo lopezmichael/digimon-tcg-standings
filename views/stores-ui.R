@@ -44,33 +44,33 @@ stores_ui <- tagList(
         actionButton(
           "stores_view_schedule",
           tagList(bsicons::bs_icon("calendar-week"), " Schedule"),
-          class = "btn-outline-primary active"
+          class = "btn-outline-primary"
         ),
         actionButton(
           "stores_view_all",
           tagList(bsicons::bs_icon("grid-3x3-gap"), " Cards"),
-          class = "btn-outline-primary"
+          class = "btn-outline-primary active"
         )
       ),
       uiOutput("stores_view_hint")
     ),
     card_body(
-      # Schedule view (default)
+      # Schedule view (shown when explicitly selected)
       conditionalPanel(
-        condition = "input.stores_view_mode != 'all'",
+        condition = "input.stores_view_mode == 'schedule'",
         id = "stores_schedule_view",
         uiOutput("stores_schedule_content")
       ),
-      # Cards view
+      # Cards view (default)
       conditionalPanel(
-        condition = "input.stores_view_mode == 'all'",
+        condition = "input.stores_view_mode != 'schedule'",
         id = "stores_cards_view",
         uiOutput("stores_cards_content")
       )
     )
   ),
   # Hidden input to track view mode
-  tags$input(type = "hidden", id = "stores_view_mode", value = "schedule", class = "shiny-input-text"),
+  tags$input(type = "hidden", id = "stores_view_mode", value = "all", class = "shiny-input-text"),
 
   # Store detail modal (rendered dynamically)
   # Handles both physical stores and online organizers

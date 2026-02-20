@@ -132,8 +132,11 @@ output$stores_schedule_content <- renderUI({
       })
     }
 
+    day_keys <- c("sun", "mon", "tue", "wed", "thu", "fri", "sat")
+    day_class <- paste0("schedule-day--", day_keys[day_idx + 1])
+
     div(
-      class = "schedule-day-section mb-3",
+      class = paste("schedule-day-section mb-3", day_class),
       # Day header
       div(
         class = paste("schedule-day-header", if (is_today) "schedule-day-today" else ""),
@@ -386,6 +389,25 @@ output$store_detail_modal <- renderUI({
   store_id <- rv$selected_store_id
   stores <- stores_data()
   store <- stores[stores$store_id == store_id, ]
+
+  # If store not found in filtered data (e.g. online store when viewing "all" scene),
+  # query directly from the database
+  if (nrow(store) == 0) {
+    store <- safe_query(rv$db_con, "
+      SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+             s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
+             s.country, s.is_online,
+             COUNT(t.tournament_id) as tournament_count,
+             COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
+             MAX(t.event_date) as last_event
+      FROM stores s
+      LEFT JOIN tournaments t ON s.store_id = t.store_id
+      WHERE s.store_id = ?
+      GROUP BY s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+               s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
+               s.country, s.is_online
+    ", params = list(store_id))
+  }
 
   if (nrow(store) == 0) return(NULL)
 
@@ -867,7 +889,7 @@ render_online_organizers_map <- function() {
   if (nrow(online_stores) == 0) {
     # Empty world map
     return(
-      atom_mapgl(theme = "digital") |>
+      atom_mapgl(theme = "digital", projection = "mercator") |>
         mapgl::set_view(center = c(-40, 20), zoom = 1.5)
     )
   }
@@ -892,7 +914,7 @@ render_online_organizers_map <- function() {
 
   if (nrow(stores_with_coords) == 0) {
     return(
-      atom_mapgl(theme = "digital") |>
+      atom_mapgl(theme = "digital", projection = "mercator") |>
         mapgl::set_view(center = c(-40, 20), zoom = 1.5)
     )
   }
@@ -929,7 +951,7 @@ render_online_organizers_map <- function() {
   })
 
   # Create world map
-  atom_mapgl(theme = "digital") |>
+  atom_mapgl(theme = "digital", projection = "mercator") |>
     add_atom_popup_style(theme = "light") |>
     mapgl::add_circle_layer(
       id = "online-stores-layer",

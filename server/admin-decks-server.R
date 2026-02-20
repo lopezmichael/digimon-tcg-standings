@@ -264,10 +264,16 @@ output$archetype_list <- renderReactable({
   if (nrow(data) == 0) {
     return(reactable(data.frame(Message = "No archetypes yet"), compact = TRUE))
   }
-  # Note: sortable = FALSE prevents column sorting which would cause row selection mismatch
   reactable(data, compact = TRUE, striped = TRUE,
-    selection = "single",
-    onClick = "select",
+    highlight = TRUE,
+    onClick = JS("function(rowInfo, column) {
+      if (rowInfo) {
+        Shiny.setInputValue('archetype_list_clicked', {
+          archetype_id: rowInfo.row['archetype_id'],
+          nonce: Math.random()
+        }, {priority: 'event'});
+      }
+    }"),
     sortable = FALSE,
     rowStyle = function(index) {
       # Highlight rows without Card ID
@@ -310,28 +316,20 @@ output$archetype_list <- renderReactable({
 })
 
 # Handle archetype selection for editing
-observeEvent(input$archetype_list__reactable__selected, {
+observeEvent(input$archetype_list_clicked, {
   req(rv$db_con)
-  selected_idx <- input$archetype_list__reactable__selected
+  archetype_id <- input$archetype_list_clicked$archetype_id
 
-  if (is.null(selected_idx) || length(selected_idx) == 0) {
-    return()
-  }
+  if (is.null(archetype_id)) return()
 
-  # Get archetype data (must use same order as archetype_list render)
-  data <- dbGetQuery(rv$db_con, "
+  # Look up archetype directly by ID
+  arch <- dbGetQuery(rv$db_con, "
     SELECT archetype_id, archetype_name, primary_color, secondary_color, display_card_id, is_multi_color
     FROM deck_archetypes
-    WHERE is_active = TRUE
-    ORDER BY
-      CASE WHEN display_card_id IS NULL OR display_card_id = '' THEN 0 ELSE 1 END,
-      display_card_id,
-      archetype_name
-  ")
+    WHERE archetype_id = ?
+  ", params = list(as.integer(archetype_id)))
 
-  if (selected_idx > nrow(data)) return()
-
-  arch <- data[selected_idx, ]
+  if (nrow(arch) == 0) return()
 
   # Populate form for editing
   updateTextInput(session, "editing_archetype_id", value = as.character(arch$archetype_id))
