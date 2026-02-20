@@ -10,10 +10,44 @@ output$player_list <- renderReactable({
   input$update_player
   input$confirm_delete_player
   input$confirm_merge_players
+  input$admin_players_show_all_scenes
 
   search_term <- input$player_search %||% ""
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_players_show_all_scenes) && isTRUE(rv$is_superadmin)
 
-  query <- "
+  # Build scene filter for players (players who have competed in scene)
+  scene_filter <- ""
+  if (!show_all && !is.null(scene) && scene != "" && scene != "all") {
+    if (scene == "online") {
+      scene_filter <- "
+        AND EXISTS (
+          SELECT 1 FROM results r2
+          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
+          JOIN stores s2 ON t2.store_id = s2.store_id
+          WHERE r2.player_id = p.player_id AND s2.is_online = TRUE
+        )
+      "
+    } else {
+      scene_filter <- sprintf("
+        AND EXISTS (
+          SELECT 1 FROM results r2
+          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
+          JOIN stores s2 ON t2.store_id = s2.store_id
+          WHERE r2.player_id = p.player_id
+            AND s2.scene_id = (SELECT scene_id FROM scenes WHERE slug = '%s')
+        )
+      ", scene)
+    }
+  }
+
+  # Build search filter
+  search_filter <- ""
+  if (nchar(search_term) > 0) {
+    search_filter <- sprintf(" AND LOWER(p.display_name) LIKE LOWER('%%%s%%')", search_term)
+  }
+
+  query <- sprintf("
     SELECT p.player_id,
            p.display_name as 'Player Name',
            COUNT(r.result_id) as 'Results',
@@ -22,16 +56,10 @@ output$player_list <- renderReactable({
     FROM players p
     LEFT JOIN results r ON p.player_id = r.player_id
     LEFT JOIN tournaments t ON r.tournament_id = t.tournament_id
-  "
-
-  if (nchar(search_term) > 0) {
-    query <- paste0(query, " WHERE LOWER(p.display_name) LIKE LOWER('%", search_term, "%')")
-  }
-
-  query <- paste0(query, "
+    WHERE 1=1 %s %s
     GROUP BY p.player_id, p.display_name
     ORDER BY p.display_name
-  ")
+  ", scene_filter, search_filter)
 
   data <- dbGetQuery(rv$db_con, query)
 
@@ -65,16 +93,48 @@ observeEvent(input$player_list__reactable__selected, {
     return()
   }
 
-  # Get player data with search filter applied
+  # Get player data with search filter and scene filter applied (same as table)
   search_term <- input$player_search %||% ""
-  query <- "
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_players_show_all_scenes) && isTRUE(rv$is_superadmin)
+
+  # Build scene filter for players (players who have competed in scene)
+  scene_filter <- ""
+  if (!show_all && !is.null(scene) && scene != "" && scene != "all") {
+    if (scene == "online") {
+      scene_filter <- "
+        AND EXISTS (
+          SELECT 1 FROM results r2
+          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
+          JOIN stores s2 ON t2.store_id = s2.store_id
+          WHERE r2.player_id = p.player_id AND s2.is_online = TRUE
+        )
+      "
+    } else {
+      scene_filter <- sprintf("
+        AND EXISTS (
+          SELECT 1 FROM results r2
+          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
+          JOIN stores s2 ON t2.store_id = s2.store_id
+          WHERE r2.player_id = p.player_id
+            AND s2.scene_id = (SELECT scene_id FROM scenes WHERE slug = '%s')
+        )
+      ", scene)
+    }
+  }
+
+  # Build search filter
+  search_filter <- ""
+  if (nchar(search_term) > 0) {
+    search_filter <- sprintf(" AND LOWER(p.display_name) LIKE LOWER('%%%s%%')", search_term)
+  }
+
+  query <- sprintf("
     SELECT p.player_id, p.display_name
     FROM players p
-  "
-  if (nchar(search_term) > 0) {
-    query <- paste0(query, " WHERE LOWER(p.display_name) LIKE LOWER('%", search_term, "%')")
-  }
-  query <- paste0(query, " ORDER BY p.display_name")
+    WHERE 1=1 %s %s
+    ORDER BY p.display_name
+  ", scene_filter, search_filter)
 
   data <- dbGetQuery(rv$db_con, query)
 
@@ -423,4 +483,19 @@ observeEvent(input$confirm_merge_players, {
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
+})
+
+# Scene indicator for admin players page
+output$admin_players_scene_indicator <- renderUI({
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_players_show_all_scenes) && isTRUE(rv$is_superadmin)
+
+  if (show_all || is.null(scene) || scene == "" || scene == "all") {
+    return(NULL)
+  }
+
+  div(
+    class = "badge bg-info mb-2",
+    paste("Filtered to:", toupper(scene))
+  )
 })
