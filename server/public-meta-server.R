@@ -25,7 +25,8 @@ output$archetype_stats <- renderReactable({
     table_alias = "t",
     format = input$meta_format,
     scene = rv$current_scene,
-    store_alias = "s"
+    store_alias = "s",
+    community_store = rv$community_filter
   )
 
   min_entries <- as.numeric(input$meta_min_entries)
@@ -110,11 +111,12 @@ output$deck_detail_modal <- renderUI({
 
   if (nrow(archetype) == 0) return(NULL)
 
-  # Build scene filter for modal queries
+  # Build scene filter for modal queries (includes community filter)
   scene_filters <- build_filters_param(
     table_alias = "t",
     scene = rv$current_scene,
-    store_alias = "s"
+    store_alias = "s",
+    community_store = rv$community_filter
   )
 
   # Get overall stats with meta share and conversion rate

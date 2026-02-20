@@ -60,7 +60,8 @@ output$player_standings <- renderReactable({
     table_alias = "t",
     format = input$players_format,
     scene = rv$current_scene,
-    store_alias = "s"
+    store_alias = "s",
+    community_store = rv$community_filter
   )
 
   # Combine filter SQL and params

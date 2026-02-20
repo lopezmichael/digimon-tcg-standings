@@ -26,7 +26,8 @@ output$tournament_history <- renderReactable({
     table_alias = "t",
     format = input$tournaments_format,
     scene = rv$current_scene,
-    store_alias = "s"
+    store_alias = "s",
+    community_store = rv$community_filter
   )
 
   event_type_filters <- build_filters_param(
