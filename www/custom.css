@@ -3800,15 +3800,29 @@ a:hover, .nav-link:hover {
 
 /* 4d. Mobile Tables - hide less important columns */
 @media (max-width: 768px) {
-  /* Player standings - hide L, T, 1st, Top3 columns */
-  .rt-table [data-col-id="L"],
-  .rt-table [data-col-id="T"],
-  .rt-table [data-col-id="1st"],
-  .rt-table [data-col-id="Top 3"],
-  .rt-table [data-col-id="Losses"],
-  .rt-table [data-col-id="Ties"],
-  .rt-table [data-col-id="1st Places"],
-  .rt-table [data-col-id="Top 3 Finishes"] {
+  /* Players table — keep: Player, Record, Win %, Rating
+     Hide: Score, Events, 1sts, Top 3s, Main Deck */
+  .rt-table [data-col-id="achievement_score"],
+  .rt-table [data-col-id="Events"],
+  .rt-table [data-col-id="1sts"],
+  .rt-table [data-col-id="Top 3s"],
+  .rt-table [data-col-id="main_deck_html"] {
+    display: none !important;
+  }
+
+  /* Deck Meta table — keep: Deck, Entries, Meta %, Win %
+     Hide: Color, 1sts, Top 3s, Conv % */
+  .rt-table [data-col-id="Color"],
+  .rt-table [data-col-id="Conv %"] {
+    display: none !important;
+  }
+
+  /* Tournaments table — keep: Date, Store, Players, Winner
+     Hide: Type, Format, Rounds, Winning Deck */
+  .rt-table [data-col-id="Type"],
+  .rt-table [data-col-id="Format"],
+  .rt-table [data-col-id="Rounds"],
+  .rt-table [data-col-id="Winning Deck"] {
     display: none !important;
   }
 
