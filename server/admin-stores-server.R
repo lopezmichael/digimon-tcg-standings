@@ -346,7 +346,7 @@ observeEvent(input$admin_store_list__reactable__selected, {
 
   # Get store data
   data <- dbGetQuery(rv$db_con, "
-    SELECT store_id, name, address, city, state, zip_code, website, is_online
+    SELECT store_id, name, address, city, state, zip_code, website, is_online, country
     FROM stores
     WHERE is_active = TRUE
     ORDER BY name
@@ -365,6 +365,7 @@ observeEvent(input$admin_store_list__reactable__selected, {
 
   if (is_online) {
     updateTextInput(session, "store_name_online", value = store$name)
+    updateSelectInput(session, "store_country", selected = if (is.na(store$country)) "USA" else store$country)
     updateTextInput(session, "store_region", value = if (is.na(store$city)) "" else store$city)
     updateTextInput(session, "store_name", value = "")  # Clear physical store name
   } else {
@@ -397,6 +398,12 @@ observeEvent(input$update_store, {
 
   store_id <- as.integer(input$editing_store_id)
   is_online <- isTRUE(input$store_is_online)
+
+  store_country <- if (is_online) {
+    input$store_country %||% "USA"
+  } else {
+    "USA"
+  }
 
   store_name <- if (is_online) {
     trimws(input$store_name_online)
@@ -477,9 +484,9 @@ observeEvent(input$update_store, {
     dbExecute(rv$db_con, "
       UPDATE stores
       SET name = ?, address = ?, city = ?, state = ?, zip_code = ?,
-          latitude = ?, longitude = ?, website = ?, is_online = ?, updated_at = CURRENT_TIMESTAMP
+          latitude = ?, longitude = ?, website = ?, is_online = ?, country = ?, updated_at = CURRENT_TIMESTAMP
       WHERE store_id = ?
-    ", params = list(store_name, address, store_city_db, state, zip_code, lat, lng, website, is_online, store_id))
+    ", params = list(store_name, address, store_city_db, state, zip_code, lat, lng, website, is_online, store_country, store_id))
 
     showNotification(sprintf("Updated store: %s", store_name), type = "message")
 
@@ -494,6 +501,7 @@ observeEvent(input$update_store, {
     updateTextInput(session, "store_website", value = "")
     updateCheckboxInput(session, "store_is_online", value = FALSE)
     updateSelectInput(session, "store_state", selected = "TX")
+    updateSelectInput(session, "store_country", selected = "USA")
     rv$pending_schedules <- list()  # Clear pending schedules
 
     shinyjs::show("add_store")
@@ -523,6 +531,7 @@ observeEvent(input$cancel_edit_store, {
   updateTextInput(session, "store_website", value = "")
   updateCheckboxInput(session, "store_is_online", value = FALSE)
   updateSelectInput(session, "store_state", selected = "TX")
+  updateSelectInput(session, "store_country", selected = "USA")
   rv$pending_schedules <- list()  # Clear pending schedules
 
   shinyjs::show("add_store")
@@ -595,6 +604,7 @@ observeEvent(input$confirm_delete_store, {
     updateTextInput(session, "store_zip", value = "")
     updateTextInput(session, "store_website", value = "")
     updateCheckboxInput(session, "store_is_online", value = FALSE)
+    updateSelectInput(session, "store_country", selected = "USA")
     rv$pending_schedules <- list()  # Clear pending schedules
 
     shinyjs::show("add_store")
