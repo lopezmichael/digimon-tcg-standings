@@ -235,21 +235,35 @@ output$admin_store_list <- renderReactable({
   input$update_store
   input$confirm_delete_store
   rv$schedules_refresh
+  input$admin_stores_show_all_scenes
+
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_stores_show_all_scenes) && isTRUE(rv$is_superadmin)
+
+  # Build scene filter
+  scene_filter <- ""
+  if (!show_all && !is.null(scene) && scene != "" && scene != "all") {
+    if (scene == "online") {
+      scene_filter <- "AND s.is_online = TRUE"
+    } else {
+      scene_filter <- sprintf("AND s.scene_id = (SELECT scene_id FROM scenes WHERE slug = '%s')", scene)
+    }
+  }
 
   # Query stores with schedule count
-  data <- dbGetQuery(rv$db_con, "
+  data <- dbGetQuery(rv$db_con, sprintf("
     SELECT s.store_id, s.name as Store, s.city as City, s.state as State,
            s.is_online, s.zip_code,
            COUNT(ss.schedule_id) as schedule_count
     FROM stores s
     LEFT JOIN store_schedules ss ON s.store_id = ss.store_id AND ss.is_active = TRUE
-    WHERE s.is_active = TRUE
+    WHERE s.is_active = TRUE %s
     GROUP BY s.store_id, s.name, s.city, s.state, s.is_online, s.zip_code
     ORDER BY
       CASE WHEN s.is_online = FALSE AND COUNT(ss.schedule_id) = 0 THEN 0 ELSE 1 END,
       CASE WHEN s.zip_code IS NULL OR s.zip_code = '' THEN 0 ELSE 1 END,
       s.name
-  ")
+  ", scene_filter))
 
   if (nrow(data) == 0) {
     data <- data.frame(Message = "No stores yet")
@@ -344,13 +358,26 @@ observeEvent(input$admin_store_list__reactable__selected, {
     return()
   }
 
-  # Get store data
-  data <- dbGetQuery(rv$db_con, "
-    SELECT store_id, name, address, city, state, zip_code, website, is_online, country
-    FROM stores
-    WHERE is_active = TRUE
-    ORDER BY name
-  ")
+  # Get store data with same scene filter as table
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_stores_show_all_scenes) && isTRUE(rv$is_superadmin)
+
+  # Build scene filter
+  scene_filter <- ""
+  if (!show_all && !is.null(scene) && scene != "" && scene != "all") {
+    if (scene == "online") {
+      scene_filter <- "AND s.is_online = TRUE"
+    } else {
+      scene_filter <- sprintf("AND s.scene_id = (SELECT scene_id FROM scenes WHERE slug = '%s')", scene)
+    }
+  }
+
+  data <- dbGetQuery(rv$db_con, sprintf("
+    SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code, s.website, s.is_online, s.country
+    FROM stores s
+    WHERE s.is_active = TRUE %s
+    ORDER BY s.name
+  ", scene_filter))
 
   if (selected_idx > nrow(data)) return()
 
@@ -861,4 +888,19 @@ observeEvent(input$confirm_delete_schedule, {
   }, error = function(e) {
     showNotification(paste("Error deleting schedule:", e$message), type = "error")
   })
+})
+
+# Scene indicator for admin stores page
+output$admin_stores_scene_indicator <- renderUI({
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_stores_show_all_scenes) && isTRUE(rv$is_superadmin)
+
+  if (show_all || is.null(scene) || scene == "" || scene == "all") {
+    return(NULL)
+  }
+
+  div(
+    class = "badge bg-info mb-2",
+    paste("Filtered to:", toupper(scene))
+  )
 })
