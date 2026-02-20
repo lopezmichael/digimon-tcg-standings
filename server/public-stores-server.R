@@ -778,14 +778,14 @@ output$online_store_detail_modal <- renderUI({
   store_id <- rv$selected_online_store_id
 
   store <- safe_query(rv$db_con, "
-    SELECT s.store_id, s.name, s.city as region, s.website, s.schedule_info,
+    SELECT s.store_id, s.name, s.slug, s.city as region, s.country, s.website, s.schedule_info,
            COUNT(t.tournament_id) as tournament_count,
            COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
            MAX(t.event_date) as last_event
     FROM stores s
     LEFT JOIN tournaments t ON s.store_id = t.store_id
     WHERE s.store_id = ?
-    GROUP BY s.store_id, s.name, s.city, s.website, s.schedule_info
+    GROUP BY s.store_id, s.name, s.slug, s.city, s.country, s.website, s.schedule_info
   ", params = list(store_id))
 
   if (nrow(store) == 0) return(NULL)
@@ -818,77 +818,166 @@ output$online_store_detail_modal <- renderUI({
     LIMIT 5
   ", params = list(store_id))
 
+  # Get unique players count
+  unique_players_result <- safe_query(rv$db_con, "
+    SELECT COUNT(DISTINCT r.player_id) as cnt
+    FROM results r
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE t.store_id = ?
+  ", params = list(store_id), default = data.frame(cnt = 0))
+  unique_players <- unique_players_result$cnt
+
+  # Get store slug for URL
+  store_slug <- if (!is.null(store$slug) && !is.na(store$slug) && store$slug != "") {
+    store$slug
+  } else {
+    slugify(store$name)
+  }
+
+  # Update URL for deep linking
+  update_url_for_store(session, store_id, store_slug)
+
+  # Build location string for header
+  location_parts <- c()
+  if (!is.na(store$region) && store$region != "") location_parts <- c(location_parts, store$region)
+  if (!is.na(store$country) && store$country != "") location_parts <- c(location_parts, store$country)
+  location_display <- if (length(location_parts) > 0) paste(location_parts, collapse = ", ") else NULL
+  has_website <- !is.na(store$website) && store$website != ""
+
   showModal(modalDialog(
     title = div(
       class = "d-flex align-items-center gap-2",
       bsicons::bs_icon("globe"),
-      store$name
+      span(store$name),
+      if (!is.null(location_display))
+        span(class = "text-muted fw-normal ms-2", style = "font-size: 0.7rem;", location_display),
+      if (has_website)
+        tags$a(href = store$website, target = "_blank", class = "text-primary ms-1",
+               style = "font-size: 0.75rem;", title = "Visit website",
+               bsicons::bs_icon("link-45deg"))
     ),
     size = "l",
     easyClose = TRUE,
-    footer = modalButton("Close"),
-
-    # Store info
-    div(
-      class = "mb-3",
-      if (!is.na(store$region) && store$region != "")
-        p(bsicons::bs_icon("geo-alt"), " ", store$region),
-      if (!is.na(store$schedule_info) && store$schedule_info != "")
-        p(class = "small", bsicons::bs_icon("calendar"), " ", store$schedule_info),
-      if (!is.na(store$website) && store$website != "")
-        p(tags$a(href = store$website, target = "_blank",
-                 bsicons::bs_icon("link-45deg"), " Website"))
+    footer = tagList(
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-secondary",
+        onclick = "copyCurrentUrl()",
+        bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-primary ms-2",
+        onclick = sprintf("copyCommunityUrl('%s')", store_slug),
+        bsicons::bs_icon("share"), " Share Community View"
+      ),
+      modalButton("Close")
     ),
 
-    # Activity stats
+    # Two-column layout: Stats (left) + Map placeholder (right)
     div(
-      class = "modal-stats-box d-flex justify-content-evenly mb-3 p-3 flex-wrap",
+      class = "row mb-3",
+      # Left column: Vertical stats list
       div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", store$tournament_count),
-        div(class = "modal-stat-label", "Events")
+        class = "col-md-5",
+        div(
+          class = "modal-stats-box p-3",
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Events"),
+            span(store$tournament_count)
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Avg Event Size"),
+            span(if (store$avg_players > 0) store$avg_players else "-")
+          ),
+          div(
+            class = "d-flex justify-content-between py-2 border-bottom",
+            span(class = "fw-semibold", "Unique Players"),
+            span(unique_players)
+          ),
+          div(
+            class = "d-flex justify-content-between py-2",
+            span(class = "fw-semibold", "Last Event"),
+            span(if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-")
+          )
+        )
       ),
+      # Right column: Map not available message (online stores have no physical location)
       div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value", if (store$avg_players > 0) store$avg_players else "-"),
-        div(class = "modal-stat-label", "Avg Players")
-      ),
-      div(
-        class = "modal-stat-item",
-        div(class = "modal-stat-value",
-            if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-"),
-        div(class = "modal-stat-label", "Last Event")
+        class = "col-md-7",
+        div(
+          class = "text-muted small p-3 bg-light rounded text-center d-flex align-items-center justify-content-center",
+          style = "height: 180px;",
+          div(
+            bsicons::bs_icon("globe", size = "2rem"),
+            p(class = "mb-0 mt-2", "Online organizer - no physical location")
+          )
+        )
       )
     ),
+
+    # Schedule info if available
+    if (!is.na(store$schedule_info) && store$schedule_info != "") {
+      div(
+        class = "mb-3",
+        h6(class = "modal-section-header", "Schedule"),
+        p(bsicons::bs_icon("calendar"), " ", store$schedule_info)
+      )
+    },
 
     # Recent tournaments
     if (!is.null(recent_tournaments) && nrow(recent_tournaments) > 0) {
       tagList(
         h6(class = "modal-section-header", "Recent Tournaments"),
-        reactable(recent_tournaments, compact = TRUE, striped = TRUE,
-                  columns = list(
-                    Date = colDef(width = 90),
-                    Type = colDef(width = 80),
-                    Format = colDef(width = 60),
-                    Players = colDef(width = 60),
-                    Winner = colDef(minWidth = 100),
-                    Deck = colDef(minWidth = 100)
-                  ))
+        tags$table(
+          class = "table table-sm table-striped",
+          tags$thead(
+            tags$tr(
+              tags$th("Date"), tags$th("Type"), tags$th("Players"), tags$th("Winner"), tags$th("Deck")
+            )
+          ),
+          tags$tbody(
+            lapply(1:nrow(recent_tournaments), function(i) {
+              row <- recent_tournaments[i, ]
+              tags$tr(
+                tags$td(format(as.Date(row$Date), "%b %d")),
+                tags$td(row$Type),
+                tags$td(row$Players),
+                tags$td(if (!is.na(row$Winner)) row$Winner else "-"),
+                tags$td(if (!is.na(row$Deck)) row$Deck else "-")
+              )
+            })
+          )
+        )
       )
     } else {
-      p(class = "text-muted", "No tournaments recorded yet.")
+      digital_empty_state("No tournaments recorded", "// check back soon", "calendar-x")
     },
 
     # Top players
     if (!is.null(top_players) && nrow(top_players) > 0) {
       tagList(
         h6(class = "modal-section-header mt-3", "Top Players"),
-        reactable(top_players, compact = TRUE, striped = TRUE,
-                  columns = list(
-                    Player = colDef(minWidth = 120),
-                    Events = colDef(width = 70),
-                    Wins = colDef(width = 60)
-                  ))
+        tags$table(
+          class = "table table-sm table-striped",
+          tags$thead(
+            tags$tr(
+              tags$th("Player"), tags$th("Events"), tags$th("Wins")
+            )
+          ),
+          tags$tbody(
+            lapply(1:nrow(top_players), function(i) {
+              row <- top_players[i, ]
+              tags$tr(
+                tags$td(row$Player),
+                tags$td(row$Events),
+                tags$td(row$Wins)
+              )
+            })
+          )
+        )
       )
     }
   ))

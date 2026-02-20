@@ -578,6 +578,9 @@ output$community_banner <- renderUI({
 observeEvent(input$clear_community_filter, {
   rv$community_filter <- NULL
   clear_community_filter(session)
+  # Reset filters back to defaults (5+) when clearing community filter
+  session$sendCustomMessage("setPillToggle", list(inputId = "players_min_events", value = "5"))
+  session$sendCustomMessage("setPillToggle", list(inputId = "meta_min_entries", value = "5"))
   showNotification("Community filter cleared", type = "message", duration = 2)
 })
 

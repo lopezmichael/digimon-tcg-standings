@@ -108,6 +108,12 @@ observeEvent(input$url_initial, {
           rv$current_scene <- scene_result$slug
         }
       }
+      # Reset filters to show all entries when viewing a single community
+      # (small dataset, so showing all makes more sense than 5+ minimum)
+      shinyjs::delay(150, {
+        session$sendCustomMessage("setPillToggle", list(inputId = "players_min_events", value = "0"))
+        session$sendCustomMessage("setPillToggle", list(inputId = "meta_min_entries", value = "0"))
+      })
     }
   }
 
