@@ -48,7 +48,7 @@ stores_ui <- tagList(
         ),
         actionButton(
           "stores_view_all",
-          tagList(bsicons::bs_icon("list-ul"), " All Stores"),
+          tagList(bsicons::bs_icon("grid-3x3-gap"), " Cards"),
           class = "btn-outline-primary"
         )
       ),
@@ -61,11 +61,11 @@ stores_ui <- tagList(
         id = "stores_schedule_view",
         uiOutput("stores_schedule_content")
       ),
-      # All Stores view
+      # Cards view
       conditionalPanel(
         condition = "input.stores_view_mode == 'all'",
-        id = "stores_all_view",
-        reactableOutput("store_list")
+        id = "stores_cards_view",
+        uiOutput("stores_cards_content")
       )
     )
   ),

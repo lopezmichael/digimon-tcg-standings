@@ -284,6 +284,80 @@ output$store_list <- renderReactable({
   )
 })
 
+# Store cards view (replaces table for both physical and online)
+output$stores_cards_content <- renderUI({
+  rv$data_refresh
+  scene <- rv$current_scene
+
+  # For online scene, show online organizers
+  if (!is.null(scene) && scene == "online") {
+    online_stores <- safe_query(rv$db_con, "
+      SELECT s.store_id, s.name, s.city as region, s.country, s.website,
+             COUNT(t.tournament_id) as tournament_count,
+             COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
+             MAX(t.event_date) as last_event
+      FROM stores s
+      LEFT JOIN tournaments t ON s.store_id = t.store_id
+      WHERE s.is_online = TRUE AND s.is_active = TRUE
+      GROUP BY s.store_id, s.name, s.city, s.country, s.website
+      ORDER BY s.name
+    ")
+
+    if (nrow(online_stores) == 0) {
+      return(digital_empty_state("No online organizers", "// check back soon", "globe"))
+    }
+
+    return(render_store_cards(online_stores, is_online = TRUE))
+  }
+
+  # For physical scenes, show physical stores
+  stores <- stores_data()
+
+  if (is.null(stores) || nrow(stores) == 0) {
+    return(digital_empty_state("No stores found", "// check back soon", "shop"))
+  }
+
+  render_store_cards(stores, is_online = FALSE)
+})
+
+# Helper: Render store cards grid
+render_store_cards <- function(stores, is_online = FALSE) {
+  div(
+    class = "row g-3",
+    lapply(1:nrow(stores), function(i) {
+      store <- stores[i, ]
+      div(
+        class = "col-md-4 col-lg-3",
+        tags$button(
+          type = "button",
+          class = "store-card-item p-3 h-100 w-100 text-start border-0",
+          onclick = if (is_online) {
+            sprintf("Shiny.setInputValue('online_store_click', %d, {priority: 'event'})", store$store_id)
+          } else {
+            sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", store$store_id)
+          },
+          h6(class = "mb-1 fw-semibold", store$name),
+          if (is_online) {
+            tagList(
+              if (!is.na(store$country)) p(class = "text-muted small mb-1", bsicons::bs_icon("globe"), " ", store$country),
+              if (!is.na(store$region) && store$region != "") p(class = "text-muted small mb-1", bsicons::bs_icon("geo"), " ", store$region)
+            )
+          } else {
+            if (!is.na(store$city)) p(class = "text-muted small mb-1", store$city)
+          },
+          if (store$tournament_count > 0) {
+            p(class = "small mb-0 text-primary",
+              bsicons::bs_icon("trophy"), " ", store$tournament_count, " events",
+              span(class = "text-muted ms-2", paste0("~", store$avg_players, " avg")))
+          } else {
+            p(class = "small mb-0 text-muted", "No events yet")
+          }
+        )
+      )
+    })
+  )
+}
+
 # Handle store row click - open detail modal
 observeEvent(input$store_clicked, {
   rv$selected_store_id <- input$store_clicked
