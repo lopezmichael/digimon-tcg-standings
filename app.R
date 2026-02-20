@@ -675,6 +675,7 @@ server <- function(input, output, session) {
     # === NAVIGATION ===
     current_nav = "dashboard",
     current_scene = "all",             # Scene filter - defaults to "all" for initial load (e.g., "dfw")
+    community_filter = NULL,           # Store slug for community-filtered view (e.g., "eagles-nest")
     navigate_to_tournament_id = NULL,
 
     # === MODAL STATE ===
