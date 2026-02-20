@@ -2123,6 +2123,17 @@ a:hover, .nav-link:hover {
   color: #a0aec0;
 }
 
+/* Rating sparkline in player modal */
+.rating-sparkline {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+.modal-stat-item:hover .rating-sparkline {
+  opacity: 1;
+}
+
 /* =============================================================================
    INFO HINT BOX - Digital Styled Explanatory Text
    ============================================================================= */
