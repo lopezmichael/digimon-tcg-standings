@@ -9,6 +9,15 @@ admin_players_ui <- tagList(
                  class = "btn-outline-warning",
                  icon = icon("code-merge"))
   ),
+  # Scene filter indicator and override toggle for superadmins
+  conditionalPanel(
+    condition = "output.is_superadmin == true",
+    div(
+      class = "d-flex justify-content-end mb-2",
+      checkboxInput("admin_players_show_all_scenes", "Show all scenes", value = FALSE)
+    )
+  ),
+  uiOutput("admin_players_scene_indicator"),
   div(
     class = "admin-panel",
     layout_columns(

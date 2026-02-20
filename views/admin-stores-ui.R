@@ -3,6 +3,15 @@
 
 admin_stores_ui <- tagList(
   h2("Edit Stores"),
+  # Scene filter indicator and override toggle for superadmins
+  conditionalPanel(
+    condition = "output.is_superadmin == true",
+    div(
+      class = "d-flex justify-content-end mb-2",
+      checkboxInput("admin_stores_show_all_scenes", "Show all scenes", value = FALSE)
+    )
+  ),
+  uiOutput("admin_stores_scene_indicator"),
   div(
     class = "admin-panel",
     layout_columns(
