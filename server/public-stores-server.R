@@ -701,11 +701,12 @@ output$store_modal_map <- renderMapboxgl({
 output$online_stores_section <- renderUI({
   req(rv$db_con)
 
-  # Only show online stores section when scene is "all" or "online"
-  # For regional scenes like "dfw", hide this section
+  # Only show online stores section when scene is "all"
+  # For regional scenes, we don't show online organizers
+  # For "online" scene, the main content area shows online organizers
   scene <- rv$current_scene
-  if (!is.null(scene) && scene != "" && scene != "all" && scene != "online") {
-    return(NULL)  # Hide section for regional scenes
+  if (is.null(scene) || scene != "all") {
+    return(NULL)
   }
 
   online_stores <- safe_query(rv$db_con, "
