@@ -68,8 +68,15 @@ output$player_list <- renderReactable({
   }
 
   reactable(data, compact = TRUE, striped = TRUE,
-    selection = "single",
-    onClick = "select",
+    highlight = TRUE,
+    onClick = JS("function(rowInfo, column) {
+      if (rowInfo) {
+        Shiny.setInputValue('player_list_clicked', {
+          player_id: rowInfo.row['player_id'],
+          nonce: Math.random()
+        }, {priority: 'event'});
+      }
+    }"),
     rowStyle = list(cursor = "pointer"),
     defaultPageSize = 20,
     showPageSizeOptions = TRUE,
@@ -85,65 +92,20 @@ output$player_list <- renderReactable({
 })
 
 # Handle player selection for editing
-observeEvent(input$player_list__reactable__selected, {
+observeEvent(input$player_list_clicked, {
   req(rv$db_con)
-  selected_idx <- input$player_list__reactable__selected
+  player_id <- input$player_list_clicked$player_id
 
-  if (is.null(selected_idx) || length(selected_idx) == 0) {
-    return()
-  }
+  if (is.null(player_id)) return()
 
-  # Get player data with search filter and scene filter applied (same as table)
-  search_term <- input$player_search %||% ""
-  scene <- rv$current_scene
-  show_all <- isTRUE(input$admin_players_show_all_scenes) && isTRUE(rv$is_superadmin)
+  # Look up player directly by ID
+  player <- dbGetQuery(rv$db_con, "
+    SELECT player_id, display_name FROM players WHERE player_id = ?
+  ", params = list(as.integer(player_id)))
 
-  # Build scene filter for players (players who have competed in scene)
-  scene_filter <- ""
-  if (!show_all && !is.null(scene) && scene != "" && scene != "all") {
-    if (scene == "online") {
-      scene_filter <- "
-        AND EXISTS (
-          SELECT 1 FROM results r2
-          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
-          JOIN stores s2 ON t2.store_id = s2.store_id
-          WHERE r2.player_id = p.player_id AND s2.is_online = TRUE
-        )
-      "
-    } else {
-      scene_filter <- sprintf("
-        AND EXISTS (
-          SELECT 1 FROM results r2
-          JOIN tournaments t2 ON r2.tournament_id = t2.tournament_id
-          JOIN stores s2 ON t2.store_id = s2.store_id
-          WHERE r2.player_id = p.player_id
-            AND s2.scene_id = (SELECT scene_id FROM scenes WHERE slug = '%s')
-        )
-      ", scene)
-    }
-  }
-
-  # Build search filter
-  search_filter <- ""
-  if (nchar(search_term) > 0) {
-    search_filter <- sprintf(" AND LOWER(p.display_name) LIKE LOWER('%%%s%%')", search_term)
-  }
-
-  query <- sprintf("
-    SELECT p.player_id, p.display_name
-    FROM players p
-    WHERE 1=1 %s %s
-    ORDER BY p.display_name
-  ", scene_filter, search_filter)
-
-  data <- dbGetQuery(rv$db_con, query)
-
-  if (selected_idx > nrow(data)) return()
-
-  player <- data[selected_idx, ]
+  if (nrow(player) == 0) return()
 
   # Populate form for editing
-
   updateTextInput(session, "editing_player_id", value = as.character(player$player_id))
   updateTextInput(session, "player_display_name", value = player$display_name)
 
