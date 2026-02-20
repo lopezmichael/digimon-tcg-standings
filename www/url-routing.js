@@ -160,37 +160,12 @@
     } else {
       urlToCopy = window.location.href;
     }
-
-    navigator.clipboard.writeText(urlToCopy).then(function() {
-      // Notify Shiny that link was copied (for toast notification)
-      if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
-        Shiny.setInputValue('link_copied', Date.now(), {priority: 'event'});
-      }
-    }).catch(function(err) {
-      console.error('Failed to copy URL:', err);
-      // Fallback: select and copy
-      var textArea = document.createElement('textarea');
-      textArea.value = urlToCopy;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-
-      if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
-        Shiny.setInputValue('link_copied', Date.now(), {priority: 'event'});
-      }
-    });
+    copyToClipboard(urlToCopy);
   };
 
   // Copy a specific URL to clipboard
   window.copyUrl = function(url) {
-    navigator.clipboard.writeText(url).then(function() {
-      if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
-        Shiny.setInputValue('link_copied', Date.now(), {priority: 'event'});
-      }
-    }).catch(function(err) {
-      console.error('Failed to copy URL:', err);
-    });
+    copyToClipboard(url);
   };
 
   // Copy community-filtered URL to clipboard
@@ -202,15 +177,30 @@
       baseUrl = window.location.origin + window.location.pathname;
     }
     var communityUrl = baseUrl + '?community=' + encodeURIComponent(storeSlug);
+    copyToClipboard(communityUrl);
+  };
 
-    navigator.clipboard.writeText(communityUrl).then(function() {
+  // Shared clipboard helper with textarea fallback for iframe contexts
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
       if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
-        Shiny.setInputValue('link_copied', Math.random(), {priority: 'event'});
+        Shiny.setInputValue('link_copied', Date.now(), {priority: 'event'});
       }
     }).catch(function(err) {
-      console.error('Failed to copy:', err);
+      console.error('Failed to copy URL:', err);
+      // Fallback: select and copy (needed in iframe contexts)
+      var textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+        Shiny.setInputValue('link_copied', Date.now(), {priority: 'event'});
+      }
     });
-  };
+  }
 
   // ==========================================================================
   // URL Building Helpers

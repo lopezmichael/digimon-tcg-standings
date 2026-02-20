@@ -88,34 +88,44 @@ The architecture doc contains:
 
 ## Current Work
 
-### Latest Release: v0.23.1 - Multi-Region, Polish & Performance
+### Latest Release: v0.25.0 - Stores & Filtering Enhancements
 
-Multi-region scene selection, dashboard improvements (layout rearrangement, chart fixes, in-place modals, batch queries), pill toggle filters, historical format rating snapshots, release event handling, mobile navbar improvements, XSS prevention.
+Online organizers world map, cards view on Stores tab, community links (`?community=store-slug`), admin scene filtering, country field for online stores, region-based mini maps in modals.
 
 See `ROADMAP.md` for the full version plan through v1.0.
 
+### Recent Releases
+
+| Version | Focus |
+|---------|-------|
+| v0.25.0 | Stores & Filtering Enhancements |
+| v0.24.0 | Limitless Integration & Admin Improvements |
+| v0.23.1 | Multi-Region, Polish & Performance |
+
 ### Upcoming Versions
 
-| Version | Focus | Design Doc |
-|---------|-------|------------|
-| v0.22 | User Accounts & Permissions | `docs/plans/2026-02-05-user-accounts-design.md` |
-| v0.24 | Onboarding & Help | - |
-| v0.25 | Self-Service Extras | - |
-| v1.0 | Public Launch | - |
+| Version | Focus |
+|---------|-------|
+| v0.26 | Self-Service Extras (achievement badges, head-to-head, result charts) |
+| v1.0 | Public Launch (landing page, SEO, PWA) |
 
-### Key Architectural Decisions (Upcoming)
+### Key Architectural Decisions
 
-**User Accounts (v0.22):**
-- Discord OAuth for authentication (free, TCG community already uses Discord)
-- Permission levels: Viewer (default, no login), Scene Admin, Super Admin
-- Scene Admins can only manage their assigned scene's data
-- localStorage for viewer preferences (scene selection, dark mode)
-
-**Multi-Region (v0.23):**
+**Multi-Region (v0.23, implemented):**
 - Scenes hierarchy: Global → Country → State → Metro
 - "Online" as a special top-level scene for webcam tournaments
 - Players don't belong to scenes; they appear on leaderboards based on where they've competed
 - Rating is global; leaderboards are filtered views
+
+**Limitless Integration (v0.24, implemented):**
+- Online organizers = virtual stores (`is_online = TRUE`, Online scene)
+- Sync via `scripts/sync_limitless.py` with deck auto-classification
+- Online tournaments feed same Elo rating pool as locals
+
+**User Accounts (deferred, originally v0.22):**
+- Discord OAuth for authentication (free, TCG community already uses Discord)
+- Permission levels: Viewer (default, no login), Scene Admin, Super Admin
+- Design doc: `docs/plans/2026-02-05-user-accounts-design.md`
 
 ### Completed Features
 
@@ -363,6 +373,6 @@ See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
-**v0.24.0** - Limitless Integration & Admin Improvements (Online tournament sync, deck auto-classification, admin grid entry, deck merge tool)
+**v0.25.0** - Stores & Filtering Enhancements (Online world map, cards view, community links, admin scene filtering)
 
 See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.
