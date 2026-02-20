@@ -870,7 +870,7 @@ render_online_organizers_map <- function() {
   if (nrow(online_stores) == 0) {
     # Empty world map
     return(
-      atom_mapgl(theme = "digital") |>
+      atom_mapgl(theme = "digital", projection = "mercator") |>
         mapgl::set_view(center = c(-40, 20), zoom = 1.5)
     )
   }
@@ -895,7 +895,7 @@ render_online_organizers_map <- function() {
 
   if (nrow(stores_with_coords) == 0) {
     return(
-      atom_mapgl(theme = "digital") |>
+      atom_mapgl(theme = "digital", projection = "mercator") |>
         mapgl::set_view(center = c(-40, 20), zoom = 1.5)
     )
   }
@@ -932,7 +932,7 @@ render_online_organizers_map <- function() {
   })
 
   # Create world map
-  atom_mapgl(theme = "digital") |>
+  atom_mapgl(theme = "digital", projection = "mercator") |>
     add_atom_popup_style(theme = "light") |>
     mapgl::add_circle_layer(
       id = "online-stores-layer",
