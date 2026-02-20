@@ -28,6 +28,7 @@ meta_ui <- tagList(
                       width = "140px",
                       selectize = FALSE)
         ),
+        span(class = "title-strip-pill-label", "Min Entries:"),
         div(
           class = "pill-toggle",
           `data-input-id` = "meta_min_entries",

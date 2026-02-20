@@ -28,6 +28,7 @@ players_ui <- tagList(
                       width = "140px",
                       selectize = FALSE)
         ),
+        span(class = "title-strip-pill-label", "Min Events:"),
         div(
           class = "pill-toggle",
           `data-input-id` = "players_min_events",

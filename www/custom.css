@@ -844,10 +844,12 @@ body.bslib-gap-spacing {
 /* ===== Pill Toggle Controls ===== */
 .pill-toggle {
   display: inline-flex;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 6px;
-  padding: 2px;
+  padding: 3px;
   gap: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .pill-option {
@@ -859,7 +861,7 @@ body.bslib-gap-spacing {
   cursor: pointer;
   transition: all 0.15s ease;
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
   line-height: 1.2;
 }
@@ -878,6 +880,23 @@ body.bslib-gap-spacing {
 [data-bs-theme="dark"] .pill-option.active {
   background: rgba(255, 255, 255, 0.85);
   color: #0A3055;
+}
+
+.title-strip-pill-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .title-strip-pill-label {
+    display: none;
+  }
 }
 
 /* ===== Dashboard Section Divider ===== */
