@@ -568,6 +568,9 @@ ui <- page_fillable(
     div(
       class = "main-content",
 
+      # Community filter banner (shown when filtering by store)
+      uiOutput("community_banner"),
+
       # Hidden navset for content switching
       navset_hidden(
         id = "main_content",

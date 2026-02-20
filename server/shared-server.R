@@ -556,6 +556,31 @@ get_latest_format_id <- reactive({
   if (nrow(result) > 0) result$format_id[1] else NULL
 }) |> bindCache(rv$data_refresh)
 
+# =============================================================================
+# Community Filter Banner
+# =============================================================================
+
+# Render community filter banner
+output$community_banner <- renderUI({
+  req(rv$community_filter)
+
+  # Look up store name
+  store <- safe_query(rv$db_con,
+    "SELECT name FROM stores WHERE slug = ?",
+    params = list(rv$community_filter))
+
+  if (nrow(store) == 0) return(NULL)
+
+  community_banner_ui(store$name)
+})
+
+# Clear community filter
+observeEvent(input$clear_community_filter, {
+  rv$community_filter <- NULL
+  clear_community_filter(session)
+  showNotification("Community filter cleared", type = "message", duration = 2)
+})
+
 #' Build Parameterized SQL Filters
 #'
 #' Creates SQL WHERE clause fragments with parameterized placeholders to prevent
