@@ -865,8 +865,109 @@ observeEvent(input$reset_dashboard_filters, {
   showNotification("Filters reset to defaults", type = "message")
 })
 
+# Helper: Render world map for online organizers
+render_online_organizers_map <- function() {
+  # Query online stores with country
+  online_stores <- safe_query(rv$db_con, "
+    SELECT s.store_id, s.name, s.city as region, s.country, s.website,
+           COUNT(t.tournament_id) as tournament_count,
+           COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players
+    FROM stores s
+    LEFT JOIN tournaments t ON s.store_id = t.store_id
+    WHERE s.is_online = TRUE AND s.is_active = TRUE
+    GROUP BY s.store_id, s.name, s.city, s.country, s.website
+  ")
+
+  if (nrow(online_stores) == 0) {
+    # Empty world map
+    return(
+      atom_mapgl(theme = "digital") |>
+        mapgl::set_view(center = c(-40, 20), zoom = 1.5)
+    )
+  }
+
+  # Add coordinates based on country/region
+  online_stores$lat <- NA_real_
+  online_stores$lng <- NA_real_
+
+  for (i in 1:nrow(online_stores)) {
+    coords <- get_region_coordinates(
+      online_stores$country[i],
+      online_stores$region[i]
+    )
+    if (!is.null(coords)) {
+      online_stores$lat[i] <- coords$lat
+      online_stores$lng[i] <- coords$lng
+    }
+  }
+
+  # Filter to stores with coordinates
+  stores_with_coords <- online_stores[!is.na(online_stores$lat), ]
+
+  if (nrow(stores_with_coords) == 0) {
+    return(
+      atom_mapgl(theme = "digital") |>
+        mapgl::set_view(center = c(-40, 20), zoom = 1.5)
+    )
+  }
+
+  # Convert to sf
+  stores_sf <- st_as_sf(stores_with_coords, coords = c("lng", "lat"), crs = 4326)
+
+  # Bubble size based on event count
+  stores_sf$bubble_size <- sapply(stores_with_coords$tournament_count, function(cnt) {
+    if (is.na(cnt) || cnt == 0) return(8)
+    if (cnt < 10) return(12)
+    if (cnt < 50) return(16)
+    if (cnt < 100) return(20)
+    return(24)
+  })
+
+  # Popup content
+  stores_sf$popup <- sapply(1:nrow(stores_sf), function(i) {
+    store <- stores_with_coords[i, ]
+    metrics <- c()
+    if (!is.na(store$country)) metrics <- c(metrics, "Country" = store$country)
+    if (!is.na(store$region) && store$region != "") metrics <- c(metrics, "Region" = store$region)
+    if (store$tournament_count > 0) {
+      metrics <- c(metrics, "Events" = as.character(store$tournament_count))
+      metrics <- c(metrics, "Avg Players" = as.character(store$avg_players))
+    }
+
+    atom_popup_html_metrics(
+      title = store$name,
+      subtitle = "Online Organizer",
+      metrics = if (length(metrics) > 0) metrics else NULL,
+      theme = "light"
+    )
+  })
+
+  # Create world map
+  atom_mapgl(theme = "digital") |>
+    add_atom_popup_style(theme = "light") |>
+    mapgl::add_circle_layer(
+      id = "online-stores-layer",
+      source = stores_sf,
+      circle_color = "#10B981",
+      circle_radius = list("get", "bubble_size"),
+      circle_stroke_color = "#FFFFFF",
+      circle_stroke_width = 2,
+      circle_opacity = 0.85,
+      popup = "popup"
+    ) |>
+    mapgl::set_view(center = c(-40, 20), zoom = 1.5)
+}
+
 # Stores Map
 output$stores_map <- renderMapboxgl({
+  scene <- rv$current_scene
+
+  # For Online scene, show world map with online organizers
+  if (!is.null(scene) && scene == "online") {
+    return(render_online_organizers_map())
+  }
+
+  # For other scenes, show regional map with physical stores
   stores <- stores_data()
 
   # Use minimal theme for map (works in both light/dark app modes)
