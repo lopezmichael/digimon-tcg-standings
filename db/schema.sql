@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS stores (
     phone VARCHAR,
     is_active BOOLEAN DEFAULT TRUE,
     is_online BOOLEAN DEFAULT FALSE,
+    country VARCHAR DEFAULT 'USA',        -- Country code for international support
     limitless_organizer_id INTEGER,  -- Limitless TCG organizer ID for auto-sync
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
