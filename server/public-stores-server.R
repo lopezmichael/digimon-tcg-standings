@@ -331,11 +331,8 @@ render_store_cards <- function(stores, is_online = FALSE) {
         tags$button(
           type = "button",
           class = "store-card-item p-3 h-100 w-100 text-start border-0",
-          onclick = if (is_online) {
-            sprintf("Shiny.setInputValue('online_store_click', %d, {priority: 'event'})", store$store_id)
-          } else {
-            sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", store$store_id)
-          },
+          # Always use store_clicked - modal handles both online and physical stores
+          onclick = sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", store$store_id),
           h6(class = "mb-1 fw-semibold", store$name),
           if (is_online) {
             tagList(
@@ -454,26 +451,51 @@ output$store_detail_modal <- renderUI({
            et)
   }
 
+  # Determine if this is an online store
+
+  is_online_store <- !is.null(store$is_online) && !is.na(store$is_online) && store$is_online == TRUE
+
   # Store coordinates for mini map (used by renderMapboxgl below)
-  rv$modal_store_coords <- list(
-    lat = store$latitude,
-    lng = store$longitude,
-    name = store$name
+  # For online stores, use region coordinates from geo_utils
+  if (is_online_store) {
+    region_coords <- get_region_coordinates(store$country, store$city)
+    rv$modal_store_coords <- list(
+      lat = region_coords$lat,
+      lng = region_coords$lng,
+      name = store$name,
+      is_online = TRUE,
+      zoom = 3  # Zoomed out for region view
+    )
+  } else {
+    rv$modal_store_coords <- list(
+      lat = store$latitude,
+      lng = store$longitude,
+      name = store$name,
+      is_online = FALSE,
+      zoom = 13  # Zoomed in for physical location
+    )
+  }
 
-  )
-
-
-  # Build address string for header (standard format: street, city, state zip)
-  address_parts <- c()
-  if (!is.na(store$address) && store$address != "") address_parts <- c(address_parts, store$address)
-  # City, State ZIP as one unit
-  city_state_zip <- c()
-  if (!is.na(store$city) && store$city != "") city_state_zip <- c(city_state_zip, store$city)
-  if (!is.na(store$state) && store$state != "") city_state_zip <- c(city_state_zip, store$state)
-  city_state_part <- paste(city_state_zip, collapse = ", ")
-  if (!is.na(store$zip_code) && store$zip_code != "") city_state_part <- paste(city_state_part, store$zip_code)
-  if (nchar(city_state_part) > 0) address_parts <- c(address_parts, city_state_part)
-  address_display <- if (length(address_parts) > 0) paste(address_parts, collapse = ", ") else NULL
+  # Build location display for header
+  # Online stores: country + region
+  # Physical stores: street, city, state zip
+  if (is_online_store) {
+    location_parts <- c()
+    if (!is.na(store$city) && store$city != "") location_parts <- c(location_parts, store$city)
+    if (!is.na(store$country) && store$country != "") location_parts <- c(location_parts, store$country)
+    address_display <- if (length(location_parts) > 0) paste(location_parts, collapse = ", ") else NULL
+  } else {
+    address_parts <- c()
+    if (!is.na(store$address) && store$address != "") address_parts <- c(address_parts, store$address)
+    # City, State ZIP as one unit
+    city_state_zip <- c()
+    if (!is.na(store$city) && store$city != "") city_state_zip <- c(city_state_zip, store$city)
+    if (!is.na(store$state) && store$state != "") city_state_zip <- c(city_state_zip, store$state)
+    city_state_part <- paste(city_state_zip, collapse = ", ")
+    if (!is.na(store$zip_code) && store$zip_code != "") city_state_part <- paste(city_state_part, store$zip_code)
+    if (nchar(city_state_part) > 0) address_parts <- c(address_parts, city_state_part)
+    address_display <- if (length(address_parts) > 0) paste(address_parts, collapse = ", ") else NULL
+  }
   has_website <- !is.na(store$website) && store$website != ""
 
   # Update URL for deep linking
@@ -488,7 +510,7 @@ output$store_detail_modal <- renderUI({
   showModal(modalDialog(
     title = div(
       class = "d-flex align-items-center gap-2",
-      bsicons::bs_icon("shop"),
+      bsicons::bs_icon(if (is_online_store) "globe" else "shop"),
       span(store$name),
       if (!is.null(address_display))
         span(class = "text-muted fw-normal ms-2", style = "font-size: 0.7rem;", address_display),
@@ -551,9 +573,10 @@ output$store_detail_modal <- renderUI({
         )
       ),
       # Right column: Mini map (height matched to stats box)
+      # For online stores, we use region coordinates; for physical stores, exact location
       div(
         class = "col-md-7",
-        if (!is.na(store$latitude) && !is.na(store$longitude)) {
+        if (!is.null(rv$modal_store_coords$lat) && !is.na(rv$modal_store_coords$lat)) {
           div(
             class = "store-mini-map rounded",
             mapboxglOutput("store_modal_map", height = "218px")
@@ -685,21 +708,28 @@ output$store_modal_map <- renderMapboxgl({
     geometry = sf::st_sfc(sf::st_point(c(coords$lng, coords$lat)), crs = 4326)
   )
 
-  # Build mini map with digital theme
+  # Use different styling for online vs physical stores
+  # Online: green marker, zoomed out for region view
+  # Physical: orange marker, zoomed in for precise location
+  is_online <- !is.null(coords$is_online) && coords$is_online == TRUE
+  marker_color <- if (is_online) "#10B981" else "#F7941D"
+  marker_radius <- if (is_online) 14 else 10
+  zoom_level <- if (!is.null(coords$zoom)) coords$zoom else 13
 
+  # Build mini map with digital theme
   atom_mapgl(theme = "digital") |>
     mapgl::add_circle_layer(
       id = "store-pin",
       source = store_point,
-      circle_color = "#F7941D",
-      circle_radius = 10,
+      circle_color = marker_color,
+      circle_radius = marker_radius,
       circle_stroke_color = "#FFFFFF",
       circle_stroke_width = 2,
       circle_opacity = 0.9
     ) |>
     mapgl::set_view(
       center = c(coords$lng, coords$lat),
-      zoom = 13
+      zoom = zoom_level
     )
 })
 
@@ -749,7 +779,8 @@ output$online_stores_section <- renderUI({
             tags$button(
               type = "button",
               class = "online-store-item p-3 h-100 w-100 text-start border-0",
-              onclick = sprintf("Shiny.setInputValue('online_store_click', %d, {priority: 'event'})", store$store_id),
+              # Use same handler as physical stores - modal handles both types
+              onclick = sprintf("Shiny.setInputValue('store_clicked', %d, {priority: 'event'})", store$store_id),
               h6(class = "mb-1", store$name),
               if (!is.na(store$region) && nchar(store$region) > 0)
                 p(class = "text-muted small mb-1", bsicons::bs_icon("geo"), " ", store$region),
@@ -764,223 +795,6 @@ output$online_stores_section <- renderUI({
       )
     )
   )
-})
-
-# Online store click handler
-observeEvent(input$online_store_click, {
-  rv$selected_online_store_id <- input$online_store_click
-})
-
-# Online store detail modal
-output$online_store_detail_modal <- renderUI({
-  req(rv$selected_online_store_id)
-
-  store_id <- rv$selected_online_store_id
-
-  store <- safe_query(rv$db_con, "
-    SELECT s.store_id, s.name, s.slug, s.city as region, s.country, s.website, s.schedule_info,
-           COUNT(t.tournament_id) as tournament_count,
-           COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
-           MAX(t.event_date) as last_event
-    FROM stores s
-    LEFT JOIN tournaments t ON s.store_id = t.store_id
-    WHERE s.store_id = ?
-    GROUP BY s.store_id, s.name, s.slug, s.city, s.country, s.website, s.schedule_info
-  ", params = list(store_id))
-
-  if (nrow(store) == 0) return(NULL)
-
-  # Get recent tournaments
-  recent_tournaments <- safe_query(rv$db_con, "
-    SELECT t.event_date as Date, t.event_type as Type, t.format as Format,
-           t.player_count as Players, p.display_name as Winner,
-           da.archetype_name as Deck
-    FROM tournaments t
-    LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
-    LEFT JOIN players p ON r.player_id = p.player_id
-    LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
-    WHERE t.store_id = ?
-    ORDER BY t.event_date DESC
-    LIMIT 5
-  ", params = list(store_id))
-
-  # Get top players
-  top_players <- safe_query(rv$db_con, "
-    SELECT p.display_name as Player,
-           COUNT(DISTINCT r.tournament_id) as Events,
-           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
-    FROM players p
-    JOIN results r ON p.player_id = r.player_id
-    JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE t.store_id = ?
-    GROUP BY p.player_id, p.display_name
-    ORDER BY COUNT(CASE WHEN r.placement = 1 THEN 1 END) DESC
-    LIMIT 5
-  ", params = list(store_id))
-
-  # Get unique players count
-  unique_players_result <- safe_query(rv$db_con, "
-    SELECT COUNT(DISTINCT r.player_id) as cnt
-    FROM results r
-    JOIN tournaments t ON r.tournament_id = t.tournament_id
-    WHERE t.store_id = ?
-  ", params = list(store_id), default = data.frame(cnt = 0))
-  unique_players <- unique_players_result$cnt
-
-  # Get store slug for URL
-  store_slug <- if (!is.null(store$slug) && !is.na(store$slug) && store$slug != "") {
-    store$slug
-  } else {
-    slugify(store$name)
-  }
-
-  # Update URL for deep linking
-  update_url_for_store(session, store_id, store_slug)
-
-  # Build location string for header
-  location_parts <- c()
-  if (!is.na(store$region) && store$region != "") location_parts <- c(location_parts, store$region)
-  if (!is.na(store$country) && store$country != "") location_parts <- c(location_parts, store$country)
-  location_display <- if (length(location_parts) > 0) paste(location_parts, collapse = ", ") else NULL
-  has_website <- !is.na(store$website) && store$website != ""
-
-  showModal(modalDialog(
-    title = div(
-      class = "d-flex align-items-center gap-2",
-      bsicons::bs_icon("globe"),
-      span(store$name),
-      if (!is.null(location_display))
-        span(class = "text-muted fw-normal ms-2", style = "font-size: 0.7rem;", location_display),
-      if (has_website)
-        tags$a(href = store$website, target = "_blank", class = "text-primary ms-1",
-               style = "font-size: 0.75rem;", title = "Visit website",
-               bsicons::bs_icon("link-45deg"))
-    ),
-    size = "l",
-    easyClose = TRUE,
-    footer = tagList(
-      tags$button(
-        type = "button",
-        class = "btn btn-outline-secondary",
-        onclick = "copyCurrentUrl()",
-        bsicons::bs_icon("link-45deg"), " Copy Link"
-      ),
-      tags$button(
-        type = "button",
-        class = "btn btn-outline-primary ms-2",
-        onclick = sprintf("copyCommunityUrl('%s')", store_slug),
-        bsicons::bs_icon("share"), " Share Community View"
-      ),
-      modalButton("Close")
-    ),
-
-    # Two-column layout: Stats (left) + Map placeholder (right)
-    div(
-      class = "row mb-3",
-      # Left column: Vertical stats list
-      div(
-        class = "col-md-5",
-        div(
-          class = "modal-stats-box p-3",
-          div(
-            class = "d-flex justify-content-between py-2 border-bottom",
-            span(class = "fw-semibold", "Events"),
-            span(store$tournament_count)
-          ),
-          div(
-            class = "d-flex justify-content-between py-2 border-bottom",
-            span(class = "fw-semibold", "Avg Event Size"),
-            span(if (store$avg_players > 0) store$avg_players else "-")
-          ),
-          div(
-            class = "d-flex justify-content-between py-2 border-bottom",
-            span(class = "fw-semibold", "Unique Players"),
-            span(unique_players)
-          ),
-          div(
-            class = "d-flex justify-content-between py-2",
-            span(class = "fw-semibold", "Last Event"),
-            span(if (!is.na(store$last_event)) format(as.Date(store$last_event), "%b %d") else "-")
-          )
-        )
-      ),
-      # Right column: Map not available message (online stores have no physical location)
-      div(
-        class = "col-md-7",
-        div(
-          class = "text-muted small p-3 bg-light rounded text-center d-flex align-items-center justify-content-center",
-          style = "height: 180px;",
-          div(
-            bsicons::bs_icon("globe", size = "2rem"),
-            p(class = "mb-0 mt-2", "Online organizer - no physical location")
-          )
-        )
-      )
-    ),
-
-    # Schedule info if available
-    if (!is.na(store$schedule_info) && store$schedule_info != "") {
-      div(
-        class = "mb-3",
-        h6(class = "modal-section-header", "Schedule"),
-        p(bsicons::bs_icon("calendar"), " ", store$schedule_info)
-      )
-    },
-
-    # Recent tournaments
-    if (!is.null(recent_tournaments) && nrow(recent_tournaments) > 0) {
-      tagList(
-        h6(class = "modal-section-header", "Recent Tournaments"),
-        tags$table(
-          class = "table table-sm table-striped",
-          tags$thead(
-            tags$tr(
-              tags$th("Date"), tags$th("Type"), tags$th("Players"), tags$th("Winner"), tags$th("Deck")
-            )
-          ),
-          tags$tbody(
-            lapply(1:nrow(recent_tournaments), function(i) {
-              row <- recent_tournaments[i, ]
-              tags$tr(
-                tags$td(format(as.Date(row$Date), "%b %d")),
-                tags$td(row$Type),
-                tags$td(row$Players),
-                tags$td(if (!is.na(row$Winner)) row$Winner else "-"),
-                tags$td(if (!is.na(row$Deck)) row$Deck else "-")
-              )
-            })
-          )
-        )
-      )
-    } else {
-      digital_empty_state("No tournaments recorded", "// check back soon", "calendar-x")
-    },
-
-    # Top players
-    if (!is.null(top_players) && nrow(top_players) > 0) {
-      tagList(
-        h6(class = "modal-section-header mt-3", "Top Players"),
-        tags$table(
-          class = "table table-sm table-striped",
-          tags$thead(
-            tags$tr(
-              tags$th("Player"), tags$th("Events"), tags$th("Wins")
-            )
-          ),
-          tags$tbody(
-            lapply(1:nrow(top_players), function(i) {
-              row <- top_players[i, ]
-              tags$tr(
-                tags$td(row$Player),
-                tags$td(row$Events),
-                tags$td(row$Wins)
-              )
-            })
-          )
-        )
-      )
-    }
-  ))
 })
 
 # Reactive: All stores data with activity metrics (for filtering and map)
@@ -1012,6 +826,7 @@ stores_data <- reactive({
   query <- sprintf("
     SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
            s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
+           s.country, s.is_online,
            COUNT(t.tournament_id) as tournament_count,
            COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
            MAX(t.event_date) as last_event
@@ -1021,7 +836,8 @@ stores_data <- reactive({
       %s
       %s
     GROUP BY s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
-             s.latitude, s.longitude, s.website, s.schedule_info, s.slug
+             s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
+             s.country, s.is_online
   ", base_online_filter, scene_sql)
 
   safe_query(rv$db_con, query, params = scene_params)

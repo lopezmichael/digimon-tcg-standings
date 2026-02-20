@@ -73,10 +73,8 @@ stores_ui <- tagList(
   tags$input(type = "hidden", id = "stores_view_mode", value = "schedule", class = "shiny-input-text"),
 
   # Store detail modal (rendered dynamically)
+  # Handles both physical stores and online organizers
   uiOutput("store_detail_modal"),
-
-  # Online store detail modal (rendered dynamically)
-  uiOutput("online_store_detail_modal"),
 
   # Online Tournament Organizers section
   uiOutput("online_stores_section")
