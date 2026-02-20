@@ -2,7 +2,7 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.23.1
+**Current Version:** v0.24.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
@@ -81,36 +81,51 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
-## v0.24 - Limitless Integration & UX Polish
+---
+
+## v0.24 - Limitless Integration & UX Polish ✓
 
 **Design:** `docs/plans/2026-02-19-limitless-integration-design.md`
 
 ### Limitless TCG Online Tournament Sync
 
-| ID | Type | Description |
-|----|------|-------------|
-| LI1 | SCHEMA | Add `limitless_organizer_id` to stores, create `limitless_deck_map` and `limitless_sync_state` tables |
-| LI2 | FEATURE | Sync script (`scripts/sync_limitless.py`) — fetches tournaments, standings, pairings from Limitless API |
-| LI3 | FEATURE | Player matching by `limitless_username`, auto-create new players from Limitless data |
-| LI4 | FEATURE | Deck archetype mapping — known decks auto-mapped, unknown routed to deck request queue |
-| LI5 | FEATURE | Format inference — regex parse from tournament name, date-based fallback from `formats` table |
-| LI6 | DATA | Seed Tier 1 organizers: Eagle's Nest (452), PHOENIX REBORN (281), DMV Drakes (559), MasterRukasu (578) |
-| LI7 | DATA | Initial historical sync (BT23 era onward, ~Oct 2025) |
-| LI8 | FEATURE | GitHub Actions workflow for daily automated sync (`.github/workflows/sync-limitless.yml`) |
-| LI9 | IMPROVEMENT | Enhance player merge tool — add matches transfer + `limitless_username` copy + ratings recalc |
-| LI10 | FUTURE | Stores page adaptation for online organizers (Discord/YouTube links instead of address/map) |
+| ID | Type | Description | Status |
+|----|------|-------------|--------|
+| LI1 | SCHEMA | Add `limitless_organizer_id` to stores, create `limitless_deck_map` and `limitless_sync_state` tables | Done |
+| LI2 | FEATURE | Sync script (`scripts/sync_limitless.py`) — fetches tournaments, standings, pairings from Limitless API | Done |
+| LI3 | FEATURE | Player matching by `limitless_username`, auto-create new players from Limitless data | Done |
+| LI4 | FEATURE | Deck archetype mapping — known decks auto-mapped, unknown routed to deck request queue | Done |
+| LI5 | FEATURE | Format inference — regex parse from tournament name, date-based fallback from `formats` table | Done |
+| LI6 | DATA | Seed Tier 1 organizers: Eagle's Nest, PHOENIX REBORN, DMV Drakes, MasterRukasu | Done |
+| LI7 | DATA | Initial historical sync (BT23 era onward) — 137 tournaments, 2,124 results | Done |
+| LI8 | FEATURE | GitHub Actions workflow for daily automated sync | Deferred |
+| LI9 | IMPROVEMENT | Enhance player merge tool — add matches transfer + `limitless_username` copy | Done |
+| LI10 | FEATURE | Deck archetype merge tool in Edit Decks admin tab | Done |
+| LI11 | FEATURE | Auto-classification script (`scripts/classify_decklists.py`) — 80+ archetype rules | Done |
+| LI12 | FUTURE | Stores page adaptation for online organizers (Discord/YouTube links instead of address/map) | Deferred |
 
-**Tier 1 Organizers (launch):** Eagle's Nest (USA, 111 events), PHOENIX REBORN (Argentina, 146+ events), DMV Drakes (USA, 50+ events), MasterRukasu (Brazil, 44 events)
+**Synced Organizers:** PHOENIX REBORN (93), Eagle's Nest (33), DMV Drakes (6), MasterRukasu (4), DFW Discord (1)
 
 **Key Decisions:**
 - Organizer = virtual store (`is_online = TRUE`, Online scene)
 - `event_type = "online"` for all Limitless tournaments
 - Online tournaments feed same Elo rating pool as locals
 - Unmapped decks route through existing deck request queue
-- No decklist storage (card-by-card data deferred)
-- GitHub Actions daily cron for ongoing sync (mirrors `sync-cards.yml` pattern)
+- Decklists captured in JSON for auto-classification (355 decks classified, 95% success rate)
+- GitHub Actions daily cron deferred to v0.25
 
-### Onboarding & Help
+### Admin Improvements (also completed)
+
+| ID | Type | Description | Status |
+|----|------|-------------|--------|
+| AI1 | FEATURE | Grid-based bulk entry for tournament results | Done |
+| AI2 | FEATURE | Points-to-WLT record format toggle | Done |
+| AI3 | FEATURE | Paste from Spreadsheet modal | Done |
+| AI4 | FEATURE | Inline player matching badges | Done |
+| AI5 | FIX | Admin table row selection mismatch (Edit Decks, Edit Stores) | Done |
+| AI6 | FIX | Dashboard empty on initial load (scene initialization) | Done |
+
+### Onboarding & Help (deferred to v0.25)
 
 | ID | Type | Description |
 |----|------|-------------|
@@ -129,8 +144,6 @@ This document outlines the planned features, improvements, and bug fixes for the
 | UX10 | UX | Custom GA4 events (track tab visits, filter usage, modal opens) |
 
 **Note:** OH1 (onboarding modal) and UX1 (player min-events filter) completed in v0.23.
-
----
 
 ## v0.25 - Self-Service Extras
 

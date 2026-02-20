@@ -7,30 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.24.0] - 2026-02-20 - Limitless Integration & Admin Improvements
+
 ### Added
+- **Limitless TCG Integration**: Automated sync of online tournament data from Limitless API
+  - New sync script (`scripts/sync_limitless.py`) fetches tournaments, standings, pairings
+  - Player resolution and deck mapping with admin review queue
+  - Match pairings synced to matches table for head-to-head records
+  - Auto-classification script (`scripts/classify_decklists.py`) with 80+ archetype rules
+  - Initial sync: 137 online tournaments, 2,124 results from 5 organizers
+- **Deck Archetype Merge Tool**: Merge duplicate archetypes in Edit Decks admin tab
+  - Moves all results and limitless mappings from source to target deck
+  - Deletes source archetype after merge
 - Admin Enter Results: grid-based bulk entry replacing one-at-a-time flow
 - Record Format toggle (Points or W-L-T) on tournament creation
 - Paste from Spreadsheet modal for bulk data fill
 - Inline player matching badges (matched with member #, new player)
 - Auto-create new players on grid submit
-- Upload results: delete row button (X) on each row in review table — removes row, auto-renumbers placements, maintains total player count
-- **Limitless TCG Integration**: Automated sync of online tournament data from Limitless API
-  - New sync script (`scripts/sync_limitless.py`) fetches tournaments, standings, pairings
-  - Player resolution and deck mapping with admin review queue
-  - Match pairings synced to matches table for head-to-head records
-- **Deck Archetype Merge Tool**: Merge duplicate archetypes in Edit Decks admin tab
-  - Moves all results and limitless mappings from source to target deck
-  - Deletes source archetype after merge
+- Upload results: delete row button (X) on each row in review table
 
 ### Changed
 - Admin Enter Results Step 2: full-width grid replaces left-form + right-table layout
 - Submit Results button replaces per-row Add Result + Mark Complete flow
 - Player merge tool now transfers matches (both as player and opponent) and copies limitless_username
+- Dashboard scene defaults to "all" on initial load (prevents empty state)
 
 ### Fixed
-- Upload results: row count now always matches user-entered total players (was allowing extra rows when OCR produced duplicate placements)
-- Admin table row selection mismatch: clicking a row in Edit Decks or Edit Stores now selects the correct row (disabled client-side sorting)
+- Upload results: row count now always matches user-entered total players
+- Admin table row selection mismatch: clicking a row in Edit Decks or Edit Stores now selects the correct row
 - Archetype list now refreshes immediately after merging decks
+- Dashboard showing 0 tournaments on initial page load (scene initialization race condition)
 
 ### Removed
 - Quick-add player/deck inline forms in admin results entry (replaced by grid auto-create and deck request modal)
