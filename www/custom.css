@@ -6082,3 +6082,18 @@ div.player-match-indicator.new {
   background: rgba(var(--bs-primary-rgb), 0.15);
 }
 
+
+
+/* =============================================================================
+   Community Filter Banner
+   ============================================================================= */
+.community-filter-banner {
+  background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.1), rgba(var(--bs-primary-rgb), 0.05));
+  border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+[data-bs-theme="dark"] .community-filter-banner {
+  background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.15), rgba(var(--bs-primary-rgb), 0.08));
+}

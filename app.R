@@ -254,6 +254,7 @@ source("views/about-ui.R", local = TRUE)
 source("views/faq-ui.R", local = TRUE)
 source("views/for-tos-ui.R", local = TRUE)
 source("views/onboarding-modal-ui.R", local = TRUE)
+source("views/community-banner-ui.R", local = TRUE)
 
 # =============================================================================
 # UI
