@@ -59,12 +59,25 @@ output$admin_tournament_list <- renderReactable({
   # Trigger refresh
   input$update_tournament
   input$confirm_delete_tournament
+  input$admin_tournaments_show_all_scenes
 
   # Search filter
   search <- input$admin_tournament_search %||% ""
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_tournaments_show_all_scenes) && isTRUE(rv$is_superadmin)
+
+  # Build scene filter
+  scene_filter <- ""
+  if (!show_all && !is.null(scene) && scene != "" && scene != "all") {
+    if (scene == "online") {
+      scene_filter <- "AND s.is_online = TRUE"
+    } else {
+      scene_filter <- sprintf("AND s.scene_id = (SELECT scene_id FROM scenes WHERE slug = '%s')", scene)
+    }
+  }
 
   # Build query
-  query <- "
+  query <- sprintf("
     SELECT t.tournament_id,
            s.name as store_name,
            t.event_date,
@@ -76,8 +89,8 @@ output$admin_tournament_list <- renderReactable({
     FROM tournaments t
     LEFT JOIN stores s ON t.store_id = s.store_id
     LEFT JOIN results r ON t.tournament_id = r.tournament_id
-    WHERE 1=1
-  "
+    WHERE 1=1 %s
+  ", scene_filter)
 
   if (nchar(search) > 0) {
     query <- paste0(query, " AND LOWER(s.name) LIKE LOWER('%", search, "%')")
@@ -640,4 +653,19 @@ observeEvent(input$modal_save_new_result, {
   }, error = function(e) {
     showNotification(paste("Error:", e$message), type = "error")
   })
+})
+
+# Scene indicator for admin tournaments page
+output$admin_tournaments_scene_indicator <- renderUI({
+  scene <- rv$current_scene
+  show_all <- isTRUE(input$admin_tournaments_show_all_scenes) && isTRUE(rv$is_superadmin)
+
+  if (show_all || is.null(scene) || scene == "" || scene == "all") {
+    return(NULL)
+  }
+
+  div(
+    class = "badge bg-info mb-2",
+    paste("Filtered to:", toupper(scene))
+  )
 })
