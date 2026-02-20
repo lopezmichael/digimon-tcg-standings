@@ -90,6 +90,27 @@ observeEvent(input$url_initial, {
     rv$current_scene <- params$scene
   }
 
+  # 1b. Community filter (store-specific view)
+  if (!is.null(params$community)) {
+    # Look up store by slug
+    store <- dbGetQuery(rv$db_con,
+      "SELECT store_id, scene_id FROM stores WHERE slug = ? AND is_active = TRUE",
+      params = list(params$community))
+
+    if (nrow(store) == 1) {
+      rv$community_filter <- params$community
+      # Also set scene to the store's scene if available
+      if (!is.na(store$scene_id)) {
+        scene_result <- dbGetQuery(rv$db_con,
+          "SELECT slug FROM scenes WHERE scene_id = ?",
+          params = list(store$scene_id))
+        if (nrow(scene_result) == 1 && !is.na(scene_result$slug)) {
+          rv$current_scene <- scene_result$slug
+        }
+      }
+    }
+  }
+
   # 2. Tab navigation
   if (!is.null(params$tab)) {
     valid_tabs <- c("dashboard", "players", "meta", "tournaments", "stores",
@@ -320,6 +341,11 @@ update_url_for_player <- function(session, player_id, display_name) {
     params$scene <- rv$current_scene
   }
 
+  # Preserve community filter if active
+  if (!is.null(rv$community_filter)) {
+    params$community <- rv$community_filter
+  }
+
   update_browser_url(session, params, replace = FALSE)
 }
 
@@ -329,6 +355,11 @@ update_url_for_deck <- function(session, archetype_id, slug) {
 
   if (!is.null(rv$current_scene)) {
     params$scene <- rv$current_scene
+  }
+
+  # Preserve community filter if active
+  if (!is.null(rv$community_filter)) {
+    params$community <- rv$community_filter
   }
 
   update_browser_url(session, params, replace = FALSE)
@@ -346,6 +377,11 @@ update_url_for_store <- function(session, store_id, slug) {
     params$scene <- rv$current_scene
   }
 
+  # Preserve community filter if active
+  if (!is.null(rv$community_filter)) {
+    params$community <- rv$community_filter
+  }
+
   update_browser_url(session, params, replace = FALSE)
 }
 
@@ -361,7 +397,30 @@ update_url_for_tournament <- function(session, tournament_id) {
     params$scene <- rv$current_scene
   }
 
+  # Preserve community filter if active
+  if (!is.null(rv$community_filter)) {
+    params$community <- rv$community_filter
+  }
+
   update_browser_url(session, params, replace = FALSE)
+}
+
+#' Update URL for community-filtered view
+update_url_for_community <- function(session, store_slug) {
+  params <- list(community = store_slug)
+  update_browser_url(session, params, replace = FALSE)
+}
+
+#' Clear community filter from URL
+clear_community_filter <- function(session) {
+  params <- list()
+  if (!is.null(rv$current_nav) && rv$current_nav != "dashboard") {
+    params$tab <- rv$current_nav
+  }
+  if (!is.null(rv$current_scene)) {
+    params$scene <- rv$current_scene
+  }
+  update_browser_url(session, params, replace = TRUE)
 }
 
 #' Clear entity from URL (when modal closes)
