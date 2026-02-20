@@ -1,0 +1,70 @@
+name: Sync Limitless Tournament Data
+
+on:
+  schedule:
+    # Run every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions UI
+    inputs:
+      since_date:
+        description: 'Sync tournaments since date (YYYY-MM-DD). Leave empty for incremental.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run (preview only, no changes)'
+        required: false
+        default: false
+        type: boolean
+      classify:
+        description: 'Auto-classify UNKNOWN decklists after sync'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install duckdb python-dotenv requests
+
+      - name: Sync Limitless data (incremental)
+        if: ${{ inputs.since_date == '' && inputs.dry_run != true }}
+        run: python scripts/sync_limitless.py --all-tier1 --incremental --classify --motherduck
+        env:
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DATABASE: digimon_tcg_dfw
+
+      - name: Sync Limitless data (specific date)
+        if: ${{ inputs.since_date != '' && inputs.dry_run != true }}
+        run: |
+          CLASSIFY_FLAG=""
+          if [ "${{ inputs.classify }}" = "true" ]; then
+            CLASSIFY_FLAG="--classify"
+          fi
+          python scripts/sync_limitless.py --all-tier1 --since ${{ inputs.since_date }} $CLASSIFY_FLAG --motherduck
+        env:
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DATABASE: digimon_tcg_dfw
+
+      - name: Sync Limitless data (dry run)
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          SINCE_FLAG="--incremental"
+          if [ "${{ inputs.since_date }}" != "" ]; then
+            SINCE_FLAG="--since ${{ inputs.since_date }}"
+          fi
+          python scripts/sync_limitless.py --all-tier1 $SINCE_FLAG --dry-run --motherduck
+        env:
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DATABASE: digimon_tcg_dfw

@@ -324,6 +324,24 @@ python scripts/sync_cards.py --by-set --incremental
 python scripts/sync_cards.py --by-set
 ```
 
+### Limitless TCG Sync (Online Tournaments)
+
+```bash
+# Manual: Incremental sync (uses last sync date from database)
+python scripts/sync_limitless.py --all-tier1 --incremental --classify --local
+
+# Manual: Sync since specific date
+python scripts/sync_limitless.py --all-tier1 --since 2025-10-01 --classify --local
+
+# Then push to MotherDuck
+python scripts/sync_to_motherduck.py
+
+# Automated: GitHub Actions runs weekly (sync-limitless.yml)
+# Syncs all Tier 1 organizers incrementally with auto-classification
+```
+
+**Tier 1 Organizers:** Eagle's Nest (452), PHOENIX REBORN (281), DMV Drakes (559), MasterRukasu (578)
+
 ## Code Style Notes
 
 - **UI refactoring:** Server logic is in `server/` files, UI in `views/` files
@@ -345,6 +363,6 @@ See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
-**v0.23.1** - Multi-Region, Polish & Performance (Scene selection, dashboard polish, release events, mobile navbar, XSS fixes, batch queries, historical rating snapshots)
+**v0.24.0** - Limitless Integration & Admin Improvements (Online tournament sync, deck auto-classification, admin grid entry, deck merge tool)
 
 See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.

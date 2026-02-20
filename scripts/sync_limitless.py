@@ -4,26 +4,34 @@ Sync LimitlessTCG Tournament Data to Database
 Fetches tournament data from the LimitlessTCG API and imports it into the
 DigiLab DuckDB database. Handles players, results, matches, and deck mapping.
 
-Recommended workflow:
+Recommended workflow (manual):
     1. python scripts/sync_from_motherduck.py --yes   (pull fresh cloud data)
     2. python scripts/sync_limitless.py --local --organizer 452 --since 2025-10-01
     3. python scripts/sync_to_motherduck.py            (push back to cloud)
+
+Recommended workflow (automated via GitHub Actions):
+    python scripts/sync_limitless.py --all-tier1 --incremental --classify --motherduck
 
 Usage:
     python scripts/sync_limitless.py --organizer 452 --since 2025-10-01
     python scripts/sync_limitless.py --organizer 452 --since 2025-10-01 --dry-run
     python scripts/sync_limitless.py --organizer 452 --since 2025-10-01 --local
     python scripts/sync_limitless.py --all-tier1 --since 2025-10-01
+    python scripts/sync_limitless.py --all-tier1 --incremental  (use last sync date)
+    python scripts/sync_limitless.py --all-tier1 --incremental --classify  (+ auto-classify)
     python scripts/sync_limitless.py --all-tier1 --since 2025-10-01 --limit 5
     python scripts/sync_limitless.py --repair --local  (re-fetch missing standings)
     python scripts/sync_limitless.py --all-tier1 --since 2025-01-01 --clean  (fresh re-import)
 
 Arguments:
     --organizer ID     Limitless organizer ID to sync
-    --all-tier1        Sync all Tier 1 organizers (452, 281, 559, 578, 1906)
+    --all-tier1        Sync all Tier 1 organizers (452, 281, 559, 578)
     --since DATE       Only sync tournaments on or after this date (YYYY-MM-DD)
+    --incremental      Auto-detect since date from last sync (stored in limitless_sync_state)
+    --classify         Run deck archetype auto-classification after sync
     --dry-run          Show what would be synced without writing to DB
     --local            Sync to local DuckDB (data/local.duckdb) instead of MotherDuck
+    --motherduck       Sync directly to MotherDuck (for GitHub Actions)
     --limit N          Max tournaments to sync (useful for testing)
     --repair           Re-fetch standings/pairings for tournaments missing results
     --clean            Delete existing Limitless data before sync (for fresh re-import)
@@ -42,7 +50,7 @@ import json
 import argparse
 import requests
 import duckdb
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -59,12 +67,12 @@ API_BASE = "https://play.limitlesstcg.com/api"
 REQUEST_DELAY = 1.5  # seconds between API calls
 
 # Tier 1 organizers for --all-tier1 flag
+# These are high-quality organizers with good deck coverage (50%+ decklists)
 TIER1_ORGANIZERS = {
     452: "Eagle's Nest",
     281: "PHOENIX REBORN",
     559: "DMV Drakes",
     578: "MasterRukasu",
-    1906: "dK's Tournament",
 }
 
 
@@ -1220,6 +1228,87 @@ def clean_limitless_data(conn, organizer_ids=None):
 # Main
 # =============================================================================
 
+def get_incremental_since_date(conn):
+    """Get the earliest last_tournament_date from sync state for incremental sync.
+
+    Returns a date 1 day before the oldest last sync to ensure we catch everything.
+    Falls back to 30 days ago if no sync state exists.
+    """
+    try:
+        result = conn.execute("""
+            SELECT MIN(last_tournament_date) FROM limitless_sync_state
+            WHERE last_tournament_date IS NOT NULL
+        """).fetchone()
+
+        if result and result[0]:
+            # Parse the date and subtract 1 day for safety overlap
+            last_date = datetime.strptime(result[0], "%Y-%m-%d")
+            since_date = last_date - timedelta(days=1)
+            return since_date.strftime("%Y-%m-%d")
+    except Exception as e:
+        print(f"  Warning: Could not read sync state: {e}")
+
+    # Default to 30 days ago
+    default_date = datetime.now() - timedelta(days=30)
+    return default_date.strftime("%Y-%m-%d")
+
+
+def run_classify_decklists(conn):
+    """Run deck archetype auto-classification on UNKNOWN decklists."""
+    print("\n" + "=" * 60)
+    print("AUTO-CLASSIFYING UNKNOWN DECKLISTS")
+    print("=" * 60)
+
+    # Import classification logic
+    from classify_decklists import CLASSIFICATION_RULES, classify_decklist
+
+    # Get archetype name to ID mapping
+    archetypes = conn.execute('''
+        SELECT archetype_id, archetype_name FROM deck_archetypes
+    ''').fetchall()
+    archetype_map = {name: id for id, name in archetypes}
+
+    # Get UNKNOWN decklist results from online tournaments
+    results = conn.execute('''
+        SELECT r.result_id, r.decklist_json
+        FROM results r
+        JOIN tournaments t ON r.tournament_id = t.tournament_id
+        JOIN stores s ON t.store_id = s.store_id
+        JOIN deck_archetypes d ON r.archetype_id = d.archetype_id
+        WHERE s.is_online = TRUE
+          AND d.archetype_name = 'UNKNOWN'
+          AND r.decklist_json IS NOT NULL
+          AND r.decklist_json != ''
+    ''').fetchall()
+
+    print(f"  Found {len(results)} UNKNOWN results with decklists")
+
+    if len(results) == 0:
+        print("  Nothing to classify!")
+        return 0
+
+    # Classify each decklist
+    updates = []
+    for result_id, decklist_json in results:
+        archetype_name = classify_decklist(decklist_json)
+        if archetype_name:
+            archetype_id = archetype_map.get(archetype_name)
+            if archetype_id:
+                updates.append((archetype_id, result_id))
+
+    # Apply updates
+    for archetype_id, result_id in updates:
+        conn.execute(
+            "UPDATE results SET archetype_id = ? WHERE result_id = ?",
+            [archetype_id, result_id]
+        )
+
+    print(f"  Classified {len(updates)} decklists")
+    print(f"  Remaining UNKNOWN: {len(results) - len(updates)}")
+
+    return len(updates)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Sync LimitlessTCG tournament data to DigiLab database"
@@ -1229,7 +1318,11 @@ def main():
     parser.add_argument("--all-tier1", action="store_true",
                         help="Sync all Tier 1 organizers")
     parser.add_argument("--since",
-                        help="Only sync tournaments on or after this date (YYYY-MM-DD, required except for --repair)")
+                        help="Only sync tournaments on or after this date (YYYY-MM-DD)")
+    parser.add_argument("--incremental", action="store_true",
+                        help="Auto-detect since date from last sync state")
+    parser.add_argument("--classify", action="store_true",
+                        help="Run deck archetype auto-classification after sync")
     parser.add_argument("--dry-run", action="store_true",
                         help="Show what would be synced without writing to DB")
     parser.add_argument("--local", action="store_true", default=True,
@@ -1248,10 +1341,10 @@ def main():
     if not args.organizer and not args.all_tier1 and not args.repair:
         parser.error("Either --organizer ID, --all-tier1, or --repair is required")
 
-    # Validate date format (not required for repair mode)
-    if not args.repair:
+    # Validate date format (not required for repair mode or incremental mode)
+    if not args.repair and not args.incremental:
         if not args.since:
-            parser.error("--since DATE is required (except in --repair mode)")
+            parser.error("--since DATE is required (or use --incremental for auto-detect)")
         try:
             datetime.strptime(args.since, "%Y-%m-%d")
         except ValueError:
@@ -1300,13 +1393,6 @@ def main():
     else:
         organizer_ids = [args.organizer]
 
-    print(f"Since: {args.since}")
-    print(f"Organizers: {', '.join(str(o) for o in organizer_ids)}")
-    if args.limit:
-        print(f"Limit: {args.limit} tournaments per organizer")
-    if args.dry_run:
-        print("Mode: DRY RUN (no database writes)")
-
     if use_local:
         db_path = LOCAL_DB
         print(f"Database: {db_path} (local)")
@@ -1329,6 +1415,21 @@ def main():
         print(f"FAILED: {e}")
         sys.exit(1)
 
+    # Determine since date (incremental mode auto-detects from sync state)
+    since_date = args.since
+    if args.incremental:
+        since_date = get_incremental_since_date(conn)
+        print(f"Mode: INCREMENTAL (auto-detected since date)")
+
+    print(f"Since: {since_date}")
+    print(f"Organizers: {', '.join(str(o) for o in organizer_ids)}")
+    if args.limit:
+        print(f"Limit: {args.limit} tournaments per organizer")
+    if args.classify:
+        print(f"Post-sync: Auto-classify UNKNOWN decklists")
+    if args.dry_run:
+        print("Mode: DRY RUN (no database writes)")
+
     # Clean existing Limitless data if --clean flag is set
     if args.clean:
         print("\n*** CLEAN MODE: Deleting existing Limitless data ***")
@@ -1339,11 +1440,16 @@ def main():
     all_stats = []
     for organizer_id in organizer_ids:
         try:
-            stats = sync_organizer(conn, organizer_id, args.since, args.dry_run, args.limit)
+            stats = sync_organizer(conn, organizer_id, since_date, args.dry_run, args.limit)
             all_stats.append(stats)
         except Exception as e:
             print(f"\nERROR syncing organizer {organizer_id}: {e}")
             all_stats.append({"error": str(e), "organizer_id": organizer_id})
+
+    # Run auto-classification if requested
+    classified_count = 0
+    if args.classify and not args.dry_run:
+        classified_count = run_classify_decklists(conn)
 
     # Close connection
     conn.close()
@@ -1367,6 +1473,8 @@ def main():
     print(f"Matches inserted: {total_matches}")
     print(f"New players: {total_players}")
     print(f"Deck requests: {total_decks}")
+    if args.classify and not args.dry_run:
+        print(f"Decklists classified: {classified_count}")
 
     if errors:
         print(f"\nErrors: {len(errors)}")
@@ -1380,7 +1488,7 @@ def main():
         print(f"  1. Review the data in the app (shiny::runApp())")
         print(f"  2. Push to cloud: python scripts/sync_to_motherduck.py")
 
-    if total_decks > 0:
+    if total_decks > 0 and use_local:
         print(f"\nNote: {total_decks} new deck request(s) created.")
         print(f"  Review in admin panel: Deck Requests > Map Limitless decks to archetypes")
 

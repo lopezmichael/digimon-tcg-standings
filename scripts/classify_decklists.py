@@ -7,13 +7,22 @@ Only processes UNKNOWN archetype results that have decklists.
 
 Usage:
     python scripts/classify_decklists.py --dry-run    # Preview changes
-    python scripts/classify_decklists.py              # Apply changes
+    python scripts/classify_decklists.py              # Apply changes (local)
+    python scripts/classify_decklists.py --motherduck # Apply changes (MotherDuck)
 """
 
 import argparse
+import os
 import duckdb
 import json
 from collections import Counter
+from dotenv import load_dotenv
+
+load_dotenv()
+
+MOTHERDUCK_DB = os.getenv("MOTHERDUCK_DATABASE", "digimon_tcg_dfw")
+MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
+LOCAL_DB = "data/local.duckdb"
 
 # Classification rules: list of (archetype_name, required_cards, min_matches)
 # required_cards can be a list of card name patterns (substring match)
@@ -347,9 +356,19 @@ def main():
     parser = argparse.ArgumentParser(description='Auto-classify UNKNOWN decklists')
     parser.add_argument('--dry-run', action='store_true', help='Preview changes without applying')
     parser.add_argument('--online-only', action='store_true', default=True, help='Only process online tournaments')
+    parser.add_argument('--motherduck', action='store_true', help='Use MotherDuck instead of local DuckDB')
     args = parser.parse_args()
 
-    con = duckdb.connect('data/local.duckdb', read_only=args.dry_run)
+    # Connect to database
+    if args.motherduck:
+        if not MOTHERDUCK_TOKEN:
+            print("Error: MOTHERDUCK_TOKEN not set in .env")
+            return
+        print(f"Connecting to MotherDuck: {MOTHERDUCK_DB}")
+        con = duckdb.connect(f"md:{MOTHERDUCK_DB}?motherduck_token={MOTHERDUCK_TOKEN}")
+    else:
+        print(f"Connecting to local database: {LOCAL_DB}")
+        con = duckdb.connect(LOCAL_DB, read_only=args.dry_run)
 
     # Get archetype name to ID mapping
     archetypes = con.execute('''

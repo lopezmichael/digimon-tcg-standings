@@ -2,7 +2,7 @@
 
 Technical reference for the DigiLab codebase. Consult this document before adding new server modules, reactive values, or modifying core patterns.
 
-**Last Updated:** February 2026 (v0.23.1)
+**Last Updated:** February 2026 (v0.24.0)
 
 > **Note:** Always keep this document in sync with code changes. Update when adding new reactive values, server modules, or patterns.
 

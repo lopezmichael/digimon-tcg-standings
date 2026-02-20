@@ -4,7 +4,7 @@ A regional tournament tracking application for the Digimon Trading Card Game com
 
 **Live App:** https://digilab.cards/
 
-**Current Version:** v0.19.0
+**Current Version:** v0.24.0
 
 ## Features
 
