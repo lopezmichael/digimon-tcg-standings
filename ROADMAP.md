@@ -39,6 +39,10 @@ This document outlines the planned features, improvements, and bug fixes for the
 | F7b | FEATURE | Info icons on Rating/Score column headers → link to FAQ methodology |
 | F7c | FEATURE | Light hints on admin pages explaining each function |
 | OH3 | CONTENT | Per-page help text/copy explaining what users can do on each tab |
+| DM5 | UI | Agumon in onboarding modal — welcoming/excited pose |
+| DM1 | UI | Agumon empty state — confused pose when search/filter returns no results |
+| DM2 | UI | Agumon empty state — waiting/sitting when no tournament data |
+| DM4 | UI | Agumon on About page — waving/friendly pose |
 
 ---
 
@@ -152,6 +156,11 @@ Items for future consideration, not scheduled:
 | UX13 | UX | Distance-based store sorting | Sort stores by proximity using localStorage scene |
 | UX14 | UX | Tournament "upcoming" section | Show future events from store schedules above recent results |
 | LI12 | FEATURE | Online store links (Discord/YouTube instead of address/map) | Partially done with community links |
+| DM3 | UI | Agumon error/offline state — worried pose with sweat drop | See `docs/digimon-mascots.md` |
+| DM6 | UI | Digivice footer watermark — subtle branding element | See `docs/digimon-mascots.md` |
+| DM7 | UI | Agumon 404/not found state — lost/searching pose | See `docs/digimon-mascots.md` |
+| DM8 | UI | Agumon achievement unlocked — celebrating pose | Needs achievement system (F10) first |
+| DM-COMM | BRANDING | Commission custom Digimon SVG set — multi-character, multi-mood | See `docs/digimon-mascots.md` for full spec |
 
 ---
 
@@ -281,5 +290,5 @@ The React PoC on `explore/react-rewrite` branch serves as a reference for future
 - **Bug Documentation:** `docs/solutions/`
 - **Design Documents:** `docs/plans/`
 - **Development Log:** `logs/dev_log.md`
-- **SVG Assets:** [copyicon.com Digimon icons](https://copyicon.com/icons?keyword=digimon) (Digivice, Agumon)
+- **SVG Assets:** `docs/digimon-mascots.md` — placement tracking, future commission spec, art style guidelines
 - **User Feedback:** [Google Sheet](https://docs.google.com/spreadsheets/d/11ZeL7yZo7ee4rIdbGCCLvx_Om2VtvXtcj4U6WmH4bS8/edit?gid=0#gid=0)
