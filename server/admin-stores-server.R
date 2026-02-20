@@ -60,6 +60,13 @@ observeEvent(input$add_store, {
   # Check if this is an online store
   is_online <- isTRUE(input$store_is_online)
 
+  # Get country for online stores
+  store_country <- if (is_online) {
+    input$store_country %||% "USA"
+  } else {
+    "USA"  # Physical stores default to USA
+  }
+
   # Get name from appropriate input based on is_online
   store_name <- if (is_online) {
     trimws(input$store_name_online)
@@ -172,10 +179,10 @@ observeEvent(input$add_store, {
     store_city_db <- if (nchar(store_city) > 0) store_city else NA_character_
 
     dbExecute(rv$db_con, "
-      INSERT INTO stores (store_id, name, address, city, state, zip_code, latitude, longitude, website, is_online)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO stores (store_id, name, address, city, state, zip_code, latitude, longitude, website, is_online, country)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ", params = list(new_id, store_name, address, store_city_db,
-                     state, zip_code, lat, lng, website, is_online))
+                     state, zip_code, lat, lng, website, is_online, store_country))
 
     # Insert any pending schedules for physical stores
     if (!is_online && length(rv$pending_schedules) > 0) {
@@ -206,6 +213,7 @@ observeEvent(input$add_store, {
     updateTextInput(session, "store_zip", value = "")
     updateTextInput(session, "store_website", value = "")
     updateCheckboxInput(session, "store_is_online", value = FALSE)
+    updateSelectInput(session, "store_country", selected = "USA")
 
     # Update store dropdown
     updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con, include_none = TRUE))
