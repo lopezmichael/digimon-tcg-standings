@@ -470,13 +470,10 @@ ui <- page_fillable(
     class = "app-header",
     div(
       class = "header-title",
-      # Cards icon (placeholder until digivice icon is found)
+      # Digivice icon
       span(
         class = "header-icon",
-        HTML('<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14" height="20" width="20">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M6.54619 0.85725c0.06787 -0.253169 0.3281 -0.403409 0.58128 -0.335603L13.1479 2.13401c0.2533 0.06783 0.4036 0.32817 0.3357 0.58143l-2.3101 8.61726c-0.0679 0.2532 -0.3281 0.4034 -0.5813 0.3356l-6.02048 -1.6124c-0.25327 -0.06779 -0.40358 -0.32813 -0.33569 -0.58139L6.54619 0.85725Z" stroke-width="1"></path>
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M6.10793 2.53467 0.851879 3.94374c-0.253168 0.06787 -0.403409 0.32809 -0.335603 0.58128L2.82425 13.1429c0.06783 0.2532 0.32817 0.4035 0.58143 0.3356l3.01003 -0.8069" stroke-width="1"></path>
-        </svg>')
+        HTML('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="20" width="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="10" r="4"/><circle cx="9" cy="18" r="1" fill="currentColor"/><circle cx="15" cy="18" r="1" fill="currentColor"/><line x1="9" y1="2" x2="9" y2="0.5"/><line x1="15" y1="2" x2="15" y2="0.5"/></svg>')
       ),
       span("DigiLab", class = "header-title-text"),
       span(class = "header-badge", "BETA"),
