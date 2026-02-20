@@ -4,6 +4,36 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-20: Stores & Filtering Features (v0.25.0)
+
+### Changes Made
+
+**Online Organizers Display:**
+- World map with region-level markers when "Online" scene selected
+- Added `country` column to stores table for international support
+- New "Cards" view replaces "All Stores" table - consistent across all scenes
+- `R/geo_utils.R` provides coordinate lookup for country/region combinations
+
+**Community Links:**
+- `?community=store-slug` URL parameter filters entire app to single store
+- Banner appears when filter active with "View All" to clear
+- "Share Community View" button in store modals
+- All public tabs (Dashboard, Players, Meta, Tournaments) respect filter
+
+**Admin Scene Filtering:**
+- Admin tables (Players, Tournaments, Stores) now respect scene selection
+- Super admins have "Show all scenes" toggle to override
+- Players filtered by where they've competed (EXISTS subquery pattern)
+
+### Technical Notes
+
+- Community filter takes precedence over scene filter in queries
+- Used `build_dashboard_filters` and `build_community_filters` pattern
+- `bindCache` calls updated to include `rv$community_filter`
+- Admin filtering uses direct scene_id comparison for stores/tournaments, EXISTS subquery for players
+
+---
+
 ## 2026-02-19: Deck Merge Tool & Admin Table Fixes
 
 **Context:** After bulk-syncing Limitless data, many similar deck archetypes needed consolidation (e.g., "Virus Imperialdramon" vs "Imperialdramon (RP)"). Also fixed admin table interaction bugs.

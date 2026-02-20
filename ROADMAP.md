@@ -2,7 +2,7 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.24.0
+**Current Version:** v0.25.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
 
@@ -145,7 +145,19 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 **Note:** OH1 (onboarding modal) and UX1 (player min-events filter) completed in v0.23.
 
-## v0.25 - Self-Service Extras
+## v0.25 - Stores & Filtering Enhancements ✓
+
+| ID | Type | Description | Status |
+|----|------|-------------|--------|
+| SF1 | FEATURE | Online Organizers World Map — world map with region-level markers for online scene | Done |
+| SF2 | FEATURE | Cards View — new card-based store view, consistent across all scenes | Done |
+| SF3 | FEATURE | Community Links — `?community=store-slug` URL filtering for single-store views | Done |
+| SF4 | FEATURE | Admin Scene Filtering — admin tables respect scene selection, super admin override | Done |
+| SF5 | SCHEMA | Country field for online stores (for map placement) | Done |
+
+---
+
+## v0.26 - Self-Service Extras
 
 | ID | Type | Description |
 |----|------|-------------|

@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.25.0] - 2026-02-20 - Stores & Filtering Enhancements
+
+### Added
+- **Online Organizers World Map**: When "Online" scene selected, Stores tab shows world map with organizer markers placed by country/region
+- **Cards View**: New card-based view toggle on Stores tab (replaces "All Stores" table), consistent across all scenes
+- **Community Links**: Store-specific filtering via `?community=store-slug` URL parameter
+  - Filters Dashboard, Players, Meta, and Tournaments to single store's data
+  - Banner shows active filter with "View All" to clear
+  - "Share Community View" button in store modals
+- **Admin Scene Filtering**: Edit Players, Tournaments, and Stores tables respect scene selection
+  - Super admins have "Show all scenes" toggle to override
+- **Country Field**: Online stores can specify their country for map placement
+
+### Changed
+- Stores tab view toggle renamed from "All Stores" to "Cards"
+- Online organizers section only shows when scene is "all" (not when viewing specific regions)
+
+### Schema
+- Added `country` column to stores table (default: 'USA')
+
 ## [0.24.0] - 2026-02-20 - Limitless Integration & Admin Improvements
 
 ### Added
