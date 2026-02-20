@@ -783,13 +783,6 @@ output$tournaments_trend_chart <- renderHighchart({
   # Build community filter conditions (scene-only)
   filters <- build_community_filters("t", "s")
 
-  # Exclude online events unless specifically viewing Online scene
-  online_filter <- if (!is.null(rv$current_scene) && rv$current_scene == "online") {
-    ""  # Don't exclude online when viewing Online scene
-  } else {
-    "AND (s.is_online = FALSE OR s.is_online IS NULL)"
-  }
-
   # Query tournaments aggregated by day with avg players (parameterized)
   result <- safe_query(rv$db_con, paste("
     SELECT t.event_date,
@@ -797,7 +790,7 @@ output$tournaments_trend_chart <- renderHighchart({
            ROUND(AVG(t.player_count), 1) as avg_players
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
-    WHERE 1=1", filters$sql, online_filter, "
+    WHERE 1=1", filters$sql, "
     GROUP BY t.event_date
     ORDER BY t.event_date
   "), params = filters$params, default = data.frame())

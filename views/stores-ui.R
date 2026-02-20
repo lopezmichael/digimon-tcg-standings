@@ -55,15 +55,15 @@ stores_ui <- tagList(
       uiOutput("stores_view_hint")
     ),
     card_body(
-      # Schedule view (default)
+      # Schedule view (shown when explicitly selected)
       conditionalPanel(
-        condition = "input.stores_view_mode != 'all'",
+        condition = "input.stores_view_mode == 'schedule'",
         id = "stores_schedule_view",
         uiOutput("stores_schedule_content")
       ),
-      # Cards view
+      # Cards view (default)
       conditionalPanel(
-        condition = "input.stores_view_mode == 'all'",
+        condition = "input.stores_view_mode != 'schedule'",
         id = "stores_cards_view",
         uiOutput("stores_cards_content")
       )

@@ -4005,7 +4005,7 @@ a:hover, .nav-link:hover {
   width: 80px;
   height: 80px;
   margin-bottom: 1rem;
-  animation: character-bob 2s ease-in-out infinite;
+  animation: character-jump 1.2s ease-in-out infinite;
 }
 
 .loading-character svg {
@@ -4014,9 +4014,14 @@ a:hover, .nav-link:hover {
   filter: drop-shadow(0 0 8px rgba(247, 148, 29, 0.4));
 }
 
-@keyframes character-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+@keyframes character-jump {
+  0%   { transform: translateY(0) scaleX(1) scaleY(1); }
+  15%  { transform: translateY(2px) scaleX(1.08) scaleY(0.92); }
+  30%  { transform: translateY(-24px) scaleX(0.92) scaleY(1.08); }
+  50%  { transform: translateY(-28px) scaleX(1) scaleY(1); }
+  70%  { transform: translateY(0) scaleX(1) scaleY(1); }
+  80%  { transform: translateY(0) scaleX(1.05) scaleY(0.95); }
+  100% { transform: translateY(0) scaleX(1) scaleY(1); }
 }
 
 /* Digital gate animation */

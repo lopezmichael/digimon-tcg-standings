@@ -390,6 +390,25 @@ output$store_detail_modal <- renderUI({
   stores <- stores_data()
   store <- stores[stores$store_id == store_id, ]
 
+  # If store not found in filtered data (e.g. online store when viewing "all" scene),
+  # query directly from the database
+  if (nrow(store) == 0) {
+    store <- safe_query(rv$db_con, "
+      SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+             s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
+             s.country, s.is_online,
+             COUNT(t.tournament_id) as tournament_count,
+             COALESCE(ROUND(AVG(t.player_count), 1), 0) as avg_players,
+             MAX(t.event_date) as last_event
+      FROM stores s
+      LEFT JOIN tournaments t ON s.store_id = t.store_id
+      WHERE s.store_id = ?
+      GROUP BY s.store_id, s.name, s.address, s.city, s.state, s.zip_code,
+               s.latitude, s.longitude, s.website, s.schedule_info, s.slug,
+               s.country, s.is_online
+    ", params = list(store_id))
+  }
+
   if (nrow(store) == 0) return(NULL)
 
   # Get recent tournaments at this store
