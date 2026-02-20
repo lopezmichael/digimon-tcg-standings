@@ -267,7 +267,9 @@ output$admin_store_list <- renderReactable({
     }
   })
 
+  # Note: sortable = FALSE prevents column sorting which would cause row selection mismatch
   reactable(data, compact = TRUE, striped = FALSE,
+    sortable = FALSE,
     selection = "single",
     onClick = "select",
     defaultPageSize = 20,

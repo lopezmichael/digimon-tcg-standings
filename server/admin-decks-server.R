@@ -241,13 +241,15 @@ observeEvent(input$add_archetype, {
 output$archetype_list <- renderReactable({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
 
-  # Trigger refresh when archetype added/updated/deleted
+  # Trigger refresh when archetype added/updated/deleted/merged
   input$add_archetype
   input$update_archetype
   input$confirm_delete_archetype
+  input$confirm_merge_decks
   # Also refresh when deck requests are approved
   input$deck_request_approve_click
   input$confirm_edit_approve_deck
+  rv$data_refresh
 
   # Sort by Card ID with NULLs first (decks needing review), then alphabetically
   data <- dbGetQuery(rv$db_con, "
@@ -262,9 +264,11 @@ output$archetype_list <- renderReactable({
   if (nrow(data) == 0) {
     return(reactable(data.frame(Message = "No archetypes yet"), compact = TRUE))
   }
+  # Note: sortable = FALSE prevents column sorting which would cause row selection mismatch
   reactable(data, compact = TRUE, striped = TRUE,
     selection = "single",
     onClick = "select",
+    sortable = FALSE,
     rowStyle = function(index) {
       # Highlight rows without Card ID
       if (is.na(data$`Card ID`[index]) || data$`Card ID`[index] == "") {
