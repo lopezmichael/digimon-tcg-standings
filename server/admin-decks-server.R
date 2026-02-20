@@ -853,3 +853,146 @@ reject_deck_request <- function(req_id, replacement_archetype_id, session, rv) {
     showNotification(paste("Error rejecting request:", e$message), type = "error")
   })
 }
+
+# =============================================================================
+# Merge Deck Archetypes
+# =============================================================================
+
+# Helper function to get deck choices for merge dropdowns
+get_deck_choices <- function(con) {
+  decks <- dbGetQuery(con, "
+    SELECT archetype_id, archetype_name, primary_color,
+           (SELECT COUNT(*) FROM results WHERE archetype_id = da.archetype_id) as result_count
+    FROM deck_archetypes da
+    WHERE is_active = TRUE
+    ORDER BY archetype_name
+  ")
+  if (nrow(decks) == 0) return(c())
+  # Format: "Deck Name (Color) - X results"
+  labels <- sprintf("%s (%s) - %d results", decks$archetype_name, decks$primary_color, decks$result_count)
+  setNames(decks$archetype_id, labels)
+}
+
+# Show merge modal
+observeEvent(input$show_merge_deck_modal, {
+  shinyjs::runjs("$('#merge_deck_modal').modal('show');")
+})
+
+# Update deck dropdowns when modal opens
+observe({
+  req(rv$db_con, rv$is_admin)
+  # Trigger on modal show or data refresh
+  input$show_merge_deck_modal
+  rv$data_refresh
+
+  choices <- get_deck_choices(rv$db_con)
+  updateSelectizeInput(session, "merge_source_deck", choices = choices)
+  updateSelectizeInput(session, "merge_target_deck", choices = choices)
+})
+
+# Preview merge impact
+output$merge_deck_preview <- renderUI({
+  req(rv$db_con)
+
+  source_id <- input$merge_source_deck
+  target_id <- input$merge_target_deck
+
+  if (is.null(source_id) || source_id == "" || is.null(target_id) || target_id == "") {
+    return(div(class = "text-muted", "Select both decks to see merge preview"))
+  }
+
+  source_id <- as.integer(source_id)
+  target_id <- as.integer(target_id)
+
+  if (source_id == target_id) {
+    return(div(class = "alert alert-danger", "Source and target must be different decks"))
+  }
+
+  # Get deck info
+  source_deck <- dbGetQuery(rv$db_con, "SELECT archetype_name FROM deck_archetypes WHERE archetype_id = ?",
+                            params = list(source_id))
+  target_deck <- dbGetQuery(rv$db_con, "SELECT archetype_name FROM deck_archetypes WHERE archetype_id = ?",
+                            params = list(target_id))
+
+  # Count results to be moved
+  source_results <- dbGetQuery(rv$db_con, "SELECT COUNT(*) as cnt FROM results WHERE archetype_id = ?",
+                               params = list(source_id))$cnt
+
+  # Count limitless mappings to be updated
+  limitless_mappings <- dbGetQuery(rv$db_con, "SELECT COUNT(*) as cnt FROM limitless_deck_map WHERE archetype_id = ?",
+                                   params = list(source_id))$cnt
+
+  div(
+    div(class = "alert alert-warning",
+        tags$strong("Merge Preview:"),
+        tags$ul(
+          tags$li(sprintf("Source: %s", source_deck$archetype_name)),
+          tags$li(sprintf("Target: %s", target_deck$archetype_name)),
+          tags$li(sprintf("%d result(s) will be reassigned", source_results)),
+          if (limitless_mappings > 0) tags$li(sprintf("%d Limitless mapping(s) will be updated", limitless_mappings))
+        )
+    ),
+    if (source_results > 0) {
+      div(class = "alert alert-info",
+          bsicons::bs_icon("info-circle"),
+          sprintf(" All %d results currently assigned to '%s' will be moved to '%s'.",
+                  source_results, source_deck$archetype_name, target_deck$archetype_name))
+    }
+  )
+})
+
+# Confirm merge
+observeEvent(input$confirm_merge_decks, {
+  req(rv$is_admin, rv$db_con)
+  req(input$merge_source_deck, input$merge_target_deck)
+
+  source_id <- as.integer(input$merge_source_deck)
+  target_id <- as.integer(input$merge_target_deck)
+
+  if (source_id == target_id) {
+    showNotification("Source and target must be different", type = "error")
+    return()
+  }
+
+  # Get deck names for notification
+  source_name <- dbGetQuery(rv$db_con, "SELECT archetype_name FROM deck_archetypes WHERE archetype_id = ?",
+                            params = list(source_id))$archetype_name
+  target_name <- dbGetQuery(rv$db_con, "SELECT archetype_name FROM deck_archetypes WHERE archetype_id = ?",
+                            params = list(target_id))$archetype_name
+
+  tryCatch({
+    # 1. Move all results from source to target
+    results_moved <- dbExecute(rv$db_con, "
+      UPDATE results SET archetype_id = ? WHERE archetype_id = ?
+    ", params = list(target_id, source_id))
+
+    # 2. Update limitless_deck_map entries to point to target
+    mappings_updated <- dbExecute(rv$db_con, "
+      UPDATE limitless_deck_map SET archetype_id = ? WHERE archetype_id = ?
+    ", params = list(target_id, source_id))
+
+    # 3. Delete the source archetype
+    dbExecute(rv$db_con, "DELETE FROM deck_archetypes WHERE archetype_id = ?",
+              params = list(source_id))
+
+    # Hide modal
+    shinyjs::runjs("$('#merge_deck_modal').modal('hide');")
+
+    # Clear selections
+    updateSelectizeInput(session, "merge_source_deck", selected = "")
+    updateSelectizeInput(session, "merge_target_deck", selected = "")
+
+    # Show success notification
+    msg <- sprintf("Merged '%s' into '%s': %d result(s) moved", source_name, target_name, results_moved)
+    if (mappings_updated > 0) {
+      msg <- paste0(msg, sprintf(", %d mapping(s) updated", mappings_updated))
+    }
+    showNotification(msg, type = "message", duration = 5)
+
+    # Refresh data
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+  }, error = function(e) {
+    showNotification(paste("Error merging decks:", e$message), type = "error")
+  })
+})

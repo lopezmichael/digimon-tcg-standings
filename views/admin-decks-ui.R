@@ -2,7 +2,13 @@
 # Admin - Manage deck archetypes UI
 
 admin_decks_ui <- tagList(
-  h2("Edit Deck Archetypes"),
+  div(
+    class = "d-flex justify-content-between align-items-center mb-3",
+    h2("Edit Deck Archetypes", class = "mb-0"),
+    actionButton("show_merge_deck_modal", "Merge Decks",
+                 class = "btn-outline-warning",
+                 icon = icon("code-merge"))
+  ),
 
   # Pending deck requests section (collapsible)
   uiOutput("deck_requests_section"),
@@ -130,6 +136,39 @@ admin_decks_ui <- tagList(
           class = "modal-footer",
           tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel"),
           actionButton("confirm_delete_archetype", "Delete", class = "btn-danger")
+        )
+      )
+    )
+  ),
+
+  # Merge decks modal
+  tags$div(
+    id = "merge_deck_modal",
+    class = "modal fade",
+    tabindex = "-1",
+    tags$div(
+      class = "modal-dialog",
+      tags$div(
+        class = "modal-content",
+        tags$div(
+          class = "modal-header",
+          tags$h5(class = "modal-title", "Merge Deck Archetypes"),
+          tags$button(type = "button", class = "btn-close", `data-bs-dismiss` = "modal")
+        ),
+        tags$div(
+          class = "modal-body",
+          p("Merge two deck archetypes into one. The source deck will be deleted and all its results will be reassigned to the target deck."),
+          selectizeInput("merge_source_deck", "Source Deck (will be deleted)",
+                         choices = NULL, options = list(placeholder = "Select deck to merge away...")),
+          selectizeInput("merge_target_deck", "Target Deck (will keep)",
+                         choices = NULL, options = list(placeholder = "Select deck to keep...")),
+          hr(),
+          uiOutput("merge_deck_preview")
+        ),
+        tags$div(
+          class = "modal-footer",
+          tags$button(type = "button", class = "btn btn-secondary", `data-bs-dismiss` = "modal", "Cancel"),
+          actionButton("confirm_merge_decks", "Merge Decks", class = "btn-warning")
         )
       )
     )
