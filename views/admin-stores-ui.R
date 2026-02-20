@@ -37,7 +37,19 @@ admin_stores_ui <- tagList(
           conditionalPanel(
             condition = "input.store_is_online",
             textInput("store_name_online", "Store/Organizer Name"),
-            textInput("store_region", "Region/Coverage (optional)", placeholder = "e.g., North America, Global")
+            selectInput("store_country", "Country",
+              choices = list(
+                "USA" = "USA",
+                "Argentina" = "Argentina",
+                "Brazil" = "Brazil",
+                "Mexico" = "Mexico",
+                "Canada" = "Canada",
+                "Other" = "Other"
+              ),
+              selected = "USA",
+              selectize = FALSE
+            ),
+            textInput("store_region", "Region/Coverage (optional)", placeholder = "e.g., DC/MD/VA, Texas, Global")
           ),
 
           # Common fields for both
