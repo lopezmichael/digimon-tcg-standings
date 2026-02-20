@@ -193,7 +193,7 @@ output$hot_deck_name <- renderUI({
   }
 
   HTML(htmltools::htmlEscape(hd$archetype_name))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, rv$data_refresh)
 
 output$hot_deck_trend <- renderUI({
   hd <- hot_deck()
@@ -209,7 +209,7 @@ output$hot_deck_trend <- renderUI({
   }
 
   HTML(sprintf("<span class='vb-trend-up'>+%s%% share</span>", hd$delta))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, rv$data_refresh)
 
 # Hot Deck card image
 output$hot_deck_image <- renderUI({
@@ -225,7 +225,7 @@ output$hot_deck_image <- renderUI({
     src = img_url,
     alt = hd$archetype_name
   )
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, rv$data_refresh)
 
 # Legacy output for backward compatibility (if needed elsewhere)
 output$most_popular_deck_image <- renderUI({
@@ -262,17 +262,24 @@ build_dashboard_filters <- function(table_alias = "t", store_alias = NULL) {
     params <- c(params, list(input$dashboard_event_type))
   }
 
-  # Scene filter (requires store_alias to be set)
-  scene <- rv$current_scene
-  if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
-    if (scene == "online") {
-      sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
-    } else {
-      sql_parts <- c(sql_parts, sprintf(
-        "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
-        store_alias
-      ))
-      params <- c(params, list(scene))
+  # Community filter (store-specific filtering)
+  # Takes precedence over scene filter
+  if (!is.null(rv$community_filter) && rv$community_filter != "" && !is.null(store_alias)) {
+    sql_parts <- c(sql_parts, sprintf("AND %s.slug = ?", store_alias))
+    params <- c(params, list(rv$community_filter))
+  } else {
+    # Scene filter (requires store_alias to be set)
+    scene <- rv$current_scene
+    if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
+      if (scene == "online") {
+        sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
+      } else {
+        sql_parts <- c(sql_parts, sprintf(
+          "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
+          store_alias
+        ))
+        params <- c(params, list(scene))
+      }
     }
   }
 
@@ -288,16 +295,23 @@ build_community_filters <- function(table_alias = "t", store_alias = NULL) {
   sql_parts <- character(0)
   params <- list()
 
-  scene <- rv$current_scene
-  if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
-    if (scene == "online") {
-      sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
-    } else {
-      sql_parts <- c(sql_parts, sprintf(
-        "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
-        store_alias
-      ))
-      params <- c(params, list(scene))
+  # Community filter (store-specific filtering)
+  # Takes precedence over scene filter
+  if (!is.null(rv$community_filter) && rv$community_filter != "" && !is.null(store_alias)) {
+    sql_parts <- c(sql_parts, sprintf("AND %s.slug = ?", store_alias))
+    params <- c(params, list(rv$community_filter))
+  } else {
+    scene <- rv$current_scene
+    if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
+      if (scene == "online") {
+        sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
+      } else {
+        sql_parts <- c(sql_parts, sprintf(
+          "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
+          store_alias
+        ))
+        params <- c(params, list(scene))
+      }
     }
   }
 
@@ -333,7 +347,7 @@ deck_analytics <- reactive({
              da.primary_color, da.is_multi_color
     ORDER BY entries DESC
   "), params = filters$params, default = data.frame())
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, rv$data_refresh)
 
 # ==========================================================================
 # Batch reactive: core metrics (tournament + player counts)
@@ -354,7 +368,7 @@ core_metrics <- reactive({
   ), params = filters$params, default = data.frame(tournaments = 0, players = 0))
 
   if (nrow(result) > 0) as.list(result[1, ]) else list(tournaments = 0, players = 0)
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, rv$data_refresh)
 
 # Recent tournaments (community section - scene-only filtering)
 # Shows Winner column, formatted Type, and Store Rating
@@ -405,7 +419,7 @@ output$recent_tournaments <- renderReactable({
       Winner = colDef(minWidth = 120)
     )
   )
-}) |> bindCache(rv$current_scene, rv$data_refresh)
+}) |> bindCache(rv$current_scene, rv$community_filter, rv$data_refresh)
 
 # Meta Share Timeline - curved area chart showing deck popularity over time
 # Shows top 5 or all decks based on toggle
@@ -560,7 +574,7 @@ output$meta_share_timeline <- renderHighchart({
     ) |>
     hc_add_series_list(series_list) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, input$dark_mode, rv$data_refresh)
 
 # Reactive: Total tournaments count for current filters - reads from core_metrics batch
 filtered_tournament_count <- reactive({
@@ -714,7 +728,7 @@ output$conversion_rate_chart <- renderHighchart({
       headerFormat = "<b>{point.key}</b><br/>"
     ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, input$dark_mode, rv$data_refresh)
 
 # Color Distribution Bar Chart - reads from deck_analytics batch
 output$color_dist_chart <- renderHighchart({
@@ -756,7 +770,7 @@ output$color_dist_chart <- renderHighchart({
     ) |>
     hc_tooltip(pointFormat = "<b>{point.y}</b> entries") |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, input$dark_mode, rv$data_refresh)
 
 # Tournament Activity Chart (community section - scene-only filtering)
 output$tournaments_trend_chart <- renderHighchart({
@@ -836,7 +850,7 @@ output$tournaments_trend_chart <- renderHighchart({
       pointFormat = "<b>{series.name}:</b> {point.y} players<br/>"
     ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(rv$current_scene, rv$community_filter, input$dark_mode, rv$data_refresh)
 
 # ---------------------------------------------------------------------------
 # Scene Health Section
@@ -1001,7 +1015,7 @@ output$meta_diversity_gauge <- renderHighchart({
       ", health_label, health_desc, decks_with_wins, total_wins))
     ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(input$dashboard_format, input$dashboard_event_type, rv$current_scene, rv$community_filter, input$dark_mode, rv$data_refresh)
 
 # Player Growth & Retention Chart (community section - scene-only filtering)
 output$player_growth_chart <- renderHighchart({
@@ -1100,7 +1114,7 @@ output$player_growth_chart <- renderHighchart({
       verticalAlign = "bottom"
     ) |>
     hc_add_theme(hc_theme_atom_switch(chart_mode))
-}) |> bindCache(rv$current_scene, input$dark_mode, rv$data_refresh)
+}) |> bindCache(rv$current_scene, rv$community_filter, input$dark_mode, rv$data_refresh)
 
 # Rising Stars - players with strong recent performance (community section - scene-only filtering)
 output$rising_stars_cards <- renderUI({
@@ -1189,7 +1203,7 @@ output$rising_stars_cards <- renderUI({
       )
     })
   )
-}) |> bindCache(rv$current_scene, rv$data_refresh)
+}) |> bindCache(rv$current_scene, rv$community_filter, rv$data_refresh)
 
 # Rising Stars click -> open player modal on overview
 observeEvent(input$overview_rising_star_clicked, {

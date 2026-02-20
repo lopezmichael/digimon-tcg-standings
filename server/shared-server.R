@@ -595,6 +595,7 @@ observeEvent(input$clear_community_filter, {
 #' @param id_column Character. Column name for ID filter (default: "id")
 #' @param scene Character or NULL. Scene slug for filtering ("all" = no filter, "online" = is_online stores)
 #' @param store_alias Character or NULL. Table alias for stores table when filtering by scene
+#' @param community_store Character or NULL. Store slug for community filtering (takes precedence over scene)
 #'
 #' @return List with:
 #'   - sql: SQL fragment with ? placeholders (e.g., "AND t.format = ?")
@@ -622,7 +623,8 @@ build_filters_param <- function(table_alias = "t",
                                  id = NULL,
                                  id_column = "id",
                                  scene = NULL,
-                                 store_alias = NULL) {
+                                 store_alias = NULL,
+                                 community_store = NULL) {
   sql_parts <- character(0)
   params <- list()
 
@@ -663,18 +665,24 @@ build_filters_param <- function(table_alias = "t",
     params <- c(params, list(as.integer(id)))
   }
 
-  # Scene filter (requires store_alias to be set)
-  if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
-    if (scene == "online") {
-      # Online scene filters by is_online flag (no parameter needed)
-      sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
-    } else {
-      # Regular scene filters by scene_id via slug lookup
-      sql_parts <- c(sql_parts, sprintf(
-        "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
-        store_alias
-      ))
-      params <- c(params, list(scene))
+  # Community filter (store-specific filtering - takes precedence over scene filter)
+  if (!is.null(community_store) && community_store != "" && !is.null(store_alias)) {
+    sql_parts <- c(sql_parts, sprintf("AND %s.slug = ?", store_alias))
+    params <- c(params, list(community_store))
+  } else {
+    # Scene filter (requires store_alias to be set)
+    if (!is.null(scene) && scene != "" && scene != "all" && !is.null(store_alias)) {
+      if (scene == "online") {
+        # Online scene filters by is_online flag (no parameter needed)
+        sql_parts <- c(sql_parts, sprintf("AND %s.is_online = TRUE", store_alias))
+      } else {
+        # Regular scene filters by scene_id via slug lookup
+        sql_parts <- c(sql_parts, sprintf(
+          "AND %s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)",
+          store_alias
+        ))
+        params <- c(params, list(scene))
+      }
     }
   }
 
