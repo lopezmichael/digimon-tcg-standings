@@ -502,9 +502,15 @@ output$store_detail_modal <- renderUI({
     footer = tagList(
       tags$button(
         type = "button",
-        class = "btn btn-outline-secondary me-auto",
+        class = "btn btn-outline-secondary",
         onclick = "copyCurrentUrl()",
         bsicons::bs_icon("link-45deg"), " Copy Link"
+      ),
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-primary ms-2",
+        onclick = sprintf("copyCommunityUrl('%s')", store_slug),
+        bsicons::bs_icon("share"), " Share Community View"
       ),
       modalButton("Close")
     ),

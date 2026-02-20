@@ -193,6 +193,25 @@
     });
   };
 
+  // Copy community-filtered URL to clipboard
+  window.copyCommunityUrl = function(storeSlug) {
+    var baseUrl;
+    if (isInIframe) {
+      baseUrl = PARENT_ORIGIN + '/';
+    } else {
+      baseUrl = window.location.origin + window.location.pathname;
+    }
+    var communityUrl = baseUrl + '?community=' + encodeURIComponent(storeSlug);
+
+    navigator.clipboard.writeText(communityUrl).then(function() {
+      if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+        Shiny.setInputValue('link_copied', Math.random(), {priority: 'event'});
+      }
+    }).catch(function(err) {
+      console.error('Failed to copy:', err);
+    });
+  };
+
   // ==========================================================================
   // URL Building Helpers
   // ==========================================================================
