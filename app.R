@@ -438,6 +438,30 @@ ui <- page_fillable(
           $('#custom-disconnect').addClass('active');
         });
       })();
+    ")),
+    # Auto-fit deck name text in value boxes
+    tags$script(HTML("
+      function fitDeckText() {
+        document.querySelectorAll('.vb-value-deck').forEach(function(el) {
+          var parent = el.parentElement;
+          if (!parent) return;
+          var maxWidth = parent.offsetWidth;
+          if (maxWidth === 0) return;
+          var fontSize = 1.1;
+          el.style.fontSize = fontSize + 'rem';
+          while (el.scrollWidth > maxWidth && fontSize > 0.6) {
+            fontSize -= 0.05;
+            el.style.fontSize = fontSize + 'rem';
+          }
+        });
+      }
+
+      $(document).on('shiny:value', function(e) {
+        if (e.name === 'hot_deck_name' || e.name === 'most_popular_deck_val') {
+          setTimeout(fitDeckText, 50);
+        }
+      });
+      $(window).on('resize', function() { setTimeout(fitDeckText, 100); });
     "))
   ),
 
