@@ -31,6 +31,7 @@ APP_VERSION <- "0.24.0"
 source("R/db_connection.R")
 source("R/digimoncard_api.R")
 source("R/ratings.R")
+source("R/geo_utils.R")
 
 # Load environment variables
 if (file.exists(".env")) {
