@@ -136,7 +136,16 @@ observeEvent(input$create_tournament, {
     })
 
     # Show modal and return (don't create)
-    shinyjs::runjs("$('#duplicate_tournament_modal').modal('show');")
+    showModal(modalDialog(
+      title = "Possible Duplicate Tournament",
+      uiOutput("duplicate_tournament_message"),
+      footer = tagList(
+        actionButton("edit_existing_tournament", "View/Edit Existing", class = "btn-outline-primary"),
+        actionButton("create_anyway", "Create Anyway", class = "btn-warning"),
+        modalButton("Cancel")
+      ),
+      easyClose = TRUE
+    ))
     return()
   }
 
@@ -194,7 +203,28 @@ observeEvent(input$clear_tournament, {
     )
   })
 
-  shinyjs::runjs("$('#start_over_modal').modal('show');")
+  showModal(modalDialog(
+    title = "Start Over?",
+    tagList(
+      p("What would you like to do?"),
+      uiOutput("start_over_message")
+    ),
+    footer = tagList(
+      div(
+        class = "d-flex flex-column gap-2 align-items-stretch w-100",
+        actionButton("clear_results_only", "Clear Results",
+                     class = "btn-warning w-100",
+                     icon = icon("eraser")),
+        tags$small(class = "text-muted text-center", "Remove entered results but keep the tournament for re-entry."),
+        actionButton("delete_tournament_confirm", "Delete Tournament",
+                     class = "btn-danger w-100",
+                     icon = icon("trash")),
+        uiOutput("delete_tournament_warning"),
+        modalButton("Cancel")
+      )
+    ),
+    easyClose = TRUE
+  ))
 })
 
 # Clear results only - keep tournament, remove results
@@ -218,7 +248,7 @@ observeEvent(input$clear_results_only, {
     recalculate_ratings_cache(rv$db_con)
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
-    shinyjs::runjs("$('#start_over_modal').modal('hide');")
+    removeModal()
     notify("Results cleared. Tournament kept for re-entry.", type = "message")
 
   }, error = function(e) {
@@ -248,7 +278,7 @@ observeEvent(input$delete_tournament_confirm, {
     rv$admin_player_matches <- list()
     rv$wizard_step <- 1
 
-    shinyjs::runjs("$('#start_over_modal').modal('hide');")
+    removeModal()
     notify("Tournament deleted.", type = "message")
 
     # Recalculate ratings cache
@@ -286,7 +316,7 @@ observeEvent(input$wizard_back, {
 # Handle "View/Edit Existing" button from duplicate modal
 observeEvent(input$edit_existing_tournament, {
   req(rv$duplicate_tournament)
-  shinyjs::runjs("$('#duplicate_tournament_modal').modal('hide');")
+  removeModal()
 
   # Store the tournament ID so Edit Tournaments can select it
   rv$navigate_to_tournament_id <- rv$duplicate_tournament$tournament_id
@@ -299,7 +329,7 @@ observeEvent(input$edit_existing_tournament, {
 
 # Handle "Create Anyway" button from duplicate modal
 observeEvent(input$create_anyway, {
-  shinyjs::runjs("$('#duplicate_tournament_modal').modal('hide');")
+  removeModal()
 
   # Get form values again
   store_id <- as.integer(input$tournament_store)
@@ -694,7 +724,36 @@ observeEvent(input$admin_player_blur, {
 # =============================================================================
 
 observeEvent(input$admin_paste_btn, {
-  shinyjs::runjs("$('#paste_spreadsheet_modal').modal('show');")
+  showModal(modalDialog(
+    title = tagList(bsicons::bs_icon("clipboard"), " Paste from Spreadsheet"),
+    tagList(
+      p(class = "text-muted", "Paste data with one player per line. Columns separated by tabs (from a spreadsheet) or 2+ spaces."),
+      p(class = "text-muted small mb-2", "Supported formats:"),
+      tags$div(
+        class = "bg-body-secondary rounded p-2 mb-3",
+        style = "font-family: monospace; font-size: 0.8rem; white-space: pre-line;",
+        tags$div(class = "fw-bold mb-1", "Names only:"),
+        tags$div(class = "text-muted mb-2", "PlayerOne\nPlayerTwo\nPlayerThree"),
+        tags$div(class = "fw-bold mb-1", "Names + Points:"),
+        tags$div(class = "text-muted mb-2", "PlayerOne\t9\nPlayerTwo\t7\nPlayerThree\t6"),
+        tags$div(class = "fw-bold mb-1", "Names + Points + Deck:"),
+        tags$div(class = "text-muted mb-2", "PlayerOne\t9\tBlue Flare\nPlayerTwo\t7\tRed Hybrid\nPlayerThree\t6\tUNKNOWN"),
+        tags$div(class = "fw-bold mb-1", "Names + W/L/T:"),
+        tags$div(class = "text-muted mb-2", "PlayerOne\t3\t0\t0\nPlayerTwo\t2\t1\t1\nPlayerThree\t2\t2\t0"),
+        tags$div(class = "fw-bold mb-1", "Names + W/L/T + Deck:"),
+        tags$div(class = "text-muted", "PlayerOne\t3\t0\t0\tBlue Flare\nPlayerTwo\t2\t1\t1\tRed Hybrid")
+      ),
+      p(class = "text-muted small", "Deck names must match existing archetypes exactly (case-insensitive). Unrecognized decks default to Unknown."),
+      tags$textarea(id = "paste_data", class = "form-control", rows = "10",
+                    placeholder = "Paste data here...")
+    ),
+    footer = tagList(
+      actionButton("paste_apply", "Fill Grid", class = "btn-primary", icon = icon("table")),
+      modalButton("Cancel")
+    ),
+    size = "l",
+    easyClose = TRUE
+  ))
 })
 
 observeEvent(input$paste_apply, {
@@ -790,8 +849,7 @@ observeEvent(input$paste_apply, {
   }
 
   # Close modal and clear textarea
-  shinyjs::runjs("$('#paste_spreadsheet_modal').modal('hide');")
-  shinyjs::runjs("$('#paste_data').val('');")
+  removeModal()
   notify(sprintf("Filled %d rows from pasted data", fill_count), type = "message")
 
   # Trigger player match lookup for all filled rows
