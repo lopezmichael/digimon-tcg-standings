@@ -2,7 +2,7 @@
 
 Technical reference for the DigiLab codebase. Consult this document before adding new server modules, reactive values, or modifying core patterns.
 
-**Last Updated:** February 2026 (v0.24.0)
+**Last Updated:** February 2026 (v0.27.0)
 
 > **Note:** Always keep this document in sync with code changes. Update when adding new reactive values, server modules, or patterns.
 
@@ -106,6 +106,12 @@ Pattern: `selected_{entity}_id` for single selection, `selected_{entity}_ids` fo
 | `selected_tournament_id` | integer | Tournament ID for detail modal |
 | `selected_store_ids` | integer[] | Store IDs from map region filter |
 | `modal_store_coords` | list | Store coordinates for modal mini map (lat, lng, name) |
+
+### Onboarding State
+
+| Name | Type | Description |
+|------|------|-------------|
+| `onboarding_step` | integer | Current step in onboarding carousel (1-4) |
 
 ### Form/Wizard State
 

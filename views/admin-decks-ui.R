@@ -27,6 +27,8 @@ admin_decks_ui <- tagList(
           )
         ),
         card_body(
+          p(class = "text-muted small mb-2", "Define colors and a display card for this archetype."),
+
           # Hidden field for edit mode
           textInput("editing_archetype_id", NULL, value = ""),
           tags$script("document.getElementById('editing_archetype_id').parentElement.style.display = 'none';"),

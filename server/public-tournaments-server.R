@@ -245,7 +245,7 @@ output$tournament_detail_modal <- renderUI({
         )
       )
     } else {
-      digital_empty_state("No results recorded", "// tournament data pending", "list-ul")
+      digital_empty_state("No results recorded", "// tournament data pending", "list-ul", mascot = "agumon")
     }
   ))
 })

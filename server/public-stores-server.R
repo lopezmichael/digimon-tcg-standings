@@ -307,7 +307,7 @@ output$stores_cards_content <- renderUI({
     ")
 
     if (nrow(online_stores) == 0) {
-      return(digital_empty_state("No online organizers", "// check back soon", "globe"))
+      return(digital_empty_state("No online organizers", "// check back soon", "globe", mascot = "agumon"))
     }
 
     return(render_store_cards(online_stores, is_online = TRUE))
@@ -317,7 +317,7 @@ output$stores_cards_content <- renderUI({
   stores <- stores_data()
 
   if (is.null(stores) || nrow(stores) == 0) {
-    return(digital_empty_state("No stores found", "// check back soon", "shop"))
+    return(digital_empty_state("No stores found", "// check back soon", "shop", mascot = "agumon"))
   }
 
   render_store_cards(stores, is_online = FALSE)
@@ -685,7 +685,7 @@ output$store_detail_modal <- renderUI({
         )
       )
     } else {
-      digital_empty_state("No tournaments recorded", "// check back soon", "calendar-x")
+      digital_empty_state("No tournaments recorded", "// check back soon", "calendar-x", mascot = "agumon")
     },
 
     # Top players

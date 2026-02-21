@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.27.0] - 2026-02-20 - Onboarding & Help
+
+### Added
+- **Onboarding Carousel**: Revamped first-visit modal with 4-step flow — Welcome (with Agumon mascot), Key Features overview, Scene Selection (map + geolocation), Community Links (Discord, Ko-fi, For Organizers)
+- **Contextual Table Hints**: "Click a row for full results" on Recent Tournaments, "Click a deck for details" on Top Decks (dashboard)
+- **Rating/Score Info Icons**: Clickable info icons on Rating and Score column headers in Players table — navigates to FAQ and opens relevant accordion section
+- **Admin Page Hints**: Explanatory text on Edit Stores, Edit Decks, and Edit Formats forms
+- **Per-Page Help Text**: Info hint boxes on all 5 public tabs (Dashboard, Players, Meta, Tournaments, Stores) explaining what each tab offers
+- **Agumon Empty States**: Agumon SVG mascot replaces generic icons in 7 empty state locations across all public tabs
+- **Agumon on About Page**: Agumon mascot in the About page hero section
+- **`agumon_svg()` Helper**: Reusable function for inline Agumon SVG with configurable size and color
+- **`digital_empty_state()` Mascot Parameter**: Optional `mascot = "agumon"` parameter to show Agumon instead of bsicons
+
+### Changed
+- Onboarding modal upgraded from single-step scene picker to 4-step carousel with dot indicators and Next/Back/Skip navigation
+- Map in onboarding step 3 triggers resize event when becoming visible (prevents blank Mapbox rendering)
+- App version bumped to 0.27.0
+
 ## [0.25.0] - 2026-02-20 - Stores & Filtering Enhancements
 
 ### Added

@@ -342,7 +342,7 @@ output$deck_detail_modal <- renderUI({
         )
       )
     } else {
-      digital_empty_state("No tournament history", "// player data pending", "person-x")
+      digital_empty_state("No tournament history", "// player data pending", "person-x", mascot = "agumon")
     }
   ))
 })

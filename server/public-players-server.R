@@ -222,13 +222,19 @@ output$player_standings <- renderReactable({
       Events = colDef(minWidth = 60, align = "center"),
       competitive_rating = colDef(
         name = "Rating",
-        minWidth = 65,
-        align = "center"
+        minWidth = 75,
+        align = "center",
+        header = JS("function(column) {
+          return '<span class=\"col-header-info\">Rating <span class=\"info-link\" onclick=\"event.stopPropagation(); Shiny.setInputValue(\\'goto_faq_rating\\', Math.random(), {priority: \\'event\\'});\" title=\"How is Rating calculated?\">\\u24d8</span></span>';
+        }")
       ),
       achievement_score = colDef(
         name = "Score",
-        minWidth = 55,
-        align = "center"
+        minWidth = 65,
+        align = "center",
+        header = JS("function(column) {
+          return '<span class=\"col-header-info\">Score <span class=\"info-link\" onclick=\"event.stopPropagation(); Shiny.setInputValue(\\'goto_faq_score\\', Math.random(), {priority: \\'event\\'});\" title=\"How is Score calculated?\">\\u24d8</span></span>';
+        }")
       ),
       `1sts` = colDef(minWidth = 45, align = "center"),
       `Top 3s` = colDef(minWidth = 55, align = "center"),
@@ -485,7 +491,7 @@ output$player_detail_modal <- renderUI({
         )
       )
     } else {
-      digital_empty_state("No results recorded", "// deck data pending", "clipboard-x")
+      digital_empty_state("No results recorded", "// deck data pending", "clipboard-x", mascot = "agumon")
     }
   ))
 })

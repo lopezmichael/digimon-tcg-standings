@@ -2,47 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.25.0
+**Current Version:** v0.27.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.26 - UI Polish & Responsiveness
-
-| ID | Type | Description |
-|----|------|-------------|
-| UP1 | UX | Filter prominence — make region/format/event selectors more noticeable across all tabs |
-| UP2 | UX | Pill toggle prominence on Players & Deck Meta (5+/10+/All not intuitive currently) |
-| UP3 | UI | Hot Deck value box — auto-resize text to always fit one line |
-| UP4 | UI | Top Decks — responsive grid that fills complete rows (scale count to viewport width) |
-| UP5 | UI | Rising Stars — same responsive row-filling behavior |
-| UP6 | UI | Player attendance chart — filter to local events only (removes online outlier skew) |
-| UP7 | UI | Stores: Cards view as default, Schedule as secondary |
-| UP8 | UI | Stores: Improve card styling (less flat/white in resting state) |
-| UP9 | UI | Stores: Schedule view — reduce orange intensity, better color variety |
-| UP10 | UI | Stores: Flat map projection for All/Online scenes (replace globe with Mercator or similar) |
-| UX3 | UI | Player modal: rating trend sparkline (mini line chart) |
-| I7 | UI | Replace header cards icon with Digivice SVG (from copyicon.com) |
-| BR1 | UI | Agumon SVG branding — loading screen, onboarding modal, or favicon (from copyicon.com) |
-| M1 | UI | Mobile table column prioritization |
-| BF1 | FIX | Admin table row selection audit — verify all admin tables select correct row on click |
-
----
-
-## v0.27 - Onboarding & Help
-
-| ID | Type | Description |
-|----|------|-------------|
-| OH1 | FEATURE | Revamped onboarding modal — multi-step carousel: (1) Welcome + what DigiLab is, (2) Key features + how-to tips, (3) Scene selection, (4) Community links (Discord, Ko-fi, For Organizers). Larger, more informative. Skippable. |
-| F7 | FEATURE | Contextual hints — "Click a row for details" above clickable tables |
-| F7b | FEATURE | Info icons on Rating/Score column headers → link to FAQ methodology |
-| F7c | FEATURE | Light hints on admin pages explaining each function |
-| OH3 | CONTENT | Per-page help text/copy explaining what users can do on each tab |
-| DM5 | UI | Agumon in onboarding modal — welcoming/excited pose |
-| DM1 | UI | Agumon empty state — confused pose when search/filter returns no results |
-| DM2 | UI | Agumon empty state — waiting/sitting when no tournament data |
-| DM4 | UI | Agumon on About page — waving/friendly pose |
 
 ---
 
@@ -202,6 +164,28 @@ The React PoC on `explore/react-rewrite` branch serves as a reference for future
 ---
 
 ## Completed
+
+### v0.27.0 - Onboarding & Help
+- Revamped onboarding modal — 4-step carousel: Welcome (with Agumon mascot), Key Features, Scene Selection, Community Links
+- Contextual hints on dashboard tables ("Click a row for full results", "Click a deck for details")
+- Info icons on Rating/Score column headers → navigate to FAQ methodology
+- Light hints on admin pages (Stores, Decks, Formats) explaining each form
+- Per-page help text on all 5 public tabs (Dashboard, Players, Meta, Tournaments, Stores)
+- Agumon mascot in empty states (7 call sites), About page hero, and onboarding welcome step
+- `agumon_svg()` helper and `digital_empty_state(mascot)` parameter for consistent mascot placement
+
+### v0.26.0 - UI Polish & Responsiveness
+- Filter prominence improvements across all tabs
+- Pill toggle prominence on Players & Deck Meta
+- Hot Deck value box auto-resize text
+- Top Decks and Rising Stars responsive grid
+- Player attendance chart filtered to local events
+- Stores: Cards view as default, improved card styling
+- Flat map projection for All/Online scenes
+- Player modal rating trend sparkline
+- Agumon SVG on loading screen
+- Mobile table column prioritization
+- Admin table row selection audit fix
 
 ### v0.25.0 - Stores & Filtering Enhancements
 - Online Organizers World Map with country-level markers

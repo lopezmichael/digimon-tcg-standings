@@ -26,6 +26,8 @@ admin_stores_ui <- tagList(
           )
         ),
         card_body(
+          p(class = "text-muted small mb-2", "Fill in store details. Check 'Online' for virtual organizers."),
+
           # Hidden field for edit mode
           textInput("editing_store_id", NULL, value = ""),
           tags$script("document.getElementById('editing_store_id').parentElement.style.display = 'none';"),

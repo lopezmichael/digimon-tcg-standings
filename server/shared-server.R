@@ -238,6 +238,36 @@ observeEvent(input$tos_to_upload3, {
 })
 
 # ---------------------------------------------------------------------------
+# FAQ Navigation from Info Icons (Rating/Score column headers)
+# ---------------------------------------------------------------------------
+
+observeEvent(input$goto_faq_rating, {
+  nav_select("main_content", "faq")
+  rv$current_nav <- "faq"
+  session$sendCustomMessage("updateSidebarNav", "nav_faq")
+  # Open the competitive-rating accordion panel after a delay
+  shinyjs::delay(300, {
+    shinyjs::runjs("
+      var panel = document.querySelector('#faq_ratings [data-value=\"competitive-rating\"] .accordion-button.collapsed');
+      if (panel) panel.click();
+    ")
+  })
+})
+
+observeEvent(input$goto_faq_score, {
+  nav_select("main_content", "faq")
+  rv$current_nav <- "faq"
+  session$sendCustomMessage("updateSidebarNav", "nav_faq")
+  # Open the achievement-score accordion panel after a delay
+  shinyjs::delay(300, {
+    shinyjs::runjs("
+      var panel = document.querySelector('#faq_ratings [data-value=\"achievement-score\"] .accordion-button.collapsed');
+      if (panel) panel.click();
+    ")
+  })
+})
+
+# ---------------------------------------------------------------------------
 # About Page Stats
 # ---------------------------------------------------------------------------
 

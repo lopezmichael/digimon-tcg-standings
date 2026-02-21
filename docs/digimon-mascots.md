@@ -17,16 +17,30 @@ Both are line-art style SVGs (stroke only, no fill). They use `currentColor` for
 |----------|-------|-----------|-------|------|-------|
 | Header navbar icon | Digivice | Static | `currentColor` (white) | `app.R` ~line 494 | 26x26, glows with header animation |
 | Loading screen | Agumon | Jumping (bounce) | `#F7941D` (orange) | `app.R` ~line 371 | 64x64, squash-and-stretch keyframe |
+| Onboarding modal (step 1) | Agumon | Welcoming | `#F7941D` (orange) | `views/onboarding-modal-ui.R` | 80x80, via `agumon_svg()` helper |
+| About page hero | Agumon | Friendly | `#F7941D` (orange) | `views/about-ui.R` | 64x64, via `agumon_svg()` helper |
+| Empty states (7 sites) | Agumon | Waiting | `#F7941D` (orange) | Various `server/public-*-server.R` | 56x56, via `digital_empty_state(mascot="agumon")` |
+
+### `agumon_svg()` Helper (v0.27+)
+
+Defined in `app.R`. Returns inline SVG HTML with `currentColor` support:
+```r
+agumon_svg(size = "48px", color = "#F7941D")
+```
+
+### `digital_empty_state()` Mascot Parameter (v0.27+)
+
+The `digital_empty_state()` helper now accepts an optional `mascot` parameter:
+```r
+digital_empty_state("No data", "// waiting", "inbox", mascot = "agumon")
+```
+When `mascot = "agumon"`, the bsicons icon is replaced with the Agumon SVG.
 
 ## Planned Placements
 
 | Location | Asset | Mood/State | Priority | Roadmap ID |
 |----------|-------|-----------|----------|------------|
-| Empty search results | Agumon | Confused/looking around | Medium | DM1 |
-| No tournament data | Agumon | Waiting/sitting | Medium | DM2 |
 | Error/offline state | Agumon | Sweat drop / worried | Low | DM3 |
-| About page | Agumon | Waving/friendly | Medium | DM4 |
-| Onboarding modal | Agumon | Excited/welcoming | High | DM5 |
 | Footer watermark | Digivice | Static (subtle) | Low | DM6 |
 | 404 / not found | Agumon | Lost/searching | Low | DM7 |
 | Achievement unlocked | Agumon | Celebrating | Future | DM8 |

@@ -16,6 +16,14 @@ stores_ui <- tagList(
     )
   ),
 
+  # Help text
+  div(class = "page-help-text",
+    div(class = "info-hint-box text-center",
+      bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+      "Find local game stores hosting Digimon TCG events. Click a store on the map or list for schedules and tournament history."
+    )
+  ),
+
   # Map card with digital scanner styling
   card(
     class = "card-map mb-3",

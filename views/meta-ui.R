@@ -44,6 +44,14 @@ meta_ui <- tagList(
     )
   ),
 
+  # Help text
+  div(class = "page-help-text",
+    div(class = "info-hint-box text-center",
+      bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+      "Deck performance across all tournaments. See which archetypes are played most and which convert to top finishes."
+    )
+  ),
+
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",

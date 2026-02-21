@@ -47,6 +47,14 @@ tournaments_ui <- tagList(
     )
   ),
 
+  # Help text
+  div(class = "page-help-text",
+    div(class = "info-hint-box text-center",
+      bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+      "Browse all recorded events. Click a tournament to see full standings, decks played, and match records."
+    )
+  ),
+
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",

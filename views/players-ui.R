@@ -47,6 +47,14 @@ players_ui <- tagList(
   # Historical rating indicator (shown when viewing past format)
   uiOutput("historical_rating_badge"),
 
+  # Help text
+  div(class = "page-help-text",
+    div(class = "info-hint-box text-center",
+      bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+      "Player leaderboard ranked by Competitive Rating. Click any player to see their full tournament history and stats."
+    )
+  ),
+
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",

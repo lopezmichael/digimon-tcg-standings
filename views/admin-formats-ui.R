@@ -17,6 +17,8 @@ admin_formats_ui <- tagList(
           )
         ),
         card_body(
+          p(class = "text-muted small mb-2", "Add a card set or format. Tournaments reference these for filtering."),
+
           # Hidden field for edit mode (stores the original format_id being edited)
           textInput("editing_format_id", NULL, value = ""),
           tags$script("document.getElementById('editing_format_id').parentElement.style.display = 'none';"),

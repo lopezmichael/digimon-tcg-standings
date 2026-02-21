@@ -118,8 +118,9 @@ observeEvent(input$scene_selector, {
 # Onboarding Modal Functions
 # -----------------------------------------------------------------------------
 
-#' Show single-step onboarding modal (welcome + scene picker combined)
+#' Show 4-step onboarding carousel modal
 show_onboarding_modal <- function() {
+  rv$onboarding_step <- 1
   showModal(modalDialog(
     onboarding_ui(),
     title = NULL,
@@ -137,6 +138,91 @@ observeEvent(input$close_onboarding, {
   session$sendCustomMessage("saveScenePreference", list(scene = "all"))
   rv$current_scene <- "all"
   updateSelectInput(session, "scene_selector", selected = "all")
+})
+
+# -----------------------------------------------------------------------------
+# Onboarding Carousel Navigation
+# -----------------------------------------------------------------------------
+
+# Update step visibility, dots, and nav buttons when step changes
+observe({
+  step <- rv$onboarding_step
+  req(step)
+
+  # Show/hide step containers
+  for (i in 1:4) {
+    if (i == step) {
+      shinyjs::show(paste0("onboarding_step_", i))
+    } else {
+      shinyjs::hide(paste0("onboarding_step_", i))
+    }
+  }
+
+  # Update dot classes via JS
+  shinyjs::runjs(sprintf("
+    $('.onboarding-dot').removeClass('active completed');
+    for (var i = 1; i <= 4; i++) {
+      var dot = document.getElementById('onboarding_dot_' + i);
+      if (dot) {
+        if (i === %d) dot.classList.add('active');
+        else if (i < %d) dot.classList.add('completed');
+      }
+    }
+  ", step, step))
+
+  # Toggle nav buttons
+  if (step == 1) {
+    shinyjs::show("onboarding_skip")
+    shinyjs::hide("onboarding_back")
+  } else {
+    shinyjs::hide("onboarding_skip")
+    shinyjs::show("onboarding_back")
+  }
+
+  if (step == 4) {
+    shinyjs::hide("onboarding_next")
+    shinyjs::show("onboarding_finish")
+  } else {
+    shinyjs::show("onboarding_next")
+    shinyjs::hide("onboarding_finish")
+  }
+
+  # Trigger map resize when scene step becomes visible
+
+  if (step == 3) {
+    shinyjs::runjs("setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 150);")
+  }
+})
+
+# Next button
+observeEvent(input$onboarding_next, {
+  if (rv$onboarding_step < 4) {
+    rv$onboarding_step <- rv$onboarding_step + 1
+  }
+})
+
+# Back button
+observeEvent(input$onboarding_back, {
+  if (rv$onboarding_step > 1) {
+    rv$onboarding_step <- rv$onboarding_step - 1
+  }
+})
+
+# Skip button - default to "all" and close
+observeEvent(input$onboarding_skip, {
+  select_scene_and_close("all")
+})
+
+# Finish button (Get Started) - close with current scene or "all" default
+observeEvent(input$onboarding_finish, {
+  select_scene_and_close(rv$current_scene %||% "all")
+})
+
+# For Organizers link in step 4 - close modal and navigate
+observeEvent(input$onboarding_to_organizers, {
+  select_scene_and_close(rv$current_scene %||% "all")
+  nav_select("main_content", "for_tos")
+  rv$current_nav <- "for_tos"
 })
 
 # -----------------------------------------------------------------------------

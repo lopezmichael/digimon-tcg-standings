@@ -43,6 +43,14 @@ dashboard_ui <- tagList(
     )
   ),
 
+  # Help text
+  div(class = "page-help-text",
+    div(class = "info-hint-box text-center",
+      bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+      "Overview of your scene's tournament activity, trending decks, and top performers. Use filters above to drill into specific formats or event types."
+    )
+  ),
+
   # Value boxes with digital Digimon aesthetic
   div(
     class = "overview-value-boxes mb-3",
@@ -120,9 +128,13 @@ dashboard_ui <- tagList(
   # Top Decks with card images (primary visual)
   card(
     card_header(
-      class = "d-flex align-items-center gap-2",
-      bsicons::bs_icon("collection", class = "text-primary"),
-      uiOutput("top_decks_header", inline = TRUE)
+      class = "d-flex justify-content-between align-items-center",
+      div(
+        class = "d-flex align-items-center gap-2",
+        bsicons::bs_icon("collection", class = "text-primary"),
+        uiOutput("top_decks_header", inline = TRUE)
+      ),
+      span(class = "small text-muted", "Click a deck for details")
     ),
     card_body(
       class = "top-decks-container",
@@ -186,9 +198,13 @@ dashboard_ui <- tagList(
     # Recent Tournaments table
     card(
       card_header(
-        class = "d-flex align-items-center gap-2",
-        bsicons::bs_icon("calendar-event", class = "text-primary"),
-        "Recent Tournaments"
+        class = "d-flex justify-content-between align-items-center",
+        div(
+          class = "d-flex align-items-center gap-2",
+          bsicons::bs_icon("calendar-event", class = "text-primary"),
+          "Recent Tournaments"
+        ),
+        span(class = "small text-muted", "Click a row for full results")
       ),
       card_body(
         reactableOutput("recent_tournaments")

@@ -599,7 +599,7 @@ output$top_decks_with_images <- renderUI({
   total_tournaments <- filtered_tournament_count()
 
   if (is.null(top_data) || nrow(top_data) == 0 || total_tournaments == 0) {
-    return(digital_empty_state("No tournament data", "// awaiting results", "inbox"))
+    return(digital_empty_state("No tournament data", "// awaiting results", "inbox", mascot = "agumon"))
   }
 
   # Sort by first places then entries, take top 6
