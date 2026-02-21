@@ -362,6 +362,130 @@ observeEvent(input$confirm_delete_tournament, {
 # Results Modal Handlers
 # =============================================================================
 
+# Helper: show the results editor modal (can be called multiple times)
+show_results_editor <- function() {
+  showModal(modalDialog(
+    # Tournament summary
+    uiOutput("results_modal_summary"),
+
+    hr(),
+
+    # Add result button
+    div(
+      class = "mb-3",
+      actionButton("modal_add_result", "+ Add Result",
+                   class = "btn-outline-primary btn-sm",
+                   icon = icon("plus"))
+    ),
+
+    # Results table
+    reactableOutput("modal_results_table"),
+
+    # Add result form (hidden initially)
+    shinyjs::hidden(
+      div(
+        id = "modal_add_result_form",
+        class = "card mt-3 p-3 bg-light",
+        h6("Add New Result"),
+        div(
+          class = "row g-2",
+          div(class = "col-md-6",
+              selectizeInput("modal_new_player", "Player",
+                             choices = NULL,
+                             options = list(create = FALSE, placeholder = "Select player..."))),
+          div(class = "col-md-6",
+              selectizeInput("modal_new_deck", "Deck",
+                             choices = NULL,
+                             options = list(create = FALSE, placeholder = "Select deck...")))
+        ),
+        div(
+          class = "row g-2 mt-2",
+          div(class = "col-md-3",
+              numericInput("modal_new_placement", "Place", value = 1, min = 1)),
+          div(class = "col-md-3",
+              numericInput("modal_new_wins", "Wins", value = 0, min = 0)),
+          div(class = "col-md-3",
+              numericInput("modal_new_losses", "Losses", value = 0, min = 0)),
+          div(class = "col-md-3",
+              numericInput("modal_new_ties", "Ties", value = 0, min = 0))
+        ),
+        div(
+          class = "row g-2 mt-2",
+          div(class = "col-12",
+              textInput("modal_new_decklist", "Decklist URL (optional)", placeholder = "https://..."))
+        ),
+        div(
+          class = "d-flex gap-2 mt-3",
+          actionButton("modal_save_new_result", "Save", class = "btn-success btn-sm"),
+          actionButton("modal_cancel_new_result", "Cancel", class = "btn-outline-secondary btn-sm")
+        )
+      )
+    ),
+
+    title = tagList(bsicons::bs_icon("list-check"), " Tournament Results"),
+    footer = modalButton("Done"),
+    size = "l",
+    easyClose = TRUE
+  ))
+}
+
+# Helper: show the edit result modal
+show_edit_result_modal <- function() {
+  showModal(modalDialog(
+    # Hidden field for result ID
+    textInput("modal_editing_result_id", NULL, value = ""),
+    tags$script("document.getElementById('modal_editing_result_id').parentElement.style.display = 'none';"),
+
+    selectizeInput("modal_edit_player", "Player",
+                   choices = NULL,
+                   options = list(create = FALSE, placeholder = "Select player...")),
+    selectizeInput("modal_edit_deck", "Deck",
+                   choices = NULL,
+                   options = list(create = FALSE, placeholder = "Select deck...")),
+    div(
+      class = "modal-numeric-inputs",
+      layout_columns(
+        col_widths = c(3, 3, 3, 3),
+        numericInput("modal_edit_placement", "Place", value = 1, min = 1),
+        numericInput("modal_edit_wins", "Wins", value = 0, min = 0),
+        numericInput("modal_edit_losses", "Losses", value = 0, min = 0),
+        numericInput("modal_edit_ties", "Ties", value = 0, min = 0)
+      )
+    ),
+    div(
+      class = "mt-2",
+      textInput("modal_edit_decklist", "Decklist URL (optional)")
+    ),
+
+    title = tagList(bsicons::bs_icon("pencil-square"), " Edit Result"),
+    footer = tagList(
+      actionButton("modal_delete_result", "Delete", class = "btn-danger"),
+      div(
+        class = "d-inline",
+        actionButton("modal_cancel_edit_result", "Cancel", class = "btn-secondary"),
+        actionButton("modal_save_edit_result", "Save Changes", class = "btn-success ms-2")
+      )
+    ),
+    easyClose = FALSE
+  ))
+}
+
+# Helper: show delete result confirmation modal
+show_delete_result_confirm <- function() {
+  showModal(modalDialog(
+    p("Are you sure you want to delete this result?"),
+    p(class = "text-muted small", "This action cannot be undone."),
+
+    title = "Delete Result?",
+    footer = tagList(
+      actionButton("modal_cancel_delete_result", "Cancel", class = "btn-secondary"),
+      actionButton("modal_confirm_delete_result", "Delete", class = "btn-danger")
+    ),
+    size = "s",
+    easyClose = FALSE
+  ))
+}
+
 # Show View/Edit Results button when tournament is selected
 observeEvent(input$admin_tournament_list_clicked, {
   # Button is shown in the existing click handler, add this line there
@@ -380,21 +504,14 @@ observeEvent(input$view_edit_results, {
   # Store the tournament ID for modal operations
   rv$modal_tournament_id <- as.integer(input$editing_tournament_id)
 
-  # Update dropdowns for add/edit forms
+  # Show modal (dropdowns populated after modal renders)
+  show_results_editor()
+
+  # Update dropdowns for add form (inside results modal)
   updateSelectizeInput(session, "modal_new_player",
                        choices = get_player_choices(rv$db_con))
   updateSelectizeInput(session, "modal_new_deck",
                        choices = get_archetype_choices(rv$db_con))
-  updateSelectizeInput(session, "modal_edit_player",
-                       choices = get_player_choices(rv$db_con))
-  updateSelectizeInput(session, "modal_edit_deck",
-                       choices = get_archetype_choices(rv$db_con))
-
-  # Reset add form
-  shinyjs::hide("modal_add_result_form")
-
-  # Show modal
-  shinyjs::runjs("$('#tournament_results_modal').modal('show');")
 })
 
 # Results modal summary
@@ -498,15 +615,6 @@ observeEvent(input$modal_result_clicked, {
     return()
   }
 
-  # Populate edit form
-  updateTextInput(session, "modal_editing_result_id", value = as.character(result_id))
-  updateSelectizeInput(session, "modal_edit_player", selected = result$player_id)
-  updateSelectizeInput(session, "modal_edit_deck", selected = result$archetype_id)
-  updateNumericInput(session, "modal_edit_placement", value = result$placement)
-  updateNumericInput(session, "modal_edit_wins", value = result$wins)
-  updateNumericInput(session, "modal_edit_losses", value = result$losses)
-  updateNumericInput(session, "modal_edit_ties", value = result$ties)
-
   # Handle various empty/null representations from DuckDB
   decklist_val <- result$decklist_url
   decklist_display <- if (is.null(decklist_val) ||
@@ -514,10 +622,23 @@ observeEvent(input$modal_result_clicked, {
                           is.na(decklist_val) ||
                           decklist_val == "" ||
                           decklist_val == "NA") "" else decklist_val
-  updateTextInput(session, "modal_edit_decklist", value = decklist_display)
 
-  # Show edit modal
-  shinyjs::runjs("$('#modal_edit_result').modal('show');")
+  # Show edit modal (replaces results editor; will re-show after save/cancel)
+  show_edit_result_modal()
+
+  # Populate form after modal renders
+  updateTextInput(session, "modal_editing_result_id", value = as.character(result_id))
+  updateSelectizeInput(session, "modal_edit_player",
+                       choices = get_player_choices(rv$db_con),
+                       selected = result$player_id)
+  updateSelectizeInput(session, "modal_edit_deck",
+                       choices = get_archetype_choices(rv$db_con),
+                       selected = result$archetype_id)
+  updateNumericInput(session, "modal_edit_placement", value = result$placement)
+  updateNumericInput(session, "modal_edit_wins", value = result$wins)
+  updateNumericInput(session, "modal_edit_losses", value = result$losses)
+  updateNumericInput(session, "modal_edit_ties", value = result$ties)
+  updateTextInput(session, "modal_edit_decklist", value = decklist_display)
 })
 
 # Save edited result
@@ -557,19 +678,43 @@ observeEvent(input$modal_save_edit_result, {
 
     notify("Result updated!", type = "message")
 
-    shinyjs::runjs("$('#modal_edit_result').modal('hide');")
     rv$modal_results_refresh <- (rv$modal_results_refresh %||% 0) + 1
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+    # Re-show results editor (replaces edit modal)
+    show_results_editor()
+    updateSelectizeInput(session, "modal_new_player",
+                         choices = get_player_choices(rv$db_con))
+    updateSelectizeInput(session, "modal_new_deck",
+                         choices = get_archetype_choices(rv$db_con))
 
   }, error = function(e) {
     notify(paste("Error:", e$message), type = "error")
   })
 })
 
-# Delete result button (shows confirmation)
+# Cancel edit result — return to results editor
+observeEvent(input$modal_cancel_edit_result, {
+  show_results_editor()
+  updateSelectizeInput(session, "modal_new_player",
+                       choices = get_player_choices(rv$db_con))
+  updateSelectizeInput(session, "modal_new_deck",
+                       choices = get_archetype_choices(rv$db_con))
+})
+
+# Delete result button (shows confirmation, replaces edit modal)
 observeEvent(input$modal_delete_result, {
   req(input$modal_editing_result_id)
-  shinyjs::runjs("$('#modal_delete_result_confirm').modal('show');")
+  show_delete_result_confirm()
+})
+
+# Cancel delete result — return to results editor
+observeEvent(input$modal_cancel_delete_result, {
+  show_results_editor()
+  updateSelectizeInput(session, "modal_new_player",
+                       choices = get_player_choices(rv$db_con))
+  updateSelectizeInput(session, "modal_new_deck",
+                       choices = get_archetype_choices(rv$db_con))
 })
 
 # Confirm delete result
@@ -584,10 +729,15 @@ observeEvent(input$modal_confirm_delete_result, {
 
     notify("Result deleted", type = "message")
 
-    shinyjs::runjs("$('#modal_delete_result_confirm').modal('hide');")
-    shinyjs::runjs("$('#modal_edit_result').modal('hide');")
     rv$modal_results_refresh <- (rv$modal_results_refresh %||% 0) + 1
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+    # Re-show results editor (replaces delete confirmation modal)
+    show_results_editor()
+    updateSelectizeInput(session, "modal_new_player",
+                         choices = get_player_choices(rv$db_con))
+    updateSelectizeInput(session, "modal_new_deck",
+                         choices = get_archetype_choices(rv$db_con))
 
   }, error = function(e) {
     notify(paste("Error:", e$message), type = "error")
