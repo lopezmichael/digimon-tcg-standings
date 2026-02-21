@@ -1625,7 +1625,11 @@ body.bslib-gap-spacing {
 }
 
 .card-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  position: relative;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.025) 0px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.025) 0px, transparent 1px, transparent 20px),
+    linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
   font-weight: 600 !important;
   font-size: 0.95rem !important;
@@ -1682,7 +1686,10 @@ body.bslib-gap-spacing {
 }
 
 [data-bs-theme="dark"] .card-header {
-  background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%) !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.02) 0px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.02) 0px, transparent 1px, transparent 20px),
+    linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
