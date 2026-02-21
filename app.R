@@ -277,6 +277,23 @@ admin_empty_state <- function(title = "No records found",
   )
 }
 
+# Standardized notification with smart duration
+# - Errors: sticky until dismissed (duration = NULL)
+# - Warnings: 8 seconds
+# - Messages: 4 seconds
+# Custom durations can still be passed to override
+notify <- function(message, type = "message", duration = NULL, ...) {
+  if (is.null(duration)) {
+    duration <- switch(type,
+      "error" = NULL,
+      "warning" = 8,
+      "message" = 4,
+      5
+    )
+  }
+  showNotification(message, type = type, duration = duration, ...)
+}
+
 # =============================================================================
 # Configuration
 # =============================================================================
