@@ -1,95 +1,84 @@
 # =============================================================================
 # Onboarding Modal UI
-# 4-step carousel: Welcome, Features, Scene Selection, Community
+# 3-step carousel: Welcome & Features, Scene Selection, Community
 # =============================================================================
 
-#' Onboarding carousel with 4 steps
+#' Onboarding carousel with 3 steps
 onboarding_ui <- function() {
   tagList(
     # Decorative top accent
     div(class = "onboarding-accent-top"),
 
-    # Dot indicators
+    # Dot indicators (3 dots)
     div(
       class = "onboarding-dots",
       style = "padding-top: 1rem;",
       span(id = "onboarding_dot_1", class = "onboarding-dot active"),
       span(id = "onboarding_dot_2", class = "onboarding-dot"),
-      span(id = "onboarding_dot_3", class = "onboarding-dot"),
-      span(id = "onboarding_dot_4", class = "onboarding-dot")
+      span(id = "onboarding_dot_3", class = "onboarding-dot")
     ),
 
-    # --- Step 1: Welcome (with Agumon) ---
+    # --- Step 1: Welcome & Features ---
     div(
       id = "onboarding_step_1",
       class = "onboarding-step",
-      div(class = "onboarding-mascot", agumon_svg(size = "80px", color = "#F7941D")),
       div(
-        class = "onboarding-header",
-        h2("Welcome to DigiLab"),
-        p(class = "onboarding-tagline", "Your Local Digimon TCG Hub")
-      ),
-      p(class = "onboarding-description",
-        "Track tournaments, player standings, and deck meta for your local Digimon TCG community. ",
-        "Let's get you set up in a few quick steps."
-      )
-    ),
-
-    # --- Step 2: Key Features ---
-    shinyjs::hidden(
-      div(
-        id = "onboarding_step_2",
-        class = "onboarding-step",
+        class = "onboarding-welcome-row",
+        div(class = "onboarding-mascot", agumon_svg(size = "80px", color = "#F7941D")),
         div(
-          class = "onboarding-header",
-          h2("What You Can Do"),
-          p(class = "onboarding-tagline", "Everything in One Place")
+          class = "onboarding-welcome-text",
+          h2("Welcome to DigiLab"),
+          p(class = "onboarding-tagline", "Your Local Digimon TCG Hub"),
+          p(class = "onboarding-description",
+            "Track tournaments, player standings, and deck meta for your local Digimon TCG community."
+          )
+        )
+      ),
+      # Features grid below the welcome
+      div(
+        class = "onboarding-features-grid",
+        div(
+          class = "onboarding-feature-item",
+          div(class = "onboarding-feature-icon", bsicons::bs_icon("grid-3x3-gap")),
+          div(class = "onboarding-feature-text",
+              tags$strong("Dashboard"),
+              span("Scene overview with trending decks and top performers"))
         ),
         div(
-          class = "onboarding-features-grid",
-          div(
-            class = "onboarding-feature-item",
-            div(class = "onboarding-feature-icon", bsicons::bs_icon("grid-3x3-gap")),
-            div(class = "onboarding-feature-text",
-                tags$strong("Dashboard"),
-                span("Scene overview with trending decks and top performers"))
-          ),
-          div(
-            class = "onboarding-feature-item",
-            div(class = "onboarding-feature-icon", bsicons::bs_icon("people")),
-            div(class = "onboarding-feature-text",
-                tags$strong("Players"),
-                span("Leaderboards, ratings, and tournament history"))
-          ),
-          div(
-            class = "onboarding-feature-item",
-            div(class = "onboarding-feature-icon", bsicons::bs_icon("stack")),
-            div(class = "onboarding-feature-text",
-                tags$strong("Deck Meta"),
-                span("Archetype performance and meta share trends"))
-          ),
-          div(
-            class = "onboarding-feature-item",
-            div(class = "onboarding-feature-icon", bsicons::bs_icon("trophy")),
-            div(class = "onboarding-feature-text",
-                tags$strong("Tournaments"),
-                span("Browse events with full standings and decks"))
-          ),
-          div(
-            class = "onboarding-feature-item",
-            div(class = "onboarding-feature-icon", bsicons::bs_icon("geo-alt-fill")),
-            div(class = "onboarding-feature-text",
-                tags$strong("Stores"),
-                span("Find local game stores hosting Digimon events"))
-          )
+          class = "onboarding-feature-item",
+          div(class = "onboarding-feature-icon", bsicons::bs_icon("people")),
+          div(class = "onboarding-feature-text",
+              tags$strong("Players"),
+              span("Leaderboards, ratings, and tournament history"))
+        ),
+        div(
+          class = "onboarding-feature-item",
+          div(class = "onboarding-feature-icon", bsicons::bs_icon("stack")),
+          div(class = "onboarding-feature-text",
+              tags$strong("Deck Meta"),
+              span("Archetype performance and meta share trends"))
+        ),
+        div(
+          class = "onboarding-feature-item",
+          div(class = "onboarding-feature-icon", bsicons::bs_icon("trophy")),
+          div(class = "onboarding-feature-text",
+              tags$strong("Tournaments"),
+              span("Browse events with full standings and decks"))
+        ),
+        div(
+          class = "onboarding-feature-item",
+          div(class = "onboarding-feature-icon", bsicons::bs_icon("geo-alt-fill")),
+          div(class = "onboarding-feature-text",
+              tags$strong("Stores"),
+              span("Find local game stores hosting Digimon events"))
         )
       )
     ),
 
-    # --- Step 3: Scene Selection ---
+    # --- Step 2: Scene Selection ---
     shinyjs::hidden(
       div(
-        id = "onboarding_step_3",
+        id = "onboarding_step_2",
         class = "onboarding-step onboarding-scene-picker",
 
         div(
@@ -99,7 +88,9 @@ onboarding_ui <- function() {
         ),
 
         p(class = "onboarding-description",
-          "Select your local scene to see tournaments, players, and deck meta in your area."
+          "DigiLab covers multiple communities. Select your local scene to see ",
+          "tournaments, players, and deck meta in your area. You can change this ",
+          "anytime from the header dropdown."
         ),
 
         # Map container
@@ -135,14 +126,20 @@ onboarding_ui <- function() {
           actionButton("select_scene_all",
                        tagList(bsicons::bs_icon("globe2"), " All Scenes"),
                        class = "btn-outline-secondary btn-sm")
+        ),
+
+        p(class = "onboarding-description text-center mt-2",
+          tags$small("Don't see your scene? Visit ",
+            tags$strong("For Organizers"),
+            " to learn how to get your community on DigiLab.")
         )
       )
     ),
 
-    # --- Step 4: Community ---
+    # --- Step 3: Community ---
     shinyjs::hidden(
       div(
-        id = "onboarding_step_4",
+        id = "onboarding_step_3",
         class = "onboarding-step",
         div(
           class = "onboarding-header",
@@ -150,7 +147,8 @@ onboarding_ui <- function() {
           p(class = "onboarding-tagline", "Connect & Contribute")
         ),
         p(class = "onboarding-description",
-          "DigiLab is community-built and open source. Get involved!"
+          "DigiLab is community-built and open source. Join the Discord to chat ",
+          "with players, report issues, and help shape the app."
         ),
         div(
           class = "onboarding-community-links",
@@ -180,6 +178,13 @@ onboarding_ui <- function() {
             div(class = "link-text",
                 tags$strong("For Organizers"),
                 span("Learn how to get your area on DigiLab"))
+          )
+        ),
+        p(class = "onboarding-description text-center mt-3",
+          tags$small(
+            bsicons::bs_icon("info-circle"),
+            " You can revisit the About, FAQ, and For Organizers pages ",
+            "anytime from the footer."
           )
         )
       )

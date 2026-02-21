@@ -2244,7 +2244,7 @@ a:hover, .nav-link:hover {
    ============================================================================= */
 
 .onboarding-modal .modal-dialog {
-  max-width: 480px;
+  max-width: 640px;
 }
 
 .onboarding-modal .modal-content {
@@ -2717,9 +2717,48 @@ a:hover, .nav-link:hover {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* ----- Onboarding Welcome Row (mascot + text side by side) ----- */
+.onboarding-welcome-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.onboarding-welcome-text h2 {
+  color: #0F4C81;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+[data-bs-theme="dark"] .onboarding-welcome-text h2 {
+  color: #FFFFFF;
+  text-shadow: 0 0 20px rgba(0, 200, 255, 0.3);
+}
+
+.onboarding-welcome-text .onboarding-tagline {
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-welcome-text .onboarding-description {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 576px) {
+  .onboarding-welcome-row {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
 /* ----- Onboarding Mascot ----- */
 .onboarding-mascot {
   margin-bottom: 0.75rem;
+  flex-shrink: 0;
 }
 
 .onboarding-mascot svg {

@@ -225,7 +225,16 @@ output$player_standings <- renderReactable({
         minWidth = 75,
         align = "center",
         header = JS("function(column) {
-          return '<span class=\"col-header-info\">Rating <span class=\"info-link\" onclick=\"event.stopPropagation(); Shiny.setInputValue(\\'goto_faq_rating\\', Math.random(), {priority: \\'event\\'});\" title=\"How is Rating calculated?\">\\u24d8</span></span>';
+          var container = document.createElement('span');
+          container.className = 'col-header-info';
+          container.textContent = 'Rating ';
+          var icon = document.createElement('span');
+          icon.className = 'info-link';
+          icon.textContent = '\\u24d8';
+          icon.title = 'How is Rating calculated?';
+          icon.onclick = function(e) { e.stopPropagation(); Shiny.setInputValue('goto_faq_rating', Math.random(), {priority: 'event'}); };
+          container.appendChild(icon);
+          return container;
         }")
       ),
       achievement_score = colDef(
@@ -233,7 +242,16 @@ output$player_standings <- renderReactable({
         minWidth = 65,
         align = "center",
         header = JS("function(column) {
-          return '<span class=\"col-header-info\">Score <span class=\"info-link\" onclick=\"event.stopPropagation(); Shiny.setInputValue(\\'goto_faq_score\\', Math.random(), {priority: \\'event\\'});\" title=\"How is Score calculated?\">\\u24d8</span></span>';
+          var container = document.createElement('span');
+          container.className = 'col-header-info';
+          container.textContent = 'Score ';
+          var icon = document.createElement('span');
+          icon.className = 'info-link';
+          icon.textContent = '\\u24d8';
+          icon.title = 'How is Score calculated?';
+          icon.onclick = function(e) { e.stopPropagation(); Shiny.setInputValue('goto_faq_score', Math.random(), {priority: 'event'}); };
+          container.appendChild(icon);
+          return container;
         }")
       ),
       `1sts` = colDef(minWidth = 45, align = "center"),

@@ -118,14 +118,14 @@ observeEvent(input$scene_selector, {
 # Onboarding Modal Functions
 # -----------------------------------------------------------------------------
 
-#' Show 4-step onboarding carousel modal
+#' Show 3-step onboarding carousel modal
 show_onboarding_modal <- function() {
   rv$onboarding_step <- 1
   showModal(modalDialog(
     onboarding_ui(),
     title = NULL,
     footer = NULL,
-    size = "m",
+    size = "l",
     easyClose = FALSE,
     class = "onboarding-modal"
   ))
@@ -150,7 +150,7 @@ observe({
   req(step)
 
   # Show/hide step containers
-  for (i in 1:4) {
+  for (i in 1:3) {
     if (i == step) {
       shinyjs::show(paste0("onboarding_step_", i))
     } else {
@@ -161,7 +161,7 @@ observe({
   # Update dot classes via JS
   shinyjs::runjs(sprintf("
     $('.onboarding-dot').removeClass('active completed');
-    for (var i = 1; i <= 4; i++) {
+    for (var i = 1; i <= 3; i++) {
       var dot = document.getElementById('onboarding_dot_' + i);
       if (dot) {
         if (i === %d) dot.classList.add('active');
@@ -179,7 +179,7 @@ observe({
     shinyjs::show("onboarding_back")
   }
 
-  if (step == 4) {
+  if (step == 3) {
     shinyjs::hide("onboarding_next")
     shinyjs::show("onboarding_finish")
   } else {
@@ -188,15 +188,14 @@ observe({
   }
 
   # Trigger map resize when scene step becomes visible
-
-  if (step == 3) {
+  if (step == 2) {
     shinyjs::runjs("setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 150);")
   }
 })
 
 # Next button
 observeEvent(input$onboarding_next, {
-  if (rv$onboarding_step < 4) {
+  if (rv$onboarding_step < 3) {
     rv$onboarding_step <- rv$onboarding_step + 1
   }
 })
