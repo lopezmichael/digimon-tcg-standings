@@ -223,36 +223,12 @@ output$player_standings <- renderReactable({
       competitive_rating = colDef(
         name = "Rating",
         minWidth = 75,
-        align = "center",
-        header = JS("function(column) {
-          var container = document.createElement('span');
-          container.className = 'col-header-info';
-          container.textContent = 'Rating ';
-          var icon = document.createElement('span');
-          icon.className = 'info-link';
-          icon.textContent = '\\u24d8';
-          icon.title = 'How is Rating calculated?';
-          icon.onclick = function(e) { e.stopPropagation(); Shiny.setInputValue('goto_faq_rating', Math.random(), {priority: 'event'}); };
-          container.appendChild(icon);
-          return container;
-        }")
+        align = "center"
       ),
       achievement_score = colDef(
         name = "Score",
         minWidth = 65,
-        align = "center",
-        header = JS("function(column) {
-          var container = document.createElement('span');
-          container.className = 'col-header-info';
-          container.textContent = 'Score ';
-          var icon = document.createElement('span');
-          icon.className = 'info-link';
-          icon.textContent = '\\u24d8';
-          icon.title = 'How is Score calculated?';
-          icon.onclick = function(e) { e.stopPropagation(); Shiny.setInputValue('goto_faq_score', Math.random(), {priority: 'event'}); };
-          container.appendChild(icon);
-          return container;
-        }")
+        align = "center"
       ),
       `1sts` = colDef(minWidth = 45, align = "center"),
       `Top 3s` = colDef(minWidth = 55, align = "center"),

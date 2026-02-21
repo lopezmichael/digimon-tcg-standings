@@ -30,11 +30,12 @@ onboarding_ui <- function() {
           h2("Welcome to DigiLab"),
           p(class = "onboarding-tagline", "Your Local Digimon TCG Hub"),
           p(class = "onboarding-description",
-            "Track tournaments, player standings, and deck meta for your local Digimon TCG community."
+            "Everything you need to track your local Digimon TCG scene ",
+            HTML("&mdash;"), " all in one place."
           )
         )
       ),
-      # Features grid below the welcome
+      # Features grid
       div(
         class = "onboarding-features-grid",
         div(
@@ -42,35 +43,35 @@ onboarding_ui <- function() {
           div(class = "onboarding-feature-icon", bsicons::bs_icon("grid-3x3-gap")),
           div(class = "onboarding-feature-text",
               tags$strong("Dashboard"),
-              span("Scene overview with trending decks and top performers"))
+              span("Trending decks, top performers, and scene health at a glance"))
         ),
         div(
           class = "onboarding-feature-item",
           div(class = "onboarding-feature-icon", bsicons::bs_icon("people")),
           div(class = "onboarding-feature-text",
               tags$strong("Players"),
-              span("Leaderboards, ratings, and tournament history"))
+              span("Elo-style ratings, win rates, and head-to-head records"))
         ),
         div(
           class = "onboarding-feature-item",
           div(class = "onboarding-feature-icon", bsicons::bs_icon("stack")),
           div(class = "onboarding-feature-text",
               tags$strong("Deck Meta"),
-              span("Archetype performance and meta share trends"))
+              span("Which archetypes are winning and how the meta is shifting"))
         ),
         div(
           class = "onboarding-feature-item",
           div(class = "onboarding-feature-icon", bsicons::bs_icon("trophy")),
           div(class = "onboarding-feature-text",
               tags$strong("Tournaments"),
-              span("Browse events with full standings and decks"))
+              span("Full standings, decklists, and match records for every event"))
         ),
         div(
           class = "onboarding-feature-item",
           div(class = "onboarding-feature-icon", bsicons::bs_icon("geo-alt-fill")),
           div(class = "onboarding-feature-text",
               tags$strong("Stores"),
-              span("Find local game stores hosting Digimon events"))
+              span("Find stores near you with schedules and event history"))
         )
       )
     ),
@@ -83,14 +84,14 @@ onboarding_ui <- function() {
 
         div(
           class = "onboarding-header",
-          h2("Choose Your Scene"),
-          p(class = "onboarding-tagline", "Filter by Region")
+          h2("Pick Your Scene"),
+          p(class = "onboarding-tagline", "See Data That Matters to You")
         ),
 
         p(class = "onboarding-description",
-          "DigiLab covers multiple communities. Select your local scene to see ",
-          "tournaments, players, and deck meta in your area. You can change this ",
-          "anytime from the header dropdown."
+          "DigiLab covers multiple communities. Pick yours below to filter everything ",
+          HTML("&mdash;"), " leaderboards, meta, and tournaments ",
+          HTML("&mdash;"), " to your local area."
         ),
 
         # Map container
@@ -98,11 +99,11 @@ onboarding_ui <- function() {
           class = "onboarding-map-wrapper",
           div(
             class = "onboarding-map-container",
-            mapgl::mapboxglOutput("onboarding_map", height = "250px")
+            mapgl::mapboxglOutput("onboarding_map", height = "220px")
           ),
           div(class = "onboarding-map-hint",
               bsicons::bs_icon("hand-index"),
-              span("Click a marker to select"))
+              span("Tap a marker to select your scene"))
         ),
 
         # Find my scene button
@@ -128,10 +129,8 @@ onboarding_ui <- function() {
                        class = "btn-outline-secondary btn-sm")
         ),
 
-        p(class = "onboarding-description text-center mt-2",
-          tags$small("Don't see your scene? Visit ",
-            tags$strong("For Organizers"),
-            " to learn how to get your community on DigiLab.")
+        p(class = "onboarding-scene-footnote",
+          tags$small("You can change your scene anytime from the dropdown in the header.")
         )
       )
     ),
@@ -144,11 +143,11 @@ onboarding_ui <- function() {
         div(
           class = "onboarding-header",
           h2("Join the Community"),
-          p(class = "onboarding-tagline", "Connect & Contribute")
+          p(class = "onboarding-tagline", "Help Shape DigiLab")
         ),
         p(class = "onboarding-description",
-          "DigiLab is community-built and open source. Join the Discord to chat ",
-          "with players, report issues, and help shape the app."
+          "DigiLab is community-built, open source, and still in beta. ",
+          "Your feedback directly shapes what gets built next."
         ),
         div(
           class = "onboarding-community-links",
@@ -159,7 +158,7 @@ onboarding_ui <- function() {
             div(class = "link-icon", bsicons::bs_icon("discord")),
             div(class = "link-text",
                 tags$strong("Discord"),
-                span("Chat with the DFW Digimon TCG community"))
+                span("Chat with players, report bugs, and suggest features"))
           ),
           tags$a(
             class = "onboarding-community-link",
@@ -168,7 +167,7 @@ onboarding_ui <- function() {
             div(class = "link-icon", bsicons::bs_icon("cup-hot")),
             div(class = "link-text",
                 tags$strong("Ko-fi"),
-                span("Support DigiLab's development"))
+                span("Support server costs and ongoing development"))
           ),
           div(
             class = "onboarding-community-link",
@@ -177,14 +176,13 @@ onboarding_ui <- function() {
             div(class = "link-icon", bsicons::bs_icon("megaphone")),
             div(class = "link-text",
                 tags$strong("For Organizers"),
-                span("Learn how to get your area on DigiLab"))
+                span("Want your community on DigiLab? Here's how"))
           )
         ),
-        p(class = "onboarding-description text-center mt-3",
+        p(class = "onboarding-scene-footnote mt-2",
           tags$small(
             bsicons::bs_icon("info-circle"),
-            " You can revisit the About, FAQ, and For Organizers pages ",
-            "anytime from the footer."
+            " Visit About, FAQ, and For Organizers anytime from the footer links."
           )
         )
       )

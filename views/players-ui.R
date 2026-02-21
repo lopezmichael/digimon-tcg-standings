@@ -51,7 +51,11 @@ players_ui <- tagList(
   div(class = "page-help-text",
     div(class = "info-hint-box text-center",
       bsicons::bs_icon("info-circle", class = "info-hint-icon"),
-      "Player leaderboard ranked by Competitive Rating. Click any player to see their full tournament history and stats."
+      "Player leaderboard ranked by ",
+      actionLink("goto_faq_rating", "Competitive Rating", class = "info-hint-link"),
+      " and ",
+      actionLink("goto_faq_score", "Achievement Score", class = "info-hint-link"),
+      ". Click any player to see their full tournament history and stats."
     )
   ),
 

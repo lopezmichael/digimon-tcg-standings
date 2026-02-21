@@ -14,7 +14,13 @@ class = "content-page",
   # Hero section
   div(
     class = "about-hero",
-    div(class = "about-mascot", agumon_svg(size = "64px")),
+    div(
+      class = "about-mascot-walkway",
+      div(class = "about-mascot-walker",
+        div(class = "about-mascot-dust"),
+        agumon_svg(size = "64px")
+      )
+    ),
     p(class = "about-tagline", "Track. Compete. Connect."),
     p(class = "about-description",
       "DigiLab is a community-built tool for tracking local Digimon TCG tournament results, ",

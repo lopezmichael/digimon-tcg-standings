@@ -187,6 +187,16 @@ observe({
     shinyjs::hide("onboarding_finish")
   }
 
+  # Scroll modal to top when switching steps
+  shinyjs::runjs("
+    var modalBody = document.querySelector('.onboarding-modal .modal-body');
+    if (modalBody) modalBody.scrollTop = 0;
+    var modalEl = document.querySelector('.onboarding-modal .modal');
+    if (modalEl) modalEl.scrollTop = 0;
+    var modalDialog = document.querySelector('.onboarding-modal');
+    if (modalDialog) modalDialog.scrollTop = 0;
+  ")
+
   # Trigger map resize when scene step becomes visible
   if (step == 2) {
     shinyjs::runjs("setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 150);")

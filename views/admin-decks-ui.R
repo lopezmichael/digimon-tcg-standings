@@ -13,6 +13,12 @@ admin_decks_ui <- tagList(
   # Pending deck requests section (collapsible)
   uiOutput("deck_requests_section"),
 
+  div(class = "page-help-text",
+    div(class = "info-hint-box",
+      bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+      "Define deck archetypes with colors and a display card. Players' results are tagged with these archetypes for meta analysis."
+    )
+  ),
   div(
     class = "admin-panel",
     layout_columns(
@@ -27,8 +33,6 @@ admin_decks_ui <- tagList(
           )
         ),
         card_body(
-          p(class = "text-muted small mb-2", "Define colors and a display card for this archetype."),
-
           # Hidden field for edit mode
           textInput("editing_archetype_id", NULL, value = ""),
           tags$script("document.getElementById('editing_archetype_id').parentElement.style.display = 'none';"),

@@ -12,6 +12,12 @@ admin_stores_ui <- tagList(
     )
   ),
   uiOutput("admin_stores_scene_indicator"),
+  div(class = "page-help-text",
+    div(class = "info-hint-box",
+      bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+      "Manage store locations and schedules. Check 'Online' for virtual organizers without a physical address."
+    )
+  ),
   div(
     class = "admin-panel",
     layout_columns(
@@ -26,8 +32,6 @@ admin_stores_ui <- tagList(
           )
         ),
         card_body(
-          p(class = "text-muted small mb-2", "Fill in store details. Check 'Online' for virtual organizers."),
-
           # Hidden field for edit mode
           textInput("editing_store_id", NULL, value = ""),
           tags$script("document.getElementById('editing_store_id').parentElement.style.display = 'none';"),
