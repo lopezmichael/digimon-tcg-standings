@@ -308,7 +308,8 @@ observeEvent(input$delete_tournament, {
     WHERE t.tournament_id = ?
   ", params = list(tournament_id))
 
-  output$delete_tournament_message <- renderUI({
+  showModal(modalDialog(
+    title = "Confirm Delete",
     div(
       p(sprintf("Are you sure you want to delete this tournament?")),
       p(tags$strong(sprintf("%s - %s", tournament$store_name, tournament$event_date))),
@@ -318,10 +319,13 @@ observeEvent(input$delete_tournament, {
           sprintf(" This will also delete %d result(s)!", tournament$results_count))
       },
       p(class = "text-muted small", "This action cannot be undone.")
-    )
-  })
-
-  shinyjs::runjs("$('#delete_tournament_modal').modal('show');")
+    ),
+    footer = tagList(
+      actionButton("confirm_delete_tournament", "Delete", class = "btn-danger"),
+      modalButton("Cancel")
+    ),
+    easyClose = TRUE
+  ))
 })
 
 # Confirm delete tournament
@@ -342,7 +346,7 @@ observeEvent(input$confirm_delete_tournament, {
     notify("Tournament and results deleted", type = "message")
 
     # Hide modal and reset form
-    shinyjs::runjs("$('#delete_tournament_modal').modal('hide');")
+    removeModal()
     reset_tournament_form()
 
     # Trigger table refresh (admin + public tables)
