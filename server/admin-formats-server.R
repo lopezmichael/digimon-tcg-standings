@@ -21,7 +21,7 @@ output$admin_format_list <- renderReactable({
   ")
 
   if (nrow(data) == 0) {
-    return(reactable(data.frame(Message = "No formats added yet")))
+    return(admin_empty_state("No formats added yet", "// add one using the form", "calendar3"))
   }
 
   # Format date for display

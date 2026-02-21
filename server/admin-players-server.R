@@ -64,7 +64,7 @@ output$player_list <- renderReactable({
   data <- dbGetQuery(rv$db_con, query)
 
   if (nrow(data) == 0) {
-    return(reactable(data.frame(Message = "No players found"), compact = TRUE))
+    return(admin_empty_state("No players found", "// add players via tournament entry", "people"))
   }
 
   reactable(data, compact = TRUE, striped = TRUE,
