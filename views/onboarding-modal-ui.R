@@ -150,7 +150,7 @@ onboarding_ui <- function() {
           class = "onboarding-link-list",
           tags$a(
             class = "onboarding-link-row",
-            href = "https://discord.gg/rKNe9FKwkN",
+            href = "https://discord.gg/ABcjha7bHk",
             target = "_blank",
             div(class = "onboarding-link-icon", bsicons::bs_icon("discord")),
             div(class = "onboarding-link-content",
