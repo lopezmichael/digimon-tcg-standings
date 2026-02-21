@@ -2460,14 +2460,23 @@ a:hover, .nav-link:hover {
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   transition: background 0.15s;
+  background: rgba(15, 76, 129, 0.03);
+  border: 1px solid rgba(0, 200, 255, 0.06);
 }
 
 .onboarding-feature-row:hover {
-  background: rgba(15, 76, 129, 0.04);
+  background: rgba(15, 76, 129, 0.06);
+  border-color: rgba(0, 200, 255, 0.15);
+}
+
+[data-bs-theme="dark"] .onboarding-feature-row {
+  background: rgba(0, 200, 255, 0.03);
+  border-color: rgba(0, 200, 255, 0.06);
 }
 
 [data-bs-theme="dark"] .onboarding-feature-row:hover {
-  background: rgba(0, 200, 255, 0.04);
+  background: rgba(0, 200, 255, 0.06);
+  border-color: rgba(0, 200, 255, 0.15);
 }
 
 .onboarding-feature-icon {
@@ -2574,6 +2583,8 @@ a:hover, .nav-link:hover {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  max-width: 380px;
+  margin: 0 auto;
 }
 
 .onboarding-link-row {
