@@ -216,13 +216,18 @@ observeEvent(input$delete_format, {
                        params = list(input$editing_format_id))
 
   if (rv$can_delete_format) {
-    output$delete_format_message <- renderUI({
+    showModal(modalDialog(
+      title = "Confirm Delete",
       div(
         p(sprintf("Are you sure you want to delete '%s'?", format$display_name)),
         p(class = "text-danger", "This action cannot be undone.")
-      )
-    })
-    shinyjs::runjs("$('#delete_format_modal').modal('show');")
+      ),
+      footer = tagList(
+        actionButton("confirm_delete_format", "Delete", class = "btn-danger"),
+        modalButton("Cancel")
+      ),
+      easyClose = TRUE
+    ))
   } else {
     notify(
       sprintf("Cannot delete: %d tournament(s) use this format", rv$format_tournament_count),
@@ -241,7 +246,7 @@ observeEvent(input$confirm_delete_format, {
     notify("Format deleted", type = "message")
 
     # Hide modal and reset form
-    shinyjs::runjs("$('#delete_format_modal').modal('hide');")
+    removeModal()
 
     updateTextInput(session, "editing_format_id", value = "")
     updateTextInput(session, "format_id", value = "")
