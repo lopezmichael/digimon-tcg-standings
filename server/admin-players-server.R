@@ -245,13 +245,18 @@ observeEvent(input$delete_player, {
                        params = list(player_id))
 
   if (rv$can_delete_player) {
-    output$delete_player_message <- renderUI({
+    showModal(modalDialog(
+      title = "Confirm Delete",
       div(
         p(sprintf("Are you sure you want to delete '%s'?", player$display_name)),
         p(class = "text-danger", "This action cannot be undone.")
-      )
-    })
-    shinyjs::runjs("$('#delete_player_modal').modal('show');")
+      ),
+      footer = tagList(
+        actionButton("confirm_delete_player", "Delete", class = "btn-danger"),
+        modalButton("Cancel")
+      ),
+      easyClose = TRUE
+    ))
   } else {
     notify(
       sprintf("Cannot delete: player has %d result(s). Use 'Merge Players' to combine with another player.",
@@ -273,7 +278,7 @@ observeEvent(input$confirm_delete_player, {
   ", params = list(player_id))$cnt
 
   if (count > 0) {
-    shinyjs::runjs("$('#delete_player_modal').modal('hide');")
+    removeModal()
     notify(sprintf("Cannot delete: player has %d result(s)", count), type = "error")
     return()
   }
@@ -283,7 +288,7 @@ observeEvent(input$confirm_delete_player, {
               params = list(player_id))
     notify("Player deleted", type = "message")
 
-    shinyjs::runjs("$('#delete_player_modal').modal('hide');")
+    removeModal()
 
     # Clear form
     updateTextInput(session, "editing_player_id", value = "")
@@ -306,7 +311,25 @@ observeEvent(input$confirm_delete_player, {
 
 # Show merge modal
 observeEvent(input$show_merge_modal, {
-  shinyjs::runjs("$('#merge_player_modal').modal('show');")
+  showModal(modalDialog(
+    title = tagList(bsicons::bs_icon("arrow-left-right"), " Merge Players"),
+    p("Merge two player records (e.g., fix a typo by combining duplicate entries)."),
+    p(class = "text-muted small", "All results from the source player will be moved to the target player, then the source player will be deleted."),
+    hr(),
+    selectizeInput("merge_source_player", "Source Player (will be deleted)",
+                   choices = NULL,
+                   options = list(placeholder = "Select player to merge FROM...")),
+    selectizeInput("merge_target_player", "Target Player (will keep)",
+                   choices = NULL,
+                   options = list(placeholder = "Select player to merge INTO...")),
+    uiOutput("merge_preview"),
+    footer = tagList(
+      actionButton("confirm_merge_players", "Merge Players", class = "btn-warning"),
+      modalButton("Cancel")
+    ),
+    size = "m",
+    easyClose = TRUE
+  ))
 })
 
 # Update merge dropdowns when they're shown
@@ -433,7 +456,7 @@ observeEvent(input$confirm_merge_players, {
 
     notify("Players merged successfully", type = "message")
 
-    shinyjs::runjs("$('#merge_player_modal').modal('hide');")
+    removeModal()
 
     # Reset dropdowns
     updateSelectizeInput(session, "merge_source_player", selected = "")
