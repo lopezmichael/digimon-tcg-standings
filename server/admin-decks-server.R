@@ -437,13 +437,18 @@ observeEvent(input$delete_archetype, {
                      params = list(archetype_id))
 
   if (rv$can_delete_archetype) {
-    output$delete_archetype_message <- renderUI({
+    showModal(modalDialog(
+      title = "Confirm Delete",
       div(
         p(sprintf("Are you sure you want to delete '%s'?", arch$archetype_name)),
         p(class = "text-danger", "This action cannot be undone.")
-      )
-    })
-    shinyjs::runjs("$('#delete_archetype_modal').modal('show');")
+      ),
+      footer = tagList(
+        actionButton("confirm_delete_archetype", "Delete", class = "btn-danger"),
+        modalButton("Cancel")
+      ),
+      easyClose = TRUE
+    ))
   } else {
     notify(
       sprintf("Cannot delete: used in %d result(s)", rv$archetype_result_count),
@@ -466,7 +471,7 @@ observeEvent(input$confirm_delete_archetype, {
   ", params = list(archetype_id))$cnt
 
   if (count > 0) {
-    shinyjs::runjs("$('#delete_archetype_modal').modal('hide');")
+    removeModal()
     notify(sprintf("Cannot delete: used in %d result(s)", count), type = "error")
     return()
   }
@@ -478,7 +483,7 @@ observeEvent(input$confirm_delete_archetype, {
     notify("Archetype deleted", type = "message")
 
     # Hide modal and reset form
-    shinyjs::runjs("$('#delete_archetype_modal').modal('hide');")
+    removeModal()
 
     # Clear form
     updateTextInput(session, "editing_archetype_id", value = "")
@@ -877,7 +882,22 @@ get_deck_choices <- function(con) {
 
 # Show merge modal
 observeEvent(input$show_merge_deck_modal, {
-  shinyjs::runjs("$('#merge_deck_modal').modal('show');")
+  showModal(modalDialog(
+    title = tagList(bsicons::bs_icon("arrow-left-right"), " Merge Deck Archetypes"),
+    p("Merge two deck archetypes into one. The source deck will be deleted and all its results will be reassigned to the target deck."),
+    selectizeInput("merge_source_deck", "Source Deck (will be deleted)",
+                   choices = NULL, options = list(placeholder = "Select deck to merge away...")),
+    selectizeInput("merge_target_deck", "Target Deck (will keep)",
+                   choices = NULL, options = list(placeholder = "Select deck to keep...")),
+    hr(),
+    uiOutput("merge_deck_preview"),
+    footer = tagList(
+      actionButton("confirm_merge_decks", "Merge Decks", class = "btn-warning"),
+      modalButton("Cancel")
+    ),
+    size = "m",
+    easyClose = TRUE
+  ))
 })
 
 # Update deck dropdowns when modal opens
@@ -978,7 +998,7 @@ observeEvent(input$confirm_merge_decks, {
               params = list(source_id))
 
     # Hide modal
-    shinyjs::runjs("$('#merge_deck_modal').modal('hide');")
+    removeModal()
 
     # Clear selections
     updateSelectizeInput(session, "merge_source_deck", selected = "")
