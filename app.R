@@ -263,6 +263,20 @@ skeleton_chart <- function(bars = 8, height = "180px") {
   )
 }
 
+# Lightweight empty state for admin tables
+admin_empty_state <- function(title = "No records found",
+                               subtitle = NULL,
+                               icon = "inbox") {
+  div(
+    class = "empty-state-digital",
+    style = "padding: 1.5rem 1rem; min-height: 80px;",
+    div(class = "empty-state-icon", style = "font-size: 1.8rem;",
+        bsicons::bs_icon(icon)),
+    div(class = "empty-state-title", title),
+    if (!is.null(subtitle)) div(class = "empty-state-subtitle", subtitle)
+  )
+}
+
 # =============================================================================
 # Configuration
 # =============================================================================
