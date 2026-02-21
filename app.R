@@ -680,7 +680,9 @@ ui <- page_fillable(
     ),
     tags$div(
       class = "footer-meta",
-      paste0("v", APP_VERSION, " | \u00A9 2026 DigiLab")
+      paste0("v", APP_VERSION, " | \u00A9 2026 DigiLab"),
+      span(class = "footer-divider", "\u00B7"),
+      actionLink("open_welcome_guide", "Welcome Guide", class = "footer-meta-link")
     )
   ),
 

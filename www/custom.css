@@ -4725,6 +4725,17 @@ a:hover, .nav-link:hover {
   font-size: 0.8rem;
 }
 
+.footer-meta-link {
+  color: rgba(255, 255, 255, 0.5) !important;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footer-meta-link:hover {
+  color: #F7941D !important;
+  text-decoration: none;
+}
+
 /* Footer responsive */
 @media (max-width: 576px) {
   .app-footer {

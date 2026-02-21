@@ -131,6 +131,11 @@ show_onboarding_modal <- function() {
   ))
 }
 
+# Re-open onboarding from footer "Welcome Guide" link
+observeEvent(input$open_welcome_guide, {
+  show_onboarding_modal()
+})
+
 # Handle close onboarding (from links to About/FAQ)
 observeEvent(input$close_onboarding, {
   removeModal()
