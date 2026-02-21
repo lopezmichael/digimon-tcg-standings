@@ -588,13 +588,18 @@ observeEvent(input$delete_store, {
                       params = list(store_id))
 
   if (rv$can_delete_store) {
-    output$delete_store_message <- renderUI({
+    showModal(modalDialog(
+      title = "Confirm Delete",
       div(
         p(sprintf("Are you sure you want to delete '%s'?", store$name)),
         p(class = "text-danger", "This action cannot be undone.")
-      )
-    })
-    shinyjs::runjs("$('#delete_store_modal').modal('show');")
+      ),
+      footer = tagList(
+        actionButton("confirm_delete_store", "Delete", class = "btn-danger"),
+        modalButton("Cancel")
+      ),
+      easyClose = TRUE
+    ))
   } else {
     notify(
       sprintf("Cannot delete: %d tournament(s) reference this store", rv$store_tournament_count),
@@ -618,7 +623,7 @@ observeEvent(input$confirm_delete_store, {
     notify("Store deleted", type = "message")
 
     # Hide modal and reset form
-    shinyjs::runjs("$('#delete_store_modal').modal('hide');")
+    removeModal()
 
     # Clear form
     updateTextInput(session, "editing_store_id", value = "")
