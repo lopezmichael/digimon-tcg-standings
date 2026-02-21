@@ -2055,6 +2055,19 @@ a:hover, .nav-link:hover {
   -webkit-user-select: text;
 }
 
+/* Subtle digital grid on modal body */
+.modal-body {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.015) 0px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.015) 0px, transparent 1px, transparent 24px);
+}
+
+[data-bs-theme="dark"] .modal-body {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.015) 0px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.015) 0px, transparent 1px, transparent 24px);
+}
+
 /* Dark mode modal */
 [data-bs-theme="dark"] .modal-header {
   background-image:
