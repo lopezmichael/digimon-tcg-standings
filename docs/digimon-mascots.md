@@ -17,8 +17,8 @@ Both are line-art style SVGs (stroke only, no fill). They use `currentColor` for
 |----------|-------|-----------|-------|------|-------|
 | Header navbar icon | Digivice | Static | `currentColor` (white) | `app.R` ~line 494 | 26x26, glows with header animation |
 | Loading screen | Agumon | Jumping (bounce) | `#F7941D` (orange) | `app.R` ~line 371 | 64x64, squash-and-stretch keyframe |
-| Onboarding modal (step 1) | Agumon | Welcoming | `#F7941D` (orange) | `views/onboarding-modal-ui.R` | 80x80, via `agumon_svg()` helper |
-| About page hero | Agumon | Friendly | `#F7941D` (orange) | `views/about-ui.R` | 64x64, via `agumon_svg()` helper |
+| Onboarding modal (step 1) | Agumon | Hero unit | `#F7941D` (orange) | `views/onboarding-modal-ui.R` | 72x72, side-by-side with app name, via `agumon_svg()` |
+| About page hero | Agumon | Walking (animated) | `#F7941D` (orange) | `views/about-ui.R` | 64x64, 8s walk cycle R→L→R with dust, via `agumon_svg()` |
 | Empty states (7 sites) | Agumon | Waiting | `#F7941D` (orange) | Various `server/public-*-server.R` | 56x56, via `digital_empty_state(mascot="agumon")` |
 
 ### `agumon_svg()` Helper (v0.27+)

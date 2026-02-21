@@ -166,12 +166,14 @@ The React PoC on `explore/react-rewrite` branch serves as a reference for future
 ## Completed
 
 ### v0.27.0 - Onboarding & Help
-- Revamped onboarding modal — 4-step carousel: Welcome (with Agumon mascot), Key Features, Scene Selection, Community Links
+- Revamped onboarding modal — 3-step carousel: Welcome (Agumon hero + feature list), Scene Selection (map + geolocation), Community Links (Discord, Ko-fi, For Organizers)
+- Progress bar, pill-shaped dot indicators, per-step navigation (Skip/Get Started, Back/Almost Done, Back/Enter DigiLab)
+- Welcome Guide icon in footer to reopen onboarding for returning users
 - Contextual hints on dashboard tables ("Click a row for full results", "Click a deck for details")
-- Info icons on Rating/Score column headers → navigate to FAQ methodology
-- Light hints on admin pages (Stores, Decks, Formats) explaining each form
+- Rating/Score FAQ links in Players tab help text → navigate to FAQ methodology
+- Info hint boxes on admin pages (Stores, Decks, Formats) explaining each form
 - Per-page help text on all 5 public tabs (Dashboard, Players, Meta, Tournaments, Stores)
-- Agumon mascot in empty states (7 call sites), About page hero, and onboarding welcome step
+- Agumon mascot in empty states (7 call sites), About page hero (walking animation), and onboarding welcome step
 - `agumon_svg()` helper and `digital_empty_state(mascot)` parameter for consistent mascot placement
 
 ### v0.26.0 - UI Polish & Responsiveness

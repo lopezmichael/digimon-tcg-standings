@@ -111,7 +111,7 @@ Pattern: `selected_{entity}_id` for single selection, `selected_{entity}_ids` fo
 
 | Name | Type | Description |
 |------|------|-------------|
-| `onboarding_step` | integer | Current step in onboarding carousel (1-4) |
+| `onboarding_step` | integer | Current step in onboarding carousel (1-3) |
 
 ### Form/Wizard State
 
