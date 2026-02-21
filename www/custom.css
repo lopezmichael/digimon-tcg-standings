@@ -3999,6 +3999,18 @@ a:hover, .nav-link:hover {
   }
 }
 
+/* Sticky notification emphasis - slightly larger close target */
+.shiny-notification-error .close,
+.shiny-notification-error .btn-close {
+  opacity: 0.8;
+  font-size: 1.1rem;
+}
+
+.shiny-notification-error .close:hover,
+.shiny-notification-error .btn-close:hover {
+  opacity: 1;
+}
+
 /* =============================================================================
    MOBILE UI IMPROVEMENTS
    ============================================================================= */
