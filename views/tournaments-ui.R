@@ -62,6 +62,10 @@ tournaments_ui <- tagList(
       span(class = "small text-muted", "Click a row for full results")
     ),
     card_body(
+      div(
+        id = "tournament_history_skeleton",
+        skeleton_table(rows = 8)
+      ),
       reactableOutput("tournament_history")
     )
   ),

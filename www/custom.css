@@ -4547,6 +4547,112 @@ a:hover, .nav-link:hover {
 }
 
 /* =============================================================================
+   SKELETON LOADERS - Digital Loading States
+   ============================================================================= */
+
+/* Fade recalculating outputs */
+.recalculating {
+  opacity: 0.4 !important;
+  transition: opacity 0.3s ease !important;
+  pointer-events: none;
+}
+
+/* Skeleton shimmer animation */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Base skeleton element */
+.skeleton-line {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg,
+    rgba(15, 76, 129, 0.06) 25%,
+    rgba(15, 76, 129, 0.12) 50%,
+    rgba(15, 76, 129, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  margin-bottom: 0.5rem;
+}
+
+/* Width variants */
+.skeleton-line.w-75 { width: 75%; }
+.skeleton-line.w-50 { width: 50%; }
+.skeleton-line.w-60 { width: 60%; }
+.skeleton-line.w-90 { width: 90%; }
+.skeleton-line.w-40 { width: 40%; }
+
+/* Table skeleton row */
+.skeleton-table-row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.skeleton-table-row .skeleton-line {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.skeleton-table-row .skeleton-line:first-child {
+  flex: 0.5;
+}
+
+/* Chart skeleton */
+.skeleton-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  height: 180px;
+}
+
+.skeleton-bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(90deg,
+    rgba(15, 76, 129, 0.06) 25%,
+    rgba(15, 76, 129, 0.12) 50%,
+    rgba(15, 76, 129, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+/* Digital grid overlay on skeleton container */
+.skeleton-container {
+  position: relative;
+  padding: 1rem;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15, 76, 129, 0.02) 0px, transparent 1px, transparent 25px),
+    repeating-linear-gradient(90deg, rgba(15, 76, 129, 0.02) 0px, transparent 1px, transparent 25px);
+  border-radius: 8px;
+  min-height: 100px;
+}
+
+/* Dark mode skeletons */
+[data-bs-theme="dark"] .skeleton-line,
+[data-bs-theme="dark"] .skeleton-bar {
+  background: linear-gradient(90deg,
+    rgba(0, 200, 255, 0.05) 25%,
+    rgba(0, 200, 255, 0.1) 50%,
+    rgba(0, 200, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+[data-bs-theme="dark"] .skeleton-table-row {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-bs-theme="dark"] .skeleton-container {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.02) 0px, transparent 1px, transparent 25px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.02) 0px, transparent 1px, transparent 25px);
+}
+
+/* =============================================================================
    ONLINE STORES CARD
    ============================================================================= */
 

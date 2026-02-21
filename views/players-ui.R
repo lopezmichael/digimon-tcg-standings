@@ -66,6 +66,10 @@ players_ui <- tagList(
       span(class = "small text-muted", "Click a row for player profile")
     ),
     card_body(
+      div(
+        id = "player_standings_skeleton",
+        skeleton_table(rows = 8)
+      ),
       reactableOutput("player_standings")
     )
   ),

@@ -186,6 +186,7 @@ dashboard_ui <- tagList(
         class = "p-2 d-flex flex-column",
         div(
           class = "flex-grow-1",
+          div(id = "meta_diversity_gauge_skeleton", skeleton_chart(bars = 1, height = "180px")),
           highchartOutput("meta_diversity_gauge", height = "220px")
         ),
         div(
@@ -207,6 +208,7 @@ dashboard_ui <- tagList(
         span(class = "small text-muted", "Click a row for full results")
       ),
       card_body(
+        div(id = "recent_tournaments_skeleton", skeleton_table(rows = 5)),
         reactableOutput("recent_tournaments")
       )
     )
@@ -226,6 +228,7 @@ dashboard_ui <- tagList(
       ),
       card_body(
         class = "p-0",
+        div(id = "conversion_rate_chart_skeleton", skeleton_chart(bars = 5, height = "240px")),
         highchartOutput("conversion_rate_chart", height = "280px")
       )
     ),
@@ -237,6 +240,7 @@ dashboard_ui <- tagList(
       ),
       card_body(
         class = "p-0",
+        div(id = "color_dist_chart_skeleton", skeleton_chart(bars = 7, height = "240px")),
         highchartOutput("color_dist_chart", height = "280px")
       )
     )
@@ -254,6 +258,7 @@ dashboard_ui <- tagList(
     ),
     card_body(
       class = "p-0",
+      div(id = "meta_share_timeline_skeleton", skeleton_chart(bars = 10, height = "310px")),
       highchartOutput("meta_share_timeline", height = "350px")
     )
   ),
@@ -270,6 +275,7 @@ dashboard_ui <- tagList(
     ),
     card_body(
       class = "p-0",
+      div(id = "tournaments_trend_chart_skeleton", skeleton_chart(bars = 8, height = "240px")),
       highchartOutput("tournaments_trend_chart", height = "280px")
     )
   ),
@@ -286,6 +292,7 @@ dashboard_ui <- tagList(
     ),
     card_body(
       class = "p-2",
+      div(id = "player_growth_chart_skeleton", skeleton_chart(bars = 6, height = "160px")),
       highchartOutput("player_growth_chart", height = "200px")
     )
   )

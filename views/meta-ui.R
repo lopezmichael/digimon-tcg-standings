@@ -59,6 +59,10 @@ meta_ui <- tagList(
       span(class = "small text-muted", "Click a row for deck profile")
     ),
     card_body(
+      div(
+        id = "archetype_stats_skeleton",
+        skeleton_table(rows = 8)
+      ),
       reactableOutput("archetype_stats")
     )
   ),

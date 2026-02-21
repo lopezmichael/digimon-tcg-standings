@@ -232,6 +232,37 @@ digital_empty_state <- function(title = "No signal detected",
   )
 }
 
+# Skeleton loader for table cards
+skeleton_table <- function(rows = 6) {
+  div(
+    class = "skeleton-container",
+    lapply(seq_len(rows), function(i) {
+      widths <- c("w-40", "w-75", "w-60", "w-50", "w-90")
+      div(
+        class = "skeleton-table-row",
+        div(class = paste("skeleton-line", widths[((i - 1) %% 5) + 1])),
+        div(class = paste("skeleton-line", widths[((i + 1) %% 5) + 1])),
+        div(class = paste("skeleton-line", widths[((i + 2) %% 5) + 1]))
+      )
+    })
+  )
+}
+
+# Skeleton loader for chart cards
+skeleton_chart <- function(bars = 8, height = "180px") {
+  div(
+    class = "skeleton-container",
+    div(
+      class = "skeleton-chart",
+      style = paste0("height:", height),
+      lapply(seq_len(bars), function(i) {
+        bar_height <- paste0(sample(30:95, 1), "%")
+        div(class = "skeleton-bar", style = paste0("height:", bar_height))
+      })
+    )
+  )
+}
+
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -501,6 +532,12 @@ ui <- page_fillable(
       $(document).on('shiny:value', function(e) {
         if (e.name === 'hot_deck_name' || e.name === 'most_popular_deck_val') {
           setTimeout(fitDeckText, 50);
+        }
+        // Hide skeleton loaders once Shiny outputs render
+        var skeletonId = e.name + '_skeleton';
+        var skeleton = document.getElementById(skeletonId);
+        if (skeleton) {
+          skeleton.style.display = 'none';
         }
       });
       $(window).on('resize', function() { setTimeout(fitDeckText, 100); });
