@@ -217,31 +217,53 @@ session$sendCustomMessage("updateSidebarNav", "nav_target_tab")
 
 ## Modal Patterns
 
-### Bootstrap Modals (Defined in UI)
+All modals use Shiny's native `showModal(modalDialog())` / `removeModal()` pattern. There are no static Bootstrap modals in the codebase.
+
+### Standard Modal
 
 ```r
-# Show modal
-shinyjs::runjs("$('#modal_id').modal('show');")
-
-# Hide modal
-shinyjs::runjs("$('#modal_id').modal('hide');")
-```
-
-### Dynamic Shiny Modals
-
-```r
-# Show modal
 showModal(modalDialog(
   title = "Modal Title",
   # ... content
   footer = tagList(
     modalButton("Cancel"),
     actionButton("confirm_btn", "Confirm")
-  )
+  ),
+  size = "l",       # "s", default, "l", or "xl"
+  easyClose = TRUE  # Click outside to close
 ))
 
 # Hide modal
 removeModal()
+```
+
+### Modal Size Convention
+
+| Modal Type | Size |
+|------------|------|
+| Detail/Profile (player, deck, store, tournament) | `size = "l"` |
+| Confirmation (delete, merge) | Default (no size param) |
+| Forms/Editors (results editor, paste spreadsheet) | `size = "l"` |
+| Processing spinners | `size = "s"` |
+
+### Nested Modal Pattern (Results Editor)
+
+Shiny only supports one modal at a time — `showModal()` replaces the current modal. For the tournament results editor (which has edit/delete sub-modals):
+
+```r
+# Helper function to re-show the results editor
+show_results_editor <- function() {
+  showModal(modalDialog(
+    # ... results table + add form
+    size = "l"
+  ))
+}
+
+# When editing a result: replace results modal with edit modal
+showModal(modalDialog(title = "Edit Result", ...))
+
+# After save/cancel: re-show the results editor
+show_results_editor()
 ```
 
 ### Modal Data Flow
@@ -556,8 +578,8 @@ session$sendCustomMessage("updateSidebarNav", "nav_tab_id")
 # Trigger refresh
 rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
-# Show Bootstrap modal
-shinyjs::runjs("$('#modal_id').modal('show');")
+# Show modal
+showModal(modalDialog(title = "Title", ..., footer = modalButton("Close")))
 
 # Check admin (Enter Results, Edit Tournaments, Edit Players, Edit Decks)
 req(rv$is_admin)

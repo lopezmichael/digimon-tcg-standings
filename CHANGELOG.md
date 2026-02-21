@@ -5,8 +5,27 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] - UX Polish
 
+### Added
+- **Skeleton Loaders**: Digital-themed skeleton loaders on all public tables and dashboard charts with shimmer animation, auto-hidden when data renders
+- **`skeleton_table()` / `skeleton_chart()` Helpers**: Reusable skeleton loader generators for table and chart card bodies
+- **`admin_empty_state()` Helper**: Lightweight empty state variant for admin tables with consistent digital styling
+- **Filter-Aware Empty States**: Public tables (Players, Meta, Tournaments) now show "No X match your filters" with funnel icon when filters are active, vs Agumon mascot "No data" when genuinely empty
+- **`notify()` Smart Durations**: Wrapper around `showNotification()` — errors stick until dismissed, warnings last 8s, success messages last 4s
+- **Digital Grid on All Card Headers**: Subtle grid pattern (Tier 2, 0.025 opacity) applied to all card headers, with stronger pattern (Tier 1, 0.04 opacity) on chart/feature cards
+- **Circuit Node on All Card Headers**: Small cyan accent dot on all card headers (4px Tier 2), with larger dot (5px Tier 1) on chart/feature cards
+- **Modal Body Grid Texture**: Very subtle digital grid overlay (0.015 opacity) on all modal bodies
+
+### Changed
+- **Modal System Consolidated**: All 8 static Bootstrap modals (`tags$div(class="modal fade")` + jQuery triggers) migrated to Shiny's `showModal(modalDialog())` / `removeModal()` pattern — single modal system throughout the app
+- **Tournament Results Editor**: Nested edit/delete modals now use re-show pattern (Shiny only supports one modal at a time)
+- **Error Notifications Persistent**: Error toasts no longer auto-dismiss — user must click X to close
+- **Admin Empty States Styled**: Admin formats and players tables now use `admin_empty_state()` instead of plain text reactable rows
+
+### Removed
+- ~270 lines of static Bootstrap modal HTML from 6 admin view files
+- All jQuery `modal('show'/'hide')` calls from server files
 
 ## [0.27.0] - 2026-02-20 - Onboarding & Help
 

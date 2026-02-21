@@ -4,6 +4,50 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-21: UX Polish — Items 1-5
+
+### Changes Made
+
+**Loading Indicators:**
+- Added CSS skeleton loaders with digital shimmer animation (light + dark mode)
+- `skeleton_table(rows)` and `skeleton_chart(bars, height)` R helpers in app.R
+- Skeleton divs on 3 public table views + 7 dashboard outputs, auto-hidden via `shiny:value` JS event
+- `.recalculating` class fades outputs to 40% opacity while Shiny recalculates
+
+**Empty State Standardization:**
+- `admin_empty_state()` helper — lightweight variant of `digital_empty_state()` for admin tables
+- Replaced plain `reactable(data.frame(Message = "..."))` empty rows in admin-formats and admin-players
+- Public pages (Players, Meta, Tournaments) now show filter-aware messages: "No X match your filters" with funnel icon when filters active, vs Agumon mascot when genuinely empty
+
+**Digital Aesthetic Extension:**
+- All card headers now get subtle grid pattern (Tier 2: 0.025 opacity vs feature cards' 0.04)
+- All card headers now get small circuit node accent (Tier 2: 4px vs feature cards' 5px)
+- Modal bodies get very subtle grid texture (0.015 opacity)
+- Creates visual continuity between themed chrome and content area
+
+**Notification System:**
+- `notify()` wrapper replaces all 175 `showNotification()` calls across 11 server files
+- Smart duration defaults: errors = sticky (NULL), warnings = 8s, messages = 4s
+- Existing explicit `duration` params preserved — wrapper only applies defaults when duration is NULL
+
+**Modal Consolidation:**
+- Migrated all 8 static Bootstrap modals to Shiny's `showModal()`/`removeModal()` pattern
+- Removed ~270 lines of boilerplate `tags$div(class = "modal fade", ...)` HTML from 6 view files
+- Replaced all jQuery `$('#id').modal('show'/'hide')` calls in server files
+- Tournament results editor uses helper function `show_results_editor()` for re-show after nested edit/delete
+
+### Technical Notes
+
+- Shiny's `showModal()` only supports one modal at a time — calling it replaces the current modal. This required the re-show pattern for the tournament results editor's nested modals.
+- The `notify()` wrapper merges with the existing custom notification system (icon + message layout) — it doesn't replace the HTML structure, just adds smart duration logic.
+- CSS card header grid uses `background-image` with `repeating-linear-gradient` — the `!important` is needed to override Bootstrap defaults.
+- Skeleton loaders use a single `shiny:value` event handler that maps `event.name + '_skeleton'` to find and hide matching skeleton divs.
+
+### Design Doc
+- `docs/plans/2026-02-21-ux-polish-items-1-5.md`
+
+---
+
 ## 2026-02-20: Stores & Filtering Features (v0.25.0)
 
 ### Changes Made
