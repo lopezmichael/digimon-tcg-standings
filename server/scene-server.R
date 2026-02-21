@@ -382,7 +382,7 @@ observeEvent(input$find_my_scene, {
 
     session$sendCustomMessage("requestGeolocation", list(scenes = scenes_list))
   } else {
-    showNotification("No scenes available", type = "warning")
+    notify("No scenes available", type = "warning")
   }
 })
 
@@ -396,16 +396,16 @@ observeEvent(input$geolocation_result, {
     if (!is.null(nearest)) {
       # Auto-select nearest scene
       select_scene_and_close(nearest$slug)
-      showNotification(
+      notify(
         sprintf("Selected %s (%.0f km away)", nearest$display_name, result$distance),
         type = "message",
         duration = 3
       )
     } else {
-      showNotification("No nearby scenes found", type = "warning")
+      notify("No nearby scenes found", type = "warning")
     }
   } else {
-    showNotification(result$error %||% "Unable to get location", type = "warning")
+    notify(result$error %||% "Unable to get location", type = "warning")
   }
 })
 

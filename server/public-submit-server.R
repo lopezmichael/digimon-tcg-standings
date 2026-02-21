@@ -128,23 +128,23 @@ observeEvent(input$submit_process_ocr, {
 
   # Validate required fields first
   if (is.null(input$submit_store) || input$submit_store == "") {
-    showNotification("Please select a store", type = "error")
+    notify("Please select a store", type = "error")
     return()
   }
   if (is.na(input$submit_date)) {
-    showNotification("Please select a date", type = "error")
+    notify("Please select a date", type = "error")
     return()
   }
   if (is.null(input$submit_event_type) || input$submit_event_type == "") {
-    showNotification("Please select an event type", type = "error")
+    notify("Please select an event type", type = "error")
     return()
   }
   if (is.null(input$submit_format) || input$submit_format == "") {
-    showNotification("Please select a format", type = "error")
+    notify("Please select a format", type = "error")
     return()
   }
   if (is.null(total_players) || total_players < 2) {
-    showNotification("Please enter the total number of players", type = "error")
+    notify("Please enter the total number of players", type = "error")
     return()
   }
 
@@ -222,7 +222,7 @@ observeEvent(input$submit_process_ocr, {
     } else {
       "\n\nNo text was extracted. Check that GOOGLE_CLOUD_VISION_API_KEY is set in .env"
     }
-    showNotification(
+    notify(
       paste0("Could not extract player data from screenshots.", error_detail),
       type = "error",
       duration = 10
@@ -360,18 +360,18 @@ observeEvent(input$submit_process_ocr, {
 
   # Show appropriate notification based on parsed vs expected
   if (parsed_count == total_players) {
-    showNotification(
+    notify(
       paste("All", total_players, "players found"),
       type = "message"
     )
   } else if (parsed_count < total_players) {
-    showNotification(
+    notify(
       paste("Parsed", parsed_count, "of", total_players, "players - fill in remaining manually"),
       type = "warning",
       duration = 8
     )
   } else {
-    showNotification(
+    notify(
       paste("Found", parsed_count, "players, showing top", total_players),
       type = "warning",
       duration = 8
@@ -544,7 +544,7 @@ observeEvent(input$submit_delete_row, {
   # Update reactive value (triggers re-render)
   rv$submit_ocr_results <- results
 
-  showNotification(
+  notify(
     paste("Row removed. Players renumbered 1-", nrow(results), ".", sep = ""),
     type = "message",
     duration = 3
@@ -702,7 +702,7 @@ observe({
       rv$submit_ocr_results$match_status[i] <- "new"
       rv$submit_ocr_results$matched_player_id[i] <- NA_integer_
       rv$submit_ocr_results$matched_player_name[i] <- NA_character_
-      showNotification(paste("Match rejected - will create as new player"), type = "message")
+      notify(paste("Match rejected - will create as new player"), type = "message")
     }, ignoreInit = TRUE, once = TRUE)
   })
 })
@@ -765,11 +765,11 @@ observeEvent(input$deck_request_submit, {
 
   # Validate required fields
   if (is.null(input$deck_request_name) || trimws(input$deck_request_name) == "") {
-    showNotification("Please enter a deck name", type = "error")
+    notify("Please enter a deck name", type = "error")
     return()
   }
   if (is.null(input$deck_request_color) || input$deck_request_color == "") {
-    showNotification("Please select a primary color", type = "error")
+    notify("Please select a primary color", type = "error")
     return()
   }
 
@@ -793,7 +793,7 @@ observeEvent(input$deck_request_submit, {
   ", params = list(deck_name))
 
   if (nrow(existing) > 0) {
-    showNotification(paste0("A deck named '", deck_name, "' already exists. Please select it from the dropdown."), type = "warning")
+    notify(paste0("A deck named '", deck_name, "' already exists. Please select it from the dropdown."), type = "warning")
     removeModal()
     return()
   }
@@ -805,7 +805,7 @@ observeEvent(input$deck_request_submit, {
   ", params = list(deck_name))
 
   if (nrow(pending) > 0) {
-    showNotification(paste0("A request for '", deck_name, "' is already pending. You can select it from the dropdown."), type = "warning")
+    notify(paste0("A request for '", deck_name, "' is already pending. You can select it from the dropdown."), type = "warning")
     removeModal()
     return()
   }
@@ -860,7 +860,7 @@ observeEvent(input$deck_request_submit, {
                       selected = new_selection)
   }
 
-  showNotification(
+  notify(
     paste0("Deck request submitted: '", deck_name, "'. An admin will review it shortly."),
     type = "message"
   )
@@ -875,25 +875,25 @@ observeEvent(input$submit_tournament, {
 
   # Validate confirmation checkbox
   if (!isTRUE(input$submit_confirm)) {
-    showNotification("Please confirm the data is accurate before submitting.", type = "warning")
+    notify("Please confirm the data is accurate before submitting.", type = "warning")
     return()
   }
 
   # Validate required fields
   if (is.null(input$submit_store) || input$submit_store == "") {
-    showNotification("Please select a store", type = "error")
+    notify("Please select a store", type = "error")
     return()
   }
   if (is.na(input$submit_date)) {
-    showNotification("Please select a date", type = "error")
+    notify("Please select a date", type = "error")
     return()
   }
   if (is.null(input$submit_event_type) || input$submit_event_type == "") {
-    showNotification("Please select an event type", type = "error")
+    notify("Please select an event type", type = "error")
     return()
   }
   if (is.null(input$submit_format) || input$submit_format == "") {
-    showNotification("Please select a format", type = "error")
+    notify("Please select a format", type = "error")
     return()
   }
 
@@ -910,7 +910,7 @@ observeEvent(input$submit_tournament, {
   ))
 
   if (nrow(existing) > 0) {
-    showNotification("A tournament with this store, date, and event type already exists.",
+    notify("A tournament with this store, date, and event type already exists.",
                      type = "error")
     return()
   }
@@ -1051,7 +1051,7 @@ observeEvent(input$submit_tournament, {
     updateCheckboxInput(session, "submit_confirm", value = FALSE)
     shinyjs::reset("submit_screenshots")
 
-    showNotification(
+    notify(
       paste("Tournament submitted successfully!", nrow(results), "results recorded."),
       type = "message"
     )
@@ -1062,7 +1062,7 @@ observeEvent(input$submit_tournament, {
     session$sendCustomMessage("updateSidebarNav", "nav_tournaments")
 
   }, error = function(e) {
-    showNotification(paste("Error submitting tournament:", e$message), type = "error")
+    notify(paste("Error submitting tournament:", e$message), type = "error")
   })
 })
 
@@ -1223,12 +1223,12 @@ observeEvent(input$match_process_ocr, {
 
   # Validate required fields
   if (is.null(input$match_tournament) || input$match_tournament == "") {
-    showNotification("Please select a tournament", type = "error")
+    notify("Please select a tournament", type = "error")
     return()
   }
 
   if (is.null(input$match_player_username) || trimws(input$match_player_username) == "") {
-    showNotification("Please enter your username", type = "error")
+    notify("Please enter your username", type = "error")
     shinyjs::removeClass("match_username_hint", "d-none")
     return()
   } else {
@@ -1236,7 +1236,7 @@ observeEvent(input$match_process_ocr, {
   }
 
   if (is.null(input$match_player_member) || trimws(input$match_player_member) == "") {
-    showNotification("Please enter your member number", type = "error")
+    notify("Please enter your member number", type = "error")
     shinyjs::removeClass("match_member_hint", "d-none")
     return()
   } else {
@@ -1283,7 +1283,7 @@ observeEvent(input$match_process_ocr, {
 
   if (is.null(ocr_text) || ocr_text == "") {
     removeModal()
-    showNotification("Could not extract text from screenshot. Check that GOOGLE_CLOUD_VISION_API_KEY is set.", type = "error")
+    notify("Could not extract text from screenshot. Check that GOOGLE_CLOUD_VISION_API_KEY is set.", type = "error")
     return()
   }
 
@@ -1335,21 +1335,21 @@ observeEvent(input$match_process_ocr, {
 
   # Show appropriate notification
   if (parsed_count == 0) {
-    showNotification(
+    notify(
       paste("No matches found - fill in all", total_rounds, "rounds manually"),
       type = "warning",
       duration = 8
     )
   } else if (parsed_count == total_rounds) {
-    showNotification(paste("All", total_rounds, "rounds found"), type = "message")
+    notify(paste("All", total_rounds, "rounds found"), type = "message")
   } else if (parsed_count < total_rounds) {
-    showNotification(
+    notify(
       paste("Parsed", parsed_count, "of", total_rounds, "rounds - fill in remaining manually"),
       type = "warning",
       duration = 8
     )
   } else {
-    showNotification(
+    notify(
       paste("Found", parsed_count, "rounds, showing", total_rounds),
       type = "warning",
       duration = 8
@@ -1458,12 +1458,12 @@ observeEvent(input$match_submit, {
   req(input$match_tournament)
 
   if (is.null(input$match_player_username) || trimws(input$match_player_username) == "") {
-    showNotification("Please enter your username", type = "error")
+    notify("Please enter your username", type = "error")
     return()
   }
 
   if (is.null(input$match_player_member) || trimws(input$match_player_member) == "") {
-    showNotification("Please enter your member number", type = "error")
+    notify("Please enter your member number", type = "error")
     return()
   }
 
@@ -1607,13 +1607,13 @@ observeEvent(input$match_submit, {
     updateTextInput(session, "match_player_member", value = "")
     shinyjs::reset("match_screenshots")
 
-    showNotification(
+    notify(
       paste("Match history submitted!", matches_inserted, "matches recorded."),
       type = "message"
     )
 
   }, error = function(e) {
-    showNotification(paste("Error submitting match history:", e$message), type = "error")
+    notify(paste("Error submitting match history:", e$message), type = "error")
   })
 })
 

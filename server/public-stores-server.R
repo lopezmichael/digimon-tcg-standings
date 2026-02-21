@@ -870,7 +870,7 @@ stores_data <- reactive({
 observeEvent(input$reset_dashboard_filters, {
   updateSelectInput(session, "dashboard_format", selected = "")
   updateSelectInput(session, "dashboard_event_type", selected = "locals")
-  showNotification("Filters reset to defaults", type = "message")
+  notify("Filters reset to defaults", type = "message")
 })
 
 # Helper: Render world map for online organizers

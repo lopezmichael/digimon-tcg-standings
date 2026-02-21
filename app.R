@@ -158,7 +158,21 @@ deck_color_badge_dual <- function(primary, secondary = NULL) {
 # Helper: Custom Notification
 # =============================================================================
 
-notify <- function(message, type = "message", duration = 5) {
+notify <- function(message, type = "message", duration = NULL, ...) {
+  # Smart duration defaults:
+  # - Errors: sticky until dismissed (duration = NULL)
+  # - Warnings: 8 seconds
+  # - Messages: 4 seconds
+  # Custom durations can still be passed to override
+  if (is.null(duration)) {
+    duration <- switch(type,
+      "error" = NULL,
+      "warning" = 8,
+      "message" = 4,
+      5
+    )
+  }
+
   # Map type to icon and class
   icon_name <- switch(type,
     "message" = "check-circle",
@@ -185,7 +199,8 @@ notify <- function(message, type = "message", duration = 5) {
     ui = ui,
     duration = duration,
     closeButton = TRUE,
-    type = type
+    type = type,
+    ...
   )
 }
 
@@ -275,23 +290,6 @@ admin_empty_state <- function(title = "No records found",
     div(class = "empty-state-title", title),
     if (!is.null(subtitle)) div(class = "empty-state-subtitle", subtitle)
   )
-}
-
-# Standardized notification with smart duration
-# - Errors: sticky until dismissed (duration = NULL)
-# - Warnings: 8 seconds
-# - Messages: 4 seconds
-# Custom durations can still be passed to override
-notify <- function(message, type = "message", duration = NULL, ...) {
-  if (is.null(duration)) {
-    duration <- switch(type,
-      "error" = NULL,
-      "warning" = 8,
-      "message" = 4,
-      5
-    )
-  }
-  showNotification(message, type = type, duration = duration, ...)
 }
 
 # =============================================================================

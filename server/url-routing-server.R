@@ -198,7 +198,7 @@ observeEvent(input$url_popstate, {
 
 # Handle "Copy Link" toast notification
 observeEvent(input$link_copied, {
-  showNotification("Link copied to clipboard!", type = "message", duration = 2)
+  notify("Link copied to clipboard!", type = "message", duration = 2)
 })
 
 # Handle modal close - clear entity from URL and reset reactive values
@@ -267,7 +267,7 @@ open_entity_from_url <- function(entity_type, slug = NULL, id = NULL) {
   }
 
   if (is.null(entity_id)) {
-    showNotification(
+    notify(
       sprintf("%s not found", tools::toTitleCase(entity_type)),
       type = "warning",
       duration = 3

@@ -386,14 +386,14 @@ observeEvent(input$login_btn, {
     rv$is_admin <- TRUE
     rv$is_superadmin <- TRUE
     removeModal()
-    showNotification("Logged in as super admin", type = "message")
+    notify("Logged in as super admin", type = "message")
   } else if (!is.null(ADMIN_PASSWORD) && pw == ADMIN_PASSWORD) {
     rv$is_admin <- TRUE
     rv$is_superadmin <- FALSE
     removeModal()
-    showNotification("Logged in as admin", type = "message")
+    notify("Logged in as admin", type = "message")
   } else {
-    showNotification("Invalid password", type = "error")
+    notify("Invalid password", type = "error")
     return()
   }
 
@@ -408,7 +408,7 @@ observeEvent(input$logout_btn, {
   rv$is_superadmin <- FALSE
   rv$active_tournament_id <- NULL
   removeModal()
-  showNotification("Logged out", type = "message")
+  notify("Logged out", type = "message")
   # Navigate back to dashboard
   nav_select("main_content", "dashboard")
   rv$current_nav <- "dashboard"
@@ -611,7 +611,7 @@ observeEvent(input$clear_community_filter, {
   # Reset filters back to defaults (5+) when clearing community filter
   session$sendCustomMessage("setPillToggle", list(inputId = "players_min_events", value = "5"))
   session$sendCustomMessage("setPillToggle", list(inputId = "meta_min_entries", value = "5"))
-  showNotification("Community filter cleared", type = "message", duration = 2)
+  notify("Community filter cleared", type = "message", duration = 2)
 })
 
 #' Build Parameterized SQL Filters
