@@ -113,7 +113,7 @@ observeEvent(input$player_list_clicked, {
   shinyjs::show("update_player")
   shinyjs::show("delete_player")
 
-  showNotification(sprintf("Editing: %s", player$display_name), type = "message", duration = 2)
+  notify(sprintf("Editing: %s", player$display_name), type = "message", duration = 2)
 })
 
 # Player stats info
@@ -179,12 +179,12 @@ observeEvent(input$update_player, {
   new_name <- trimws(input$player_display_name)
 
   if (nchar(new_name) == 0) {
-    showNotification("Please enter a player name", type = "error")
+    notify("Please enter a player name", type = "error")
     return()
   }
 
   if (nchar(new_name) < 2) {
-    showNotification("Player name must be at least 2 characters", type = "error")
+    notify("Player name must be at least 2 characters", type = "error")
     return()
   }
 
@@ -195,7 +195,7 @@ observeEvent(input$update_player, {
   ", params = list(new_name, player_id))
 
   if (nrow(existing) > 0) {
-    showNotification(sprintf("A player named '%s' already exists", new_name), type = "error")
+    notify(sprintf("A player named '%s' already exists", new_name), type = "error")
     return()
   }
 
@@ -206,7 +206,7 @@ observeEvent(input$update_player, {
       WHERE player_id = ?
     ", params = list(new_name, player_id))
 
-    showNotification(sprintf("Updated player: %s", new_name), type = "message")
+    notify(sprintf("Updated player: %s", new_name), type = "message")
 
     # Clear form and reset
     updateTextInput(session, "editing_player_id", value = "")
@@ -219,7 +219,7 @@ observeEvent(input$update_player, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -253,7 +253,7 @@ observeEvent(input$delete_player, {
     })
     shinyjs::runjs("$('#delete_player_modal').modal('show');")
   } else {
-    showNotification(
+    notify(
       sprintf("Cannot delete: player has %d result(s). Use 'Merge Players' to combine with another player.",
               rv$player_result_count),
       type = "error",
@@ -274,14 +274,14 @@ observeEvent(input$confirm_delete_player, {
 
   if (count > 0) {
     shinyjs::runjs("$('#delete_player_modal').modal('hide');")
-    showNotification(sprintf("Cannot delete: player has %d result(s)", count), type = "error")
+    notify(sprintf("Cannot delete: player has %d result(s)", count), type = "error")
     return()
   }
 
   tryCatch({
     dbExecute(rv$db_con, "DELETE FROM players WHERE player_id = ?",
               params = list(player_id))
-    showNotification("Player deleted", type = "message")
+    notify("Player deleted", type = "message")
 
     shinyjs::runjs("$('#delete_player_modal').modal('hide');")
 
@@ -296,7 +296,7 @@ observeEvent(input$confirm_delete_player, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -371,12 +371,12 @@ observeEvent(input$confirm_merge_players, {
   target_id <- as.integer(input$merge_target_player)
 
   if (is.na(source_id) || is.na(target_id)) {
-    showNotification("Please select both source and target players", type = "error")
+    notify("Please select both source and target players", type = "error")
     return()
   }
 
   if (source_id == target_id) {
-    showNotification("Source and target players cannot be the same", type = "error")
+    notify("Source and target players cannot be the same", type = "error")
     return()
   }
 
@@ -397,7 +397,7 @@ observeEvent(input$confirm_merge_players, {
           SELECT r2.tournament_id FROM results r2 WHERE r2.player_id = ?
         )
       ", params = list(source_id, target_id))
-      showNotification(
+      notify(
         sprintf("Note: %d conflicting result(s) removed from source player", nrow(conflicts)),
         type = "warning", duration = 5
       )
@@ -431,7 +431,7 @@ observeEvent(input$confirm_merge_players, {
     dbExecute(rv$db_con, "DELETE FROM players WHERE player_id = ?",
               params = list(source_id))
 
-    showNotification("Players merged successfully", type = "message")
+    notify("Players merged successfully", type = "message")
 
     shinyjs::runjs("$('#merge_player_modal').modal('hide');")
 
@@ -443,7 +443,7 @@ observeEvent(input$confirm_merge_players, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 

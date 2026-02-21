@@ -74,7 +74,7 @@ observeEvent(input$admin_format_list__reactable__selected, {
   shinyjs::show("update_format")
   shinyjs::show("delete_format")
 
-  showNotification(sprintf("Editing: %s", format$set_name), type = "message", duration = 2)
+  notify(sprintf("Editing: %s", format$set_name), type = "message", duration = 2)
 })
 
 # Add format
@@ -87,7 +87,7 @@ observeEvent(input$add_format, {
   is_active <- input$format_is_active
 
   if (format_id == "" || set_name == "") {
-    showNotification("Set Code and Set Name are required", type = "error")
+    notify("Set Code and Set Name are required", type = "error")
     return()
   }
 
@@ -100,7 +100,7 @@ observeEvent(input$add_format, {
       VALUES ($1, $2, $3, $4, 0, $5)
     ", params = list(format_id, set_name, display_name, release_date, is_active))
 
-    showNotification(sprintf("Added format: %s", display_name), type = "message")
+    notify(sprintf("Added format: %s", display_name), type = "message")
 
     # Clear form
     updateTextInput(session, "format_id", value = "")
@@ -114,9 +114,9 @@ observeEvent(input$add_format, {
 
   }, error = function(e) {
     if (grepl("unique|duplicate|primary key", e$message, ignore.case = TRUE)) {
-      showNotification("A format with this Set Code already exists", type = "error")
+      notify("A format with this Set Code already exists", type = "error")
     } else {
-      showNotification(paste("Error:", e$message), type = "error")
+      notify(paste("Error:", e$message), type = "error")
     }
   })
 })
@@ -132,7 +132,7 @@ observeEvent(input$update_format, {
   is_active <- input$format_is_active
 
   if (format_id == "" || set_name == "") {
-    showNotification("Set Code and Set Name are required", type = "error")
+    notify("Set Code and Set Name are required", type = "error")
     return()
   }
 
@@ -161,7 +161,7 @@ observeEvent(input$update_format, {
       ", params = list(set_name, display_name, release_date, is_active, format_id))
     }
 
-    showNotification(sprintf("Updated format: %s", display_name), type = "message")
+    notify(sprintf("Updated format: %s", display_name), type = "message")
 
     # Reset form
     updateTextInput(session, "editing_format_id", value = "")
@@ -179,7 +179,7 @@ observeEvent(input$update_format, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -224,7 +224,7 @@ observeEvent(input$delete_format, {
     })
     shinyjs::runjs("$('#delete_format_modal').modal('show');")
   } else {
-    showNotification(
+    notify(
       sprintf("Cannot delete: %d tournament(s) use this format", rv$format_tournament_count),
       type = "error"
     )
@@ -238,7 +238,7 @@ observeEvent(input$confirm_delete_format, {
   tryCatch({
     dbExecute(rv$db_con, "DELETE FROM formats WHERE format_id = ?",
               params = list(input$editing_format_id))
-    showNotification("Format deleted", type = "message")
+    notify("Format deleted", type = "message")
 
     # Hide modal and reset form
     shinyjs::runjs("$('#delete_format_modal').modal('hide');")
@@ -260,6 +260,6 @@ observeEvent(input$confirm_delete_format, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })

@@ -135,7 +135,7 @@ lapply(1:100, function(i) {
         rv$card_search_results$cardnumber[i]
       }
       updateTextInput(session, "selected_card_id", value = card_num)
-      showNotification(paste("Selected:", card_num), type = "message", duration = 2)
+      notify(paste("Selected:", card_num), type = "message", duration = 2)
     }
   }, ignoreInit = TRUE)
 })
@@ -176,12 +176,12 @@ observeEvent(input$add_archetype, {
 
   # Validation
   if (is.null(name) || nchar(name) == 0) {
-    showNotification("Please enter an archetype name", type = "error")
+    notify("Please enter an archetype name", type = "error")
     return()
   }
 
   if (nchar(name) < 2) {
-    showNotification("Archetype name must be at least 2 characters", type = "error")
+    notify("Archetype name must be at least 2 characters", type = "error")
     return()
   }
 
@@ -192,7 +192,7 @@ observeEvent(input$add_archetype, {
   ", params = list(name))
 
   if (nrow(existing) > 0) {
-    showNotification(
+    notify(
       sprintf("Archetype '%s' already exists", name),
       type = "error"
     )
@@ -202,7 +202,7 @@ observeEvent(input$add_archetype, {
   # Validate card ID format if provided
   if (!is.null(card_id) && nchar(card_id) > 0) {
     if (!grepl("^[A-Z0-9]+-[0-9]+$", card_id)) {
-      showNotification(
+      notify(
         "Card ID format should be like BT17-042 or EX6-001",
         type = "warning"
       )
@@ -218,7 +218,7 @@ observeEvent(input$add_archetype, {
       VALUES (?, ?, ?, ?, ?, ?)
     ", params = list(new_id, name, card_id, primary_color, secondary_color, isTRUE(input$deck_multi_color)))
 
-    showNotification(paste("Added archetype:", name), type = "message")
+    notify(paste("Added archetype:", name), type = "message")
 
     # Clear form
     updateTextInput(session, "deck_name", value = "")
@@ -233,7 +233,7 @@ observeEvent(input$add_archetype, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -346,7 +346,7 @@ observeEvent(input$archetype_list_clicked, {
   shinyjs::show("update_archetype")
   shinyjs::show("delete_archetype")
 
-  showNotification(sprintf("Editing: %s", arch$archetype_name), type = "message", duration = 2)
+  notify(sprintf("Editing: %s", arch$archetype_name), type = "message", duration = 2)
 })
 
 # Update archetype
@@ -361,7 +361,7 @@ observeEvent(input$update_archetype, {
   card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NA_character_
 
   if (is.null(name) || nchar(name) == 0) {
-    showNotification("Please enter an archetype name", type = "error")
+    notify("Please enter an archetype name", type = "error")
     return()
   }
 
@@ -375,7 +375,7 @@ observeEvent(input$update_archetype, {
       WHERE archetype_id = ?
     ", params = list(name, primary_color, secondary_color, card_id, isTRUE(input$deck_multi_color), archetype_id))
 
-    showNotification(sprintf("Updated archetype: %s", name), type = "message")
+    notify(sprintf("Updated archetype: %s", name), type = "message")
 
     # Clear form and reset to add mode
     updateTextInput(session, "editing_archetype_id", value = "")
@@ -395,7 +395,7 @@ observeEvent(input$update_archetype, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -445,7 +445,7 @@ observeEvent(input$delete_archetype, {
     })
     shinyjs::runjs("$('#delete_archetype_modal').modal('show');")
   } else {
-    showNotification(
+    notify(
       sprintf("Cannot delete: used in %d result(s)", rv$archetype_result_count),
       type = "error"
     )
@@ -467,7 +467,7 @@ observeEvent(input$confirm_delete_archetype, {
 
   if (count > 0) {
     shinyjs::runjs("$('#delete_archetype_modal').modal('hide');")
-    showNotification(sprintf("Cannot delete: used in %d result(s)", count), type = "error")
+    notify(sprintf("Cannot delete: used in %d result(s)", count), type = "error")
     return()
   }
 
@@ -475,7 +475,7 @@ observeEvent(input$confirm_delete_archetype, {
     message(sprintf("Executing DELETE for archetype_id=%d", archetype_id))
     dbExecute(rv$db_con, "DELETE FROM deck_archetypes WHERE archetype_id = ?",
               params = list(archetype_id))
-    showNotification("Archetype deleted", type = "message")
+    notify("Archetype deleted", type = "message")
 
     # Hide modal and reset form
     shinyjs::runjs("$('#delete_archetype_modal').modal('hide');")
@@ -498,7 +498,7 @@ observeEvent(input$confirm_delete_archetype, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -736,7 +736,7 @@ approve_deck_request <- function(req_id, session, rv) {
   req_data <- dbGetQuery(rv$db_con, "SELECT * FROM deck_requests WHERE request_id = ?",
                          params = list(req_id))
   if (nrow(req_data) == 0) {
-    showNotification("Request not found", type = "error")
+    notify("Request not found", type = "error")
     return()
   }
   req_data <- req_data[1, ]
@@ -759,7 +759,7 @@ create_deck_from_request <- function(req_id, deck_name, primary_color, secondary
   ", params = list(deck_name))
 
   if (nrow(existing) > 0) {
-    showNotification(paste0("Deck '", deck_name, "' already exists"), type = "warning")
+    notify(paste0("Deck '", deck_name, "' already exists"), type = "warning")
     return()
   }
 
@@ -791,11 +791,11 @@ create_deck_from_request <- function(req_id, deck_name, primary_color, secondary
     if (updated_count > 0) {
       msg <- paste0(msg, sprintf(" and updated %d result(s)", updated_count))
     }
-    showNotification(msg, type = "message")
+    notify(msg, type = "message")
 
     # Remind admin to set card image if not provided
     if (is.na(card_id) || card_id == "") {
-      showNotification(
+      notify(
         "Remember to set a card image in the deck table below (decks without images are highlighted).",
         type = "warning",
         duration = 8
@@ -807,7 +807,7 @@ create_deck_from_request <- function(req_id, deck_name, primary_color, secondary
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error approving deck:", e$message), type = "error")
+    notify(paste("Error approving deck:", e$message), type = "error")
   })
 }
 
@@ -847,12 +847,12 @@ reject_deck_request <- function(req_id, replacement_archetype_id, session, rv) {
                                      params = list(replacement_archetype_id))$archetype_name[1]
       msg <- paste0(msg, sprintf(" - %d result(s) reassigned to '%s'", updated_count, replacement_name))
     }
-    showNotification(msg, type = "message")
+    notify(msg, type = "message")
     rv$deck_requests_refresh <- Sys.time()
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error rejecting request:", e$message), type = "error")
+    notify(paste("Error rejecting request:", e$message), type = "error")
   })
 }
 
@@ -952,7 +952,7 @@ observeEvent(input$confirm_merge_decks, {
   target_id <- as.integer(input$merge_target_deck)
 
   if (source_id == target_id) {
-    showNotification("Source and target must be different", type = "error")
+    notify("Source and target must be different", type = "error")
     return()
   }
 
@@ -989,12 +989,12 @@ observeEvent(input$confirm_merge_decks, {
     if (mappings_updated > 0) {
       msg <- paste0(msg, sprintf(", %d mapping(s) updated", mappings_updated))
     }
-    showNotification(msg, type = "message", duration = 5)
+    notify(msg, type = "message", duration = 5)
 
     # Refresh data
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error merging decks:", e$message), type = "error")
+    notify(paste("Error merging decks:", e$message), type = "error")
   })
 })

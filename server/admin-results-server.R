@@ -82,29 +82,29 @@ observeEvent(input$create_tournament, {
 
   # Validation
   if (is.null(store_id) || nchar(trimws(store_id)) == 0) {
-    showNotification("Please select a store", type = "error")
+    notify("Please select a store", type = "error")
     return()
   }
 
   store_id <- as.integer(store_id)
   if (is.na(store_id)) {
-    showNotification("Invalid store selection", type = "error")
+    notify("Invalid store selection", type = "error")
     return()
   }
 
   # Date validation
   if (is.null(input$tournament_date) || is.na(input$tournament_date)) {
-    showNotification("Please select a tournament date", type = "error")
+    notify("Please select a tournament date", type = "error")
     return()
   }
 
   if (is.null(player_count) || is.na(player_count) || player_count < 2) {
-    showNotification("Player count must be at least 2", type = "error")
+    notify("Player count must be at least 2", type = "error")
     return()
   }
 
   if (is.null(rounds) || is.na(rounds) || rounds < 1) {
-    showNotification("Rounds must be at least 1", type = "error")
+    notify("Rounds must be at least 1", type = "error")
     return()
   }
 
@@ -153,14 +153,14 @@ observeEvent(input$create_tournament, {
     rv$active_tournament_id <- new_id
     rv$current_results <- data.frame()
 
-    showNotification("Tournament created!", type = "message")
+    notify("Tournament created!", type = "message")
     rv$wizard_step <- 2
     rv$admin_record_format <- input$admin_record_format %||% "points"
     rv$admin_grid_data <- init_admin_grid(player_count)
     rv$admin_player_matches <- list()
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -219,10 +219,10 @@ observeEvent(input$clear_results_only, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
     shinyjs::runjs("$('#start_over_modal').modal('hide');")
-    showNotification("Results cleared. Tournament kept for re-entry.", type = "message")
+    notify("Results cleared. Tournament kept for re-entry.", type = "message")
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -249,7 +249,7 @@ observeEvent(input$delete_tournament_confirm, {
     rv$wizard_step <- 1
 
     shinyjs::runjs("$('#start_over_modal').modal('hide');")
-    showNotification("Tournament deleted.", type = "message")
+    notify("Tournament deleted.", type = "message")
 
     # Recalculate ratings cache
     recalculate_ratings_cache(rv$db_con)
@@ -258,7 +258,7 @@ observeEvent(input$delete_tournament_confirm, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -322,14 +322,14 @@ observeEvent(input$create_anyway, {
     rv$current_results <- data.frame()
     rv$duplicate_tournament <- NULL
 
-    showNotification("Tournament created!", type = "message")
+    notify("Tournament created!", type = "message")
     rv$wizard_step <- 2
     rv$admin_record_format <- input$admin_record_format %||% "points"
     rv$admin_grid_data <- init_admin_grid(player_count)
     rv$admin_player_matches <- list()
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -623,7 +623,7 @@ observeEvent(input$admin_delete_row, {
   }
   rv$admin_player_matches <- new_matches
   rv$admin_grid_data <- grid
-  showNotification(paste0("Row removed. Players renumbered 1-", nrow(grid), "."), type = "message", duration = 3)
+  notify(paste0("Row removed. Players renumbered 1-", nrow(grid), "."), type = "message", duration = 3)
 })
 
 # =============================================================================
@@ -702,7 +702,7 @@ observeEvent(input$paste_apply, {
 
   paste_text <- input$paste_data
   if (is.null(paste_text) || nchar(trimws(paste_text)) == 0) {
-    showNotification("No data to paste", type = "warning")
+    notify("No data to paste", type = "warning")
     return()
   }
 
@@ -710,7 +710,7 @@ observeEvent(input$paste_apply, {
   lines <- lines[nchar(trimws(lines)) > 0]
 
   if (length(lines) == 0) {
-    showNotification("No valid lines found", type = "warning")
+    notify("No valid lines found", type = "warning")
     return()
   }
 
@@ -792,7 +792,7 @@ observeEvent(input$paste_apply, {
   # Close modal and clear textarea
   shinyjs::runjs("$('#paste_spreadsheet_modal').modal('hide');")
   shinyjs::runjs("$('#paste_data').val('');")
-  showNotification(sprintf("Filled %d rows from pasted data", fill_count), type = "message")
+  notify(sprintf("Filled %d rows from pasted data", fill_count), type = "message")
 
   # Trigger player match lookup for all filled rows
   for (idx in seq_len(fill_count)) {
@@ -863,7 +863,7 @@ observeEvent(input$admin_deck_request_submit, {
 
   deck_name <- trimws(input$admin_deck_request_name)
   if (nchar(deck_name) == 0) {
-    showNotification("Please enter a deck name", type = "error")
+    notify("Please enter a deck name", type = "error")
     return()
   }
 
@@ -883,7 +883,7 @@ observeEvent(input$admin_deck_request_submit, {
   ", params = list(deck_name))
 
   if (nrow(existing) > 0) {
-    showNotification(sprintf("A pending request for '%s' already exists", deck_name), type = "warning")
+    notify(sprintf("A pending request for '%s' already exists", deck_name), type = "warning")
   } else {
     max_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(request_id), 0) as max_id FROM deck_requests")$max_id
     new_id <- max_id + 1
@@ -893,7 +893,7 @@ observeEvent(input$admin_deck_request_submit, {
       VALUES (?, ?, ?, ?, ?, 'pending')
     ", params = list(new_id, deck_name, primary_color, secondary_color, card_id))
 
-    showNotification(sprintf("Deck request submitted: %s", deck_name), type = "message")
+    notify(sprintf("Deck request submitted: %s", deck_name), type = "message")
   }
 
   removeModal()
@@ -920,7 +920,7 @@ observeEvent(input$admin_submit_results, {
   ", params = list(rv$active_tournament_id))
 
   if (nrow(tournament) == 0) {
-    showNotification("Tournament not found", type = "error")
+    notify("Tournament not found", type = "error")
     return()
   }
 
@@ -931,7 +931,7 @@ observeEvent(input$admin_submit_results, {
   filled_rows <- grid[nchar(trimws(grid$player_name)) > 0, ]
 
   if (nrow(filled_rows) == 0) {
-    showNotification("No results to submit. Enter at least one player name.", type = "warning")
+    notify("No results to submit. Enter at least one player name.", type = "warning")
     return()
   }
 
@@ -940,7 +940,7 @@ observeEvent(input$admin_submit_results, {
   unknown_id <- if (nrow(unknown_row) > 0) unknown_row$archetype_id[1] else NA_integer_
 
   if (is_release && is.na(unknown_id)) {
-    showNotification("UNKNOWN archetype not found in database", type = "error")
+    notify("UNKNOWN archetype not found in database", type = "error")
     return()
   }
 
@@ -1011,7 +1011,7 @@ observeEvent(input$admin_submit_results, {
     recalculate_ratings_cache(rv$db_con)
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
-    showNotification(sprintf("Tournament submitted! %d results recorded.", result_count),
+    notify(sprintf("Tournament submitted! %d results recorded.", result_count),
                      type = "message", duration = 5)
 
     # Reset to Step 1
@@ -1022,6 +1022,6 @@ observeEvent(input$admin_submit_results, {
     rv$admin_player_matches <- list()
 
   }, error = function(e) {
-    showNotification(paste("Error submitting results:", e$message), type = "error")
+    notify(paste("Error submitting results:", e$message), type = "error")
   })
 })

@@ -48,7 +48,7 @@ observe({
   shinyjs::show("delete_tournament")
   shinyjs::show("view_results_btn_container")
 
-  showNotification(sprintf("Editing: %s - %s", tournament$store_name, tournament$event_date),
+  notify(sprintf("Editing: %s - %s", tournament$store_name, tournament$event_date),
                    type = "message", duration = 3)
 })
 
@@ -192,7 +192,7 @@ observeEvent(input$admin_tournament_list_clicked, {
   shinyjs::show("update_tournament")
   shinyjs::show("delete_tournament")
 
-  showNotification(sprintf("Editing: %s - %s", tournament$store_name, tournament$event_date),
+  notify(sprintf("Editing: %s - %s", tournament$store_name, tournament$event_date),
                    type = "message", duration = 2)
 })
 
@@ -242,12 +242,12 @@ observeEvent(input$update_tournament, {
 
   # Validation
   if (is.null(store_id) || store_id == "") {
-    showNotification("Please select a store", type = "error")
+    notify("Please select a store", type = "error")
     return()
   }
 
   if (is.null(event_type) || event_type == "") {
-    showNotification("Please select an event type", type = "error")
+    notify("Please select an event type", type = "error")
     return()
   }
 
@@ -260,7 +260,7 @@ observeEvent(input$update_tournament, {
     ", params = list(as.integer(store_id), event_date, event_type, format,
                      player_count, rounds, tournament_id))
 
-    showNotification("Tournament updated", type = "message")
+    notify("Tournament updated", type = "message")
 
     # Reset form
     reset_tournament_form()
@@ -270,7 +270,7 @@ observeEvent(input$update_tournament, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -339,7 +339,7 @@ observeEvent(input$confirm_delete_tournament, {
     dbExecute(rv$db_con, "DELETE FROM tournaments WHERE tournament_id = ?",
               params = list(tournament_id))
 
-    showNotification("Tournament and results deleted", type = "message")
+    notify("Tournament and results deleted", type = "message")
 
     # Hide modal and reset form
     shinyjs::runjs("$('#delete_tournament_modal').modal('hide');")
@@ -350,7 +350,7 @@ observeEvent(input$confirm_delete_tournament, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -490,7 +490,7 @@ observeEvent(input$modal_result_clicked, {
   ", params = list(result_id, rv$modal_tournament_id))
 
   if (nrow(result) == 0) {
-    showNotification("Result not found", type = "error")
+    notify("Result not found", type = "error")
     return()
   }
 
@@ -532,11 +532,11 @@ observeEvent(input$modal_save_edit_result, {
 
   # Validation
   if (is.na(player_id)) {
-    showNotification("Please select a player", type = "error")
+    notify("Please select a player", type = "error")
     return()
   }
   if (is.na(archetype_id)) {
-    showNotification("Please select a deck", type = "error")
+    notify("Please select a deck", type = "error")
     return()
   }
 
@@ -551,14 +551,14 @@ observeEvent(input$modal_save_edit_result, {
                      wins, losses, ties, decklist_url,
                      result_id, rv$modal_tournament_id))
 
-    showNotification("Result updated!", type = "message")
+    notify("Result updated!", type = "message")
 
     shinyjs::runjs("$('#modal_edit_result').modal('hide');")
     rv$modal_results_refresh <- (rv$modal_results_refresh %||% 0) + 1
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -578,7 +578,7 @@ observeEvent(input$modal_confirm_delete_result, {
     dbExecute(rv$db_con, "DELETE FROM results WHERE result_id = ? AND tournament_id = ?",
               params = list(result_id, rv$modal_tournament_id))
 
-    showNotification("Result deleted", type = "message")
+    notify("Result deleted", type = "message")
 
     shinyjs::runjs("$('#modal_delete_result_confirm').modal('hide');")
     shinyjs::runjs("$('#modal_edit_result').modal('hide');")
@@ -586,7 +586,7 @@ observeEvent(input$modal_confirm_delete_result, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -628,11 +628,11 @@ observeEvent(input$modal_save_new_result, {
 
   # Validation
   if (is.na(player_id)) {
-    showNotification("Please select a player", type = "error")
+    notify("Please select a player", type = "error")
     return()
   }
   if (is.na(archetype_id)) {
-    showNotification("Please select a deck", type = "error")
+    notify("Please select a deck", type = "error")
     return()
   }
 
@@ -644,14 +644,14 @@ observeEvent(input$modal_save_new_result, {
     ", params = list(rv$modal_tournament_id, player_id, archetype_id, placement,
                      wins, losses, ties, decklist_url))
 
-    showNotification("Result added!", type = "message")
+    notify("Result added!", type = "message")
 
     shinyjs::hide("modal_add_result_form")
     rv$modal_results_refresh <- (rv$modal_results_refresh %||% 0) + 1
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 

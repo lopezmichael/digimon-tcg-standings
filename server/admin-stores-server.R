@@ -83,19 +83,19 @@ observeEvent(input$add_store, {
 
   # Validation
   if (nchar(store_name) == 0) {
-    showNotification("Please enter a store name", type = "error")
+    notify("Please enter a store name", type = "error")
     return()
   }
 
   # City is required for physical stores, optional for online stores
   if (!is_online && nchar(store_city) == 0) {
-    showNotification("Please enter a city", type = "error")
+    notify("Please enter a city", type = "error")
     return()
   }
 
   # ZIP code is required for physical stores
   if (!is_online && nchar(trimws(input$store_zip)) == 0) {
-    showNotification("Please enter a ZIP code", type = "error")
+    notify("Please enter a ZIP code", type = "error")
     return()
   }
 
@@ -115,12 +115,12 @@ observeEvent(input$add_store, {
 
   if (nrow(existing) > 0) {
     if (is_online && nchar(store_city) == 0) {
-      showNotification(
+      notify(
         sprintf("Online store '%s' already exists", store_name),
         type = "error"
       )
     } else {
-      showNotification(
+      notify(
         sprintf("Store '%s' in %s already exists", store_name, store_city),
         type = "error"
       )
@@ -130,7 +130,7 @@ observeEvent(input$add_store, {
 
   # Validate website URL format if provided
   if (nchar(input$store_website) > 0 && !grepl("^https?://", input$store_website)) {
-    showNotification("Website should start with http:// or https://", type = "warning")
+    notify("Website should start with http:// or https://", type = "warning")
   }
 
   tryCatch({
@@ -151,14 +151,14 @@ observeEvent(input$add_store, {
       full_address <- paste(address_parts, collapse = ", ")
 
       # Geocode the address using Mapbox
-      showNotification("Geocoding address...", type = "message", duration = 2)
+      notify("Geocoding address...", type = "message", duration = 2)
       geo_result <- geocode_with_mapbox(full_address)
 
       lat <- geo_result$lat
       lng <- geo_result$lng
 
       if (is.na(lat) || is.na(lng)) {
-        showNotification("Could not geocode address. Store added without coordinates.", type = "warning")
+        notify("Could not geocode address. Store added without coordinates.", type = "warning")
         lat <- NA_real_
         lng <- NA_real_
       }
@@ -197,10 +197,10 @@ observeEvent(input$add_store, {
         ", params = list(sched_id, new_id, sched$day_of_week, sched$start_time, sched$frequency))
       }
 
-      showNotification(paste("Added store:", store_name, "with", length(rv$pending_schedules), "schedule(s)"), type = "message")
+      notify(paste("Added store:", store_name, "with", length(rv$pending_schedules), "schedule(s)"), type = "message")
       rv$pending_schedules <- list()  # Clear pending schedules
     } else {
-      showNotification(paste("Added store:", store_name), type = "message")
+      notify(paste("Added store:", store_name), type = "message")
     }
 
     # Clear form - both physical and online store fields
@@ -222,7 +222,7 @@ observeEvent(input$add_store, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -415,7 +415,7 @@ observeEvent(input$admin_store_list__reactable__selected, {
   shinyjs::show("update_store")
   shinyjs::show("delete_store")
 
-  showNotification(sprintf("Editing: %s", store$name), type = "message", duration = 2)
+  notify(sprintf("Editing: %s", store$name), type = "message", duration = 2)
 })
 
 # Update store
@@ -445,25 +445,25 @@ observeEvent(input$update_store, {
   }
 
   if (nchar(store_name) == 0) {
-    showNotification("Store name is required", type = "error")
+    notify("Store name is required", type = "error")
     return()
   }
 
   # City only required for physical stores
   if (!is_online && nchar(store_city) == 0) {
-    showNotification("Please enter a city", type = "error")
+    notify("Please enter a city", type = "error")
     return()
   }
 
   # ZIP code required for physical stores
   if (!is_online && nchar(trimws(input$store_zip)) == 0) {
-    showNotification("Please enter a ZIP code", type = "error")
+    notify("Please enter a ZIP code", type = "error")
     return()
   }
 
   # Validate website URL format if provided
   if (nchar(input$store_website) > 0 && !grepl("^https?://", input$store_website)) {
-    showNotification("Website should start with http:// or https://", type = "warning")
+    notify("Website should start with http:// or https://", type = "warning")
   }
 
   tryCatch({
@@ -485,14 +485,14 @@ observeEvent(input$update_store, {
       full_address <- paste(address_parts, collapse = ", ")
 
       # Geocode the address using Mapbox
-      showNotification("Geocoding address...", type = "message", duration = 2)
+      notify("Geocoding address...", type = "message", duration = 2)
       geo_result <- geocode_with_mapbox(full_address)
 
       lat <- geo_result$lat
       lng <- geo_result$lng
 
       if (is.na(lat) || is.na(lng)) {
-        showNotification("Could not geocode address. Keeping existing coordinates.", type = "warning")
+        notify("Could not geocode address. Keeping existing coordinates.", type = "warning")
         # Keep existing coordinates
         existing <- dbGetQuery(rv$db_con, "SELECT latitude, longitude FROM stores WHERE store_id = ?",
                                params = list(store_id))
@@ -515,7 +515,7 @@ observeEvent(input$update_store, {
       WHERE store_id = ?
     ", params = list(store_name, address, store_city_db, state, zip_code, lat, lng, website, is_online, store_country, store_id))
 
-    showNotification(sprintf("Updated store: %s", store_name), type = "message")
+    notify(sprintf("Updated store: %s", store_name), type = "message")
 
     # Clear form and reset to add mode
     updateTextInput(session, "editing_store_id", value = "")
@@ -542,7 +542,7 @@ observeEvent(input$update_store, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -596,7 +596,7 @@ observeEvent(input$delete_store, {
     })
     shinyjs::runjs("$('#delete_store_modal').modal('show');")
   } else {
-    showNotification(
+    notify(
       sprintf("Cannot delete: %d tournament(s) reference this store", rv$store_tournament_count),
       type = "error"
     )
@@ -615,7 +615,7 @@ observeEvent(input$confirm_delete_store, {
 
     dbExecute(rv$db_con, "DELETE FROM stores WHERE store_id = ?",
               params = list(store_id))
-    showNotification("Store deleted", type = "message")
+    notify("Store deleted", type = "message")
 
     # Hide modal and reset form
     shinyjs::runjs("$('#delete_store_modal').modal('hide');")
@@ -645,7 +645,7 @@ observeEvent(input$confirm_delete_store, {
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
   }, error = function(e) {
-    showNotification(paste("Error:", e$message), type = "error")
+    notify(paste("Error:", e$message), type = "error")
   })
 })
 
@@ -708,7 +708,7 @@ observeEvent(input$remove_pending_schedule, {
   idx <- input$remove_pending_schedule
   if (!is.null(idx) && idx > 0 && idx <= length(rv$pending_schedules)) {
     rv$pending_schedules <- rv$pending_schedules[-idx]
-    showNotification("Schedule removed", type = "message", duration = 2)
+    notify("Schedule removed", type = "message", duration = 2)
   }
 })
 
@@ -778,7 +778,7 @@ observeEvent(input$add_schedule, {
 
   # Validate time format
   if (is.null(start_time) || start_time == "") {
-    showNotification("Please enter a start time", type = "error")
+    notify("Please enter a start time", type = "error")
     return()
   }
 
@@ -797,7 +797,7 @@ observeEvent(input$add_schedule, {
       ", params = list(store_id, day_of_week, start_time))
 
       if (nrow(existing) > 0) {
-        showNotification("This schedule already exists for this store", type = "warning")
+        notify("This schedule already exists for this store", type = "warning")
         return()
       }
 
@@ -810,13 +810,13 @@ observeEvent(input$add_schedule, {
         VALUES (?, ?, ?, ?, ?)
       ", params = list(new_id, store_id, day_of_week, start_time, frequency))
 
-      showNotification(sprintf("Added %s schedule", DAY_LABELS[day_of_week + 1]), type = "message")
+      notify(sprintf("Added %s schedule", DAY_LABELS[day_of_week + 1]), type = "message")
 
       # Trigger refresh
       rv$schedules_refresh <- (rv$schedules_refresh %||% 0) + 1
 
     }, error = function(e) {
-      showNotification(paste("Error adding schedule:", e$message), type = "error")
+      notify(paste("Error adding schedule:", e$message), type = "error")
     })
 
   } else {
@@ -827,7 +827,7 @@ observeEvent(input$add_schedule, {
     }))
 
     if (is_duplicate) {
-      showNotification("This schedule is already in your pending list", type = "warning")
+      notify("This schedule is already in your pending list", type = "warning")
       return()
     }
 
@@ -839,7 +839,7 @@ observeEvent(input$add_schedule, {
     )
     rv$pending_schedules <- c(rv$pending_schedules, list(new_schedule))
 
-    showNotification(sprintf("Added %s schedule (will be saved with store)", DAY_LABELS[day_of_week + 1]), type = "message")
+    notify(sprintf("Added %s schedule (will be saved with store)", DAY_LABELS[day_of_week + 1]), type = "message")
   }
 
   # Reset form inputs
@@ -878,7 +878,7 @@ observeEvent(input$confirm_delete_schedule, {
       WHERE schedule_id = ?
     ", params = list(rv$schedule_to_delete_id))
 
-    showNotification("Schedule deleted", type = "message")
+    notify("Schedule deleted", type = "message")
     removeModal()
 
     # Trigger refresh
@@ -886,7 +886,7 @@ observeEvent(input$confirm_delete_schedule, {
     rv$schedule_to_delete_id <- NULL
 
   }, error = function(e) {
-    showNotification(paste("Error deleting schedule:", e$message), type = "error")
+    notify(paste("Error deleting schedule:", e$message), type = "error")
   })
 })
 
