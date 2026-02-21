@@ -4729,6 +4729,8 @@ a:hover, .nav-link:hover {
   color: rgba(255, 255, 255, 0.5) !important;
   text-decoration: none;
   transition: color 0.15s;
+  margin-left: 0.4rem;
+  font-size: 0.9rem;
 }
 
 .footer-meta-link:hover {
