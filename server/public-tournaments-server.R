@@ -55,7 +55,23 @@ output$tournament_history <- renderReactable({
   result <- safe_query(rv$db_con, query, params = filter_params, default = data.frame())
 
   if (nrow(result) == 0) {
-    return(reactable(data.frame(Message = "No tournaments match filters"), compact = TRUE))
+    has_filters <- nchar(trimws(input$tournaments_search %||% "")) > 0 ||
+                   nchar(trimws(input$tournaments_format %||% "")) > 0 ||
+                   nchar(trimws(input$tournaments_event_type %||% "")) > 0
+    if (has_filters) {
+      return(digital_empty_state(
+        title = "No tournaments match your filters",
+        subtitle = "// try adjusting search or filters",
+        icon = "funnel"
+      ))
+    } else {
+      return(digital_empty_state(
+        title = "No tournaments recorded",
+        subtitle = "// tournament data pending",
+        icon = "trophy",
+        mascot = "agumon"
+      ))
+    }
   }
 
   # Format event type nicely

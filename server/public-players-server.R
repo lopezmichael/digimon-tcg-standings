@@ -152,7 +152,22 @@ output$player_standings <- renderReactable({
   main_decks <- safe_query(rv$db_con, main_decks_query, params = filter_params, default = data.frame())
 
   if (nrow(result) == 0) {
-    return(reactable(data.frame(Message = "No player data matches filters"), compact = TRUE))
+    has_filters <- nchar(trimws(input$players_search %||% "")) > 0 ||
+                   nchar(trimws(input$players_format %||% "")) > 0
+    if (has_filters) {
+      return(digital_empty_state(
+        title = "No players match your filters",
+        subtitle = "// try adjusting search or format",
+        icon = "funnel"
+      ))
+    } else {
+      return(digital_empty_state(
+        title = "No players recorded",
+        subtitle = "// player data pending",
+        icon = "people",
+        mascot = "agumon"
+      ))
+    }
   }
 
   # Determine rating source: historical snapshot or live cache

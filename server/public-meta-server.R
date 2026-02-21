@@ -54,7 +54,22 @@ output$archetype_stats <- renderReactable({
   ", combined_sql), params = combined_params, default = data.frame())
 
   if (nrow(result) == 0) {
-    return(reactable(data.frame(Message = "No decks match the current filters"), compact = TRUE))
+    has_filters <- nchar(trimws(input$meta_search %||% "")) > 0 ||
+                   nchar(trimws(input$meta_format %||% "")) > 0
+    if (has_filters) {
+      return(digital_empty_state(
+        title = "No decks match your filters",
+        subtitle = "// try adjusting search or format",
+        icon = "funnel"
+      ))
+    } else {
+      return(digital_empty_state(
+        title = "No deck data available",
+        subtitle = "// meta data pending",
+        icon = "stack",
+        mascot = "agumon"
+      ))
+    }
   }
 
   # Calculate Meta % (share of total entries)
