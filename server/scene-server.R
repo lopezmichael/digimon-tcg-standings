@@ -144,7 +144,7 @@ observeEvent(input$close_onboarding, {
 # Onboarding Carousel Navigation
 # -----------------------------------------------------------------------------
 
-# Update step visibility, dots, and nav buttons when step changes
+# Update step visibility, dots, progress bar, and nav buttons when step changes
 observe({
   step <- rv$onboarding_step
   req(step)
@@ -158,19 +158,28 @@ observe({
     }
   }
 
-  # Update dot classes via JS
+  # Update progress bar width
+  pct <- round(step / 3 * 100)
+  shinyjs::runjs(sprintf(
+    "var fill = document.getElementById('onboarding_progress_fill'); if (fill) fill.style.width = '%d%%';",
+    pct
+  ))
+
+  # Update dot classes: active = pill, completed = filled, upcoming = dim
   shinyjs::runjs(sprintf("
-    $('.onboarding-dot').removeClass('active completed');
+    $('.onboarding-dot').removeClass('active completed upcoming');
     for (var i = 1; i <= 3; i++) {
       var dot = document.getElementById('onboarding_dot_' + i);
       if (dot) {
         if (i === %d) dot.classList.add('active');
         else if (i < %d) dot.classList.add('completed');
+        else dot.classList.add('upcoming');
       }
     }
   ", step, step))
 
-  # Toggle nav buttons
+  # Toggle nav buttons per step
+  # Left: skip (step 1) or back (steps 2-3)
   if (step == 1) {
     shinyjs::show("onboarding_skip")
     shinyjs::hide("onboarding_back")
@@ -179,22 +188,18 @@ observe({
     shinyjs::show("onboarding_back")
   }
 
-  if (step == 3) {
-    shinyjs::hide("onboarding_next")
-    shinyjs::show("onboarding_finish")
-  } else {
-    shinyjs::show("onboarding_next")
-    shinyjs::hide("onboarding_finish")
-  }
+  # Right: next (step 1), next_2 (step 2), finish (step 3)
+  shinyjs::hide("onboarding_next")
+  shinyjs::hide("onboarding_next_2")
+  shinyjs::hide("onboarding_finish")
+  if (step == 1) shinyjs::show("onboarding_next")
+  if (step == 2) shinyjs::show("onboarding_next_2")
+  if (step == 3) shinyjs::show("onboarding_finish")
 
   # Scroll modal to top when switching steps
   shinyjs::runjs("
     var modalBody = document.querySelector('.onboarding-modal .modal-body');
     if (modalBody) modalBody.scrollTop = 0;
-    var modalEl = document.querySelector('.onboarding-modal .modal');
-    if (modalEl) modalEl.scrollTop = 0;
-    var modalDialog = document.querySelector('.onboarding-modal');
-    if (modalDialog) modalDialog.scrollTop = 0;
   ")
 
   # Trigger map resize when scene step becomes visible
@@ -203,8 +208,14 @@ observe({
   }
 })
 
-# Next button
+# Next buttons (step 1 and step 2 both increment)
 observeEvent(input$onboarding_next, {
+  if (rv$onboarding_step < 3) {
+    rv$onboarding_step <- rv$onboarding_step + 1
+  }
+})
+
+observeEvent(input$onboarding_next_2, {
   if (rv$onboarding_step < 3) {
     rv$onboarding_step <- rv$onboarding_step + 1
   }
@@ -227,8 +238,27 @@ observeEvent(input$onboarding_finish, {
   select_scene_and_close(rv$current_scene %||% "all")
 })
 
-# For Organizers link in step 4 - close modal and navigate
+# For Organizers link - close modal and navigate
 observeEvent(input$onboarding_to_organizers, {
+  select_scene_and_close(rv$current_scene %||% "all")
+  nav_select("main_content", "for_tos")
+  rv$current_nav <- "for_tos"
+})
+
+# Step 3 footer inline links
+observeEvent(input$onboarding_goto_about, {
+  select_scene_and_close(rv$current_scene %||% "all")
+  nav_select("main_content", "about")
+  rv$current_nav <- "about"
+})
+
+observeEvent(input$onboarding_goto_faq, {
+  select_scene_and_close(rv$current_scene %||% "all")
+  nav_select("main_content", "faq")
+  rv$current_nav <- "faq"
+})
+
+observeEvent(input$onboarding_goto_organizers, {
   select_scene_and_close(rv$current_scene %||% "all")
   nav_select("main_content", "for_tos")
   rv$current_nav <- "for_tos"
