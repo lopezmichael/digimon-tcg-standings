@@ -1637,6 +1637,20 @@ body.bslib-gap-spacing {
   border-radius: 10px 10px 0 0 !important;
 }
 
+/* Tier 2: Subtle circuit node on all card headers */
+.card-header::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 200, 255, 0.25);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 200, 255, 0.3);
+}
+
 /* =============================================================================
    FEATURE CARDS (Tier 1) - Charts and Key Data
    ============================================================================= */
