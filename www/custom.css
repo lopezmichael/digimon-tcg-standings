@@ -1344,6 +1344,16 @@ body.bslib-gap-spacing {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* Value box update animation */
+.vb-value-updating {
+  animation: vb-fade-in 0.4s ease-out;
+}
+
+@keyframes vb-fade-in {
+  0% { opacity: 0.3; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 /* Dark mode adjustments */
 [data-bs-theme="dark"] .value-box-digital {
   background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%);

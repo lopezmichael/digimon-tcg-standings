@@ -598,6 +598,45 @@ ui <- page_fillable(
         if (e.name === 'hot_deck_name' || e.name === 'most_popular_deck_val') {
           setTimeout(fitDeckText, 50);
         }
+
+        // Count-up animation for numeric value boxes
+        var numericBoxes = ['total_tournaments_val', 'total_players_val'];
+        if (numericBoxes.indexOf(e.name) !== -1) {
+          setTimeout(function() {
+            var el = document.getElementById(e.name);
+            if (!el) return;
+            var newVal = parseInt(el.textContent, 10);
+            if (isNaN(newVal)) return;
+            var oldVal = parseInt(el.getAttribute('data-prev') || '0', 10);
+            el.setAttribute('data-prev', newVal);
+            if (oldVal === newVal || oldVal === 0) {
+              el.classList.add('vb-value-updating');
+              setTimeout(function() { el.classList.remove('vb-value-updating'); }, 400);
+              return;
+            }
+            var duration = 600;
+            var start = performance.now();
+            function step(now) {
+              var progress = Math.min((now - start) / duration, 1);
+              var eased = 1 - Math.pow(1 - progress, 3);
+              el.textContent = Math.round(oldVal + (newVal - oldVal) * eased);
+              if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+          }, 50);
+        }
+
+        // Fade-in animation for deck value boxes
+        var deckBoxes = ['hot_deck_name', 'most_popular_deck_val', 'hot_deck_trend', 'top_deck_meta_share'];
+        if (deckBoxes.indexOf(e.name) !== -1) {
+          setTimeout(function() {
+            var el = document.getElementById(e.name);
+            if (!el) return;
+            el.classList.add('vb-value-updating');
+            setTimeout(function() { el.classList.remove('vb-value-updating'); }, 400);
+          }, 50);
+        }
+
         // Hide skeleton loaders once Shiny outputs render
         var skeletonId = e.name + '_skeleton';
         var skeleton = document.getElementById(skeletonId);
