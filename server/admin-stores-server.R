@@ -56,6 +56,7 @@ geocode_with_mapbox <- function(address) {
 observeEvent(input$add_store, {
 
   req(rv$is_superadmin, rv$db_con)
+  clear_all_field_errors(session)
 
   # Check if this is an online store
   is_online <- isTRUE(input$store_is_online)
@@ -83,18 +84,21 @@ observeEvent(input$add_store, {
 
   # Validation
   if (nchar(store_name) == 0) {
+    show_field_error(session, if (is_online) "store_name_online" else "store_name")
     notify("Please enter a store name", type = "error")
     return()
   }
 
   # City is required for physical stores, optional for online stores
   if (!is_online && nchar(store_city) == 0) {
+    show_field_error(session, "store_city")
     notify("Please enter a city", type = "error")
     return()
   }
 
   # ZIP code is required for physical stores
   if (!is_online && nchar(trimws(input$store_zip)) == 0) {
+    show_field_error(session, "store_zip")
     notify("Please enter a ZIP code", type = "error")
     return()
   }
@@ -130,6 +134,7 @@ observeEvent(input$add_store, {
 
   # Validate website URL format if provided
   if (nchar(input$store_website) > 0 && !grepl("^https?://", input$store_website)) {
+    show_field_error(session, "store_website")
     notify("Website should start with http:// or https://", type = "warning")
   }
 
@@ -422,6 +427,7 @@ observeEvent(input$admin_store_list__reactable__selected, {
 observeEvent(input$update_store, {
   req(rv$is_superadmin, rv$db_con)
   req(input$editing_store_id)
+  clear_all_field_errors(session)
 
   store_id <- as.integer(input$editing_store_id)
   is_online <- isTRUE(input$store_is_online)
@@ -445,24 +451,28 @@ observeEvent(input$update_store, {
   }
 
   if (nchar(store_name) == 0) {
+    show_field_error(session, if (is_online) "store_name_online" else "store_name")
     notify("Store name is required", type = "error")
     return()
   }
 
   # City only required for physical stores
   if (!is_online && nchar(store_city) == 0) {
+    show_field_error(session, "store_city")
     notify("Please enter a city", type = "error")
     return()
   }
 
   # ZIP code required for physical stores
   if (!is_online && nchar(trimws(input$store_zip)) == 0) {
+    show_field_error(session, "store_zip")
     notify("Please enter a ZIP code", type = "error")
     return()
   }
 
   # Validate website URL format if provided
   if (nchar(input$store_website) > 0 && !grepl("^https?://", input$store_website)) {
+    show_field_error(session, "store_website")
     notify("Website should start with http:// or https://", type = "warning")
   }
 
@@ -776,6 +786,7 @@ output$store_schedules_table <- renderReactable({
 # Add schedule (handles both new stores and editing existing stores)
 observeEvent(input$add_schedule, {
   req(rv$is_superadmin, rv$db_con)
+  clear_all_field_errors(session)
 
   day_of_week <- as.integer(input$schedule_day)
   start_time <- input$schedule_time
@@ -783,6 +794,7 @@ observeEvent(input$add_schedule, {
 
   # Validate time format
   if (is.null(start_time) || start_time == "") {
+    show_field_error(session, "schedule_time")
     notify("Please enter a start time", type = "error")
     return()
   }
