@@ -137,13 +137,13 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
-          href = "https://forms.google.com/digilab-contact",
+          href = LINKS$contact,
           target = "_blank",
           bsicons::bs_icon("envelope"), "Request via Form"
         ),
         tags$a(
           class = "contact-link",
-          href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=New%20Store%20Request",
+          href = paste0(LINKS$github, "/issues/new?title=New%20Store%20Request"),
           target = "_blank",
           bsicons::bs_icon("github"), "Request via GitHub"
         )
@@ -195,13 +195,13 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
-          href = "https://forms.google.com/digilab-contact",
+          href = LINKS$contact,
           target = "_blank",
           bsicons::bs_icon("envelope"), "Request via Form"
         ),
         tags$a(
           class = "contact-link",
-          href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=New%20Region%20Request",
+          href = paste0(LINKS$github, "/issues/new?title=New%20Region%20Request"),
           target = "_blank",
           bsicons::bs_icon("github"), "Request via GitHub"
         )
@@ -268,7 +268,7 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
-          href = "https://forms.google.com/digilab-contact",
+          href = LINKS$contact,
           target = "_blank",
           bsicons::bs_icon("envelope"), "Request Contributor Access"
         )
@@ -312,13 +312,13 @@ for_tos_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
-          href = "https://forms.google.com/digilab-contact",
+          href = LINKS$contact,
           target = "_blank",
           bsicons::bs_icon("envelope"), "Report via Form"
         ),
         tags$a(
           class = "contact-link",
-          href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=Data%20Error%20Report",
+          href = paste0(LINKS$github, "/issues/new?title=Data%20Error%20Report"),
           target = "_blank",
           bsicons::bs_icon("github"), "Report via GitHub"
         )
@@ -337,19 +337,19 @@ for_tos_ui <- div(
       class = "contact-links",
       tags$a(
         class = "contact-link",
-        href = "https://forms.google.com/digilab-contact",
+        href = LINKS$contact,
         target = "_blank",
         bsicons::bs_icon("envelope"), "Contact Form"
       ),
       tags$a(
         class = "contact-link",
-        href = "https://github.com/lopezmichael/digimon-tcg-standings",
+        href = LINKS$github,
         target = "_blank",
         bsicons::bs_icon("github"), "GitHub"
       ),
       tags$a(
         class = "contact-link",
-        href = "https://ko-fi.com/digilab",
+        href = LINKS$kofi,
         target = "_blank",
         bsicons::bs_icon("cup-hot"), "Ko-fi"
       )

@@ -352,6 +352,14 @@ EVENT_TYPES <- c(
   "Other" = "other"
 )
 
+# External links (single source of truth)
+LINKS <- list(
+  discord = "https://discord.gg/ABcjha7bHk",
+  kofi    = "https://ko-fi.com/digilab",
+  github  = "https://github.com/lopezmichael/digimon-tcg-standings",
+  contact = "https://forms.gle/shc6cGjBFNjqvkSw9"
+)
+
 # =============================================================================
 # Source Views
 # =============================================================================
@@ -671,7 +679,7 @@ ui <- page_fillable(
                  title = "Admin Login"),
       # Ko-fi support (moved from footer)
       tags$a(
-        href = "https://ko-fi.com/atomshell",
+        href = LINKS$kofi,
         target = "_blank",
         class = "header-action-btn header-coffee-btn",
         title = "Support on Ko-fi",
@@ -812,7 +820,7 @@ ui <- page_fillable(
       actionLink("nav_for_tos", "For Organizers", class = "footer-link"),
       span(class = "footer-divider", "//"),
       tags$a(
-        href = "https://github.com/lopezmichael/digimon-tcg-standings",
+        href = LINKS$github,
         target = "_blank",
         class = "footer-link footer-icon-link",
         title = "View on GitHub",

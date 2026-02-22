@@ -1076,7 +1076,7 @@ observeEvent(input$submit_request_store, {
       bsicons::bs_icon("shop", size = "3em", class = "text-primary mb-3"),
       p("To request a new store be added to the system, please fill out our store request form."),
       tags$a(
-        href = "https://forms.gle/placeholder", # TODO: Real form URL
+        href = LINKS$contact,
         target = "_blank",
         class = "btn btn-primary",
         bsicons::bs_icon("box-arrow-up-right", class = "me-2"),

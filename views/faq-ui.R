@@ -215,7 +215,7 @@ faq_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
-          href = "https://ko-fi.com/digilab",
+          href = LINKS$kofi,
           target = "_blank",
           bsicons::bs_icon("cup-hot"), "Support on Ko-fi"
         )
@@ -237,13 +237,13 @@ faq_ui <- div(
         class = "contact-links",
         tags$a(
           class = "contact-link",
-          href = "https://forms.google.com/digilab-contact",
+          href = LINKS$contact,
           target = "_blank",
           bsicons::bs_icon("envelope"), "Report via Form"
         ),
         tags$a(
           class = "contact-link",
-          href = "https://github.com/lopezmichael/digimon-tcg-standings/issues/new?title=Bug%20Report",
+          href = paste0(LINKS$github, "/issues/new?title=Bug%20Report"),
           target = "_blank",
           bsicons::bs_icon("github"), "Report via GitHub"
         )

@@ -100,19 +100,19 @@ class = "content-page",
       class = "contact-links contact-links--centered",
       tags$a(
         class = "contact-link",
-        href = "https://github.com/lopezmichael/digimon-tcg-standings",
+        href = LINKS$github,
         target = "_blank",
         bsicons::bs_icon("github"), "View on GitHub"
       ),
       tags$a(
         class = "contact-link",
-        href = "https://ko-fi.com/digilab",
+        href = LINKS$kofi,
         target = "_blank",
         bsicons::bs_icon("cup-hot"), "Support on Ko-fi"
       ),
       tags$a(
         class = "contact-link",
-        href = "https://forms.google.com/digilab-contact",
+        href = LINKS$contact,
         target = "_blank",
         bsicons::bs_icon("envelope"), "Contact Form"
       )
