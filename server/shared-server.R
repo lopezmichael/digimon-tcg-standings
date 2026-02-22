@@ -197,44 +197,64 @@ observeEvent(input$nav_for_tos, {
 observeEvent(input$about_to_for_tos, {
   nav_select("main_content", "for_tos")
   rv$current_nav <- "for_tos"
+  session$sendCustomMessage("updateSidebarNav", "nav_for_tos")
 })
 
 observeEvent(input$faq_to_for_tos, {
   nav_select("main_content", "for_tos")
   rv$current_nav <- "for_tos"
-})
-
-observeEvent(input$faq_to_about, {
-  nav_select("main_content", "about")
-  rv$current_nav <- "about"
+  session$sendCustomMessage("updateSidebarNav", "nav_for_tos")
 })
 
 # FAQ → Upload Results
 observeEvent(input$faq_to_upload, {
   nav_select("main_content", "submit")
   rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
 })
 observeEvent(input$faq_to_upload2, {
   nav_select("main_content", "submit")
   rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
+})
+observeEvent(input$faq_to_upload3, {
+  nav_select("main_content", "submit")
+  rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
+})
+
+# FAQ → For Organizers (multiple links on the page)
+observeEvent(input$faq_to_for_tos_new_scene, {
+  nav_select("main_content", "for_tos")
+  rv$current_nav <- "for_tos"
+  session$sendCustomMessage("updateSidebarNav", "nav_for_tos")
+})
+observeEvent(input$faq_to_for_tos2, {
+  nav_select("main_content", "for_tos")
+  rv$current_nav <- "for_tos"
+  session$sendCustomMessage("updateSidebarNav", "nav_for_tos")
 })
 
 # For Organizers → Upload Results (multiple links on the page)
 observeEvent(input$tos_to_upload, {
   nav_select("main_content", "submit")
   rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
 })
 observeEvent(input$tos_to_upload_btn, {
   nav_select("main_content", "submit")
   rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
 })
 observeEvent(input$tos_to_upload2, {
   nav_select("main_content", "submit")
   rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
 })
 observeEvent(input$tos_to_upload3, {
   nav_select("main_content", "submit")
   rv$current_nav <- "submit"
+  session$sendCustomMessage("updateSidebarNav", "nav_submit")
 })
 
 # ---------------------------------------------------------------------------
@@ -271,6 +291,13 @@ observeEvent(input$goto_faq_score, {
 # About Page Stats
 # ---------------------------------------------------------------------------
 
+output$about_scene_count <- renderText({
+  req(rv$db_con)
+  count <- safe_query(rv$db_con, "SELECT COUNT(*) as n FROM scenes WHERE slug != 'all'",
+                      default = data.frame(n = 0))$n
+  as.character(count)
+})
+
 output$about_store_count <- renderText({
   req(rv$db_con)
   count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) FROM stores WHERE is_active = TRUE")[[1]]
@@ -286,12 +313,6 @@ output$about_player_count <- renderText({
 output$about_tournament_count <- renderText({
   req(rv$db_con)
   count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) FROM tournaments")[[1]]
-  as.character(count)
-})
-
-output$about_result_count <- renderText({
-  req(rv$db_con)
-  count <- dbGetQuery(rv$db_con, "SELECT COUNT(*) FROM results")[[1]]
   as.character(count)
 })
 
@@ -456,6 +477,11 @@ safe_query <- function(db_con, query, params = NULL, default = data.frame()) {
     query_preview <- substr(gsub("\\s+", " ", query), 1, 200)
     message("[safe_query] Error: ", msg, " | Query: ", query_preview)
 
+    # Send to Sentry if enabled
+    if (sentry_enabled) {
+      tryCatch(sentryR::capture_exception(e), error = function(se) NULL)
+    }
+
     # Attempt reconnection if connection is invalid
     if (!DBI::dbIsValid(db_con)) {
       message("[safe_query] Connection invalid, attempting reconnection...")
@@ -508,6 +534,10 @@ safe_execute <- function(db_con, query, params = NULL) {
   }, error = function(e) {
     message("[safe_execute] Error: ", conditionMessage(e))
     message("[safe_execute] Query: ", substr(gsub("\\s+", " ", query), 1, 200))
+    # Send to Sentry if enabled
+    if (sentry_enabled) {
+      tryCatch(sentryR::capture_exception(e), error = function(se) NULL)
+    }
     0  # Return 0 rows affected on error
   })
 }

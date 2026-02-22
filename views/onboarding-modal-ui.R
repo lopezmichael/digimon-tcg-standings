@@ -150,7 +150,7 @@ onboarding_ui <- function() {
           class = "onboarding-link-list",
           tags$a(
             class = "onboarding-link-row",
-            href = "https://discord.gg/ABcjha7bHk",
+            href = LINKS$discord,
             target = "_blank",
             div(class = "onboarding-link-icon", bsicons::bs_icon("discord")),
             div(class = "onboarding-link-content",
@@ -160,7 +160,7 @@ onboarding_ui <- function() {
           ),
           tags$a(
             class = "onboarding-link-row",
-            href = "https://ko-fi.com/digilab",
+            href = LINKS$kofi,
             target = "_blank",
             div(class = "onboarding-link-icon", bsicons::bs_icon("cup-hot")),
             div(class = "onboarding-link-content",
