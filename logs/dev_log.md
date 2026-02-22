@@ -4,6 +4,40 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-22: UX Polish Round 2 — Items 6, 8, 14
+
+### Changes Made
+
+**Inline Form Validation (Item 6):**
+- CSS `.input-invalid` class with red border + box-shadow (light and dark mode)
+- `show_field_error(session, inputId)`, `clear_field_error(session, inputId)`, `clear_all_field_errors(session)` R helpers using shinyjs
+- Auto-clear JS handler: invalid styling clears on change/input/focus events
+- Applied to all 14 admin form submission handlers across 6 server files
+- No new packages — uses shinyjs (already loaded) + CSS classes
+
+**Debounced Search Inputs (Item 8):**
+- 300ms `reactive() |> debounce(300)` on all 5 search inputs
+- Public: `players_search_debounced`, `meta_search_debounced`, `tournaments_search_debounced`
+- Admin: `admin_tournament_search_debounced`, `player_search_debounced`
+- Only READ references replaced; WRITE references (updateTextInput) unchanged
+
+**Value Box Animations (Item 14):**
+- Count-up: `requestAnimationFrame` loop with cubic ease-out, 600ms duration, for Tournaments and Players numeric boxes
+- Fade-in: CSS `.vb-value-updating` class with 0.4s ease-out animation for deck content boxes
+- Both integrated into existing `shiny:value` event handler (no separate listener)
+- First load uses fade-in (oldVal === 0); subsequent updates count up
+
+### Design Doc
+- `docs/plans/2026-02-21-ux-polish-round-2.md`
+
+### Content & Error Tracking Design (planned, not yet implemented)
+- Design doc: `docs/plans/2026-02-22-content-and-error-tracking-design.md`
+- Implementation plan: `docs/plans/2026-02-22-content-and-error-tracking-implementation.md`
+- Scope: FAQ/About/For Organizers rewrites for multi-region, LINKS constants, Sentry integration
+- Ready for implementation — 6 tasks planned
+
+---
+
 ## 2026-02-21: UX Polish — Items 1-5
 
 ### Changes Made

@@ -23,6 +23,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 | SEO2 | SEO | Structured data (JSON-LD) on static site |
 | SEO3 | SEO | Search Console integration |
 | ERR1 | RESILIENCE | Error tracking (Sentry R SDK or similar) |
+| REV1 | REVIEW | Review admin pages and tournament info submission flow — audit UX, copy, and completeness |
 
 **Website Architecture:**
 - digilab.cards becomes a hub: `/app` (Shiny iframe), `/about`, `/faq`, `/organizers`, `/meta-report` (future)

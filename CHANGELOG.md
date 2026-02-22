@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Digital Grid on All Card Headers**: Subtle grid pattern (Tier 2, 0.025 opacity) applied to all card headers, with stronger pattern (Tier 1, 0.04 opacity) on chart/feature cards
 - **Circuit Node on All Card Headers**: Small cyan accent dot on all card headers (4px Tier 2), with larger dot (5px Tier 1) on chart/feature cards
 - **Modal Body Grid Texture**: Very subtle digital grid overlay (0.015 opacity) on all modal bodies
+- **Inline Form Validation**: Red border + glow on invalid fields across all 14 admin form handlers with auto-clear on user interaction
+- **`show_field_error()` / `clear_field_error()` / `clear_all_field_errors()` Helpers**: Inline validation helpers using shinyjs
+- **Debounced Search Inputs**: 300ms debounce on all 5 search inputs (Players, Meta, Tournaments, Admin Tournaments, Admin Players)
+- **Value Box Count-Up Animation**: Numeric value boxes (Tournaments, Players) animate from old to new value with cubic ease-out; deck boxes fade in on update
 
 ### Changed
 - **Modal System Consolidated**: All 8 static Bootstrap modals (`tags$div(class="modal fade")` + jQuery triggers) migrated to Shiny's `showModal(modalDialog())` / `removeModal()` pattern — single modal system throughout the app
