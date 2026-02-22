@@ -9,6 +9,9 @@ observeEvent(input$reset_meta_filters, {
   session$sendCustomMessage("resetPillToggle", list(inputId = "meta_min_entries", value = "5"))
 })
 
+# Debounce search input (300ms)
+meta_search_debounced <- reactive(input$meta_search) |> debounce(300)
+
 # Archetype stats
 output$archetype_stats <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
@@ -17,7 +20,7 @@ output$archetype_stats <- renderReactable({
   # Build parameterized filters to prevent SQL injection
   search_filters <- build_filters_param(
     table_alias = "da",
-    search = input$meta_search,
+    search = meta_search_debounced(),
     search_column = "archetype_name"
   )
 
@@ -54,7 +57,7 @@ output$archetype_stats <- renderReactable({
   ", combined_sql), params = combined_params, default = data.frame())
 
   if (nrow(result) == 0) {
-    has_filters <- nchar(trimws(input$meta_search %||% "")) > 0 ||
+    has_filters <- nchar(trimws(meta_search_debounced() %||% "")) > 0 ||
                    nchar(trimws(input$meta_format %||% "")) > 0
     if (has_filters) {
       return(digital_empty_state(

@@ -26,6 +26,9 @@ historical_snapshot_data <- reactive({
   if (nrow(result) > 0) result else NULL
 })
 
+# Debounce search input (300ms)
+players_search_debounced <- reactive(input$players_search) |> debounce(300)
+
 # Generate inline SVG sparkline from a numeric vector
 make_sparkline_svg <- function(values, width = 120, height = 24, color = "#00C8FF") {
   if (length(values) < 2) return(NULL)
@@ -92,7 +95,7 @@ output$player_standings <- renderReactable({
   # Build parameterized filters to prevent SQL injection
   search_filters <- build_filters_param(
     table_alias = "p",
-    search = input$players_search,
+    search = players_search_debounced(),
     search_column = "display_name"
   )
 
@@ -152,7 +155,7 @@ output$player_standings <- renderReactable({
   main_decks <- safe_query(rv$db_con, main_decks_query, params = filter_params, default = data.frame())
 
   if (nrow(result) == 0) {
-    has_filters <- nchar(trimws(input$players_search %||% "")) > 0 ||
+    has_filters <- nchar(trimws(players_search_debounced() %||% "")) > 0 ||
                    nchar(trimws(input$players_format %||% "")) > 0
     if (has_filters) {
       return(digital_empty_state(

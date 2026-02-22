@@ -52,6 +52,9 @@ observe({
                    type = "message", duration = 3)
 })
 
+# Debounce admin search input (300ms)
+admin_tournament_search_debounced <- reactive(input$admin_tournament_search) |> debounce(300)
+
 # Tournament list table
 output$admin_tournament_list <- renderReactable({
   req(rv$db_con)
@@ -62,7 +65,7 @@ output$admin_tournament_list <- renderReactable({
   input$admin_tournaments_show_all_scenes
 
   # Search filter
-  search <- input$admin_tournament_search %||% ""
+  search <- admin_tournament_search_debounced() %||% ""
   scene <- rv$current_scene
   show_all <- isTRUE(input$admin_tournaments_show_all_scenes) && isTRUE(rv$is_superadmin)
 

@@ -11,6 +11,9 @@ observeEvent(input$reset_tournaments_filters, {
   updateSelectInput(session, "tournaments_event_type", selected = "")
 })
 
+# Debounce search input (300ms)
+tournaments_search_debounced <- reactive(input$tournaments_search) |> debounce(300)
+
 output$tournament_history <- renderReactable({
   rv$data_refresh  # Trigger refresh on admin changes
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
@@ -18,7 +21,7 @@ output$tournament_history <- renderReactable({
   # Build parameterized filters to prevent SQL injection
   search_filters <- build_filters_param(
     table_alias = "s",
-    search = input$tournaments_search,
+    search = tournaments_search_debounced(),
     search_column = "name"
   )
 
@@ -55,7 +58,7 @@ output$tournament_history <- renderReactable({
   result <- safe_query(rv$db_con, query, params = filter_params, default = data.frame())
 
   if (nrow(result) == 0) {
-    has_filters <- nchar(trimws(input$tournaments_search %||% "")) > 0 ||
+    has_filters <- nchar(trimws(tournaments_search_debounced() %||% "")) > 0 ||
                    nchar(trimws(input$tournaments_format %||% "")) > 0 ||
                    nchar(trimws(input$tournaments_event_type %||% "")) > 0
     if (has_filters) {

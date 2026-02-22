@@ -2,6 +2,9 @@
 # Admin: Edit Players Server Logic
 # =============================================================================
 
+# Debounce admin search input (300ms)
+player_search_debounced <- reactive(input$player_search) |> debounce(300)
+
 # Player list
 output$player_list <- renderReactable({
   if (is.null(rv$db_con) || !dbIsValid(rv$db_con)) return(NULL)
@@ -12,7 +15,7 @@ output$player_list <- renderReactable({
   input$confirm_merge_players
   input$admin_players_show_all_scenes
 
-  search_term <- input$player_search %||% ""
+  search_term <- player_search_debounced() %||% ""
   scene <- rv$current_scene
   show_all <- isTRUE(input$admin_players_show_all_scenes) && isTRUE(rv$is_superadmin)
 
