@@ -81,12 +81,16 @@ observeEvent(input$admin_format_list__reactable__selected, {
 observeEvent(input$add_format, {
   req(rv$is_superadmin, rv$db_con)
 
+  clear_all_field_errors(session)
+
   format_id <- trimws(input$format_id)
   set_name <- trimws(input$format_set_name)
   release_date <- input$format_release_date
   is_active <- input$format_is_active
 
   if (format_id == "" || set_name == "") {
+    if (format_id == "") show_field_error(session, "format_id")
+    if (set_name == "") show_field_error(session, "format_set_name")
     notify("Set Code and Set Name are required", type = "error")
     return()
   }
@@ -125,6 +129,8 @@ observeEvent(input$add_format, {
 observeEvent(input$update_format, {
   req(rv$is_superadmin, rv$db_con, input$editing_format_id)
 
+  clear_all_field_errors(session)
+
   original_id <- input$editing_format_id
   format_id <- trimws(input$format_id)
   set_name <- trimws(input$format_set_name)
@@ -132,6 +138,8 @@ observeEvent(input$update_format, {
   is_active <- input$format_is_active
 
   if (format_id == "" || set_name == "") {
+    if (format_id == "") show_field_error(session, "format_id")
+    if (set_name == "") show_field_error(session, "format_set_name")
     notify("Set Code and Set Name are required", type = "error")
     return()
   }

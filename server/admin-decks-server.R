@@ -169,6 +169,8 @@ output$selected_card_preview <- renderUI({
 observeEvent(input$add_archetype, {
   req(rv$is_admin, rv$db_con)
 
+  clear_all_field_errors(session)
+
   name <- trimws(input$deck_name)
   primary_color <- input$deck_primary_color
   secondary_color <- if (input$deck_secondary_color == "") NA_character_ else input$deck_secondary_color
@@ -176,11 +178,13 @@ observeEvent(input$add_archetype, {
 
   # Validation
   if (is.null(name) || nchar(name) == 0) {
+    show_field_error(session, "deck_name")
     notify("Please enter an archetype name", type = "error")
     return()
   }
 
   if (nchar(name) < 2) {
+    show_field_error(session, "deck_name")
     notify("Archetype name must be at least 2 characters", type = "error")
     return()
   }
@@ -202,6 +206,7 @@ observeEvent(input$add_archetype, {
   # Validate card ID format if provided
   if (!is.null(card_id) && nchar(card_id) > 0) {
     if (!grepl("^[A-Z0-9]+-[0-9]+$", card_id)) {
+      show_field_error(session, "selected_card_id")
       notify(
         "Card ID format should be like BT17-042 or EX6-001",
         type = "warning"
@@ -354,6 +359,8 @@ observeEvent(input$update_archetype, {
   req(rv$is_admin, rv$db_con)
   req(input$editing_archetype_id)
 
+  clear_all_field_errors(session)
+
   archetype_id <- as.integer(input$editing_archetype_id)
   name <- trimws(input$deck_name)
   primary_color <- input$deck_primary_color
@@ -361,6 +368,7 @@ observeEvent(input$update_archetype, {
   card_id <- if (!is.null(input$selected_card_id) && nchar(input$selected_card_id) > 0) input$selected_card_id else NA_character_
 
   if (is.null(name) || nchar(name) == 0) {
+    show_field_error(session, "deck_name")
     notify("Please enter an archetype name", type = "error")
     return()
   }

@@ -232,6 +232,8 @@ output$tournament_stats_info <- renderUI({
 observeEvent(input$update_tournament, {
   req(rv$is_admin, rv$db_con, input$editing_tournament_id)
 
+  clear_all_field_errors(session)
+
   tournament_id <- as.integer(input$editing_tournament_id)
   store_id <- input$edit_tournament_store
   event_date <- input$edit_tournament_date
@@ -242,11 +244,13 @@ observeEvent(input$update_tournament, {
 
   # Validation
   if (is.null(store_id) || store_id == "") {
+    show_field_error(session, "edit_tournament_store")
     notify("Please select a store", type = "error")
     return()
   }
 
   if (is.null(event_type) || event_type == "") {
+    show_field_error(session, "edit_tournament_type")
     notify("Please select an event type", type = "error")
     return()
   }
@@ -645,6 +649,8 @@ observeEvent(input$modal_result_clicked, {
 observeEvent(input$modal_save_edit_result, {
   req(rv$db_con, rv$modal_tournament_id, input$modal_editing_result_id)
 
+  clear_all_field_errors(session)
+
   result_id <- as.integer(input$modal_editing_result_id)
   player_id <- as.integer(input$modal_edit_player)
   archetype_id <- as.integer(input$modal_edit_deck)
@@ -657,10 +663,12 @@ observeEvent(input$modal_save_edit_result, {
 
   # Validation
   if (is.na(player_id)) {
+    show_field_error(session, "modal_edit_player")
     notify("Please select a player", type = "error")
     return()
   }
   if (is.na(archetype_id)) {
+    show_field_error(session, "modal_edit_deck")
     notify("Please select a deck", type = "error")
     return()
   }
@@ -771,6 +779,8 @@ observeEvent(input$modal_cancel_new_result, {
 observeEvent(input$modal_save_new_result, {
   req(rv$db_con, rv$modal_tournament_id)
 
+  clear_all_field_errors(session)
+
   player_id <- as.integer(input$modal_new_player)
   archetype_id <- as.integer(input$modal_new_deck)
   placement <- input$modal_new_placement
@@ -782,10 +792,12 @@ observeEvent(input$modal_save_new_result, {
 
   # Validation
   if (is.na(player_id)) {
+    show_field_error(session, "modal_new_player")
     notify("Please select a player", type = "error")
     return()
   }
   if (is.na(archetype_id)) {
+    show_field_error(session, "modal_new_deck")
     notify("Please select a deck", type = "error")
     return()
   }

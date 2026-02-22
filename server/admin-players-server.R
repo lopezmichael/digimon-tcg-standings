@@ -175,15 +175,19 @@ observeEvent(input$cancel_edit_player, {
 observeEvent(input$update_player, {
   req(rv$is_admin, rv$db_con, input$editing_player_id)
 
+  clear_all_field_errors(session)
+
   player_id <- as.integer(input$editing_player_id)
   new_name <- trimws(input$player_display_name)
 
   if (nchar(new_name) == 0) {
+    show_field_error(session, "player_display_name")
     notify("Please enter a player name", type = "error")
     return()
   }
 
   if (nchar(new_name) < 2) {
+    show_field_error(session, "player_display_name")
     notify("Player name must be at least 2 characters", type = "error")
     return()
   }
@@ -390,10 +394,14 @@ output$merge_preview <- renderUI({
 observeEvent(input$confirm_merge_players, {
   req(rv$is_admin, rv$db_con)
 
+  clear_all_field_errors(session)
+
   source_id <- as.integer(input$merge_source_player)
   target_id <- as.integer(input$merge_target_player)
 
   if (is.na(source_id) || is.na(target_id)) {
+    show_field_error(session, "merge_source_player")
+    show_field_error(session, "merge_target_player")
     notify("Please select both source and target players", type = "error")
     return()
   }
