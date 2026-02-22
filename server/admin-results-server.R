@@ -71,6 +71,7 @@ output$active_tournament_info <- renderText({
 
 # Create tournament
 observeEvent(input$create_tournament, {
+  clear_all_field_errors(session)
   req(rv$is_admin, rv$db_con)
 
   store_id <- input$tournament_store
@@ -82,28 +83,33 @@ observeEvent(input$create_tournament, {
 
   # Validation
   if (is.null(store_id) || nchar(trimws(store_id)) == 0) {
+    show_field_error(session, "tournament_store")
     notify("Please select a store", type = "error")
     return()
   }
 
   store_id <- as.integer(store_id)
   if (is.na(store_id)) {
+    show_field_error(session, "tournament_store")
     notify("Invalid store selection", type = "error")
     return()
   }
 
   # Date validation
   if (is.null(input$tournament_date) || is.na(input$tournament_date)) {
+    show_field_error(session, "tournament_date")
     notify("Please select a tournament date", type = "error")
     return()
   }
 
   if (is.null(player_count) || is.na(player_count) || player_count < 2) {
+    show_field_error(session, "tournament_players")
     notify("Player count must be at least 2", type = "error")
     return()
   }
 
   if (is.null(rounds) || is.na(rounds) || rounds < 1) {
+    show_field_error(session, "tournament_rounds")
     notify("Rounds must be at least 1", type = "error")
     return()
   }
