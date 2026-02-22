@@ -205,6 +205,37 @@ notify <- function(message, type = "message", duration = NULL, ...) {
 }
 
 # =============================================================================
+# Helper: Inline Form Validation
+# =============================================================================
+
+# Highlight a field as invalid (red border)
+show_field_error <- function(session, inputId) {
+  shinyjs::runjs(sprintf(
+    "var el = document.getElementById('%s');
+     if (el) el.closest('.shiny-input-container').classList.add('input-invalid');",
+    inputId
+  ))
+}
+
+# Clear invalid highlighting from a field
+clear_field_error <- function(session, inputId) {
+  shinyjs::runjs(sprintf(
+    "var el = document.getElementById('%s');
+     if (el) el.closest('.shiny-input-container').classList.remove('input-invalid');",
+    inputId
+  ))
+}
+
+# Clear all invalid fields in a container
+clear_all_field_errors <- function(session) {
+  shinyjs::runjs(
+    "document.querySelectorAll('.input-invalid').forEach(function(el) {
+       el.classList.remove('input-invalid');
+     });"
+  )
+}
+
+# =============================================================================
 # Helper: Agumon SVG Mascot
 # =============================================================================
 
@@ -557,6 +588,11 @@ ui <- page_fillable(
           }
         });
       }
+
+      // Auto-clear validation styling when user interacts with invalid fields
+      $(document).on('change input focus', '.input-invalid .form-control, .input-invalid select, .input-invalid .selectize-input input', function() {
+        $(this).closest('.input-invalid').removeClass('input-invalid');
+      });
 
       $(document).on('shiny:value', function(e) {
         if (e.name === 'hot_deck_name' || e.name === 'most_popular_deck_val') {

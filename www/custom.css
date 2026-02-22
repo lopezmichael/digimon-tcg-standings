@@ -4698,6 +4698,39 @@ a:hover, .nav-link:hover {
     repeating-linear-gradient(90deg, rgba(0, 200, 255, 0.02) 0px, transparent 1px, transparent 25px);
 }
 
+/* =========================================================================
+   FORM VALIDATION
+   ========================================================================= */
+
+/* Invalid field highlighting - applied to .shiny-input-container */
+.input-invalid .form-control,
+.input-invalid .shiny-input-select,
+.input-invalid .selectized .selectize-input {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15) !important;
+}
+
+/* Also target native select elements */
+.input-invalid select {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15) !important;
+}
+
+/* Dark mode adjustment */
+[data-bs-theme="dark"] .input-invalid .form-control,
+[data-bs-theme="dark"] .input-invalid .shiny-input-select,
+[data-bs-theme="dark"] .input-invalid select,
+[data-bs-theme="dark"] .input-invalid .selectized .selectize-input {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+/* Smooth transition for validation state */
+.form-control,
+select,
+.selectize-input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
 /* =============================================================================
    ONLINE STORES CARD
    ============================================================================= */
