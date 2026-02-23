@@ -542,7 +542,7 @@ observeEvent(input$edit_delete_row, {
   # Append blank row
   blank_row <- data.frame(
     placement = nrow(grid) + 1,
-    player_name = "", points = 0L, wins = 0L, losses = 0L, ties = 0L,
+    player_name = "", member_number = "", points = 0L, wins = 0L, losses = 0L, ties = 0L,
     deck_id = NA_integer_, match_status = "", matched_player_id = NA_integer_,
     matched_member_number = NA_character_, result_id = NA_integer_,
     stringsAsFactors = FALSE

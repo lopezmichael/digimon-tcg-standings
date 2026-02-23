@@ -20,6 +20,7 @@ init_grid_data <- function(player_count) {
   data.frame(
     placement = seq_len(player_count),
     player_name = rep("", player_count),
+    member_number = rep("", player_count),
     points = rep(0L, player_count),
     wins = rep(0L, player_count),
     losses = rep(0L, player_count),
@@ -53,10 +54,10 @@ load_grid_from_results <- function(tournament_id, con) {
   if (nrow(rows) == 0) {
     return(init_grid_data(0))
   }
-
   data.frame(
     placement = rows$placement,
     player_name = rows$display_name,
+    member_number = ifelse(is.na(rows$member_number), "", rows$member_number),
     points = as.integer((rows$wins * 3L) + rows$ties),
     wins = as.integer(rows$wins),
     losses = as.integer(rows$losses),
@@ -85,6 +86,8 @@ sync_grid_inputs <- function(input, grid_data, record_format, prefix) {
   for (i in seq_len(nrow(grid_data))) {
     player_val <- input[[paste0(prefix, "player_", i)]]
     if (!is.null(player_val)) grid_data$player_name[i] <- player_val
+    member_val <- input[[paste0(prefix, "member_", i)]]
+    if (!is.null(member_val)) grid_data$member_number[i] <- member_val
 
     if (record_format == "points") {
       pts_val <- input[[paste0(prefix, "pts_", i)]]
@@ -124,15 +127,15 @@ render_grid_ui <- function(grid_data, record_format, is_release, deck_choices,
   # Column widths depend on format and release event
   if (is_release) {
     if (record_format == "points") {
-      col_widths <- c(1, 1, 8, 2)
+      col_widths <- c(1, 1, 6, 2, 2)
     } else {
-      col_widths <- c(1, 1, 6, 2, 1, 1)
+      col_widths <- c(1, 1, 4, 2, 2, 1, 1)
     }
   } else {
     if (record_format == "points") {
-      col_widths <- c(1, 1, 4, 2, 4)
+      col_widths <- c(1, 1, 3, 2, 2, 3)
     } else {
-      col_widths <- c(1, 1, 3, 1, 1, 1, 4)
+      col_widths <- c(1, 1, 2, 2, 1, 1, 1, 3)
     }
   }
 
@@ -140,18 +143,18 @@ render_grid_ui <- function(grid_data, record_format, is_release, deck_choices,
   if (is_release) {
     if (record_format == "points") {
       header <- layout_columns(col_widths = col_widths, class = "results-header-row",
-                               div(""), div("#"), div("Player"), div("Pts"))
+                               div(""), div("#"), div("Player"), div("Member #"), div("Pts"))
     } else {
       header <- layout_columns(col_widths = col_widths, class = "results-header-row",
-                               div(""), div("#"), div("Player"), div("W"), div("L"), div("T"))
+                               div(""), div("#"), div("Player"), div("Member #"), div("W"), div("L"), div("T"))
     }
   } else {
     if (record_format == "points") {
       header <- layout_columns(col_widths = col_widths, class = "results-header-row",
-                               div(""), div("#"), div("Player"), div("Pts"), div("Deck"))
+                               div(""), div("#"), div("Player"), div("Member #"), div("Pts"), div("Deck"))
     } else {
       header <- layout_columns(col_widths = col_widths, class = "results-header-row",
-                               div(""), div("#"), div("Player"), div("W"), div("L"), div("T"), div("Deck"))
+                               div(""), div("#"), div("Player"), div("Member #"), div("W"), div("L"), div("T"), div("Deck"))
     }
   }
 
@@ -159,7 +162,7 @@ render_grid_ui <- function(grid_data, record_format, is_release, deck_choices,
   release_notice <- if (is_release) {
     div(class = "alert alert-info py-2 px-3 mb-3",
         bsicons::bs_icon("info-circle"),
-        " Release event \u2014 deck archetype auto-set to UNKNOWN.")
+        " Release event — deck archetype auto-set to UNKNOWN.")
   } else {
     NULL
   }
@@ -215,18 +218,25 @@ render_grid_ui <- function(grid_data, record_format, is_release, deck_choices,
       textInput(paste0(prefix, "player_", i), NULL, value = row$player_name)
     )
 
+    # Member number input
+    member_col <- div(
+      textInput(paste0(prefix, "member_", i), NULL,
+                value = if (!is.na(row$member_number)) row$member_number else "",
+                placeholder = "0000...")
+    )
+
     # Build row based on format and release event
     if (is_release) {
       if (record_format == "points") {
         pts_col <- div(numericInput(paste0(prefix, "pts_", i), NULL, value = row$points, min = 0, max = 99))
         layout_columns(col_widths = col_widths, class = "upload-result-row",
-                       delete_btn, placement_col, player_col, pts_col)
+                       delete_btn, placement_col, player_col, member_col, pts_col)
       } else {
         w_col <- div(numericInput(paste0(prefix, "w_", i), NULL, value = row$wins, min = 0))
         l_col <- div(numericInput(paste0(prefix, "l_", i), NULL, value = row$losses, min = 0))
         t_col <- div(numericInput(paste0(prefix, "t_", i), NULL, value = row$ties, min = 0))
         layout_columns(col_widths = col_widths, class = "upload-result-row",
-                       delete_btn, placement_col, player_col, w_col, l_col, t_col)
+                       delete_btn, placement_col, player_col, member_col, w_col, l_col, t_col)
       }
     } else {
       current_deck <- if (!is.na(row$deck_id)) as.character(row$deck_id) else ""
@@ -239,13 +249,13 @@ render_grid_ui <- function(grid_data, record_format, is_release, deck_choices,
       if (record_format == "points") {
         pts_col <- div(numericInput(paste0(prefix, "pts_", i), NULL, value = row$points, min = 0, max = 99))
         layout_columns(col_widths = col_widths, class = "upload-result-row",
-                       delete_btn, placement_col, player_col, pts_col, deck_col)
+                       delete_btn, placement_col, player_col, member_col, pts_col, deck_col)
       } else {
         w_col <- div(numericInput(paste0(prefix, "w_", i), NULL, value = row$wins, min = 0))
         l_col <- div(numericInput(paste0(prefix, "l_", i), NULL, value = row$losses, min = 0))
         t_col <- div(numericInput(paste0(prefix, "t_", i), NULL, value = row$ties, min = 0))
         layout_columns(col_widths = col_widths, class = "upload-result-row",
-                       delete_btn, placement_col, player_col, w_col, l_col, t_col, deck_col)
+                       delete_btn, placement_col, player_col, member_col, w_col, l_col, t_col, deck_col)
       }
     }
   })

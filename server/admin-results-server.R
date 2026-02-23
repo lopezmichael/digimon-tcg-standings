@@ -437,6 +437,7 @@ observeEvent(input$admin_delete_row, {
   blank_row <- data.frame(
     placement = nrow(grid) + 1,
     player_name = "",
+    member_number = "",
     points = 0L, wins = 0L, losses = 0L, ties = 0L,
     deck_id = NA_integer_,
     match_status = "",
