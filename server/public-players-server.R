@@ -394,8 +394,8 @@ output$player_detail_modal <- renderUI({
       ),
       tags$a(
         href = LINKS$contact, target = "_blank",
-        class = "btn btn-outline-secondary btn-sm",
-        bsicons::bs_icon("flag"), " Report an error"
+        class = "btn btn-outline-secondary",
+        bsicons::bs_icon("flag"), " Report Error"
       ),
       modalButton("Close")
     ),
