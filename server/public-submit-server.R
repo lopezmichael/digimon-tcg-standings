@@ -680,6 +680,17 @@ observeEvent(input$submit_delete_row, {
     }
   }
   rv$submit_player_matches <- new_matches
+
+  # Update OCR row indices (shift down after deleted row)
+  if (!is.null(rv$submit_ocr_row_indices)) {
+    rv$submit_ocr_row_indices <- setdiff(
+      ifelse(rv$submit_ocr_row_indices > row_idx,
+             rv$submit_ocr_row_indices - 1,
+             rv$submit_ocr_row_indices),
+      row_idx
+    )
+  }
+
   rv$submit_grid_data <- grid
 
   # Also update OCR results for submission handler
@@ -1061,6 +1072,8 @@ observeEvent(input$submit_tournament, {
       results$username[i] <- grid$player_name[i]
       results$member_number[i] <- grid$member_number[i]
       results$points[i] <- grid$points[i]
+      results$matched_player_id[i] <- grid$matched_player_id[i]
+      results$match_status[i] <- grid$match_status[i]
     }
     rv$submit_ocr_results <- results
     results <- rv$submit_ocr_results
