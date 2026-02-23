@@ -416,6 +416,9 @@ observeEvent(input$admin_login_link, {
                  class = "admin-modal-link"),
       actionLink("modal_admin_players",
                  tagList(bsicons::bs_icon("people"), " Edit Players"),
+                 class = "admin-modal-link"),
+      actionLink("modal_admin_stores",
+                 tagList(bsicons::bs_icon("shop"), " Edit Stores"),
                  class = "admin-modal-link")
     )
 
@@ -425,9 +428,6 @@ observeEvent(input$admin_login_link, {
       superadmin_links <- tagList(
         tags$hr(class = "my-2"),
         tags$div(class = "admin-modal-section", "Super Admin"),
-        actionLink("modal_admin_stores",
-                   tagList(bsicons::bs_icon("shop"), " Edit Stores"),
-                   class = "admin-modal-link"),
         actionLink("modal_admin_decks",
                    tagList(bsicons::bs_icon("collection"), " Edit Decks"),
                    class = "admin-modal-link"),

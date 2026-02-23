@@ -68,10 +68,15 @@ observeEvent(getReactableState("admin_scenes_table", "selected"), {
   updateTextInput(session, "scene_display_name", value = row$display_name)
   updateTextInput(session, "scene_slug", value = row$slug)
   updateSelectInput(session, "scene_type", selected = row$scene_type)
-  updateTextInput(session, "scene_latitude",
-                  value = if (is.na(row$latitude)) "" else as.character(row$latitude))
-  updateTextInput(session, "scene_longitude",
-                  value = if (is.na(row$longitude)) "" else as.character(row$longitude))
+
+  # Build location hint from existing coordinates
+  if (!is.na(row$latitude) && !is.na(row$longitude)) {
+    updateTextInput(session, "scene_location",
+                    value = paste0(row$display_name, " (has coordinates)"))
+  } else {
+    updateTextInput(session, "scene_location", value = "")
+  }
+
   updateCheckboxInput(session, "scene_is_active", value = row$is_active)
 
   shinyjs::html("scene_form_title", "Edit Scene")
@@ -83,8 +88,7 @@ observeEvent(input$clear_scene_form_btn, {
   updateTextInput(session, "scene_display_name", value = "")
   updateTextInput(session, "scene_slug", value = "")
   updateSelectInput(session, "scene_type", selected = "metro")
-  updateTextInput(session, "scene_latitude", value = "")
-  updateTextInput(session, "scene_longitude", value = "")
+  updateTextInput(session, "scene_location", value = "")
   updateCheckboxInput(session, "scene_is_active", value = TRUE)
   updateReactable("admin_scenes_table", selected = NA)
   shinyjs::html("scene_form_title", "Add Scene")
@@ -133,12 +137,6 @@ observeEvent(input$save_scene_btn, {
   slug <- trimws(tolower(input$scene_slug))
   scene_type <- input$scene_type
   is_active <- input$scene_is_active
-  lat <- if (nchar(trimws(input$scene_latitude)) > 0) {
-    as.numeric(trimws(input$scene_latitude))
-  } else NA_real_
-  lng <- if (nchar(trimws(input$scene_longitude)) > 0) {
-    as.numeric(trimws(input$scene_longitude))
-  } else NA_real_
 
   # Validation
   if (nchar(display_name) == 0) {
@@ -153,9 +151,42 @@ observeEvent(input$save_scene_btn, {
     notify("Slug must be lowercase letters, numbers, and hyphens only", type = "warning")
     return()
   }
-  if (scene_type == "metro" && (is.na(lat) || is.na(lng))) {
-    notify("Metro scenes need latitude and longitude for the map", type = "warning")
-    return()
+
+  # Geocode for metro scenes
+  lat <- NA_real_
+  lng <- NA_real_
+  if (scene_type == "metro") {
+    location <- trimws(input$scene_location)
+
+    # If editing and location field wasn't changed (still shows hint), keep existing coords
+    if (!is.null(editing_scene_id())) {
+      old_scene <- safe_query(rv$db_con,
+        "SELECT latitude, longitude FROM scenes WHERE scene_id = ?",
+        params = list(editing_scene_id()),
+        default = data.frame())
+      if (nrow(old_scene) > 0 && grepl("has coordinates", location, fixed = TRUE)) {
+        lat <- old_scene$latitude[1]
+        lng <- old_scene$longitude[1]
+      }
+    }
+
+    # Geocode if we don't already have coordinates
+    if (is.na(lat) || is.na(lng)) {
+      if (nchar(location) == 0) {
+        notify("Location is required for metro scenes (e.g., 'Houston, TX')", type = "warning")
+        return()
+      }
+      notify("Geocoding location...", type = "message", duration = 2)
+      geo_result <- geocode_with_mapbox(location)
+      lat <- geo_result$lat
+      lng <- geo_result$lng
+
+      if (is.na(lat) || is.na(lng)) {
+        notify("Could not geocode location. Try a more specific location (e.g., 'Houston, Texas, USA').",
+               type = "warning", duration = 5)
+        return()
+      }
+    }
   }
 
   if (is.null(editing_scene_id())) {
@@ -192,8 +223,7 @@ observeEvent(input$save_scene_btn, {
       updateTextInput(session, "scene_display_name", value = "")
       updateTextInput(session, "scene_slug", value = "")
       updateSelectInput(session, "scene_type", selected = "metro")
-      updateTextInput(session, "scene_latitude", value = "")
-      updateTextInput(session, "scene_longitude", value = "")
+      updateTextInput(session, "scene_location", value = "")
       updateCheckboxInput(session, "scene_is_active", value = TRUE)
       updateReactable("admin_scenes_table", selected = NA)
     } else {
@@ -282,8 +312,7 @@ observeEvent(input$delete_scene_btn, {
   updateTextInput(session, "scene_display_name", value = "")
   updateTextInput(session, "scene_slug", value = "")
   updateSelectInput(session, "scene_type", selected = "metro")
-  updateTextInput(session, "scene_latitude", value = "")
-  updateTextInput(session, "scene_longitude", value = "")
+  updateTextInput(session, "scene_location", value = "")
   updateCheckboxInput(session, "scene_is_active", value = TRUE)
   updateReactable("admin_scenes_table", selected = NA)
   shinyjs::html("scene_form_title", "Add Scene")

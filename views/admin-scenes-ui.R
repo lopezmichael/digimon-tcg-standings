@@ -40,12 +40,13 @@ admin_scenes_ui <- tagList(
                       selectize = FALSE),
           conditionalPanel(
             condition = "input.scene_type == 'metro'",
-            textInput("scene_latitude", "Latitude",
-                      placeholder = "e.g., 32.7767"),
-            textInput("scene_longitude", "Longitude",
-                      placeholder = "e.g., -96.7970"),
-            tags$small(class = "form-text text-muted d-block mt-n2 mb-2",
-                       "Center coordinates for the map. Find on Google Maps.")
+            textInput("scene_location", "Location",
+                      placeholder = "e.g., Houston, TX"),
+            div(
+              class = "text-muted small mb-2",
+              bsicons::bs_icon("geo-alt"),
+              " Map coordinates will be set automatically from the location"
+            )
           ),
           checkboxInput("scene_is_active", "Active", value = TRUE),
           div(

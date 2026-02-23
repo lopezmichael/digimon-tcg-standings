@@ -770,6 +770,9 @@ ui <- page_fillable(
                      class = "nav-link-sidebar"),
           actionLink("nav_admin_players",
                      tagList(bsicons::bs_icon("people"), " Edit Players"),
+                     class = "nav-link-sidebar"),
+          actionLink("nav_admin_stores",
+                     tagList(bsicons::bs_icon("shop"), " Edit Stores"),
                      class = "nav-link-sidebar")
         ),
 
@@ -777,9 +780,6 @@ ui <- page_fillable(
         conditionalPanel(
           condition = "output.is_superadmin",
           tags$div(class = "nav-section-label", "Super Admin"),
-          actionLink("nav_admin_stores",
-                     tagList(bsicons::bs_icon("shop"), " Edit Stores"),
-                     class = "nav-link-sidebar"),
           actionLink("nav_admin_decks",
                      tagList(bsicons::bs_icon("collection"), " Edit Decks"),
                      class = "nav-link-sidebar"),
