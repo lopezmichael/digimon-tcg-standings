@@ -409,12 +409,14 @@ observeEvent(input$admin_login_link, {
         bsicons::bs_icon("key"), " Change Password ",
         bsicons::bs_icon("chevron-down", class = "admin-chevron-icon")
       ),
-      div(
+      tags$form(
         id = "change_password_panel",
         class = "collapse admin-change-password mt-2",
-        passwordInput("change_current_password", "Current Password"),
-        passwordInput("change_new_password", "New Password"),
-        passwordInput("change_confirm_password", "Confirm New Password"),
+        autocomplete = "on",
+        onsubmit = "event.preventDefault(); $('#change_password_btn').click();",
+        tagAppendAttributes(passwordInput("change_current_password", "Current Password"), autocomplete = "current-password"),
+        tagAppendAttributes(passwordInput("change_new_password", "New Password"), autocomplete = "new-password"),
+        tagAppendAttributes(passwordInput("change_confirm_password", "Confirm New Password"), autocomplete = "new-password"),
         actionButton("change_password_btn", "Update Password",
                      class = "btn-primary btn-sm mt-1")
       )
@@ -479,24 +481,35 @@ observeEvent(input$admin_login_link, {
     showModal(modalDialog(
       title = "Create Super Admin",
       tags$p(class = "text-muted", "No admin accounts exist yet. Create the first super admin account."),
-      textInput("bootstrap_username", "Username", placeholder = "e.g., michael"),
-      textInput("bootstrap_display_name", "Display Name", placeholder = "e.g., Michael"),
-      tags$div(
-        passwordInput("bootstrap_password", "Password"),
-        style = "margin-bottom: 0.5rem;"
+      tags$form(
+        id = "bootstrap_form",
+        autocomplete = "on",
+        onsubmit = "event.preventDefault(); $('#bootstrap_btn').click();",
+        tagAppendAttributes(textInput("bootstrap_username", "Username", placeholder = "e.g., michael"), autocomplete = "username"),
+        textInput("bootstrap_display_name", "Display Name", placeholder = "e.g., Michael"),
+        tags$div(
+          tagAppendAttributes(passwordInput("bootstrap_password", "Password"), autocomplete = "new-password"),
+          style = "margin-bottom: 0.5rem;"
+        ),
+        tagAppendAttributes(passwordInput("bootstrap_confirm", "Confirm Password"), autocomplete = "new-password")
       ),
-      passwordInput("bootstrap_confirm", "Confirm Password"),
       footer = tagList(
         actionButton("bootstrap_btn", "Create Account", class = "btn-primary"),
         modalButton("Cancel")
       )
     ))
   } else {
-    # Normal login form
+    # Normal login form (wrapped in <form> with autocomplete hints for browser password saving)
     showModal(modalDialog(
       title = "Admin Login",
-      textInput("login_username", "Username"),
-      passwordInput("login_password", "Password"),
+      tags$form(
+        id = "admin_login_form",
+        autocomplete = "on",
+        # Prevent default form submit (Shiny handles it via actionButton)
+        onsubmit = "event.preventDefault(); $('#login_btn').click();",
+        tagAppendAttributes(textInput("login_username", "Username"), autocomplete = "username"),
+        tagAppendAttributes(passwordInput("login_password", "Password"), autocomplete = "current-password")
+      ),
       footer = tagList(
         actionButton("login_btn", "Login", class = "btn-primary"),
         modalButton("Cancel")
