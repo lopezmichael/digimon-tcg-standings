@@ -576,6 +576,30 @@ observeEvent(input$logout_btn, {
 # Helper Functions
 # ---------------------------------------------------------------------------
 
+#' Track a custom GA4 event
+#' @param event_name GA4 event name (e.g., "tab_visit", "modal_open")
+#' @param ... Named parameters to include as event params
+track_event <- function(event_name, ...) {
+  params <- list(...)
+  tryCatch(
+    session$sendCustomMessage("trackEvent", list(event = event_name, params = params)),
+    error = function(e) NULL
+  )
+}
+
+#' Build Sentry context tags from current session state
+#' @return Named list of tags for sentryR::capture_exception()
+sentry_context_tags <- function() {
+  tags <- list()
+  tryCatch({
+    if (!is.null(rv$current_nav)) tags$active_tab <- rv$current_nav
+    if (!is.null(rv$current_scene)) tags$scene <- rv$current_scene
+    if (!is.null(rv$is_admin) && rv$is_admin) tags$is_admin <- "true"
+    if (!is.null(rv$community_filter)) tags$community <- rv$community_filter
+  }, error = function(e) NULL)
+  tags
+}
+
 #' Safe Database Query Wrapper
 #'
 #' Executes a database query with error handling, returning a sensible default
@@ -614,9 +638,12 @@ safe_query <- function(db_con, query, params = NULL, default = data.frame()) {
     query_preview <- substr(gsub("\\s+", " ", query), 1, 200)
     message("[safe_query] Error: ", msg, " | Query: ", query_preview)
 
-    # Send to Sentry if enabled
+    # Send to Sentry if enabled (with context tags)
     if (sentry_enabled) {
-      tryCatch(sentryR::capture_exception(e), error = function(se) NULL)
+      tryCatch(
+        sentryR::capture_exception(e, tags = sentry_context_tags()),
+        error = function(se) NULL
+      )
     }
 
     # Attempt reconnection if connection is invalid
@@ -671,9 +698,12 @@ safe_execute <- function(db_con, query, params = NULL) {
   }, error = function(e) {
     message("[safe_execute] Error: ", conditionMessage(e))
     message("[safe_execute] Query: ", substr(gsub("\\s+", " ", query), 1, 200))
-    # Send to Sentry if enabled
+    # Send to Sentry if enabled (with context tags)
     if (sentry_enabled) {
-      tryCatch(sentryR::capture_exception(e), error = function(se) NULL)
+      tryCatch(
+        sentryR::capture_exception(e, tags = sentry_context_tags()),
+        error = function(se) NULL
+      )
     }
     0  # Return 0 rows affected on error
   })

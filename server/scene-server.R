@@ -120,6 +120,9 @@ observeEvent(input$scene_selector, {
   # Update reactive value
   rv$current_scene <- new_scene
 
+  # Track scene change in GA4
+  track_event("scene_change", scene = new_scene)
+
   # Save to localStorage
   session$sendCustomMessage("saveScenePreference", list(scene = new_scene))
 

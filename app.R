@@ -424,6 +424,13 @@ ui <- page_fillable(
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-NJ3SMG8HGG');
+
+      // Custom GA4 event handler (called from Shiny server)
+      Shiny.addCustomMessageHandler('trackEvent', function(data) {
+        if (typeof gtag === 'function') {
+          gtag('event', data.event, data.params || {});
+        }
+      });
     ")),
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
     # Deep linking URL routing
@@ -891,10 +898,13 @@ ui <- page_fillable(
 
 server <- function(input, output, session) {
 
-  # Global error handler for Sentry
+  # Global error handler for Sentry (with context tags)
   if (sentry_enabled) {
     options(shiny.error = function() {
-      tryCatch(sentryR::capture_exception(geterrmessage()), error = function(se) NULL)
+      tryCatch(
+        sentryR::capture_exception(geterrmessage(), tags = sentry_context_tags()),
+        error = function(se) NULL
+      )
     })
   }
 

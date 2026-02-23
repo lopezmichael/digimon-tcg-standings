@@ -228,6 +228,9 @@ observeEvent(rv$current_nav, {
                   "admin_users")
 
   if (!is.null(rv$current_nav)) {
+    # Track tab visit in GA4
+    track_event("tab_visit", tab = rv$current_nav, scene = rv$current_scene %||% "all")
+
     if (rv$current_nav %in% public_tabs) {
       params <- list()
       if (rv$current_nav != "dashboard") {
@@ -335,6 +338,7 @@ resolve_entity_slug <- function(entity_type, slug) {
 #' Update URL when player modal opens
 #' Call this from player modal observers
 update_url_for_player <- function(session, player_id, display_name) {
+  track_event("modal_open", modal_type = "player", entity = display_name)
   slug <- slugify(display_name)
   params <- list(player = slug)
 
@@ -358,6 +362,7 @@ update_url_for_player <- function(session, player_id, display_name) {
 
 #' Update URL when deck modal opens
 update_url_for_deck <- function(session, archetype_id, slug) {
+  track_event("modal_open", modal_type = "deck", entity = slug)
   params <- list(deck = slug, tab = "meta")
 
   if (!is.null(rv$current_scene)) {
@@ -374,6 +379,7 @@ update_url_for_deck <- function(session, archetype_id, slug) {
 
 #' Update URL when store modal opens
 update_url_for_store <- function(session, store_id, slug) {
+  track_event("modal_open", modal_type = "store", entity = slug)
   params <- list(store = slug)
 
   if (!is.null(rv$current_nav) && rv$current_nav != "dashboard") {
@@ -394,6 +400,7 @@ update_url_for_store <- function(session, store_id, slug) {
 
 #' Update URL when tournament modal opens
 update_url_for_tournament <- function(session, tournament_id) {
+  track_event("modal_open", modal_type = "tournament", entity = as.character(tournament_id))
   params <- list(tournament = tournament_id)
 
   if (!is.null(rv$current_nav) && rv$current_nav != "dashboard") {
