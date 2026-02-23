@@ -25,6 +25,14 @@ observe({
       message("[startup] Could not check/populate ratings cache: ", e$message)
     })
 
+    # Check if admin_users table needs bootstrap (first-ever setup)
+    admin_count <- safe_query(rv$db_con,
+      "SELECT COUNT(*) as n FROM admin_users",
+      default = data.frame(n = 0))
+    if (nrow(admin_count) > 0 && admin_count$n[1] == 0) {
+      rv$needs_bootstrap <- TRUE
+    }
+
     # Hide loading screen - data is ready after cache check
     session$sendCustomMessage("hideLoading", list())
   }
