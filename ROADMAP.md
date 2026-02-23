@@ -2,33 +2,9 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v0.28.0
+**Current Version:** v0.29.0
 **Target:** v1.0 Public Launch
 **Cadence:** ~1 milestone per week
-
----
-
-## v0.29 - Admin Auth & Automation
-
-| ID | Type | Description |
-|----|------|-------------|
-| AUTH1 | FEATURE | `admin_users` table — username, password_hash, role (super_admin / scene_admin), scene assignment |
-| AUTH2 | FEATURE | Admin login form — simple username/password check, reactive session state |
-| AUTH3 | FEATURE | Permission-scoped admin tabs — hidden unless logged in with appropriate role |
-| AUTH4 | FEATURE | Permission check on admin mutations — verify role before any data write |
-| AUTH5 | FEATURE | Super admin "Add Admin" form — manually create/remove admin accounts |
-| LI8 | FEATURE | GitHub Actions scheduled Limitless sync + deck classification |
-| LI8b | FEATURE | Review and update GitHub Actions card sync schedule |
-| SENTRY1 | OPS | Verify Sentry dashboard receives events, set up alert rules (email on error spikes) |
-| SENTRY2 | OPS | Add context tags to Sentry errors (active tab, scene, user action) |
-| UX10 | UX | Custom GA4 events (track tab visits, filter usage, modal opens) |
-
-**Admin Auth Architecture:**
-- Simple password-based auth (no Discord OAuth for v1.0 — only ~5 admin users)
-- Super admin (you) manages all data and admin accounts
-- Scene admins manage data for their assigned scene only (existing scene filtering)
-- No cookies/session persistence — re-login on page refresh (acceptable at this scale)
-- Full Discord OAuth, invite links, audit log deferred to post-v1.0
 
 ---
 
@@ -175,6 +151,19 @@ The React PoC on `explore/react-rewrite` branch serves as a reference for future
 ---
 
 ## Completed
+
+### v0.29.0 - Admin Auth & Automation
+- Per-user admin accounts: `admin_users` table with bcrypt password hashing, role (super_admin / scene_admin), scene assignment
+- Admin login form: username/password check, bootstrap flow for first super admin creation
+- Permission-scoped admin tabs: hidden unless logged in with appropriate role
+- Manage Admins UI: add/edit/deactivate admin accounts (super admin only)
+- Scene scoping: scene admins locked to their assigned scene
+- Design doc: `docs/plans/2026-02-22-admin-auth-design.md`
+- GitHub Actions review: both `sync-limitless.yml` (weekly) and `sync-cards.yml` (monthly) confirmed working
+- Limitless sync fix: NULL deck archetypes now default to UNKNOWN (archetype_id=50)
+- Limitless sync filter: skip tournaments where top 3 players have no deck data (no-decklist tournaments)
+- Sentry context tags: active_tab, scene, is_admin, community on all error captures
+- GA4 custom events: tab_visit, modal_open, scene_change tracking
 
 ### v0.28.0 - Content Updates, Error Tracking & Admin UX
 - OCR layout-aware parser: bounding box analysis replaces line-based text parsing (73% → 95% accuracy)
