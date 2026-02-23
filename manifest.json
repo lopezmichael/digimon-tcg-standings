@@ -4328,7 +4328,7 @@
       "checksum": "2209b31b91119dd05fb80ff1a2c13be2"
     },
     ".Rprofile": {
-      "checksum": "00aa45a6e15b90885b2ad5dca5608594"
+      "checksum": "0749eb852cbdcc7a3636382961de43e0"
     },
     ".vscode/settings.json": {
       "checksum": "4aa85c6acde752675b31b354987521ce"
@@ -5465,19 +5465,19 @@
       "checksum": "6fe5800db7aef1ea29f4a47204e53b96"
     },
     "server/public-meta-server.R": {
-      "checksum": "7b372a82b8c52a17be1bceb42285d6cc"
+      "checksum": "8d3b86776b0c793b82f23bf4c203c448"
     },
     "server/public-players-server.R": {
-      "checksum": "6e4257f0526951d0ff9ff73aa3c02a1f"
+      "checksum": "ad6db3e4f13da2f79f1b6b0d77643a32"
     },
     "server/public-stores-server.R": {
-      "checksum": "5ee3cf2302ceba357d51004e9fe049af"
+      "checksum": "2fa0e6bef5b143c1107847fe8b40abbd"
     },
     "server/public-submit-server.R": {
       "checksum": "36aaad66995e7d0f63b8d75cd065928a"
     },
     "server/public-tournaments-server.R": {
-      "checksum": "0bdc0946e0d67a142936c79e8c0cd00f"
+      "checksum": "832c0d79a710056e86da75e0b005c764"
     },
     "server/scene-server.R": {
       "checksum": "6d1c04028d63453c33c5bf165245e286"
