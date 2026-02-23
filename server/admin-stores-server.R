@@ -299,7 +299,7 @@ output$admin_store_list <- renderReactable({
     sortable = FALSE,
     selection = "single",
     onClick = "select",
-    defaultPageSize = 20,
+    defaultPageSize = 12,
     showPageSizeOptions = TRUE,
     pageSizeOptions = c(10, 20, 50, 100),
     rowStyle = function(index) {

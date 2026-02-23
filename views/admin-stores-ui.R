@@ -43,23 +43,26 @@ admin_stores_ui <- tagList(
             condition = "!input.store_is_online",
             textInput("store_name", "Store Name"),
             textInput("store_address", "Street Address"),
-            textInput("store_city", "City"),
-            selectInput("store_state", "State",
-              choices = c(
-                "AL" = "AL", "AK" = "AK", "AZ" = "AZ", "AR" = "AR", "CA" = "CA",
-                "CO" = "CO", "CT" = "CT", "DE" = "DE", "DC" = "DC", "FL" = "FL",
-                "GA" = "GA", "HI" = "HI", "ID" = "ID", "IL" = "IL", "IN" = "IN",
-                "IA" = "IA", "KS" = "KS", "KY" = "KY", "LA" = "LA", "ME" = "ME",
-                "MD" = "MD", "MA" = "MA", "MI" = "MI", "MN" = "MN", "MS" = "MS",
-                "MO" = "MO", "MT" = "MT", "NE" = "NE", "NV" = "NV", "NH" = "NH",
-                "NJ" = "NJ", "NM" = "NM", "NY" = "NY", "NC" = "NC", "ND" = "ND",
-                "OH" = "OH", "OK" = "OK", "OR" = "OR", "PA" = "PA", "RI" = "RI",
-                "SC" = "SC", "SD" = "SD", "TN" = "TN", "TX" = "TX", "UT" = "UT",
-                "VT" = "VT", "VA" = "VA", "WA" = "WA", "WV" = "WV", "WI" = "WI",
-                "WY" = "WY"
-              ),
-              selected = "TX",
-              selectize = FALSE
+            layout_columns(
+              col_widths = breakpoints(sm = c(12, 12), md = c(8, 4)),
+              textInput("store_city", "City"),
+              selectInput("store_state", "State",
+                choices = c(
+                  "AL" = "AL", "AK" = "AK", "AZ" = "AZ", "AR" = "AR", "CA" = "CA",
+                  "CO" = "CO", "CT" = "CT", "DE" = "DE", "DC" = "DC", "FL" = "FL",
+                  "GA" = "GA", "HI" = "HI", "ID" = "ID", "IL" = "IL", "IN" = "IN",
+                  "IA" = "IA", "KS" = "KS", "KY" = "KY", "LA" = "LA", "ME" = "ME",
+                  "MD" = "MD", "MA" = "MA", "MI" = "MI", "MN" = "MN", "MS" = "MS",
+                  "MO" = "MO", "MT" = "MT", "NE" = "NE", "NV" = "NV", "NH" = "NH",
+                  "NJ" = "NJ", "NM" = "NM", "NY" = "NY", "NC" = "NC", "ND" = "ND",
+                  "OH" = "OH", "OK" = "OK", "OR" = "OR", "PA" = "PA", "RI" = "RI",
+                  "SC" = "SC", "SD" = "SD", "TN" = "TN", "TX" = "TX", "UT" = "UT",
+                  "VT" = "VT", "VA" = "VA", "WA" = "WA", "WV" = "WV", "WI" = "WI",
+                  "WY" = "WY"
+                ),
+                selected = "TX",
+                selectize = FALSE
+              )
             ),
             textInput("store_zip", "ZIP Code")
           ),
