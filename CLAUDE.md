@@ -171,6 +171,7 @@ Contains design documents for features before implementation. Key active plans:
 - `2026-02-04-region-expansion-design.md` - Scenes hierarchy, multi-region support
 - `2026-02-04-deep-linking-design.md` - Shareable URLs, browser history
 - `2026-02-04-content-pages-design.md` - About, FAQ, For Organizers pages
+- `2026-02-22-ocr-layout-parser-design.md` - Layout-aware OCR parser using bounding box coordinates
 - `2026-02-03-public-submissions-design.md` - Screenshot OCR, public result submission
 - `2026-02-01-rating-system-design.md` - Competitive Rating, Achievement Score, Store Rating methodology
 

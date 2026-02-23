@@ -4,6 +4,43 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-02-22: OCR Layout-Aware Parser (REV2)
+
+### Problem
+The text-based OCR parser (`parse_tournament_standings()`) processed Google Cloud Vision output as plain text lines. This approach suffered from line ordering issues, couldn't distinguish between columns, and frequently misassigned points, rankings, and member numbers. Initial batch test accuracy: **73.2%**.
+
+### Solution
+Built a layout-aware parser (`parse_standings_layout()`) that uses GCV's word-level bounding box coordinates instead of raw text. The 12-step algorithm:
+1. Normalizes bounding box coordinates to percentages of image dimensions
+2. Filters top/bottom noise (status bar, nav bar)
+3. Detects header row keywords to dynamically set column boundaries
+4. Filters known noise text (app headers, copyright, navigation)
+5. Clusters annotations into visual rows by Y-position (1.5% gap threshold)
+6. Assigns text to columns (Ranking, Username/Member, Win Points) by X-position
+7. Handles multi-word usernames, "Member Number" labels, GUEST patterns
+8. Validates points against `total_rounds * 3` with digit truncation
+9. Infers missing ranks 1-3 (medal icons unreadable by GCV) from Y-position
+10. Autofills zero points for high-ranked players, calculates W-L-T
+
+### Key Decisions
+- **Layout-first with text fallback**: `parse_standings()` orchestrator tries layout parser, validates (needs ≥1 player with ranking+username+member), falls back to text parser
+- **Medal icon workaround**: GCV cannot read numbers inside gold/silver/bronze medal circles. Instead of trying harder at OCR, we infer ranks 1-3 from their screen position relative to detected rank 4+
+- **Points truncation over rejection**: When GCV merges "6" with adjacent "0" from OMW% column (reading "60"), we truncate trailing digits rather than rejecting the value
+- **Conservative noise filtering**: Aggressive filtering of decimal numbers/percentages caused regressions by disrupting row clustering. Kept word-based noise list instead.
+
+### Results
+- Batch test accuracy: **73.2% → 95.1%** across 7 test folders (11 screenshots, 106 expected players)
+- Remaining ~5% failures are GCV character recognition errors (9↔6 digit confusion, Cyrillic substitution) — unfixable at parser level
+- Rankings: 100% accuracy across all test folders (was ~60% before rank inference)
+
+### Files Modified
+- `R/ocr.R`: `gcv_detect_text()` (returns annotations), `parse_standings_layout()` (~460 lines), `parse_standings()` orchestrator
+- `server/public-submit-server.R`: Ranking-aware merge, GUEST dedup, DB lookup
+- `scripts/batch_test_ocr.R`: `batch_test_folders()`, `batch_retest_folders()`
+- `scripts/test_ocr.R`: Updated for orchestrator, `test_compare()`
+
+---
+
 ## 2026-02-22: UX Polish Round 2 — Items 6, 8, 14
 
 ### Changes Made

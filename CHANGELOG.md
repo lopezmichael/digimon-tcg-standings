@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.28.0] - 2026-02-22 - Content Updates, Error Tracking & Admin UX
 
 ### Added
+- **OCR Layout-Aware Parser**: Replaced line-based text parsing with bounding box coordinate analysis using Google Cloud Vision annotations (73% → 95% accuracy)
+  - `parse_standings_layout()`: 12-step algorithm normalizes coordinates, clusters rows by Y-position, assigns text to columns (Ranking, Username/Member, Win Points) by X-position
+  - `parse_standings()` orchestrator: tries layout parser first, validates results, falls back to text parser
+  - Medal icon rank inference: detects missing ranks 1-3 (gold/silver/bronze icons unreadable by GCV) and infers from Y-position ordering
+  - Points validation: caps at `rounds * 3`, truncates merged digits (GCV sometimes merges "6" + "0" from adjacent OMW% column)
+  - Noise filtering: app headers, B-logo variants, copyright fragments, garbled multi-word text without member numbers
+  - `gcv_detect_text()` now returns bounding box annotations alongside full text for backward compatibility
+  - Ranking-aware multi-screenshot merge with GUEST dedup and rank gap padding
+  - GUEST player DB lookup: recovers real member numbers by matching username against players table
+- **OCR Batch Test Harness**: `batch_test_folders()` and `batch_retest_folders()` in `scripts/batch_test_ocr.R` — 7 ground truth folders (11 screenshots, 106 expected players) with per-field accuracy scoring
 - **LINKS Constant**: Centralized all external URLs (Discord, Ko-fi, GitHub, contact form) into a `LINKS` list in `app.R` — all views reference `LINKS$discord`, `LINKS$kofi`, etc.
 - **FAQ Page Rewrite**: 5 categories (Getting Started, Ratings & Scores, Scenes & Regions, Data & Coverage, General), 22 questions covering all features through v0.27
 - **About Page Rewrite**: Removed DFW-specific language, added "Active Scenes" stat with globe icon, Discord as primary contact link, multi-region audience types (Online Competitors, Community Builders)
@@ -48,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All jQuery `modal('show'/'hide')` calls from server files
 
 ### Documentation
+- **OCR Layout Parser Design Doc**: `docs/plans/2026-02-22-ocr-layout-parser-design.md` — brainstorming design for bounding box approach
+- **OCR Layout Parser Implementation Plan**: `docs/plans/2026-02-22-ocr-layout-parser-implementation.md` — 9-task implementation plan
 - **Admin UX Audit Design Doc**: `docs/plans/2026-02-22-admin-ux-audit-design.md` — prioritized findings from REV1 audit (2 blockers, 3 high, 3 medium, 3 low)
 
 ## [0.27.0] - 2026-02-20 - Onboarding & Help
