@@ -10,16 +10,18 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ## v0.30 - Mobile & Polish
 
-| ID | Type | Description |
-|----|------|-------------|
-| MOB1 | REVIEW | Full mobile UX audit — tables, modals, filters, navigation, tap targets |
-| MOB2 | UX | Mobile table improvements — responsive columns, horizontal scroll UX, touch-friendly rows |
-| MOB3 | UX | Mobile submit results review — camera upload flow, form layout on small screens |
-| ADM1 | UX | Edit tournaments flow — reuse grid entry, paste-from-spreadsheet, and player matching from Enter Results |
-| ADM2 | REVIEW | Enter Results & Submit Results tabs UX review — audit flow after OCR improvements |
-| DM3 | UI | Agumon in disconnect overlay — worried pose with sweat drop in reconnect UI |
-| DM9 | UI | Agumon in loading spinner — centered inside the circular loading animation |
-| DM7 | UI | Agumon 404/not found state — lost/searching pose for bad deep link URLs |
+| ID | Type | Status | Description |
+|----|------|--------|-------------|
+| MOB1 | REVIEW | ✅ Done | Full mobile UX audit — layout breakpoints, column hiding, tap targets, value box fonts |
+| MOB2 | UX | | Mobile table improvements — responsive columns, horizontal scroll UX, touch-friendly rows |
+| MOB3 | UX | | Mobile submit results review — camera upload flow, form layout on small screens |
+| ADM1 | UX | | Edit tournaments flow — reuse grid entry, paste-from-spreadsheet, and player matching from Enter Results |
+| ADM2 | REVIEW | | Enter Results & Submit Results tabs UX review — audit flow after OCR improvements |
+| DM3 | UI | ✅ Done | Agumon in disconnect overlay — bounce animation in reconnect UI |
+| DM9 | UI | ✅ Done | Agumon in loading spinner — centered inside the circular loading gate |
+| DM7 | UI | ✅ Done | Agumon 404/not found state — modal with mascot for bad deep link URLs |
+| DM10 | BRANDING | ✅ Done | DigiLab logo refresh — Digivice SVG in logo and icon files |
+| DM11 | BRANDING | ✅ Done | OG image update — Digivice watermark branding for Discord/chat link embeds |
 
 ---
 
@@ -67,8 +69,6 @@ Upgrade from simple password auth to full user account system:
 |----|------|-------------|
 | DM6 | UI | Digivice footer watermark — subtle branding element |
 | DM8 | UI | Agumon achievement unlocked — celebrating pose (needs F10) |
-| DM10 | BRANDING | DigiLab logo refresh — incorporate Digivice SVG into sidebar logo and favicon |
-| DM11 | BRANDING | OG image update — new preview card with Digivice branding for Discord/chat link embeds |
 | DM-COMM | BRANDING | Commission custom Digimon SVG set — multi-character, multi-mood |
 
 See `docs/digimon-mascots.md` for full spec and art style guidelines.
@@ -152,11 +152,18 @@ The React PoC on `explore/react-rewrite` branch serves as a reference for future
 
 ## Completed
 
+### v0.30.0 (in progress) - Mobile & Polish
+- Agumon mascot: loading spinner (DM9), disconnect overlay (DM3), 404 not-found modal (DM7)
+- Digivice branding: logo/icon refresh (DM10), OG image with watermark (DM11)
+- Mobile UX audit (MOB1): admin layout breakpoints, column hiding, tap targets, value box fonts, admin-results col-md fixes
+
 ### v0.29.0 - Admin Auth & Automation
 - Per-user admin accounts: `admin_users` table with bcrypt password hashing, role (super_admin / scene_admin), scene assignment
 - Admin login form: username/password check, bootstrap flow for first super admin creation
 - Permission-scoped admin tabs: hidden unless logged in with appropriate role
 - Manage Admins UI: add/edit/deactivate admin accounts (super admin only)
+- Manage Scenes UI: add/edit/delete scenes with auto-geocoding (super admin only)
+- Change password form: collapsible in admin modal
 - Scene scoping: scene admins locked to their assigned scene
 - Design doc: `docs/plans/2026-02-22-admin-auth-design.md`
 - GitHub Actions review: both `sync-limitless.yml` (weekly) and `sync-cards.yml` (monthly) confirmed working

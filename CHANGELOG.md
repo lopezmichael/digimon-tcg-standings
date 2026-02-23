@@ -5,6 +5,53 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Mascot, Branding & Mobile Polish
+
+### Added
+- **Agumon Loading Spinner (DM9)**: Agumon SVG centered inside the circular loading gate animation with `gate-agumon-pulse` scale/opacity animation
+- **Agumon Disconnect Overlay (DM3)**: Agumon SVG in the "Connection Lost" reconnect screen with `disconnect-agumon` bounce animation
+- **Agumon 404 Not Found (DM7)**: Bad deep link URLs now show a modal with Agumon mascot, entity-specific title, and descriptive message instead of a toast notification
+- **Digivice OG Image (DM11)**: New 1200x630 Open Graph image (`www/og-image.svg` / `og-image.png`) with large Digivice watermark behind DigiLab text
+- **Digivice Logo Refresh (DM10)**: Updated `docs/digilab-logo.svg` and `docs/digilab-icon.svg` with Digivice icon
+- **Mobile Column Hiding**: Stores table hides City, Avg Event Size, Avg Rating on mobile; admin tournaments table hides Type, Format, Rounds
+
+### Changed
+- **OG Meta Tags**: Updated to reference `og-image.png` with dimensions, Twitter card upgraded to `summary_large_image`
+- **Admin Layout Breakpoints (MOB1)**: All 8 admin and dashboard `layout_columns` calls now use `breakpoints()` for proper mobile stacking
+- **Admin Results Mobile (MOB1)**: All `col-md-X` classes now include `col-12` prefix for mobile-first stacking
+- **Tab Bar Tap Targets (MOB1)**: Increased mobile tab bar item padding and added `min-width: 44px` / `min-height: 44px` for WCAG compliance
+- **Value Box Font Floor (MOB1)**: Bumped `.vb-label` and `.vb-subtitle` minimum font sizes at 576px breakpoint from 0.55/0.6rem to 0.65rem
+
+### Removed
+- Duplicate `www/digilab-logo.svg` (original lives in `docs/`)
+- `.loading-character` CSS class and `character-jump` animation (replaced by Agumon in loading gate)
+
+## [0.29.0] - 2026-02-22 - Admin Auth & Automation
+
+### Added
+- **Per-User Admin Accounts**: `admin_users` table with bcrypt password hashing, roles (super_admin / scene_admin), and scene assignment
+- **Admin Login Form**: Username/password authentication with bootstrap flow for first super admin creation
+- **Permission-Scoped Admin Tabs**: Hidden unless logged in with appropriate role
+- **Manage Admins UI**: Add, edit, and deactivate admin accounts (super admin only)
+- **Manage Scenes UI**: Add, edit, and delete scenes with auto-geocoding (super admin only)
+- **Change Password Form**: Collapsible form in admin modal for changing own password
+- **Scene Scoping**: Scene admins locked to their assigned scene's data
+- **Sentry Context Tags**: `active_tab`, `scene`, `is_admin`, `community` on all error captures
+- **GA4 Custom Events**: `tab_visit`, `modal_open`, `scene_change` tracking
+
+### Changed
+- **Admin Modal**: Simplified header, collapsible change password section
+- **Edit Stores**: Moved to admin section (was super admin only)
+- **Scene Locations**: Auto-geocoded from location text field
+
+### Fixed
+- **Limitless Sync NULL Decks**: NULL deck archetypes now default to UNKNOWN (archetype_id=50)
+- **Limitless Sync Filter**: Skip tournaments where top 3 players have no deck data (no-decklist tournaments)
+- **GitHub Actions**: Both `sync-limitless.yml` (weekly) and `sync-cards.yml` (monthly) confirmed working
+
+### Documentation
+- **Admin Auth Design Doc**: `docs/plans/2026-02-22-admin-auth-design.md`
+
 ## [0.28.0] - 2026-02-22 - Content Updates, Error Tracking & Admin UX
 
 ### Added
