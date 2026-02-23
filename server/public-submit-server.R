@@ -809,6 +809,57 @@ observeEvent(input$submit_paste_apply, {
   rv$submit_grid_data <- grid
 })
 
+# =============================================================================
+# Submit Grid: Player Matching (blur-based)
+# =============================================================================
+
+# Attach blur handlers for submit grid player matching
+observe({
+  req(rv$submit_grid_data)
+  shinyjs::runjs("
+    $(document).off('blur.submitGrid').on('blur.submitGrid', 'input[id^=\"submit_player_\"]', function() {
+      var id = $(this).attr('id');
+      var rowNum = parseInt(id.replace('submit_player_', ''));
+      if (!isNaN(rowNum)) {
+        Shiny.setInputValue('submit_player_blur', {row: rowNum, name: $(this).val(), ts: Date.now()}, {priority: 'event'});
+      }
+    });
+  ")
+})
+
+observeEvent(input$submit_player_blur, {
+  req(rv$db_con, rv$submit_grid_data)
+
+  info <- input$submit_player_blur
+  row_num <- info$row
+  name <- trimws(info$name)
+
+  if (is.null(row_num) || is.na(row_num)) return()
+  if (row_num < 1 || row_num > nrow(rv$submit_grid_data)) return()
+
+  # Sync all inputs before modifying reactive
+  rv$submit_grid_data <- sync_grid_inputs(input, rv$submit_grid_data, "points", "submit_")
+
+  if (nchar(name) == 0) {
+    rv$submit_player_matches[[as.character(row_num)]] <- NULL
+    rv$submit_grid_data$match_status[row_num] <- ""
+    rv$submit_grid_data$matched_player_id[row_num] <- NA_integer_
+    rv$submit_grid_data$matched_member_number[row_num] <- NA_character_
+    return()
+  }
+
+  match_info <- match_player(name, rv$db_con)
+  rv$submit_player_matches[[as.character(row_num)]] <- match_info
+  rv$submit_grid_data$match_status[row_num] <- match_info$status
+  if (match_info$status == "matched") {
+    rv$submit_grid_data$matched_player_id[row_num] <- match_info$player_id
+    rv$submit_grid_data$matched_member_number[row_num] <- match_info$member_number
+  } else {
+    rv$submit_grid_data$matched_player_id[row_num] <- NA_integer_
+    rv$submit_grid_data$matched_member_number[row_num] <- NA_character_
+  }
+})
+
 
 # Track which row triggered the deck request modal
 rv$deck_request_row <- NULL
