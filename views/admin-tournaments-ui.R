@@ -105,5 +105,45 @@ admin_tournaments_ui <- tagList(
         )
       )
     )
+  ),
+  # Edit Results Grid (hidden initially, shown when View/Edit Results is clicked)
+  shinyjs::hidden(
+    div(
+      id = "edit_results_grid_section",
+      class = "admin-panel mt-3",
+
+      # Tournament summary bar
+      uiOutput("edit_grid_summary_bar"),
+
+      card(
+        card_header(
+          class = "d-flex justify-content-between align-items-center",
+          div(
+            class = "d-flex align-items-center gap-2",
+            span("Edit Results"),
+            uiOutput("edit_record_format_badge", inline = TRUE)
+          ),
+          div(
+            class = "d-flex align-items-center gap-2",
+            uiOutput("edit_filled_count", inline = TRUE),
+            actionButton("edit_paste_btn", "Paste from Spreadsheet",
+                         class = "btn-sm btn-outline-primary",
+                         icon = icon("clipboard"))
+          )
+        ),
+        card_body(
+          uiOutput("edit_grid_table")
+        )
+      ),
+
+      # Bottom navigation
+      div(
+        class = "d-flex justify-content-between mt-3",
+        actionButton("edit_grid_cancel", "Cancel", class = "btn-secondary",
+                     icon = icon("xmark")),
+        actionButton("edit_grid_save", "Save Changes", class = "btn-primary btn-lg",
+                     icon = icon("check"))
+      )
+    )
   )
 )
