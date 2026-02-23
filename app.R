@@ -421,6 +421,15 @@ ui <- page_fillable(
     tags$meta(name = "twitter:image", content = "https://digilab.cards/og-image.png"),
     # Standard meta description
     tags$meta(name = "description", content = "Track your local Digimon TCG tournament results, player standings, deck meta, and store events."),
+    # PWA manifest and theme
+    tags$link(rel = "manifest", href = "manifest.json"),
+    tags$meta(name = "theme-color", content = "#1a1a2e"),
+    # Favicon and app icons
+    tags$link(rel = "icon", type = "image/x-icon", href = "favicon.ico"),
+    tags$link(rel = "apple-touch-icon", href = "icons/icon-192.png"),
+    # iOS standalone mode
+    tags$meta(name = "apple-mobile-web-app-capable", content = "yes"),
+    tags$meta(name = "apple-mobile-web-app-status-bar-style", content = "black-translucent"),
     # Google Analytics
     tags$script(async = NA, src = "https://www.googletagmanager.com/gtag/js?id=G-NJ3SMG8HGG"),
     tags$script(HTML("
@@ -443,6 +452,8 @@ ui <- page_fillable(
     tags$script(src = "scene-selector.js"),
     # Pill toggle segmented controls
     tags$script(src = "pill-toggle.js"),
+    # PWA service worker registration
+    tags$script(HTML("if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}")),
     # JavaScript to handle active nav state and loading screen
     tags$script(HTML("
       $(document).on('click', '.nav-link-sidebar', function() {
