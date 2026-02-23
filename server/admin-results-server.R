@@ -357,7 +357,7 @@ output$tournament_summary_bar <- renderUI({
   req(rv$active_tournament_id, rv$db_con)
 
   info <- dbGetQuery(rv$db_con, "
-    SELECT s.name as store_name, t.event_date, t.event_type, t.player_count
+    SELECT s.name as store_name, t.event_date, t.event_type, t.format, t.player_count
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
     WHERE t.tournament_id = ?
@@ -373,6 +373,10 @@ output$tournament_summary_bar <- renderUI({
     span(class = "summary-item", format(as.Date(info$event_date), "%b %d, %Y")),
     span(class = "summary-divider", "|"),
     span(class = "summary-item", info$event_type),
+    if (!is.null(info$format) && !is.na(info$format) && nchar(info$format) > 0) tagList(
+      span(class = "summary-divider", "|"),
+      span(class = "summary-item", info$format)
+    ),
     span(class = "summary-divider", "|"),
     span(class = "summary-item", sprintf("%d players", info$player_count))
   )

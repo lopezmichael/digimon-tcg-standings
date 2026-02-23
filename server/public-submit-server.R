@@ -476,6 +476,14 @@ output$submit_summary_banner <- renderUI({
         span(paste("Parsed", parsed_count, "of", total_players, "players")))
   }
 
+  # Get format display name
+  format_name <- ""
+  if (!is.null(input$submit_format) && input$submit_format != "") {
+    fmt <- safe_query(rv$db_con, "SELECT display_name FROM formats WHERE format_id = ?",
+                      params = list(input$submit_format))
+    if (nrow(fmt) > 0) format_name <- fmt$display_name[1]
+  }
+
   div(
     class = "tournament-summary-bar mb-3",
     div(
@@ -487,8 +495,11 @@ output$submit_summary_banner <- renderUI({
           bsicons::bs_icon("calendar"),
           span(format(input$submit_date, "%b %d, %Y"))),
       div(class = "summary-item",
+          bsicons::bs_icon("controller"),
+          span(input$submit_event_type)),
+      div(class = "summary-item",
           bsicons::bs_icon("tag"),
-          span(input$submit_format)),
+          span(format_name)),
       div(class = "summary-item",
           bsicons::bs_icon("people"),
           span(total_players, " players")),
