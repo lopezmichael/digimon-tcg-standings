@@ -2,6 +2,13 @@
 # Admin: Edit Tournaments Server Logic
 # =============================================================================
 
+# Edit grid state
+rv$edit_grid_data <- NULL
+rv$edit_record_format <- "points"
+rv$edit_player_matches <- list()
+rv$edit_deleted_result_ids <- c()
+rv$edit_grid_tournament_id <- NULL
+
 # Update edit form dropdowns when data changes
 observe({
   req(rv$db_con)
@@ -504,21 +511,113 @@ observeEvent(input$cancel_edit_tournament, {
   shinyjs::hide("view_results_btn_container")
 }, priority = -1)
 
-# Open results modal
+# Open edit results grid
 observeEvent(input$view_edit_results, {
   req(rv$db_con, input$editing_tournament_id)
 
-  # Store the tournament ID for modal operations
-  rv$modal_tournament_id <- as.integer(input$editing_tournament_id)
+  tournament_id <- as.integer(input$editing_tournament_id)
+  rv$edit_grid_tournament_id <- tournament_id
 
-  # Show modal (dropdowns populated after modal renders)
-  show_results_editor()
+  # Load existing results into grid
+  grid <- load_grid_from_results(tournament_id, rv$db_con)
 
-  # Update dropdowns for add form (inside results modal)
-  updateSelectizeInput(session, "modal_new_player",
-                       choices = get_player_choices(rv$db_con))
-  updateSelectizeInput(session, "modal_new_deck",
-                       choices = get_archetype_choices(rv$db_con))
+  # Infer record format: if any row has ties > 0 or wins don't cleanly convert to points, use WLT
+  has_ties <- any(grid$ties > 0)
+  has_irregular <- any((grid$wins * 3L + grid$ties) != grid$points & nchar(trimws(grid$player_name)) > 0)
+  rv$edit_record_format <- if (has_ties || has_irregular) "wlt" else "points"
+
+  # Add blank rows to allow adding more results (pad to at least current count + 4)
+  current_count <- nrow(grid)
+  pad_count <- max(current_count + 4, 8)
+  if (current_count < pad_count) {
+    extra <- init_grid_data(pad_count - current_count)
+    extra$placement <- seq(current_count + 1, pad_count)
+    grid <- rbind(grid, extra)
+  }
+
+  rv$edit_grid_data <- grid
+  rv$edit_deleted_result_ids <- c()
+
+  # Build player matches from loaded data
+  rv$edit_player_matches <- list()
+  for (i in seq_len(current_count)) {
+    if (nchar(trimws(grid$player_name[i])) > 0) {
+      rv$edit_player_matches[[as.character(i)]] <- list(
+        status = "matched",
+        player_id = grid$matched_player_id[i],
+        member_number = grid$matched_member_number[i]
+      )
+    }
+  }
+
+  shinyjs::show("edit_results_grid_section")
+})
+
+# Edit grid rendering
+output$edit_grid_table <- renderUI({
+  req(rv$edit_grid_data)
+
+  grid <- rv$edit_grid_data
+  record_format <- rv$edit_record_format %||% "points"
+
+  # Check if release event
+  is_release <- FALSE
+  if (!is.null(rv$edit_grid_tournament_id) && !is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+    t_info <- dbGetQuery(rv$db_con, "SELECT event_type FROM tournaments WHERE tournament_id = ?",
+                         params = list(rv$edit_grid_tournament_id))
+    if (nrow(t_info) > 0) is_release <- t_info$event_type[1] == "release_event"
+  }
+
+  deck_choices <- build_deck_choices(rv$db_con)
+
+  render_grid_ui(grid, record_format, is_release, deck_choices, rv$edit_player_matches, "edit_")
+})
+
+# Edit grid summary bar
+output$edit_grid_summary_bar <- renderUI({
+  req(rv$db_con, rv$edit_grid_tournament_id)
+
+  tournament <- dbGetQuery(rv$db_con, "
+    SELECT t.*, s.name as store_name
+    FROM tournaments t
+    LEFT JOIN stores s ON t.store_id = s.store_id
+    WHERE t.tournament_id = ?
+  ", params = list(rv$edit_grid_tournament_id))
+
+  if (nrow(tournament) == 0) return(NULL)
+
+  div(
+    class = "tournament-summary-bar mb-3",
+    div(class = "summary-detail", bsicons::bs_icon("shop"), tournament$store_name),
+    div(class = "summary-detail", bsicons::bs_icon("calendar"), as.character(tournament$event_date)),
+    div(class = "summary-detail", bsicons::bs_icon("tag"), tournament$format),
+    div(class = "summary-detail", bsicons::bs_icon("people"), paste(tournament$player_count, "players"))
+  )
+})
+
+# Edit grid format badge
+output$edit_record_format_badge <- renderUI({
+  format <- rv$edit_record_format %||% "points"
+  label <- if (format == "points") "Points mode" else "W-L-T mode"
+  span(class = "badge bg-info", label)
+})
+
+# Edit grid filled count
+output$edit_filled_count <- renderUI({
+  req(rv$edit_grid_data)
+  grid <- rv$edit_grid_data
+  filled <- sum(nchar(trimws(grid$player_name)) > 0)
+  total <- nrow(grid)
+  span(class = "text-muted small", sprintf("Filled: %d/%d", filled, total))
+})
+
+# Cancel edit grid
+observeEvent(input$edit_grid_cancel, {
+  shinyjs::hide("edit_results_grid_section")
+  rv$edit_grid_data <- NULL
+  rv$edit_player_matches <- list()
+  rv$edit_deleted_result_ids <- c()
+  rv$edit_grid_tournament_id <- NULL
 })
 
 # Results modal summary
