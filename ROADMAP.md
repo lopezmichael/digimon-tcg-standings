@@ -18,7 +18,7 @@ This document outlines the planned features, improvements, and bug fixes for the
 | SEO1 | SEO | Crawlable static pages (replaces iframe-trapped content) |
 | SEO2 | SEO | Structured data (JSON-LD) on static site |
 | SEO3 | SEO | Search Console integration |
-| REV2 | REVIEW | Review OCR setup and screenshot parsing pipeline — audit accuracy, error handling, and UX |
+| REV2 | ~~REVIEW~~ | ~~Review OCR setup and screenshot parsing pipeline — audit accuracy, error handling, and UX~~ ✅ Layout-aware parser (95% accuracy), rank inference, points validation, noise filtering |
 
 **Website Architecture:**
 - digilab.cards becomes a hub: `/app` (Shiny iframe), `/about`, `/faq`, `/organizers`, `/meta-report` (future)
@@ -162,6 +162,10 @@ The React PoC on `explore/react-rewrite` branch serves as a reference for future
 ## Completed
 
 ### v0.28.0 - Content Updates, Error Tracking & Admin UX
+- OCR layout-aware parser: bounding box analysis replaces line-based text parsing (73% → 95% accuracy)
+  - Medal icon rank inference (ranks 1-3), points validation/truncation, expanded noise filtering
+  - Batch test harness with 7 ground truth folders (11 screenshots, 106 expected players)
+  - Design doc: `docs/plans/2026-02-22-ocr-layout-parser-design.md`
 - FAQ page rewrite: 5 categories, 22 questions covering all features through v0.27
 - About page rewrite: multi-region language, Active Scenes stat, Discord link
 - For Organizers page rewrite: Limitless Integration section, Community Links section, scene request flow
