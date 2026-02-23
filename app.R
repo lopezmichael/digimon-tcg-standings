@@ -427,8 +427,8 @@ ui <- page_fillable(
     # Favicon and app icons
     tags$link(rel = "icon", type = "image/x-icon", href = "favicon.ico"),
     tags$link(rel = "apple-touch-icon", href = "icons/icon-192.png"),
-    # iOS standalone mode
-    tags$meta(name = "apple-mobile-web-app-capable", content = "yes"),
+    # Standalone mode (iOS + Android)
+    tags$meta(name = "mobile-web-app-capable", content = "yes"),
     tags$meta(name = "apple-mobile-web-app-status-bar-style", content = "black-translucent"),
     # Google Analytics
     tags$script(async = NA, src = "https://www.googletagmanager.com/gtag/js?id=G-NJ3SMG8HGG"),
@@ -514,12 +514,8 @@ ui <- page_fillable(
         }, 200);
       });
 
-      // Inject loading overlay into body on document ready (avoids prependContent warning)
-      $(document).ready(function() {
-        // Set initial active tab on mobile bar
-        $('#mob_dashboard .tab-bar-item').addClass('active');
-
-        var agumonSvg = '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\" viewBox=\"0 0 24 24\">' +
+      // Agumon SVG string (shared by loading overlay and disconnect overlay)
+      var agumonSvg = '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\" viewBox=\"0 0 24 24\">' +
               '<g transform=\"matrix(0.83 0 0 0.83 12 12)\"><g>' +
                 '<g transform=\"matrix(1 0 0 1 -1.37 -5.11)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-10.63, -6.89)\" d=\"M 11.7644 9.4961 L 9.18799 10.7838 C 8.91075 10.9225 8.60501 10.9948 8.29501 10.9948 L 4.24725 10.9948 C 3.80632 10.9948 3.37002 10.905 2.96493 10.7308 C 2.55985 10.5567 2.19447 10.3018 1.89107 9.98189 C 1.58767 9.66195 1.3526 9.28356 1.20018 8.86981 C 1.04777 8.45606 0.981209 8.01561 1.00456 7.57529 C 1.07944 6.7239 1.47496 5.93274 2.11109 5.36191 C 2.74721 4.79109 3.57642 4.48324 4.43093 4.50064 L 7.99897 4.50064 C 8.45142 3.62999 9.09522 2.87314 9.88204 2.28691 C 10.6689 1.70068 11.5783 1.3003 12.542 1.11583 C 13.5057 0.931367 14.4986 0.967605 15.4463 1.22183 C 16.394 1.47605 17.2718 1.94164 18.0138 2.58367 C 18.7558 3.22569 19.3427 4.02746 19.7305 4.92877 C 20.1183 5.83009 20.2969 6.80755 20.2528 7.78776 C 20.2088 8.76797 19.9433 9.72547 19.4762 10.5884 C 19.0091 11.4513 18.3527 12.1972 17.5561 12.7701\"/></g>' +
                 '<g transform=\"matrix(1 0 0 1 1.54 -6.6)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; fill: none;\" transform=\" translate(-13.54, -5.4)\" d=\"M 13.7203 5.76587 C 13.518 5.76587 13.3539 5.60184 13.3539 5.39949 C 13.3539 5.19714 13.518 5.03311 13.7203 5.03311\"/></g>' +
@@ -532,6 +528,11 @@ ui <- page_fillable(
                 '<g transform=\"matrix(1 0 0 1 3.05 3.98)\"><path style=\"stroke: #F7941D; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none;\" transform=\" translate(-15.05, -15.98)\" d=\"M 16.8282 16.4641 L 15.5581 17.2614 C 15.3913 17.3659 15.2056 17.4366 15.0115 17.4694 C 14.8173 17.5022 14.6187 17.4964 14.4268 17.4524 C 14.2349 17.4084 14.0536 17.327 13.8931 17.213 C 13.7327 17.0989 13.5963 16.9543 13.4917 16.7875 C 13.3872 16.6207 13.3165 16.435 13.2837 16.2409 C 13.2509 16.0467 13.2567 15.8481 13.3007 15.6562 C 13.3447 15.4643 13.4261 15.283 13.5402 15.1225 C 13.6542 14.9621 13.7988 14.8257 13.9656 14.7211 L 14.3564 14.4779\"/></g>' +
               '</g></g>' +
             '</svg>';
+
+      // Inject loading overlay into body on document ready (avoids prependContent warning)
+      $(document).ready(function() {
+        // Set initial active tab on mobile bar
+        $('#mob_dashboard .tab-bar-item').addClass('active');
 
         var loadingHTML = '<div class=\"app-loading-overlay\">' +
           '<div class=\"loading-scanline\"></div>' +
