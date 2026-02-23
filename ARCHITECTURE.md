@@ -121,12 +121,34 @@ Pattern: `selected_{entity}_id` for single selection, `selected_{entity}_ids` fo
 | `active_tournament_id` | integer | Tournament being edited in wizard |
 | `current_results` | data.frame | Results being entered in wizard |
 | `duplicate_tournament` | data.frame | Tournament info for duplicate flow |
-| `modal_tournament_id` | integer | Tournament ID for results edit modal |
 | `editing_store` | list | Store being edited (edit mode) |
 | `editing_archetype` | list | Archetype being edited (edit mode) |
 | `card_search_results` | data.frame | Card search results for deck management |
 | `card_search_page` | integer | Current page in card search pagination |
 | `schedule_to_delete_id` | integer | Schedule ID pending delete confirmation |
+
+### Admin Grid State
+
+Declared at top of respective server files. Both grids use shared functions from `R/admin_grid.R`.
+
+**Enter Results** (prefix: `admin_`, declared in `admin-results-server.R`):
+
+| Name | Type | Description |
+|------|------|-------------|
+| `admin_grid_data` | data.frame | Grid rows for bulk result entry |
+| `admin_record_format` | string | "points" or "wlt" |
+| `admin_player_matches` | list | Player match status per row |
+| `admin_deck_request_row` | integer | Row requesting a new deck |
+
+**Edit Tournaments** (prefix: `edit_`, declared in `admin-tournaments-server.R`):
+
+| Name | Type | Description |
+|------|------|-------------|
+| `edit_grid_data` | data.frame | Grid rows for editing existing results |
+| `edit_record_format` | string | "points" or "wlt" (inferred from data) |
+| `edit_player_matches` | list | Player match status per row |
+| `edit_deleted_result_ids` | integer[] | Result IDs marked for DB deletion |
+| `edit_grid_tournament_id` | integer | Tournament being edited in grid |
 
 ### Refresh Triggers
 
@@ -138,7 +160,6 @@ Pattern: `{scope}_refresh` - increment to trigger reactive invalidation.
 | `results_refresh` | integer | Refresh results table in wizard |
 | `format_refresh` | integer | Refresh format dropdowns |
 | `tournament_refresh` | integer | Refresh tournament tables |
-| `modal_results_refresh` | integer | Refresh results in edit modal |
 | `schedules_refresh` | integer | Refresh store schedules table in admin |
 
 **Usage:**

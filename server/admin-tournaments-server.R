@@ -102,14 +102,16 @@ output$admin_tournament_list <- renderReactable({
     WHERE 1=1 %s
   ", scene_filter)
 
+  search_params <- list()
   if (nchar(search) > 0) {
-    query <- paste0(query, " AND LOWER(s.name) LIKE LOWER('%", search, "%')")
+    query <- paste0(query, " AND LOWER(s.name) LIKE LOWER(?)")
+    search_params <- list(paste0("%", search, "%"))
   }
 
   query <- paste0(query, " GROUP BY t.tournament_id, s.name, t.event_date, t.event_type, t.format, t.player_count, t.rounds
                           ORDER BY t.event_date DESC")
 
-  data <- dbGetQuery(rv$db_con, query)
+  data <- dbGetQuery(rv$db_con, query, params = search_params)
 
   if (nrow(data) == 0) {
     return(reactable(data.frame(Message = "No tournaments found")))
