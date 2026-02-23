@@ -870,6 +870,174 @@ observeEvent(input$edit_deck_request_submit, {
   rv$edit_grid_data <- rv$edit_grid_data
 })
 
+# =============================================================================
+# Edit Grid: Save Handler (Update/Insert/Delete Diff)
+# =============================================================================
+
+observeEvent(input$edit_grid_save, {
+  req(rv$is_admin, rv$db_con, rv$edit_grid_tournament_id)
+
+  rv$edit_grid_data <- sync_grid_inputs(input, rv$edit_grid_data, rv$edit_record_format %||% "points", "edit_")
+  grid <- rv$edit_grid_data
+  record_format <- rv$edit_record_format %||% "points"
+  tournament_id <- rv$edit_grid_tournament_id
+
+  # Get tournament info
+  tournament <- dbGetQuery(rv$db_con, "
+    SELECT tournament_id, event_type, rounds FROM tournaments WHERE tournament_id = ?
+  ", params = list(tournament_id))
+
+  if (nrow(tournament) == 0) {
+    notify("Tournament not found", type = "error")
+    return()
+  }
+
+  rounds <- tournament$rounds
+  is_release <- tournament$event_type == "release_event"
+
+  # Get UNKNOWN archetype ID
+  unknown_row <- dbGetQuery(rv$db_con, "SELECT archetype_id FROM deck_archetypes WHERE archetype_name = 'UNKNOWN' LIMIT 1")
+  unknown_id <- if (nrow(unknown_row) > 0) unknown_row$archetype_id[1] else NA_integer_
+
+  if (is_release && is.na(unknown_id)) {
+    notify("UNKNOWN archetype not found in database", type = "error")
+    return()
+  }
+
+  # Separate filled vs empty rows
+  filled_rows <- grid[nchar(trimws(grid$player_name)) > 0, ]
+
+  if (nrow(filled_rows) == 0) {
+    notify("No results to save. Enter at least one player name.", type = "warning")
+    return()
+  }
+
+  tryCatch({
+    update_count <- 0L
+    insert_count <- 0L
+    delete_count <- 0L
+
+    # 1. DELETE: rows that were deleted via X button
+    for (rid in rv$edit_deleted_result_ids) {
+      dbExecute(rv$db_con, "DELETE FROM results WHERE result_id = ?", params = list(rid))
+      delete_count <- delete_count + 1L
+    }
+
+    # 2. DELETE: original rows that are now empty (user cleared the name)
+    empty_rows <- grid[nchar(trimws(grid$player_name)) == 0 & !is.na(grid$result_id), ]
+    for (idx in seq_len(nrow(empty_rows))) {
+      dbExecute(rv$db_con, "DELETE FROM results WHERE result_id = ?",
+                params = list(empty_rows$result_id[idx]))
+      delete_count <- delete_count + 1L
+    }
+
+    # 3. UPDATE or INSERT filled rows
+    max_result_id <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(result_id), 0) as max_id FROM results")$max_id
+
+    for (idx in seq_len(nrow(filled_rows))) {
+      row <- filled_rows[idx, ]
+      name <- trimws(row$player_name)
+
+      # Resolve player
+      player <- dbGetQuery(rv$db_con, "
+        SELECT player_id FROM players WHERE LOWER(display_name) = LOWER(?) LIMIT 1
+      ", params = list(name))
+
+      if (nrow(player) > 0) {
+        player_id <- player$player_id
+      } else {
+        max_pid <- dbGetQuery(rv$db_con, "SELECT COALESCE(MAX(player_id), 0) as max_id FROM players")$max_id
+        player_id <- max_pid + 1
+        dbExecute(rv$db_con, "INSERT INTO players (player_id, display_name) VALUES (?, ?)",
+                  params = list(player_id, name))
+      }
+
+      # Convert record
+      if (record_format == "points") {
+        pts <- row$points
+        wins <- pts %/% 3L
+        ties <- pts %% 3L
+        losses <- max(0L, rounds - wins - ties)
+      } else {
+        wins <- row$wins
+        losses <- row$losses
+        ties <- row$ties
+      }
+
+      # Resolve deck
+      pending_deck_request_id <- NA_integer_
+      if (is_release) {
+        archetype_id <- unknown_id
+      } else {
+        deck_input <- input[[paste0("edit_deck_", row$placement)]]
+        if (is.null(deck_input) || nchar(deck_input) == 0 || deck_input == "__REQUEST_NEW__") {
+          archetype_id <- unknown_id
+        } else if (grepl("^pending_", deck_input)) {
+          pending_deck_request_id <- as.integer(sub("^pending_", "", deck_input))
+          archetype_id <- unknown_id
+        } else {
+          archetype_id <- as.integer(deck_input)
+        }
+      }
+
+      if (!is.na(row$result_id)) {
+        # UPDATE existing result
+        dbExecute(rv$db_con, "
+          UPDATE results
+          SET player_id = ?, archetype_id = ?, pending_deck_request_id = ?,
+              placement = ?, wins = ?, losses = ?, ties = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE result_id = ?
+        ", params = list(player_id, archetype_id, pending_deck_request_id,
+                         row$placement, wins, losses, ties, row$result_id))
+        update_count <- update_count + 1L
+      } else {
+        # INSERT new result
+        max_result_id <- max_result_id + 1
+        dbExecute(rv$db_con, "
+          INSERT INTO results (result_id, tournament_id, player_id, archetype_id,
+                               pending_deck_request_id, placement, wins, losses, ties)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ", params = list(max_result_id, tournament_id, player_id, archetype_id,
+                         pending_deck_request_id, row$placement, wins, losses, ties))
+        insert_count <- insert_count + 1L
+      }
+    }
+
+    # Update player count on tournament
+    dbExecute(rv$db_con, "
+      UPDATE tournaments SET player_count = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE tournament_id = ?
+    ", params = list(nrow(filled_rows), tournament_id))
+
+    # Recalculate ratings
+    recalculate_ratings_cache(rv$db_con)
+    rv$data_refresh <- (rv$data_refresh %||% 0) + 1
+
+    # Build summary message
+    parts <- c()
+    if (update_count > 0) parts <- c(parts, sprintf("%d updated", update_count))
+    if (insert_count > 0) parts <- c(parts, sprintf("%d added", insert_count))
+    if (delete_count > 0) parts <- c(parts, sprintf("%d removed", delete_count))
+    msg <- paste("Results saved!", paste(parts, collapse = ", "))
+
+    notify(msg, type = "message", duration = 5)
+
+    # Collapse grid
+    shinyjs::hide("edit_results_grid_section")
+    rv$edit_grid_data <- NULL
+    rv$edit_player_matches <- list()
+    rv$edit_deleted_result_ids <- c()
+    rv$edit_grid_tournament_id <- NULL
+
+    # Refresh the tournament list table
+    rv$tournament_refresh <- (rv$tournament_refresh %||% 0) + 1
+
+  }, error = function(e) {
+    notify(paste("Error saving results:", e$message), type = "error")
+  })
+})
+
 # Results modal summary
 output$results_modal_summary <- renderUI({
   req(rv$db_con, rv$modal_tournament_id)
