@@ -136,10 +136,17 @@ complete_ocr_processing <- function(combined, total_players, total_rounds, parse
   }
 
   if (max_rank > total_players) {
-    # Screenshots show more players than declared — auto-correct upward
-    message("[SUBMIT] Auto-correcting player count: ", total_players, " -> ", max_rank,
-            " (screenshots show rank ", max_rank, ")")
-    total_players <- max_rank
+    # Sanity check: if max_rank is wildly larger than actual parsed rows,
+    # the parser likely misread a number (e.g., "96" from username "Legobuilder96")
+    if (max_rank > parsed_count * 2 && max_rank > parsed_count + 8) {
+      message("[SUBMIT] Suspicious max_rank=", max_rank, " with only ", parsed_count,
+              " parsed players — ignoring (likely OCR noise)")
+    } else {
+      # Screenshots show more players than declared — auto-correct upward
+      message("[SUBMIT] Auto-correcting player count: ", total_players, " -> ", max_rank,
+              " (screenshots show rank ", max_rank, ")")
+      total_players <- max_rank
+    }
   }
 
   # Enforce exactly total_players rows
@@ -995,6 +1002,14 @@ observeEvent(input$submit_tournament, {
     results <- rv$submit_ocr_results
   }
 
+  # Filter out blank rows before submission
+  results <- results[!is.na(results$username) & trimws(results$username) != "", ]
+
+  if (nrow(results) == 0) {
+    notify("No results to submit — all rows are blank.", type = "warning")
+    return()
+  }
+
   # Check for duplicate tournament
   existing <- safe_query(rv$db_con, "
     SELECT tournament_id FROM tournaments
@@ -1018,7 +1033,7 @@ observeEvent(input$submit_tournament, {
     # Create tournament - must generate ID since DuckDB doesn't auto-increment
     tournament_id <- next_id(rv$db_con, "tournaments", "tournament_id")
 
-    safe_execute(rv$db_con, "
+    DBI::dbExecute(rv$db_con, "
       INSERT INTO tournaments (tournament_id, store_id, event_date, event_type, format, player_count, rounds)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     ", params = list(
@@ -1071,7 +1086,7 @@ observeEvent(input$submit_tournament, {
       if (!is.na(row$matched_player_id) && row$match_status %in% c("matched", "possible")) {
         player_id <- row$matched_player_id
         if (!is.na(member_number)) {
-          safe_execute(rv$db_con, "
+          DBI::dbExecute(rv$db_con, "
             UPDATE players SET member_number = ?
             WHERE player_id = ? AND member_number IS NULL
           ", params = list(member_number, player_id))
@@ -1086,14 +1101,14 @@ observeEvent(input$submit_tournament, {
         if (nrow(player) == 0) {
           # Generate player_id since DuckDB doesn't auto-increment
           player_id <- next_id(rv$db_con, "players", "player_id")
-          safe_execute(rv$db_con, "
+          DBI::dbExecute(rv$db_con, "
             INSERT INTO players (player_id, display_name, member_number)
             VALUES (?, ?, ?)
           ", params = list(player_id, username, member_number))
         } else {
           player_id <- player$player_id[1]
           if (!is.na(member_number)) {
-            safe_execute(rv$db_con, "
+            DBI::dbExecute(rv$db_con, "
               UPDATE players SET member_number = ?
               WHERE player_id = ? AND member_number IS NULL
             ", params = list(member_number, player_id))
@@ -1109,7 +1124,7 @@ observeEvent(input$submit_tournament, {
 
       # Generate result_id since DuckDB doesn't auto-increment
       result_id <- next_id(rv$db_con, "results", "result_id")
-      safe_execute(rv$db_con, "
+      DBI::dbExecute(rv$db_con, "
         INSERT INTO results (result_id, tournament_id, player_id, archetype_id, pending_deck_request_id, placement, wins, losses, ties)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ", params = list(
@@ -1161,6 +1176,13 @@ observeEvent(input$submit_tournament, {
 
   }, error = function(e) {
     tryCatch(dbExecute(rv$db_con, "ROLLBACK"), error = function(re) NULL)
+    message("[SUBMIT] Transaction error: ", conditionMessage(e))
+    if (sentry_enabled) {
+      tryCatch(
+        sentryR::capture_exception(e, tags = sentry_context_tags()),
+        error = function(se) NULL
+      )
+    }
     notify(paste("Error submitting tournament:", e$message), type = "error")
   })
 })
