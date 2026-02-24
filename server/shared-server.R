@@ -8,17 +8,18 @@
 # ---------------------------------------------------------------------------
 
 observe({
-  rv$db_con <- connect_db()
+  con <- connect_db()
+  rv$db_con <- con
 
   # Once database is connected, check and populate ratings cache if empty
-  if (!is.null(rv$db_con) && dbIsValid(rv$db_con)) {
+  if (!is.null(con) && dbIsValid(con)) {
     # Check if ratings cache is empty and populate if needed
     tryCatch({
-      cache_count <- DBI::dbGetQuery(rv$db_con,
+      cache_count <- DBI::dbGetQuery(con,
         "SELECT COUNT(*) as n FROM player_ratings_cache")$n
       if (is.na(cache_count) || cache_count == 0) {
         message("[startup] Ratings cache empty, populating...")
-        recalculate_ratings_cache(rv$db_con)
+        recalculate_ratings_cache(con)
         message("[startup] Ratings cache populated")
       }
     }, error = function(e) {
@@ -26,7 +27,7 @@ observe({
     })
 
     # Check if admin_users table needs bootstrap (first-ever setup)
-    admin_count <- safe_query(rv$db_con,
+    admin_count <- safe_query(con,
       "SELECT COUNT(*) as n FROM admin_users",
       default = data.frame(n = 0))
     if (nrow(admin_count) > 0 && admin_count$n[1] == 0) {
@@ -774,14 +775,14 @@ safe_query <- function(db_con, query, params = NULL, default = data.frame(), max
     }, error = function(e) {
       msg <- conditionMessage(e)
 
-      # On MotherDuck "catalog changed" errors, reconnect and retry
+      # On MotherDuck "catalog changed" errors, get a fresh connection and retry.
+      # IMPORTANT: Do NOT set rv$db_con here — that triggers the startup observer.
       if (attempt < max_retries && grepl("catalog", msg, ignore.case = TRUE)) {
         message("[safe_query] Catalog changed (attempt ", attempt, "/", max_retries, "), reconnecting...")
         tryCatch({
           new_con <- connect_db()
-          rv$db_con <- new_con
           con <<- new_con
-          message("[safe_query] Reconnected successfully")
+          message("[safe_query] Reconnected, retrying...")
         }, error = function(re) {
           message("[safe_query] Reconnection failed: ", conditionMessage(re))
         })
@@ -803,7 +804,6 @@ safe_query <- function(db_con, query, params = NULL, default = data.frame(), max
         message("[safe_query] Connection invalid, attempting reconnection...")
         tryCatch({
           new_con <- connect_db()
-          rv$db_con <- new_con
           con <<- new_con
           message("[safe_query] Reconnected successfully")
           if (!is.null(params) && length(params) > 0) {
@@ -851,15 +851,15 @@ safe_execute <- function(db_con, query, params = NULL, max_retries = 3) {
         DBI::dbExecute(con, query)
       }
     }, error = function(e) {
-      # On MotherDuck "catalog changed" errors, reconnect and retry
+      # On MotherDuck "catalog changed" errors, get a fresh connection and retry.
+      # IMPORTANT: Do NOT set rv$db_con here — that triggers the startup observer
+      # which creates yet another connection, causing a cascade of catalog changes.
       if (attempt < max_retries && grepl("catalog", conditionMessage(e), ignore.case = TRUE)) {
         message("[safe_execute] Catalog changed (attempt ", attempt, "/", max_retries, "), reconnecting...")
         tryCatch({
           new_con <- connect_db()
-          # Update rv$db_con so the rest of the app uses the fresh connection
-          rv$db_con <- new_con
           con <<- new_con
-          message("[safe_execute] Reconnected successfully")
+          message("[safe_execute] Reconnected, retrying...")
         }, error = function(re) {
           message("[safe_execute] Reconnection failed: ", conditionMessage(re))
         })
@@ -875,7 +875,14 @@ safe_execute <- function(db_con, query, params = NULL, max_retries = 3) {
       }
       0
     })
-    if (!identical(result, "__RETRY__")) return(result)
+    if (!identical(result, "__RETRY__")) {
+      # If we reconnected, update rv$db_con AFTER the successful write
+      if (!identical(con, db_con)) {
+        message("[safe_execute] Updating app connection after successful write")
+        rv$db_con <- con
+      }
+      return(result)
+    }
   }
   0
 }
