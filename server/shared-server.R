@@ -932,8 +932,8 @@ observeEvent(input$clear_community_filter, {
   # Reset filters to dynamic default for current scene
  tournament_count <- count_tournaments_for_scope(db_pool, rv$current_scene, NULL)
   default_min <- get_default_min_events(tournament_count)
-  session$sendCustomMessage("setPillToggle", list(inputId = "players_min_events", value = default_min))
-  session$sendCustomMessage("setPillToggle", list(inputId = "meta_min_entries", value = default_min))
+  session$sendCustomMessage("resetPillToggle", list(inputId = "players_min_events", value = default_min))
+  session$sendCustomMessage("resetPillToggle", list(inputId = "meta_min_entries", value = default_min))
   notify("Community filter cleared", type = "message", duration = 2)
 })
 

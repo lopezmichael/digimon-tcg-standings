@@ -112,8 +112,8 @@ observeEvent(input$url_initial, {
       shinyjs::delay(150, {
         tournament_count <- count_tournaments_for_scope(db_pool, NULL, params$community)
         default_min <- get_default_min_events(tournament_count)
-        session$sendCustomMessage("setPillToggle", list(inputId = "players_min_events", value = default_min))
-        session$sendCustomMessage("setPillToggle", list(inputId = "meta_min_entries", value = default_min))
+        session$sendCustomMessage("resetPillToggle", list(inputId = "players_min_events", value = default_min))
+        session$sendCustomMessage("resetPillToggle", list(inputId = "meta_min_entries", value = default_min))
       })
     }
   }

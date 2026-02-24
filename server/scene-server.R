@@ -95,8 +95,8 @@ observeEvent(input$scene_from_storage, {
       shinyjs::delay(200, {
         tournament_count <- count_tournaments_for_scope(db_pool, stored$scene, NULL)
         default_min <- get_default_min_events(tournament_count)
-        session$sendCustomMessage("setPillToggle", list(inputId = "players_min_events", value = default_min))
-        session$sendCustomMessage("setPillToggle", list(inputId = "meta_min_entries", value = default_min))
+        session$sendCustomMessage("resetPillToggle", list(inputId = "players_min_events", value = default_min))
+        session$sendCustomMessage("resetPillToggle", list(inputId = "meta_min_entries", value = default_min))
       })
     }
   }
@@ -139,8 +139,8 @@ observeEvent(input$scene_selector, {
   # Update min_events default based on scene's tournament count
   tournament_count <- count_tournaments_for_scope(db_pool, new_scene, NULL)
   default_min <- get_default_min_events(tournament_count)
-  session$sendCustomMessage("setPillToggle", list(inputId = "players_min_events", value = default_min))
-  session$sendCustomMessage("setPillToggle", list(inputId = "meta_min_entries", value = default_min))
+  session$sendCustomMessage("resetPillToggle", list(inputId = "players_min_events", value = default_min))
+  session$sendCustomMessage("resetPillToggle", list(inputId = "meta_min_entries", value = default_min))
 }, ignoreInit = TRUE)
 
 # -----------------------------------------------------------------------------
