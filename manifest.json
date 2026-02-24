@@ -4348,7 +4348,7 @@
   },
   "files": {
     ".claude/settings.local.json": {
-      "checksum": "f5e9f1d1f4ce3787d574e8d14ce79a81"
+      "checksum": "c3e8606063d9cc29157fcb489afb41ae"
     },
     ".env": {
       "checksum": "75647938b53bd9d90e5e53bc3a85c1dc"
@@ -4363,7 +4363,7 @@
       "checksum": "2209b31b91119dd05fb80ff1a2c13be2"
     },
     ".Rprofile": {
-      "checksum": "76a13b4cdf6ea73f8db01d5a294faf5b"
+      "checksum": "fa7637b14ad6a31ea80b76e60ba498d8"
     },
     ".vscode/settings.json": {
       "checksum": "4aa85c6acde752675b31b354987521ce"
@@ -4372,7 +4372,7 @@
       "checksum": "adfe9ebb234cf98011117227749e7b13"
     },
     "app.R": {
-      "checksum": "dad54f3f6282d55b9c39f54e8cd4ba7b"
+      "checksum": "4291a425569b03636e20f0943cd2ab86"
     },
     "ARCHITECTURE.md": {
       "checksum": "2e2283a0d8ac88aeeb3993e6d590acea"
@@ -5494,7 +5494,7 @@
       "checksum": "b357ed4c70272f6ea47e3ca8e72b4da6"
     },
     "server/admin-stores-server.R": {
-      "checksum": "add52ef536e505eec94cc633ddf7eac7"
+      "checksum": "3f1151d5ac29927f478419635b6338d5"
     },
     "server/admin-tournaments-server.R": {
       "checksum": "6568351faec876387315974c3185bf8d"
