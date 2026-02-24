@@ -349,8 +349,13 @@ observe({
   rv$current_nav
   req(db_pool, rv$is_admin)
   choices <- get_player_choices(db_pool)
-  updateSelectizeInput(session, "merge_source_player", choices = choices)
-  updateSelectizeInput(session, "merge_target_player", choices = choices)
+  # Preserve current selections when repopulating choices
+  current_source <- isolate(input$merge_source_player)
+  current_target <- isolate(input$merge_target_player)
+  updateSelectizeInput(session, "merge_source_player", choices = choices,
+                       selected = current_source)
+  updateSelectizeInput(session, "merge_target_player", choices = choices,
+                       selected = current_target)
 })
 
 # Merge preview

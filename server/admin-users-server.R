@@ -21,8 +21,11 @@ observe({
     default = data.frame())
   if (nrow(scenes) > 0) {
     choices <- setNames(as.character(scenes$scene_id), scenes$display_name)
+    # Preserve current selection when repopulating choices
+    current_selection <- isolate(input$admin_scene)
     updateSelectInput(session, "admin_scene",
-                      choices = c("Select scene..." = "", choices))
+                      choices = c("Select scene..." = "", choices),
+                      selected = current_selection)
   }
 })
 

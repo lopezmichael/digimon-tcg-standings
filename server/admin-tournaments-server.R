@@ -16,13 +16,17 @@ observe({
 
   rv$format_refresh
 
-  # Update store dropdown for edit form
+  # Update store dropdown for edit form (preserve current selection)
+  current_store <- isolate(input$edit_tournament_store)
   updateSelectInput(session, "edit_tournament_store",
-                    choices = get_store_choices(db_pool, include_none = TRUE))
+                    choices = get_store_choices(db_pool, include_none = TRUE),
+                    selected = current_store)
 
-  # Update format dropdown for edit form
+  # Update format dropdown for edit form (preserve current selection)
   format_choices <- get_format_choices(db_pool)
-  updateSelectInput(session, "edit_tournament_format", choices = format_choices)
+  current_format <- isolate(input$edit_tournament_format)
+  updateSelectInput(session, "edit_tournament_format", choices = format_choices,
+                    selected = current_format)
 })
 
 # Auto-select tournament when navigated from duplicate modal

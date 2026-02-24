@@ -623,8 +623,11 @@ observe({
   rv$current_nav
   rv$data_refresh
   req(rv$is_admin)
+  # Preserve current selection when repopulating choices
+  current_selection <- isolate(input$tournament_store)
   updateSelectInput(session, "tournament_store",
-                    choices = get_store_choices(db_pool, include_none = TRUE))
+                    choices = get_store_choices(db_pool, include_none = TRUE),
+                    selected = current_selection)
 })
 
 # Handle logout
@@ -841,12 +844,25 @@ observe({
     "Recent Formats" = format_choices
   )
 
-  # Update all format dropdowns (default to All Formats to avoid empty results when new format has no data)
-  updateSelectInput(session, "dashboard_format", choices = format_choices_with_all, selected = "")
-  updateSelectInput(session, "players_format", choices = format_choices_with_all)
-  updateSelectInput(session, "meta_format", choices = format_choices_with_all)
-  updateSelectInput(session, "tournaments_format", choices = format_choices_with_all)
-  updateSelectInput(session, "tournament_format", choices = format_choices)
+  # Preserve current selections when repopulating choices
+  current_dashboard <- isolate(input$dashboard_format)
+  current_players <- isolate(input$players_format)
+  current_meta <- isolate(input$meta_format)
+  current_tournaments <- isolate(input$tournaments_format)
+  current_tournament <- isolate(input$tournament_format)
+
+  # Update all format dropdowns (preserve selections, default dashboard to All Formats)
+
+  updateSelectInput(session, "dashboard_format", choices = format_choices_with_all,
+                    selected = if (is.null(current_dashboard)) "" else current_dashboard)
+  updateSelectInput(session, "players_format", choices = format_choices_with_all,
+                    selected = current_players)
+  updateSelectInput(session, "meta_format", choices = format_choices_with_all,
+                    selected = current_meta)
+  updateSelectInput(session, "tournaments_format", choices = format_choices_with_all,
+                    selected = current_tournaments)
+  updateSelectInput(session, "tournament_format", choices = format_choices,
+                    selected = current_tournament)
 })
 
 # Reactive: get the latest (current) format_id

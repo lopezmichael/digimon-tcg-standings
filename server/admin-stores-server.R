@@ -67,8 +67,11 @@ observe({
   )
   if (nrow(scenes) > 0) {
     choices <- setNames(as.character(scenes$scene_id), scenes$display_name)
+    # Preserve current selection when repopulating choices (fixes scene clearing bug)
+    current_selection <- isolate(input$store_scene)
     updateSelectInput(session, "store_scene",
-                      choices = c("Select scene..." = "", choices))
+                      choices = c("Select scene..." = "", choices),
+                      selected = current_selection)
   }
 })
 
