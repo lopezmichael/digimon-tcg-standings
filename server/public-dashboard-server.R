@@ -50,7 +50,7 @@ output$total_stores_val <- renderText({
   rv$data_refresh
   filters <- build_dashboard_filters("t", "s")
   result <- safe_query(db_pool, paste("
-    SELECT COUNT(DISTINCT s.store_id) as n
+    SELECT COUNT(DISTINCT s.store_id)::int as n
     FROM stores s
     JOIN tournaments t ON s.store_id = t.store_id
     WHERE s.is_active = TRUE", filters$sql),
@@ -62,7 +62,7 @@ output$total_decks_val <- renderText({
   rv$data_refresh
   filters <- build_dashboard_filters("t", "s")
   result <- safe_query(db_pool, paste("
-    SELECT COUNT(DISTINCT r.archetype_id) as n
+    SELECT COUNT(DISTINCT r.archetype_id)::int as n
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id
@@ -125,7 +125,9 @@ hot_deck <- reactive({
 
   # Get median tournament date to split into older/newer halves
   median_date <- safe_query(db_pool, paste("
-    SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY event_date) as median_date
+    SELECT TO_TIMESTAMP(
+      PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM event_date))
+    )::date as median_date
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
     WHERE 1=1", filters$sql
@@ -209,7 +211,7 @@ output$hot_deck_trend <- renderUI({
   if (is.null(hd)) return(HTML(""))
 
   if (isTRUE(hd$insufficient_data)) {
-    needed <- 10 - hd$tournament_count
+    needed <- as.integer(10 - hd$tournament_count)
     return(HTML(sprintf("<span class='vb-trend-neutral'>%d more events needed</span>", needed)))
   }
 
@@ -316,8 +318,8 @@ core_metrics <- reactive({
   filters <- build_dashboard_filters("t", "s")
 
   result <- safe_query(db_pool, paste("
-    SELECT COUNT(DISTINCT t.tournament_id) as tournaments,
-           COUNT(DISTINCT r.player_id) as players
+    SELECT COUNT(DISTINCT t.tournament_id)::int as tournaments,
+           COUNT(DISTINCT r.player_id)::int as players
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
     LEFT JOIN results r ON t.tournament_id = r.tournament_id
@@ -337,9 +339,9 @@ output$recent_tournaments <- renderReactable({
 
   # Query with winner (player who got placement = 1) and store_id for rating join
   query <- paste("
-    SELECT t.tournament_id, s.store_id, s.name as Store,
-           t.event_date as Date, t.player_count as Players,
-           p.display_name as Winner
+    SELECT t.tournament_id, s.store_id, s.name as \"Store\",
+           t.event_date as \"Date\", t.player_count as \"Players\",
+           p.display_name as \"Winner\"
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
     LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
@@ -542,7 +544,7 @@ output$top_decks_header <- renderUI({
   if (total == 0) {
     "Top Decks"
   } else {
-    sprintf("Top Decks (%d Tournaments)", total)
+    sprintf("Top Decks (%d Tournaments)", as.integer(total))
   }
 })
 
@@ -594,7 +596,7 @@ output$top_decks_with_images <- renderUI({
           )
         ),
         div(class = "deck-stats",
-          span(class = "deck-entries", sprintf("%d wins", row$first_places)),
+          span(class = "deck-entries", sprintf("%d wins", as.integer(row$first_places))),
           span(class = "deck-pct", sprintf("%.1f%% win rate", row$win_rate))
         )
       )
@@ -823,7 +825,7 @@ meta_diversity_data <- reactive({
   # Convert to diversity score (0-100, higher = more diverse)
   # HHI of 1 = monopoly (one deck wins everything) -> score 0
   # HHI of 1/n = perfect equality -> score approaches 100
-  diversity_score <- round((1 - hhi) * 100, 0)
+  diversity_score <- as.integer(round((1 - hhi) * 100, 0))
 
   list(score = diversity_score, decks_with_wins = nrow(winners), total_wins = total_wins)
 })
@@ -834,7 +836,7 @@ output$meta_diversity_decks_count <- renderUI({
   if (is.null(data) || data$decks_with_wins == 0) {
     return(tags$span(class = "text-muted small", "No data"))
   }
-  tags$span(class = "text-muted small", sprintf("%d decks with wins", data$decks_with_wins))
+  tags$span(class = "text-muted small", sprintf("%d decks with wins", as.integer(data$decks_with_wins)))
 })
 
 output$meta_diversity_gauge <- renderHighchart({
@@ -849,7 +851,7 @@ output$meta_diversity_gauge <- renderHighchart({
     )
   }
 
-  score <- data$score
+  score <- as.integer(data$score)
   decks_with_wins <- data$decks_with_wins
   total_wins <- data$total_wins
 
@@ -888,7 +890,7 @@ output$meta_diversity_gauge <- renderHighchart({
       }
 
       // Draw main score
-      chart.centerText = chart.renderer.text('%d', centerX, centerY + 8)
+      chart.centerText = chart.renderer.text('%s', centerX, centerY + 8)
         .css({
           fontSize: '28px',
           fontWeight: 'bold',

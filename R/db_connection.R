@@ -42,6 +42,7 @@ create_db_pool <- function() {
       password = password,
       port = 5432,
       sslmode = "require",
+      bigint = "integer",
       minSize = 1,
       maxSize = 5
     )
@@ -74,7 +75,7 @@ close_db_pool <- function(p) {
 #' @param pool pool object
 #' @param schema_path Path to SQL schema file
 #' @export
-init_schema <- function(pool, schema_path = "db/schema_postgres.sql") {
+init_schema <- function(pool, schema_path = "db/schema.sql") {
   if (!file.exists(schema_path)) {
     stop("Schema file not found: ", schema_path)
   }

@@ -56,10 +56,10 @@ output$player_list <- renderReactable({
 
   query <- sprintf("
     SELECT p.player_id,
-           p.display_name as 'Player Name',
-           COUNT(r.result_id) as 'Results',
-           SUM(CASE WHEN r.placement = 1 THEN 1 ELSE 0 END) as 'Wins',
-           MAX(t.event_date) as 'Last Event'
+           p.display_name as \"Player Name\",
+           COUNT(r.result_id) as \"Results\",
+           SUM(CASE WHEN r.placement = 1 THEN 1 ELSE 0 END) as \"Wins\",
+           MAX(t.event_date) as \"Last Event\"
     FROM players p
     LEFT JOIN results r ON p.player_id = r.player_id
     LEFT JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -68,7 +68,7 @@ output$player_list <- renderReactable({
     ORDER BY p.display_name
   ", scene_filter, search_filter)
 
-  data <- dbGetQuery(db_pool, query, params = query_params)
+  data <- dbGetQuery(db_pool, query, params = if (length(query_params) > 0) query_params else NULL)
 
   if (nrow(data) == 0) {
     return(admin_empty_state("No players found", "// add players via tournament entry", "people"))
@@ -271,7 +271,7 @@ observeEvent(input$delete_player, {
   } else {
     notify(
       sprintf("Cannot delete: player has %d result(s). Use 'Merge Players' to combine with another player.",
-              rv$player_result_count),
+              as.integer(rv$player_result_count)),
       type = "error",
       duration = 5
     )
@@ -290,7 +290,7 @@ observeEvent(input$confirm_delete_player, {
 
   if (count > 0) {
     removeModal()
-    notify(sprintf("Cannot delete: player has %d result(s)", count), type = "error")
+    notify(sprintf("Cannot delete: player has %d result(s)", as.integer(count)), type = "error")
     return()
   }
 
@@ -388,13 +388,13 @@ output$merge_preview <- renderUI({
       class = "alert alert-warning",
       bsicons::bs_icon("exclamation-triangle"),
       sprintf(" %d result(s) and %d match record(s) will be moved to the target player.",
-              source_count, match_count)
+              as.integer(source_count), as.integer(match_count))
     ),
     if (conflict_count > 0) div(
       class = "alert alert-danger",
       bsicons::bs_icon("x-circle"),
       sprintf(" %d conflicting result(s) found (both players in same tournament). Source results will be dropped.",
-              conflict_count)
+              as.integer(conflict_count))
     )
   )
 })

@@ -255,7 +255,7 @@ output$archetype_list <- renderReactable({
 
   # Sort by Card ID with NULLs first (decks needing review), then alphabetically
   data <- dbGetQuery(db_pool, "
-    SELECT archetype_id, archetype_name as Deck, primary_color, secondary_color, is_multi_color, display_card_id as 'Card ID'
+    SELECT archetype_id, archetype_name as \"Deck\", primary_color, secondary_color, is_multi_color, display_card_id as \"Card ID\"
     FROM deck_archetypes
     WHERE is_active = TRUE
     ORDER BY
@@ -453,7 +453,7 @@ observeEvent(input$delete_archetype, {
     ))
   } else {
     notify(
-      sprintf("Cannot delete: used in %d result(s)", rv$archetype_result_count),
+      sprintf("Cannot delete: used in %d result(s)", as.integer(rv$archetype_result_count)),
       type = "error"
     )
   }
@@ -471,7 +471,7 @@ observeEvent(input$confirm_delete_archetype, {
 
   if (count > 0) {
     removeModal()
-    notify(sprintf("Cannot delete: used in %d result(s)", count), type = "error")
+    notify(sprintf("Cannot delete: used in %d result(s)", as.integer(count)), type = "error")
     return()
   }
 
@@ -701,7 +701,7 @@ observeEvent(input$deck_request_reject_click, {
     ),
     if (result_count > 0) {
       div(
-        p(sprintf("This deck is used in %d result(s). Select an existing deck to assign them to:", result_count)),
+        p(sprintf("This deck is used in %d result(s). Select an existing deck to assign them to:", as.integer(result_count))),
         selectInput("reject_replacement_deck", "Replace with:",
                     choices = c("Unknown" = "", deck_choices),
                     selectize = FALSE)
@@ -792,7 +792,7 @@ create_deck_from_request <- function(req_id, deck_name, primary_color, secondary
 
     msg <- sprintf("Approved '%s'", deck_name)
     if (updated_count > 0) {
-      msg <- paste0(msg, sprintf(" and updated %d result(s)", updated_count))
+      msg <- paste0(msg, sprintf(" and updated %d result(s)", as.integer(updated_count)))
     }
     notify(msg, type = "message")
 
@@ -848,7 +848,7 @@ reject_deck_request <- function(req_id, replacement_archetype_id, session, rv) {
       # Get replacement deck name for message
       replacement_name <- dbGetQuery(db_pool, "SELECT archetype_name FROM deck_archetypes WHERE archetype_id = $1",
                                      params = list(replacement_archetype_id))$archetype_name[1]
-      msg <- paste0(msg, sprintf(" - %d result(s) reassigned to '%s'", updated_count, replacement_name))
+      msg <- paste0(msg, sprintf(" - %d result(s) reassigned to '%s'", as.integer(updated_count), replacement_name))
     }
     notify(msg, type = "message")
     rv$deck_requests_refresh <- Sys.time()
@@ -874,7 +874,7 @@ get_deck_choices <- function(con) {
   ")
   if (nrow(decks) == 0) return(c())
   # Format: "Deck Name (Color) - X results"
-  labels <- sprintf("%s (%s) - %d results", decks$archetype_name, decks$primary_color, decks$result_count)
+  labels <- sprintf("%s (%s) - %d results", decks$archetype_name, decks$primary_color, as.integer(decks$result_count))
   setNames(decks$archetype_id, labels)
 }
 
@@ -950,15 +950,15 @@ output$merge_deck_preview <- renderUI({
         tags$ul(
           tags$li(sprintf("Source: %s", source_deck$archetype_name)),
           tags$li(sprintf("Target: %s", target_deck$archetype_name)),
-          tags$li(sprintf("%d result(s) will be reassigned", source_results)),
-          if (limitless_mappings > 0) tags$li(sprintf("%d Limitless mapping(s) will be updated", limitless_mappings))
+          tags$li(sprintf("%d result(s) will be reassigned", as.integer(source_results))),
+          if (limitless_mappings > 0) tags$li(sprintf("%d Limitless mapping(s) will be updated", as.integer(limitless_mappings)))
         )
     ),
     if (source_results > 0) {
       div(class = "alert alert-info",
           bsicons::bs_icon("info-circle"),
           sprintf(" All %d results currently assigned to '%s' will be moved to '%s'.",
-                  source_results, source_deck$archetype_name, target_deck$archetype_name))
+                  as.integer(source_results), source_deck$archetype_name, target_deck$archetype_name))
     }
   )
 })
@@ -1005,9 +1005,9 @@ observeEvent(input$confirm_merge_decks, {
     updateSelectizeInput(session, "merge_target_deck", selected = "")
 
     # Show success notification
-    msg <- sprintf("Merged '%s' into '%s': %d result(s) moved", source_name, target_name, results_moved)
+    msg <- sprintf("Merged '%s' into '%s': %d result(s) moved", source_name, target_name, as.integer(results_moved))
     if (mappings_updated > 0) {
-      msg <- paste0(msg, sprintf(", %d mapping(s) updated", mappings_updated))
+      msg <- paste0(msg, sprintf(", %d mapping(s) updated", as.integer(mappings_updated)))
     }
     notify(msg, type = "message", duration = 5)
 

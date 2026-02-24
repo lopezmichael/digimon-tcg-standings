@@ -413,9 +413,9 @@ output$store_detail_modal <- renderUI({
 
   # Get recent tournaments at this store
   recent_tournaments <- safe_query(db_pool, "
-      SELECT t.event_date as Date, t.event_type as Type, t.format as Format,
-             t.player_count as Players, p.display_name as Winner,
-             da.archetype_name as Deck, r.decklist_url
+      SELECT t.event_date as \"Date\", t.event_type as \"Type\", t.format as \"Format\",
+             t.player_count as \"Players\", p.display_name as \"Winner\",
+             da.archetype_name as \"Deck\", r.decklist_url
       FROM tournaments t
       LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
       LEFT JOIN players p ON r.player_id = p.player_id
@@ -427,9 +427,9 @@ output$store_detail_modal <- renderUI({
 
   # Get top players at this store
   top_players <- safe_query(db_pool, "
-      SELECT p.display_name as Player,
-             COUNT(DISTINCT r.tournament_id) as Events,
-             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
+      SELECT p.display_name as \"Player\",
+             COUNT(DISTINCT r.tournament_id) as \"Events\",
+             COUNT(CASE WHEN r.placement = 1 THEN 1 END) as \"Wins\"
       FROM players p
       JOIN results r ON p.player_id = r.player_id
       JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -964,7 +964,7 @@ render_online_organizers_map <- function() {
         store <- grp[j, ]
         details <- c()
         if (store$tournament_count > 0) {
-          details <- c(details, sprintf("%d events", store$tournament_count))
+          details <- c(details, sprintf("%d events", as.integer(store$tournament_count)))
           details <- c(details, sprintf("%.1f avg players", store$avg_players))
         }
         detail_str <- if (length(details) > 0) paste(details, collapse = " &middot; ") else "No events yet"

@@ -618,6 +618,15 @@ observeEvent(input$bootstrap_btn, {
   }
 })
 
+# Keep store dropdown populated (re-fires on tab switch to handle lazy-loaded UI)
+observe({
+  rv$current_nav
+  rv$data_refresh
+  req(rv$is_admin)
+  updateSelectInput(session, "tournament_store",
+                    choices = get_store_choices(db_pool, include_none = TRUE))
+})
+
 # Handle logout
 observeEvent(input$logout_btn, {
   rv$is_admin <- FALSE
@@ -818,10 +827,11 @@ get_format_choices <- function(pool) {
   return(choices)
 }
 
-# Update format dropdowns when database connects or formats change
+# Update format dropdowns when database connects, formats change, or tab navigation
 observe({
-  # Trigger on format refresh
+  # Trigger on format refresh or tab switch (ensures UI exists after lazy-load)
   rv$format_refresh
+  rv$current_nav
 
   format_choices <- get_format_choices(db_pool)
 

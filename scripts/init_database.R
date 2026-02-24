@@ -16,7 +16,7 @@ if (file.exists(".env")) {
 }
 
 # Check packages
-required <- c("DBI", "duckdb")
+required <- c("DBI", "pool", "RPostgres")
 missing <- required[!sapply(required, requireNamespace, quietly = TRUE)]
 if (length(missing) > 0) {
   install.packages(missing)
@@ -25,20 +25,20 @@ if (length(missing) > 0) {
 # Load connection module
 source("R/db_connection.R")
 
-# Connect (auto-detects local vs cloud)
+# Connect to Neon PostgreSQL
 cat("Connecting to database...\n")
-con <- connect_db()
+db_pool <- create_db_pool()
 
 # Initialize schema
 cat("Creating tables...\n")
-init_schema(con, "db/schema.sql")
+init_schema(db_pool)
 
 # Verify
 cat("\nVerifying schema...\n")
-check_schema(con)
+check_schema(db_pool)
 
 # Done
-disconnect(con)
+close_db_pool(db_pool)
 
 cat("
 ╔═══════════════════════════════════════════════════════════╗

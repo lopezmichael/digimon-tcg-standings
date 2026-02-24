@@ -12,10 +12,10 @@ output$admin_format_list <- renderReactable({
   input$confirm_delete_format
 
   data <- dbGetQuery(db_pool, "
-    SELECT format_id as 'Set Code',
-           set_name as 'Set Name',
-           release_date as 'Release Date',
-           is_active as 'Active'
+    SELECT format_id as \"Set Code\",
+           set_name as \"Set Name\",
+           release_date as \"Release Date\",
+           is_active as \"Active\"
     FROM formats
     ORDER BY release_date DESC
   ")
@@ -238,7 +238,7 @@ observeEvent(input$delete_format, {
     ))
   } else {
     notify(
-      sprintf("Cannot delete: %d tournament(s) use this format", rv$format_tournament_count),
+      sprintf("Cannot delete: %d tournament(s) use this format", as.integer(rv$format_tournament_count)),
       type = "error"
     )
   }

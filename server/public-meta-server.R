@@ -46,11 +46,11 @@ output$archetype_stats <- renderReactable({
 
   # Exclude UNKNOWN archetype from analytics
   result <- safe_query(db_pool, sprintf("
-    SELECT da.archetype_id, da.archetype_name as Deck, da.primary_color as Color,
-           COUNT(r.result_id) as Entries,
-           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1sts',
-           COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3s',
-           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
+    SELECT da.archetype_id, da.archetype_name as \"Deck\", da.primary_color as \"Color\",
+           COUNT(r.result_id) as \"Entries\",
+           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as \"1sts\",
+           COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as \"Top 3s\",
+           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as \"Win %%\"
     FROM deck_archetypes da
     JOIN results r ON da.archetype_id = r.archetype_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -184,10 +184,10 @@ output$deck_detail_modal <- renderUI({
   # Get top pilots (include player_id for clickable links)
   top_pilots <- safe_query(db_pool, sprintf("
     SELECT p.player_id,
-           p.display_name as Player,
-           COUNT(*) as Times,
-           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins,
-           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%'
+           p.display_name as \"Player\",
+           COUNT(*) as \"Times\",
+           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as \"Wins\",
+           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as \"Win %%\"
     FROM results r
     JOIN players p ON r.player_id = p.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -200,8 +200,8 @@ output$deck_detail_modal <- renderUI({
 
   # Get recent results with this deck
   recent_results <- safe_query(db_pool, sprintf("
-    SELECT t.event_date as Date, s.name as Store, p.display_name as Player,
-           r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
+    SELECT t.event_date as \"Date\", s.name as \"Store\", p.display_name as \"Player\",
+           r.placement as \"Place\", r.wins as \"W\", r.losses as \"L\", r.decklist_url
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id

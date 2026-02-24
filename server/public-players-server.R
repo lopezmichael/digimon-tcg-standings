@@ -121,12 +121,12 @@ output$player_standings <- renderReactable({
 
   # Build query with parameterized HAVING clause
   query <- sprintf("
-    SELECT p.player_id, p.display_name as Player,
-           COUNT(DISTINCT r.tournament_id) as Events,
-           SUM(r.wins) as W, SUM(r.losses) as L, SUM(r.ties) as T,
-           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as 'Win %%',
-           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as '1sts',
-           COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as 'Top 3s'
+    SELECT p.player_id, p.display_name as \"Player\",
+           COUNT(DISTINCT r.tournament_id) as \"Events\",
+           SUM(r.wins) as \"W\", SUM(r.losses) as \"L\", SUM(r.ties) as \"T\",
+           ROUND(SUM(r.wins) * 100.0 / NULLIF(SUM(r.wins) + SUM(r.losses), 0), 1) as \"Win %%\",
+           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as \"1sts\",
+           COUNT(CASE WHEN r.placement <= 3 THEN 1 END) as \"Top 3s\"
     FROM players p
     JOIN results r ON p.player_id = r.player_id
     JOIN tournaments t ON r.tournament_id = t.tournament_id
@@ -206,8 +206,8 @@ output$player_standings <- renderReactable({
     t <- result$T[i]
     sprintf(
       "<span style='color: #22c55e;'>%d</span>-<span style='color: #ef4444;'>%d</span>%s",
-      w, l,
-      if (t > 0) sprintf("-<span style='color: #f97316;'>%d</span>", t) else ""
+      as.integer(w), as.integer(l),
+      if (t > 0) sprintf("-<span style='color: #f97316;'>%d</span>", as.integer(t)) else ""
     )
   })
 
@@ -333,9 +333,9 @@ output$player_detail_modal <- renderUI({
   # Get favorite decks (most played, parameterized query)
   # Exclude UNKNOWN archetype from player profiles
   favorite_decks <- safe_query(db_pool, "
-    SELECT da.archetype_name as Deck, da.primary_color as color,
-           COUNT(*) as Times,
-           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as Wins
+    SELECT da.archetype_name as \"Deck\", da.primary_color as color,
+           COUNT(*) as \"Times\",
+           COUNT(CASE WHEN r.placement = 1 THEN 1 END) as \"Wins\"
     FROM results r
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     WHERE r.player_id = $1 AND da.archetype_name != 'UNKNOWN'
@@ -346,8 +346,8 @@ output$player_detail_modal <- renderUI({
 
   # Get recent tournament results (parameterized query)
   recent_results <- safe_query(db_pool, "
-    SELECT t.event_date as Date, s.name as Store, da.archetype_name as Deck,
-           r.placement as Place, r.wins as W, r.losses as L, r.decklist_url
+    SELECT t.event_date as \"Date\", s.name as \"Store\", da.archetype_name as \"Deck\",
+           r.placement as \"Place\", r.wins as \"W\", r.losses as \"L\", r.decklist_url
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN stores s ON t.store_id = s.store_id
@@ -472,7 +472,7 @@ output$player_detail_modal <- renderUI({
             div(
               class = "d-flex align-items-center gap-1",
               span(class = paste("deck-badge", color_class), deck$Deck),
-              span(class = "small text-muted", sprintf("(%dx, %d wins)", deck$Times, deck$Wins))
+              span(class = "small text-muted", sprintf("(%dx, %d wins)", as.integer(deck$Times), as.integer(deck$Wins)))
             )
           })
         )

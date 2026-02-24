@@ -115,7 +115,7 @@ output$admin_tournament_list <- renderReactable({
   query <- paste0(query, " GROUP BY t.tournament_id, s.name, t.event_date, t.event_type, t.format, t.player_count, t.rounds
                           ORDER BY t.event_date DESC")
 
-  data <- dbGetQuery(db_pool, query, params = query_params)
+  data <- dbGetQuery(db_pool, query, params = if (length(query_params) > 0) query_params else NULL)
 
   if (nrow(data) == 0) {
     return(reactable(data.frame(Message = "No tournaments found")))
@@ -227,7 +227,7 @@ output$tournament_stats_info <- renderUI({
   tagList(
     div(
       class = "d-flex gap-4 text-muted small",
-      div(bsicons::bs_icon("people-fill"), sprintf(" %d results entered", results_count)),
+      div(bsicons::bs_icon("people-fill"), sprintf(" %d results entered", as.integer(results_count))),
       if (nrow(winner) > 0) {
         div(bsicons::bs_icon("trophy-fill"),
             sprintf(" Winner: %s (%s)", winner$display_name, winner$archetype_name %||% "Unknown deck"))
@@ -335,7 +335,7 @@ observeEvent(input$delete_tournament, {
       if (tournament$results_count > 0) {
         p(class = "text-danger",
           bsicons::bs_icon("exclamation-triangle-fill"),
-          sprintf(" This will also delete %d result(s)!", tournament$results_count))
+          sprintf(" This will also delete %d result(s)!", as.integer(tournament$results_count)))
       },
       p(class = "text-muted small", "This action cannot be undone.")
     ),

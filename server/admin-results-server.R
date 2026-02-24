@@ -131,7 +131,7 @@ observeEvent(input$create_tournament, {
                   existing$store_name[1], format(as.Date(event_date), "%B %d, %Y"))),
         tags$ul(
           tags$li(sprintf("%d players expected", existing$player_count[1])),
-          tags$li(sprintf("%d results entered", existing$result_count[1])),
+          tags$li(sprintf("%d results entered", as.integer(existing$result_count[1]))),
           tags$li(sprintf("Event type: %s", existing$event_type[1]))
         ),
         p("What would you like to do?")
@@ -186,7 +186,7 @@ observeEvent(input$clear_tournament, {
 
   output$start_over_message <- renderUI({
     if (result_count > 0) {
-      p(class = "text-muted", sprintf("This tournament has %d result(s) entered.", result_count))
+      p(class = "text-muted", sprintf("This tournament has %d result(s) entered.", as.integer(result_count)))
     } else {
       p(class = "text-muted", "This tournament has no results entered yet.")
     }
@@ -195,7 +195,7 @@ observeEvent(input$clear_tournament, {
   output$delete_tournament_warning <- renderUI({
     tags$small(class = "text-danger text-center",
       if (result_count > 0) {
-        sprintf("Permanently delete this tournament and all %d result(s).", result_count)
+        sprintf("Permanently delete this tournament and all %d result(s).", as.integer(result_count))
       } else {
         "Permanently delete this tournament."
       }
@@ -805,7 +805,7 @@ observeEvent(input$admin_submit_results, {
     recalculate_ratings_cache(db_pool)
     rv$data_refresh <- (rv$data_refresh %||% 0) + 1
 
-    notify(sprintf("Tournament submitted! %d results recorded.", result_count),
+    notify(sprintf("Tournament submitted! %d results recorded.", as.integer(result_count)),
                      type = "message", duration = 5)
 
     # Reset to Step 1

@@ -284,7 +284,7 @@ output$admin_store_list <- renderReactable({
 
   # Query stores with schedule count
   data <- dbGetQuery(db_pool, sprintf("
-    SELECT s.store_id, s.name as Store, s.city as City, s.state as State,
+    SELECT s.store_id, s.name as \"Store\", s.city as \"City\", s.state as \"State\",
            s.is_online, s.zip_code,
            COUNT(ss.schedule_id) as schedule_count
     FROM stores s
@@ -295,7 +295,7 @@ output$admin_store_list <- renderReactable({
       CASE WHEN s.is_online = FALSE AND COUNT(ss.schedule_id) = 0 THEN 0 ELSE 1 END,
       CASE WHEN s.zip_code IS NULL OR s.zip_code = '' THEN 0 ELSE 1 END,
       s.name
-  ", scene_filter), params = scene_params)
+  ", scene_filter), params = if (length(scene_params) > 0) scene_params else NULL)
 
   if (nrow(data) == 0) {
     data <- data.frame(Message = "No stores yet")
@@ -636,7 +636,7 @@ observeEvent(input$delete_store, {
     ))
   } else {
     notify(
-      sprintf("Cannot delete: %d tournament(s) reference this store", rv$store_tournament_count),
+      sprintf("Cannot delete: %d tournament(s) reference this store", as.integer(rv$store_tournament_count)),
       type = "error"
     )
   }

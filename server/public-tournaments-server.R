@@ -46,9 +46,9 @@ output$tournament_history <- renderReactable({
   filter_params <- c(search_filters$params, format_filters$params, event_type_filters$params)
 
   query <- paste0("
-    SELECT t.tournament_id, t.event_date as Date, s.name as Store, t.event_type as Type,
-           t.format as Format, t.player_count as Players, t.rounds as Rounds,
-           p.display_name as Winner, da.archetype_name as 'Winning Deck'
+    SELECT t.tournament_id, t.event_date as \"Date\", s.name as \"Store\", t.event_type as \"Type\",
+           t.format as \"Format\", t.player_count as \"Players\", t.rounds as \"Rounds\",
+           p.display_name as \"Winner\", da.archetype_name as \"Winning Deck\"
     FROM tournaments t
     JOIN stores s ON t.store_id = s.store_id
     LEFT JOIN results r ON t.tournament_id = r.tournament_id AND r.placement = 1
@@ -147,8 +147,8 @@ output$tournament_detail_modal <- renderUI({
 
   # Get all results for this tournament
   results <- safe_query(db_pool, "
-    SELECT r.placement as Place, p.display_name as Player, da.archetype_name as Deck,
-           da.primary_color as color, r.wins as W, r.losses as L, r.ties as T, r.decklist_url
+    SELECT r.placement as \"Place\", p.display_name as \"Player\", da.archetype_name as \"Deck\",
+           da.primary_color as color, r.wins as \"W\", r.losses as \"L\", r.ties as \"T\", r.decklist_url
     FROM results r
     JOIN players p ON r.player_id = p.player_id
     JOIN deck_archetypes da ON r.archetype_id = da.archetype_id

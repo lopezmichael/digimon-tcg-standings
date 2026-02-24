@@ -36,7 +36,7 @@ from decimal import Decimal
 # ---------------------------------------------------------------------------
 
 LOCAL_DB = "data/local.duckdb"
-SCHEMA_FILE = "db/schema_postgres.sql"
+SCHEMA_FILE = "db/schema.sql"
 
 # Tables in FK-safe order (parents before children)
 TABLES = [
