@@ -296,11 +296,14 @@ output$admin_store_list <- renderReactable({
     }
   })
 
-  # Note: sortable = FALSE prevents column sorting which would cause row selection mismatch
+  # Store data for selection handler (avoids re-query with different ORDER BY)
+  rv$admin_store_list_data <- data
+
   reactable(data, compact = TRUE, striped = FALSE,
     sortable = FALSE,
     selection = "single",
     onClick = "select",
+    searchable = TRUE,
     defaultPageSize = 12,
     showPageSizeOptions = TRUE,
     pageSizeOptions = c(10, 20, 50, 100),
@@ -365,32 +368,21 @@ observeEvent(input$admin_store_list__reactable__selected, {
     return()
   }
 
-  # Get store data with same scene filter as table
-  scene <- rv$current_scene
-  show_all <- isTRUE(input$admin_stores_show_all_scenes) && isTRUE(rv$is_superadmin)
+  # Use stored table data to get store_id (avoids ORDER BY mismatch)
+  table_data <- rv$admin_store_list_data
+  if (is.null(table_data) || selected_idx > nrow(table_data)) return()
 
-  # Build scene filter
-  scene_filter <- ""
-  scene_params <- list()
-  if (!show_all && !is.null(scene) && scene != "" && scene != "all") {
-    if (scene == "online") {
-      scene_filter <- "AND s.is_online = TRUE"
-    } else {
-      scene_filter <- "AND s.scene_id = (SELECT scene_id FROM scenes WHERE slug = ?)"
-      scene_params <- list(scene)
-    }
-  }
+  store_id <- table_data$store_id[selected_idx]
 
-  data <- dbGetQuery(rv$db_con, sprintf("
+  # Fetch full store details by ID
+  store <- dbGetQuery(rv$db_con, "
     SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code, s.website, s.is_online, s.country
     FROM stores s
-    WHERE s.is_active = TRUE %s
-    ORDER BY s.name
-  ", scene_filter), params = scene_params)
+    WHERE s.store_id = ?
+  ", params = list(store_id))
 
-  if (selected_idx > nrow(data)) return()
-
-  store <- data[selected_idx, ]
+  if (nrow(store) == 0) return()
+  store <- store[1, ]
 
   # Populate form for editing
   updateTextInput(session, "editing_store_id", value = as.character(store$store_id))
