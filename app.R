@@ -27,7 +27,7 @@ library(bcrypt)
 # - httr: Lazy-loaded via namespacing in R/digimoncard_api.R (rarely used, cards cached)
 
 # App version (update with each release)
-APP_VERSION <- "1.0.3"
+APP_VERSION <- "1.0.4"
 
 # Load modules
 source("R/db_connection.R")
@@ -355,7 +355,7 @@ EVENT_TYPES <- c(
 # External links (single source of truth)
 LINKS <- list(
   discord = "https://discord.gg/ABcjha7bHk",
-  kofi    = "https://ko-fi.com/atomshell",
+  kofi    = "https://ko-fi.com/digilab",
   github  = "https://github.com/lopezmichael/digimon-tcg-standings",
   contact = "https://forms.gle/shc6cGjBFNjqvkSw9"
 )

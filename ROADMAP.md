@@ -2,20 +2,8 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v1.0.3
+**Current Version:** v1.0.4
 **Cadence:** ~1 milestone per week
-
----
-
-## v1.0.x - In Progress
-
-Minor improvements and polish for the v1.0 release line.
-
-| ID | Type | Description |
-|----|------|-------------|
-| UX-DME | UX | Dynamic min events default based on scene tournament count |
-
-**Design:** `docs/plans/2026-02-24-dynamic-min-events-design.md`
 
 ---
 
@@ -135,6 +123,12 @@ The React PoC on `explore/react-rewrite` branch serves as a reference for future
 ---
 
 ## Completed
+
+### v1.0.4 - Dynamic Min Events
+- Dynamic min events/entries filter defaults based on scene tournament count (<20: All, 20-100: 5+, >100: 10+)
+- Help tooltips on min events filters explaining dynamic behavior
+- FAQ entry for filter defaults
+- Ko-fi link updated to digilab
 
 ### v1.0.0 - Public Launch
 - Version badge: BETA → v1.0, clickable DigiLab header navigates to dashboard

@@ -5,6 +5,22 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-02-24 - Dynamic Min Events & Ko-fi Update
+
+### Added
+- **Dynamic min events default**: The "Min Events" filter on Players tab and "Min Entries" filter on Deck Meta tab now default based on scene tournament count
+  - Scenes with <20 tournaments default to "All" (show everyone)
+  - Scenes with 20-100 tournaments default to "5+"
+  - Scenes with >100 tournaments default to "10+"
+  - Ensures newer scenes don't appear empty while established scenes surface committed competitors
+- **Help tooltips**: Added info icons next to min events/entries filters explaining the dynamic behavior
+- **FAQ entry**: New FAQ explaining why the filter defaults differ between scenes
+
+### Changed
+- **Ko-fi link**: Updated from atomshell to digilab (https://ko-fi.com/digilab)
+
+---
+
 ## [1.0.3] - 2026-02-24 - Admin Tab Dropdown & Player Edit Fixes
 
 ### Fixed
