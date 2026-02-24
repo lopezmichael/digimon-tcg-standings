@@ -651,25 +651,11 @@ observeEvent(input$confirm_delete_store, {
   req(rv$is_admin, rv$db_con, input$editing_store_id)
   store_id <- as.integer(input$editing_store_id)
 
-  # Use a fresh connection for writes to avoid MotherDuck "catalog changed"
-  # errors. The long-lived rv$db_con accumulates stale catalog state from
-  # reactive observers; a new connection always has the current catalog.
-  delete_ok <- tryCatch({
-    write_con <- connect_db()
-    on.exit(tryCatch(DBI::dbDisconnect(write_con, shutdown = TRUE), error = function(e) NULL))
-    DBI::dbExecute(write_con, "DELETE FROM store_schedules WHERE store_id = ?",
-                   params = list(store_id))
-    DBI::dbExecute(write_con, "DELETE FROM stores WHERE store_id = ?",
-                   params = list(store_id))
-    TRUE
-  }, error = function(e) {
-    message("[store-delete] Error: ", conditionMessage(e))
-    if (sentry_enabled) {
-      tryCatch(sentryR::capture_exception(e, tags = sentry_context_tags()),
-               error = function(se) NULL)
-    }
-    FALSE
-  })
+  safe_execute(rv$db_con, "DELETE FROM store_schedules WHERE store_id = ?",
+               params = list(store_id))
+  rows_deleted <- safe_execute(rv$db_con, "DELETE FROM stores WHERE store_id = ?",
+                               params = list(store_id))
+  delete_ok <- rows_deleted > 0
 
   if (!delete_ok) {
     notify("Failed to delete store. Check logs for details.", type = "error")

@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS players (
     tcgplus_id VARCHAR,
     member_number VARCHAR,  -- Bandai TCG+ member number (0000XXXXXX), uniqueness enforced in app
     limitless_username VARCHAR,
-    home_store_id INTEGER REFERENCES stores(store_id),
+    home_store_id INTEGER,              -- References stores(store_id) - no FK for DuckDB compat
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -177,7 +177,7 @@ CREATE INDEX IF NOT EXISTS idx_archetypes_color ON deck_archetypes(primary_color
 -- Links archetypes to their associated cards from DigimonCard.io
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS archetype_cards (
-    archetype_id INTEGER NOT NULL REFERENCES deck_archetypes(archetype_id),
+    archetype_id INTEGER NOT NULL,       -- References deck_archetypes(archetype_id) - no FK for DuckDB compat
     card_id VARCHAR NOT NULL,
     card_role VARCHAR NOT NULL,
     is_core BOOLEAN DEFAULT TRUE,
@@ -213,7 +213,7 @@ CREATE INDEX IF NOT EXISTS idx_deck_requests_status ON deck_requests(status);
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS tournaments (
     tournament_id INTEGER PRIMARY KEY,
-    store_id INTEGER NOT NULL REFERENCES stores(store_id),
+    store_id INTEGER NOT NULL,            -- References stores(store_id) - no FK for DuckDB compat
     event_date DATE NOT NULL,
     event_type VARCHAR NOT NULL,
     format VARCHAR,
