@@ -67,6 +67,10 @@ admin_stores_ui <- tagList(
           ),
 
           # Common fields for both
+          selectInput("store_scene", "Scene",
+            choices = c("Select scene..." = ""),
+            selectize = FALSE
+          ),
           textInput("store_website", "Website (optional)"),
 
           # Geocode message only for physical stores

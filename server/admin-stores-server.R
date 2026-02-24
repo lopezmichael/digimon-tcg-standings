@@ -52,6 +52,22 @@ geocode_with_mapbox <- function(address) {
   })
 }
 
+# --- Load scene choices for store dropdown ---
+observe({
+  rv$current_nav
+  rv$data_refresh
+  req(rv$db_con, rv$is_superadmin)
+  scenes <- dbGetQuery(rv$db_con,
+    "SELECT scene_id, display_name FROM scenes
+     WHERE is_active = TRUE
+     ORDER BY scene_type, display_name")
+  if (nrow(scenes) > 0) {
+    choices <- setNames(as.character(scenes$scene_id), scenes$display_name)
+    updateSelectInput(session, "store_scene",
+                      choices = c("Select scene..." = "", choices))
+  }
+})
+
 # Add store
 observeEvent(input$add_store, {
 
@@ -178,15 +194,16 @@ observeEvent(input$add_store, {
 
     # Common fields for both online and physical stores
     website <- if (nchar(input$store_website) > 0) input$store_website else NA_character_
+    scene_id <- if (!is.null(input$store_scene) && input$store_scene != "") as.integer(input$store_scene) else NA_integer_
 
     # Use NA for empty city/region
     store_city_db <- if (nchar(store_city) > 0) store_city else NA_character_
 
     dbExecute(rv$db_con, "
-      INSERT INTO stores (store_id, name, address, city, state, zip_code, latitude, longitude, website, is_online, country)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO stores (store_id, name, address, city, state, zip_code, latitude, longitude, website, is_online, country, scene_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ", params = list(new_id, store_name, address, store_city_db,
-                     state, zip_code, lat, lng, website, is_online, store_country))
+                     state, zip_code, lat, lng, website, is_online, store_country, scene_id))
 
     # Insert any pending schedules for physical stores
     if (!is_online && length(rv$pending_schedules) > 0) {
@@ -219,6 +236,7 @@ observeEvent(input$add_store, {
     updateCheckboxInput(session, "store_is_online", value = FALSE)
     updateSelectInput(session, "store_country", selected = "USA")
     updateSelectInput(session, "store_country_physical", selected = "USA")
+    updateSelectInput(session, "store_scene", selected = "")
 
     # Update store dropdown
     updateSelectInput(session, "tournament_store", choices = get_store_choices(rv$db_con, include_none = TRUE))
@@ -376,7 +394,7 @@ observeEvent(input$admin_store_list__reactable__selected, {
 
   # Fetch full store details by ID
   store <- dbGetQuery(rv$db_con, "
-    SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code, s.website, s.is_online, s.country
+    SELECT s.store_id, s.name, s.address, s.city, s.state, s.zip_code, s.website, s.is_online, s.country, s.scene_id
     FROM stores s
     WHERE s.store_id = ?
   ", params = list(store_id))
@@ -408,6 +426,7 @@ observeEvent(input$admin_store_list__reactable__selected, {
   updateTextInput(session, "store_state", value = if (is.na(store$state)) "" else store$state)
   updateTextInput(session, "store_zip", value = if (is.na(store$zip_code)) "" else store$zip_code)
   updateTextInput(session, "store_website", value = if (is.na(store$website)) "" else store$website)
+  updateSelectInput(session, "store_scene", selected = if (is.na(store$scene_id)) "" else as.character(store$scene_id))
 
   # Clear pending schedules when entering edit mode (we use database schedules instead)
   rv$pending_schedules <- list()
@@ -513,13 +532,14 @@ observeEvent(input$update_store, {
     }
 
     website <- if (nchar(input$store_website) > 0) input$store_website else NA_character_
+    scene_id <- if (!is.null(input$store_scene) && input$store_scene != "") as.integer(input$store_scene) else NA_integer_
 
     dbExecute(rv$db_con, "
       UPDATE stores
       SET name = ?, address = ?, city = ?, state = ?, zip_code = ?,
-          latitude = ?, longitude = ?, website = ?, is_online = ?, country = ?, updated_at = CURRENT_TIMESTAMP
+          latitude = ?, longitude = ?, website = ?, is_online = ?, country = ?, scene_id = ?, updated_at = CURRENT_TIMESTAMP
       WHERE store_id = ?
-    ", params = list(store_name, address, store_city_db, state, zip_code, lat, lng, website, is_online, store_country, store_id))
+    ", params = list(store_name, address, store_city_db, state, zip_code, lat, lng, website, is_online, store_country, scene_id, store_id))
 
     notify(sprintf("Updated store: %s", store_name), type = "message")
 
@@ -536,6 +556,7 @@ observeEvent(input$update_store, {
     updateCheckboxInput(session, "store_is_online", value = FALSE)
     updateSelectInput(session, "store_country", selected = "USA")
     updateSelectInput(session, "store_country_physical", selected = "USA")
+    updateSelectInput(session, "store_scene", selected = "")
     rv$pending_schedules <- list()  # Clear pending schedules
 
     shinyjs::show("add_store")
@@ -646,6 +667,7 @@ observeEvent(input$confirm_delete_store, {
     updateCheckboxInput(session, "store_is_online", value = FALSE)
     updateSelectInput(session, "store_country", selected = "USA")
     updateSelectInput(session, "store_country_physical", selected = "USA")
+    updateSelectInput(session, "store_scene", selected = "")
     rv$pending_schedules <- list()  # Clear pending schedules
 
     shinyjs::show("add_store")
