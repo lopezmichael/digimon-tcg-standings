@@ -17,17 +17,21 @@ observe({
 
   rv$format_refresh
 
-  # Update store dropdown for edit form (preserve current selection)
+  # Capture current selections and choices before deferring
   current_store <- isolate(input$edit_tournament_store)
-  updateSelectInput(session, "edit_tournament_store",
-                    choices = get_store_choices(db_pool, include_none = TRUE),
-                    selected = current_store)
-
-  # Update format dropdown for edit form (preserve current selection)
-  format_choices <- get_format_choices(db_pool)
+  store_choices <- get_store_choices(db_pool, include_none = TRUE)
   current_format <- isolate(input$edit_tournament_format)
-  updateSelectInput(session, "edit_tournament_format", choices = format_choices,
-                    selected = current_format)
+  format_choices <- get_format_choices(db_pool)
+
+  # Defer update until after UI has been flushed to browser
+  session$onFlushed(function() {
+    updateSelectInput(session, "edit_tournament_store",
+                      choices = store_choices,
+                      selected = current_store)
+    updateSelectInput(session, "edit_tournament_format",
+                      choices = format_choices,
+                      selected = current_format)
+  }, once = TRUE)
 })
 
 # Auto-select tournament when navigated from duplicate modal

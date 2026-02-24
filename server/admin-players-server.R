@@ -353,10 +353,13 @@ observe({
   # Preserve current selections when repopulating choices
   current_source <- isolate(input$merge_source_player)
   current_target <- isolate(input$merge_target_player)
-  updateSelectizeInput(session, "merge_source_player", choices = choices,
-                       selected = current_source)
-  updateSelectizeInput(session, "merge_target_player", choices = choices,
-                       selected = current_target)
+  # Defer update until after UI has been flushed to browser
+  session$onFlushed(function() {
+    updateSelectizeInput(session, "merge_source_player", choices = choices,
+                         selected = current_source)
+    updateSelectizeInput(session, "merge_target_player", choices = choices,
+                         selected = current_target)
+  }, once = TRUE)
 })
 
 # Merge preview

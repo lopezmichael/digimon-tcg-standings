@@ -70,9 +70,12 @@ observe({
     choices <- setNames(as.character(scenes$scene_id), scenes$display_name)
     # Preserve current selection when repopulating choices (fixes scene clearing bug)
     current_selection <- isolate(input$store_scene)
-    updateSelectInput(session, "store_scene",
-                      choices = c("Select scene..." = "", choices),
-                      selected = current_selection)
+    # Defer update until after UI has been flushed to browser
+    session$onFlushed(function() {
+      updateSelectInput(session, "store_scene",
+                        choices = c("Select scene..." = "", choices),
+                        selected = current_selection)
+    }, once = TRUE)
   }
 })
 
