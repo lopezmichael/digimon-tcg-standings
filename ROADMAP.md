@@ -7,6 +7,16 @@ This document outlines the planned features, improvements, and bug fixes for the
 
 ---
 
+## v1.0.x - In Progress
+
+Minor improvements and polish for the v1.0 release line.
+
+| ID | Type | Description |
+|----|------|-------------|
+| UX-DME | UX | Dynamic min events default based on scene tournament count |
+
+**Design:** `docs/plans/2026-02-24-dynamic-min-events-design.md`
+
 ---
 
 ## Post-v1.0 / Deferred
