@@ -2,7 +2,7 @@
 
 This document outlines the planned features, improvements, and bug fixes for the tournament tracker.
 
-**Current Version:** v1.0.7
+**Current Version:** v1.0.8
 **Cadence:** ~1 milestone per week
 
 ---
@@ -43,11 +43,25 @@ Upgrade from simple password auth to full user account system:
 
 See `docs/digimon-mascots.md` for full spec and art style guidelines.
 
+### Performance & Scaling
+
+Dashboard is the current bottleneck — loads multiple charts and stats on startup.
+
+| ID | Type | Description |
+|----|------|-------------|
+| PERF1 | PERFORMANCE | Query audit — identify slowest queries with `EXPLAIN ANALYZE`, add missing indexes |
+| PERF2 | PERFORMANCE | Materialized views for dashboard aggregations (pre-computed stats refreshed periodically) |
+| PERF3 | PERFORMANCE | Expand `bindCache()` coverage — audit which outputs aren't cached yet |
+| PERF4 | PERFORMANCE | Lazy tab loading — defer data fetch until tab is actually visited |
+| PERF5 | PERFORMANCE | Neon connection pool tuning — review pool size limits and timeouts |
+| PERF6 | PERFORMANCE | Batch initial queries — combine startup queries into fewer DB round trips |
+
 ### Infrastructure
 
 | ID | Type | Description |
 |----|------|-------------|
 | MR17 | PERFORMANCE | ~~Profile with `shinyloadtest` and size Posit Connect tier~~ (Done in v1.0 — see profiling report) |
+| INF1 | DEVEX | Sentry API integration for Claude — API token setup, proactive error monitoring workflow |
 
 ---
 
