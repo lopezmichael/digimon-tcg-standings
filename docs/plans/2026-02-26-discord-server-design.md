@@ -273,11 +273,12 @@ New person joins Discord
 
 Since the Discord is only 2 days old, this is effectively a fresh setup.
 
-**Step 1:** Create new structure — Forum channels with tags and post templates, categories, permissions
+**Step 1:** Create new structure — Forum channels with tags and post templates, categories, permissions ✅
 
 **Step 2:** Move existing content
 - `#get-started` content → split into short `#welcome` message + pinned guidelines in `#scene-requests`
 - `#admin-requests` threads → recreate as posts in `#scene-requests` (tag appropriately) and `#scene-coordination` for already-onboarded scenes
+- `#feature-requests` old channel → migrate posts to new Forum (see Migrated Posts below)
 - `#data-collection` → keep as-is, moves under Coordination
 - `#error-log` → keep as-is, moves under OPS
 
@@ -285,7 +286,27 @@ Since the Discord is only 2 days old, this is effectively a fresh setup.
 
 **Step 4:** Announce — post in `#announcements` explaining the new layout, DM active scene admins
 
-**Step 5:** Clean up — archive old channels (#admin-requests, #get-started, old onboarding category)
+**Step 5:** Clean up — archive old channels (#admin-requests, #get-started, #feature-requests text channel, old onboarding category)
+
+### Migrated Posts
+
+Feature requests migrated from the old `#feature-requests` text channel to the new Forum:
+
+**Post: "Self-service store submission with player validation"** — Tag: `Planned`
+> **Requested by:** Kargalargus (2/26/2026)
+>
+> Allow players to manually add a store without submitting a Google Form. Add more regions by default and let players submit stores with validation/confirmation from other players to reduce friction and encourage more participation.
+>
+> **Dev note:** Aligns with the public submissions roadmap. Scene admins will manage stores for their areas — working toward removing the Google Form dependency.
+
+**Post: "Import tournament results from Bandai TCG+ CSV export"** — Tag: `New`
+> **Requested by:** Erich DTCG (2/26/2026)
+>
+> Bandai TCG+ has an event management dashboard that can export tournament results as a CSV file. Adding a CSV import option would let organizers submit results directly without screenshots, eliminating OCR errors.
+>
+> Sample CSV was shared via DM for reference.
+>
+> **Dev note:** Previously unaware of this export feature. Could be a more reliable alternative to screenshot OCR for organizers who use Bandai TCG+.
 
 ---
 
