@@ -49,7 +49,7 @@ output$admin_scenes_table <- renderReactable({
       country = colDef(show = FALSE),
       state_region = colDef(show = FALSE),
       created_at = colDef(name = "Created", maxWidth = 100, cell = function(value) {
-        if (is.null(value) || is.na(value)) "" else format(as.Date(value), "%m/%d/%Y")
+        if (is.null(value) || is.na(value)) "" else format(as.POSIXct(value), "%m/%d/%Y")
       }),
       store_count = colDef(name = "Stores", maxWidth = 70)
     ),
