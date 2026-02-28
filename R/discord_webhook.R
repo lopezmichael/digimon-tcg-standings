@@ -18,6 +18,7 @@ discord_send <- function(webhook_url, body, thread_id = NULL) {
     httr2::request(url) |>
       httr2::req_body_json(body) |>
       httr2::req_timeout(10) |>
+      httr2::req_error(is_error = function(resp) FALSE) |>
       httr2::req_perform()
 
     invisible(TRUE)

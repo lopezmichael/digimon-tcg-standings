@@ -1379,15 +1379,21 @@ observeEvent(input$submit_store_request, {
     return()
   }
 
-  if (scene_val == "new") {
-    discord_username <- trimws(input$store_req_discord)
-    discord_post_scene_request(store_name, location, discord_username)
+  tryCatch({
+    if (scene_val == "new") {
+      discord_username <- trimws(input$store_req_discord)
+      discord_post_scene_request(store_name, location, discord_username)
+      removeModal()
+      notify("Your request has been submitted! Join our Discord to follow up.", type = "message", duration = 5)
+    } else {
+      scene_id <- as.integer(scene_val)
+      discord_post_to_scene(scene_id, store_name, location, db_pool)
+      removeModal()
+      notify("Your store request has been sent to the scene admin!", type = "message", duration = 5)
+    }
+  }, error = function(e) {
+    warning(paste("Store request error:", e$message))
     removeModal()
-    notify("Your request has been submitted! Join our Discord to follow up.", type = "message", duration = 5)
-  } else {
-    scene_id <- as.integer(scene_val)
-    discord_post_to_scene(scene_id, store_name, location, db_pool)
-    removeModal()
-    notify("Your store request has been sent to the scene admin!", type = "message", duration = 5)
-  }
+    notify("Your request was received but we couldn't send it to Discord. We'll follow up manually.", type = "warning", duration = 5)
+  })
 })
