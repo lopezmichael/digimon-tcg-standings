@@ -306,7 +306,8 @@ observeEvent(input$goto_faq_score, {
 # Reactive to store context for the data error report
 data_error_context <- reactiveValues(
   item_type = NULL,
-  item_name = NULL
+  item_name = NULL,
+  scene_id = NULL
 )
 
 # Player modal → data error report
@@ -318,8 +319,21 @@ observeEvent(input$report_error_player, {
       default = data.frame()),
     error = function(e) data.frame()
   )
+  # Look up scene from the player's most recent tournament
+  player_scene <- tryCatch(
+    safe_query(db_pool,
+      "SELECT s.scene_id FROM results r
+       JOIN tournaments t ON r.tournament_id = t.tournament_id
+       JOIN stores s ON t.store_id = s.store_id
+       WHERE r.player_id = $1 AND s.scene_id IS NOT NULL
+       ORDER BY t.event_date DESC LIMIT 1",
+      params = list(rv$selected_player_id),
+      default = data.frame()),
+    error = function(e) data.frame()
+  )
   data_error_context$item_type <- "Player"
   data_error_context$item_name <- if (nrow(player) > 0) player$display_name[1] else "Unknown"
+  data_error_context$scene_id <- if (nrow(player_scene) > 0) player_scene$scene_id[1] else NULL
   show_data_error_modal(data_error_context$item_type, data_error_context$item_name)
 })
 
@@ -327,7 +341,7 @@ observeEvent(input$report_error_player, {
 observeEvent(input$report_error_tournament, {
   tourn <- tryCatch(
     safe_query(db_pool,
-      "SELECT t.event_date, s.name as store_name
+      "SELECT t.event_date, s.name as store_name, s.scene_id
        FROM tournaments t JOIN stores s ON t.store_id = s.store_id
        WHERE t.tournament_id = $1",
       params = list(rv$selected_tournament_id),
@@ -338,6 +352,7 @@ observeEvent(input$report_error_tournament, {
   data_error_context$item_name <- if (nrow(tourn) > 0) {
     paste0(tourn$store_name[1], " - ", tourn$event_date[1])
   } else "Unknown"
+  data_error_context$scene_id <- if (nrow(tourn) > 0 && !is.na(tourn$scene_id[1])) tourn$scene_id[1] else NULL
   show_data_error_modal(data_error_context$item_type, data_error_context$item_name)
 })
 
@@ -352,6 +367,7 @@ observeEvent(input$report_error_deck, {
   )
   data_error_context$item_type <- "Deck"
   data_error_context$item_name <- if (nrow(deck) > 0) deck$archetype_name[1] else "Unknown"
+  data_error_context$scene_id <- NULL  # Decks are global, no inherent scene
   show_data_error_modal(data_error_context$item_type, data_error_context$item_name)
 })
 
@@ -393,9 +409,9 @@ observeEvent(input$submit_data_error, {
   }
 
   tryCatch({
-    # Look up scene_id from current scene slug
-    scene_id <- NULL
-    if (!is.null(rv$current_scene) && rv$current_scene != "all") {
+    # Use item's scene first (from tournament/player), fall back to user's selected scene
+    scene_id <- data_error_context$scene_id
+    if (is.null(scene_id) && !is.null(rv$current_scene) && rv$current_scene != "all") {
       scene_row <- safe_query(db_pool,
         "SELECT scene_id FROM scenes WHERE slug = $1",
         params = list(rv$current_scene),
