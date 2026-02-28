@@ -19,7 +19,7 @@ for_tos_ui <- div(
   h2(class = "faq-category", bsicons::bs_icon("cloud-upload"), "Upload Tournament Results"),
   accordion(
     id = "tos_submit",
-    open = TRUE,
+    open = FALSE,
     accordion_panel(
       title = "How to upload results",
       value = "submit-results",
@@ -54,7 +54,7 @@ for_tos_ui <- div(
         )
       ),
       div(
-        class = "contact-links",
+        class = "contact-links contact-links--centered",
         actionLink("tos_to_upload_btn", tagList(bsicons::bs_icon("cloud-upload"), " Go to Upload Results"),
                    class = "contact-link")
       )
@@ -144,7 +144,7 @@ for_tos_ui <- div(
         tags$li("Approximate event frequency")
       ),
       div(
-        class = "contact-links",
+        class = "contact-links contact-links--centered",
         tags$a(
           class = "contact-link",
           href = LINKS$discord,
@@ -219,7 +219,7 @@ for_tos_ui <- div(
       ),
       p(class = "text-muted small", "You can also find this on the ", strong("Stores"), " tab."),
       div(
-        class = "contact-links",
+        class = "contact-links contact-links--centered",
         actionLink("tos_open_store_request",
           tagList(bsicons::bs_icon("plus-circle"), " Request a Store"),
           class = "contact-link"
@@ -240,7 +240,7 @@ for_tos_ui <- div(
       p("Events sync automatically via Limitless integration once your organizer page is added."),
       p(class = "text-muted small", "You can also submit from the ", strong("Stores"), " tab using the \"Request a Store\" button."),
       div(
-        class = "contact-links",
+        class = "contact-links contact-links--centered",
         actionLink("tos_open_store_request_online",
           tagList(bsicons::bs_icon("plus-circle"), " Request an Organizer"),
           class = "contact-link"
@@ -299,7 +299,7 @@ for_tos_ui <- div(
         )
       ),
       div(
-        class = "contact-links",
+        class = "contact-links contact-links--centered",
         actionLink("tos_open_scene_request",
           tagList(bsicons::bs_icon("plus-circle"), " Request a Scene"),
           class = "contact-link"
@@ -371,7 +371,7 @@ for_tos_ui <- div(
         )
       ),
       div(
-        class = "contact-links",
+        class = "contact-links contact-links--centered",
         tags$a(
           class = "contact-link",
           href = LINKS$discord,
@@ -414,7 +414,7 @@ for_tos_ui <- div(
         tags$li("Screenshots if possible")
       ),
       div(
-        class = "contact-links",
+        class = "contact-links contact-links--centered",
         actionLink("tos_open_bug_report",
           tagList(bsicons::bs_icon("bug"), " Report a Bug"),
           class = "contact-link"
@@ -431,7 +431,7 @@ for_tos_ui <- div(
        bsicons::bs_icon("chat-square-text"), "Questions?"),
     p("If you have questions about submitting results or getting involved, don't hesitate to reach out."),
     div(
-      class = "contact-links",
+      class = "contact-links contact-links--centered",
       tags$a(
         class = "contact-link",
         href = LINKS$discord,
