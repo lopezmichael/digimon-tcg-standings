@@ -36,10 +36,12 @@ discord_send <- function(webhook_url, body, thread_id = NULL) {
 
 # Post a store request to an existing scene's #scene-coordination thread
 discord_post_to_scene <- function(scene_id, store_name, city_state, db_pool) {
-  scene <- safe_query(db_pool,
-    "SELECT discord_thread_id, display_name FROM scenes WHERE scene_id = $1",
-    params = list(scene_id),
-    default = data.frame())
+  scene <- tryCatch(
+    pool::dbGetQuery(db_pool,
+      "SELECT discord_thread_id, display_name FROM scenes WHERE scene_id = $1",
+      params = list(scene_id)),
+    error = function(e) data.frame()
+  )
 
   if (nrow(scene) == 0) {
     warning(paste("Scene not found:", scene_id))
