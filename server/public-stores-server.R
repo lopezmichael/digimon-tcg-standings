@@ -1320,7 +1320,7 @@ observeEvent(input$open_store_request, {
   scene_choices <- c("My area isn't listed" = "new")
   if (nrow(scenes) > 0) {
     named <- setNames(as.character(scenes$scene_id), scenes$display_name)
-    scene_choices <- c(named, scene_choices)
+    scene_choices <- c(scene_choices, named)  # "My area isn't listed" first
   }
 
   showModal(modalDialog(
@@ -1400,22 +1400,3 @@ observeEvent(input$submit_store_request, {
   })
 })
 
-# --- For Organizers page: open store request modal ---
-observeEvent(input$tos_open_store_request, {
-  shinyjs::click("open_store_request")
-})
-
-observeEvent(input$tos_open_store_request_online, {
-  shinyjs::click("open_store_request")
-})
-
-# For Organizers page: open scene request modal (pre-select "My area isn't listed")
-observeEvent(input$tos_open_scene_request, {
-  shinyjs::click("open_store_request")
-  # After modal opens, set dropdown to "new" to trigger scene request mode
-  shinyjs::delay(300, {
-    shinyjs::runjs("
-      $('#store_req_scene').val('new').trigger('change');
-    ")
-  })
-})
