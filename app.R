@@ -719,19 +719,19 @@ ui <- page_fillable(
                  title = "Admin Login"),
       # Help dropdown (three-dots menu)
       div(
-        class = "header-help-dropdown",
+        class = "header-help-dropdown dropdown",
         tags$button(
           id = "help_dropdown_toggle",
           class = "header-action-btn dropdown-toggle",
           type = "button",
           `data-bs-toggle` = "dropdown",
+          `data-bs-auto-close` = "true",
           `aria-expanded` = "false",
           title = "Help & Resources",
           bsicons::bs_icon("three-dots-vertical")
         ),
         tags$ul(
           class = "dropdown-menu dropdown-menu-end",
-          `aria-labelledby` = "help_dropdown_toggle",
           tags$li(tags$a(class = "dropdown-item", href = "https://digilab.cards/faq",
                          target = "_blank", rel = "noopener noreferrer",
                          bsicons::bs_icon("question-circle"), " FAQ")),

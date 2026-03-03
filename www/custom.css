@@ -220,6 +220,8 @@
 /* Help dropdown in header */
 .header-help-dropdown {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .header-help-dropdown .dropdown-toggle::after {
@@ -233,21 +235,24 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   min-width: 200px;
   padding: 0.5rem 0;
+  z-index: 1050;
+  margin-top: 0.25rem;
 }
 
 .header-help-dropdown .dropdown-item {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.9) !important;
   padding: 0.5rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   transition: all 0.15s ease;
+  text-decoration: none;
 }
 
 .header-help-dropdown .dropdown-item:hover,
 .header-help-dropdown .dropdown-item:focus {
   background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  color: #FFFFFF !important;
 }
 
 .header-help-dropdown .dropdown-divider {
