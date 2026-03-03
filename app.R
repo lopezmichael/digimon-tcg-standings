@@ -745,7 +745,7 @@ ui <- page_fillable(
           tags$li(actionLink("header_bug_report", class = "dropdown-item",
                              tagList(bsicons::bs_icon("bug"), " Report a Bug"))),
           tags$li(actionLink("header_store_request", class = "dropdown-item",
-                             tagList(bsicons::bs_icon("plus-circle"), " Request Store/Scene")))
+                             tagList(bsicons::bs_icon("plus-circle"), " Request a Store")))
         )
       )
     ),

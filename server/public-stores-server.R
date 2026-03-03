@@ -1320,7 +1320,7 @@ observeEvent(input$open_store_request, {
   scene_choices <- c("My area isn't listed" = "new")
   if (nrow(scenes) > 0) {
     named <- setNames(as.character(scenes$scene_id), scenes$display_name)
-    scene_choices <- c(named, scene_choices)
+    scene_choices <- c(scene_choices, named)  # "My area isn't listed" first
   }
 
   showModal(modalDialog(
