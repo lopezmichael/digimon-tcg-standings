@@ -8,6 +8,7 @@ dotenv::load_dot_env()
 library(highcharter)
 library(htmlwidgets)
 library(jsonlite)
+library(atomtemplates)
 library(pool)
 library(RPostgres)
 
@@ -19,6 +20,18 @@ OUTPUT_DIR <- normalizePath("../digilab-web/public/charts", mustWork = FALSE)
 
 COL_BLUE   <- "#2D7DD2"
 COL_ORANGE <- "#F7941D"
+
+# Base theme: atomtemplates dark + transparent background + dark text for embedding
+blog_theme <- hc_theme_merge(
+  hc_theme_atom_switch("dark"),
+  hc_theme(
+    chart = list(backgroundColor = "transparent"),
+    colors = c(COL_BLUE, COL_ORANGE),
+    title = list(style = list(color = "#1a1a1a")),
+    subtitle = list(style = list(color = "#4a4a4a")),
+    legend = list(itemStyle = list(color = "#333333"))
+  )
+)
 
 # ---------------------------------------------------------------------------
 # Load scene data from database
@@ -98,7 +111,7 @@ world_geojson <- jsonlite::fromJSON(
 )
 
 chart <- highchart(type = "map") %>%
-  hc_chart(backgroundColor = "transparent") %>%
+  hc_add_theme(blog_theme) %>%
   hc_add_series(
     mapData = world_geojson,
     showInLegend = FALSE,
