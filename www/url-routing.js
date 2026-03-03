@@ -5,10 +5,11 @@
   'use strict';
 
   // ==========================================================================
-  // Parent Frame Communication (for iframe embedding on digilab.cards)
+  // Parent Frame Communication (for iframe embedding on app.digilab.cards or digilab.cards/app)
   // ==========================================================================
 
-  var PARENT_ORIGIN = 'https://app.digilab.cards';
+  var VALID_PARENT_ORIGINS = ['https://app.digilab.cards', 'https://digilab.cards'];
+  var PARENT_ORIGIN = VALID_PARENT_ORIGINS[0]; // Default for outgoing messages
   var isInIframe = window.parent !== window;
 
   // Send URL update to parent frame
@@ -28,8 +29,11 @@
 
   // Listen for URL updates from parent (browser back/forward in parent)
   window.addEventListener('message', function(event) {
-    if (event.origin !== PARENT_ORIGIN) return;
+    if (VALID_PARENT_ORIGINS.indexOf(event.origin) === -1) return;
     if (!event.data) return;
+
+    // Lock to the actual parent origin on first valid message
+    PARENT_ORIGIN = event.origin;
 
     if (event.data.type === 'digilab-url-navigate') {
       // Parent is telling us to navigate to a URL (back/forward button)
@@ -129,11 +133,14 @@
     }
 
     // If in iframe, tell parent we're ready to receive initial URL
+    // Try all valid parent origins since we don't know which one is hosting us yet
     if (isInIframe) {
       try {
-        window.parent.postMessage({
-          type: 'digilab-iframe-ready'
-        }, PARENT_ORIGIN);
+        VALID_PARENT_ORIGINS.forEach(function(origin) {
+          window.parent.postMessage({
+            type: 'digilab-iframe-ready'
+          }, origin);
+        });
       } catch (e) {
         // Fallback: use own URL if parent doesn't respond
         var initialSearch = window.location.search;
