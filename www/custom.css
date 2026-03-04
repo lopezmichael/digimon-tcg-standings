@@ -6590,6 +6590,12 @@ div.player-match-indicator.new {
   }
 }
 
+/* Dark mode mobile tab bar */
+[data-bs-theme="dark"] .mobile-tab-bar {
+  background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Admin account info in modal */
 .admin-account-info {
   display: flex;
