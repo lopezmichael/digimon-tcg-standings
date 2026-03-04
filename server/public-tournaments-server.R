@@ -4,6 +4,17 @@
 # Note: Contains overview_tournament_clicked handler which is triggered from
 # the Dashboard tab to open tournament details from "Recent Tournaments" table.
 
+# ---------------------------------------------------------------------------
+# Page Rendering (desktop vs mobile)
+# ---------------------------------------------------------------------------
+output$tournaments_page <- renderUI({
+  if (is_mobile()) {
+    source("views/mobile-tournaments-ui.R", local = TRUE)$value
+  } else {
+    tournaments_ui
+  }
+})
+
 # Reset tournaments filters
 observeEvent(input$reset_tournaments_filters, {
   updateTextInput(session, "tournaments_search", value = "")

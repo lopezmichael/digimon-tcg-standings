@@ -4,6 +4,17 @@
 # Note: Contains overview_player_clicked handler which is triggered from
 # the Dashboard tab to open player details from "Top Players" table.
 
+# ---------------------------------------------------------------------------
+# Page Rendering (desktop vs mobile)
+# ---------------------------------------------------------------------------
+output$players_page <- renderUI({
+  if (is_mobile()) {
+    source("views/mobile-players-ui.R", local = TRUE)$value
+  } else {
+    players_ui
+  }
+})
+
 # Shared reactive: fetch snapshot ratings for historical format (or NULL)
 historical_snapshot_data <- reactive({
   selected_format <- input$players_format

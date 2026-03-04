@@ -2,6 +2,17 @@
 # Public: Meta Analysis Server Logic
 # =============================================================================
 
+# ---------------------------------------------------------------------------
+# Page Rendering (desktop vs mobile)
+# ---------------------------------------------------------------------------
+output$meta_page <- renderUI({
+  if (is_mobile()) {
+    source("views/mobile-meta-ui.R", local = TRUE)$value
+  } else {
+    meta_ui
+  }
+})
+
 # Reset meta filters
 observeEvent(input$reset_meta_filters, {
   updateTextInput(session, "meta_search", value = "")
