@@ -135,6 +135,31 @@ tagList(
     highchartOutput("player_growth_chart", height = "200px")
   ),
 
+  # -- Top 3 Conversion ------------------------------------------------------
+  div(class = "mobile-section-header", "Top 3 Conversion"),
+  div(
+    class = "mobile-chart-container",
+    highchartOutput("conversion_rate_chart", height = "250px")
+  ),
+
+  # -- Meta Diversity --------------------------------------------------------
+  div(class = "mobile-section-header", "Meta Diversity"),
+  div(
+    class = "mobile-chart-container",
+    highchartOutput("meta_diversity_gauge", height = "200px")
+  ),
+  div(class = "info-hint-box text-center mb-2",
+    bsicons::bs_icon("info-circle", class = "info-hint-icon"),
+    "How evenly distributed tournament wins are across different decks. Higher = healthier meta."
+  ),
+
+  # -- Recent Tournaments ----------------------------------------------------
+  div(class = "mobile-section-header", "Recent Tournaments"),
+  div(
+    class = "mobile-table-compact",
+    reactableOutput("recent_tournaments")
+  ),
+
   # -- Rising Stars ----------------------------------------------------------
   div(class = "mobile-section-header", "Rising Stars"),
   uiOutput("mobile_rising_stars"),
