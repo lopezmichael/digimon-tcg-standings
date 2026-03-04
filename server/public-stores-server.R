@@ -5,6 +5,17 @@
 # This is kept here for now due to physical proximity; could move to shared-server.R later.
 # Also contains reset_dashboard_filters which should ideally be in Dashboard server.
 
+# ---------------------------------------------------------------------------
+# Page Rendering (desktop vs mobile)
+# ---------------------------------------------------------------------------
+output$stores_page <- renderUI({
+  if (is_mobile()) {
+    source("views/mobile-stores-ui.R", local = TRUE)$value
+  } else {
+    stores_ui
+  }
+})
+
 # =============================================================================
 # View Toggle (Schedule / All Stores)
 # =============================================================================

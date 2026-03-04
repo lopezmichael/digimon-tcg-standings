@@ -8,6 +8,17 @@
 # - All dashboard charts (meta share, conversion, color distribution, trends)
 
 # ---------------------------------------------------------------------------
+# Page Rendering (desktop vs mobile)
+# ---------------------------------------------------------------------------
+output$dashboard_page <- renderUI({
+  if (is_mobile()) {
+    source("views/mobile-dashboard-ui.R", local = TRUE)$value
+  } else {
+    dashboard_ui
+  }
+})
+
+# ---------------------------------------------------------------------------
 # Dashboard Data
 # ---------------------------------------------------------------------------
 

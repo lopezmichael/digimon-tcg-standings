@@ -872,11 +872,11 @@ ui <- page_fillable(
       navset_hidden(
         id = "main_content",
 
-        nav_panel_hidden(value = "dashboard", dashboard_ui),
-        nav_panel_hidden(value = "stores", stores_ui),
-        nav_panel_hidden(value = "players", players_ui),
-        nav_panel_hidden(value = "meta", meta_ui),
-        nav_panel_hidden(value = "tournaments", tournaments_ui),
+        nav_panel_hidden(value = "dashboard", uiOutput("dashboard_page")),
+        nav_panel_hidden(value = "stores", uiOutput("stores_page")),
+        nav_panel_hidden(value = "players", uiOutput("players_page")),
+        nav_panel_hidden(value = "meta", uiOutput("meta_page")),
+        nav_panel_hidden(value = "tournaments", uiOutput("tournaments_page")),
         nav_panel_hidden(value = "submit", submit_ui),
         nav_panel_hidden(value = "admin_results", uiOutput("admin_results_ui")),
         nav_panel_hidden(value = "admin_tournaments", uiOutput("admin_tournaments_ui")),
