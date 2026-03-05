@@ -527,7 +527,8 @@ output$mobile_players_cards <- renderUI({
     load_btn <- tags$button(
       class = "mobile-load-more",
       onclick = "Shiny.setInputValue('mobile_players_load_more', Math.random(), {priority: 'event'})",
-      sprintf("Load more (%d remaining)", remaining)
+      span(class = "mobile-load-more-label", "LOAD MORE"),
+      span(class = "mobile-load-more-count", sprintf("%d remaining", remaining))
     )
     tagList(card_list, load_btn)
   } else {
