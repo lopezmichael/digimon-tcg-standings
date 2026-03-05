@@ -5,6 +5,16 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-03-04 - Fixes & Upload Improvements
+
+### Fixed
+- **Achievement scores include all events**: Achievement scores now correctly include all event types. Only competitive rating (Elo) excludes unrated events.
+- **Title strip dropdown styling**: Styled native `<select>` options with dark blue backgrounds matching the scene selector, fixing white-on-white text in Chrome light mode.
+- **Upload Results UI language**: Updated wizard step from "Upload Screenshots" to "Upload Results", promoted CSV as recommended upload method, renamed process button.
+
+### Added
+- **CSV upload validation**: File size limit (500KB), row cap (300), required column checks, ranking/points range validation to prevent malformed uploads.
+
 ## [1.3.0] - 2026-03-04 - Mobile Views & PWA Fixes
 
 ### Added
@@ -19,11 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile store card redesign**: Two-row layout with store name + events badge (top), schedule/location + star rating (bottom). Online organizer cards updated similarly.
 - **Map scene-aware bounding boxes**: Desktop, mobile, and admin scene maps now fit bounds around both stores and the scene's center coordinates, ensuring the full scene area is visible.
 - **Casuals event type**: New "Casuals" event type available for tournament entry.
-- **Unrated event types**: Casuals, Regulation Battles, Release Events, and Other events are excluded from competitive rating and achievement score calculations.
+- **Unrated event types**: Casuals, Regulation Battles, Release Events, and Other events are excluded from competitive rating calculations (achievement scores still include all events).
 - **CSV upload support**: Upload Results tab now accepts Bandai TCG+ CSV exports alongside screenshots. CSV files are parsed directly without OCR.
 
 ### Fixed
-- **Dropdown text color**: Title strip format/event type dropdown options now show dark text on light backgrounds in light mode (was white on white).
+- **Dropdown text color**: Title strip format/event type dropdown options styled with dark backgrounds for readability.
 
 ### Changed
 - **Mobile tab bar**: Reduced from 6 tabs to 5 (removed Upload Results) for a cleaner mobile navigation.

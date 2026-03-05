@@ -1,5 +1,5 @@
 ---
-currentVersion: "1.3.0"
+currentVersion: "1.3.1"
 lastUpdated: "2026-03-04"
 
 inProgress: []
@@ -31,17 +31,6 @@ planned:
     tags: [feature, data]
     targetVersion: "v1.5.0"
 
-  - id: casual-event-types
-    title: "Casual Event Types"
-    description: "New event types (regulation battles, casual night, experimental formats) that don't affect Elo ratings, keeping competitive scores clean."
-    tags: [feature, ratings]
-    targetVersion: "v1.5.0"
-
-  - id: csv-upload
-    title: "CSV Result Upload"
-    description: "Import tournament results from Bandai TCG+ organizer CSV exports for faster, error-free data entry."
-    tags: [feature, data]
-    targetVersion: "v1.5.0"
 
   - id: ocr-improvements
     title: "OCR Upload Improvements"
@@ -62,11 +51,6 @@ planned:
     tags: [ux, feature]
     targetVersion: "v1.6.0"
 
-  - id: store-page-reorg
-    title: "All Scenes Store Reorganization"
-    description: "Group stores by scene on the All Scenes view with collapsible sections and additional filtering options to reduce clutter."
-    tags: [ux, feature]
-    targetVersion: "v1.6.0"
 
   - id: scene-selector-redesign
     title: "Scene Selector Redesign"
@@ -157,6 +141,28 @@ planned:
     targetVersion: "Future"
 
 completed:
+  # v1.3.1
+  - id: casual-event-types
+    title: "Casual Event Types"
+    description: "New Casuals event type plus unrated event exclusions (casuals, regulation battles, release events, other) from competitive rating. Achievement scores still include all events."
+    tags: [feature, ratings]
+    date: "2026-03"
+    version: "v1.3.1"
+
+  - id: csv-upload
+    title: "CSV Result Upload"
+    description: "Upload Results tab accepts Bandai TCG+ CSV exports with validation (file size, columns, data ranges). CSV promoted as recommended upload method."
+    tags: [feature, data]
+    date: "2026-03"
+    version: "v1.3.1"
+
+  - id: store-page-reorg
+    title: "All Scenes Store Reorganization"
+    description: "All Scenes view shows scene summary cards instead of individual stores. Clicking navigates into the scene. Applied to desktop cards, schedule views, and mobile."
+    tags: [ux, feature]
+    date: "2026-03"
+    version: "v1.3.1"
+
   # v1.3.0
   - id: mobile-player-cards
     title: "Mobile Player Card Redesign"

@@ -7,13 +7,16 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 ## 2026-03-04: Casuals Event Type, Unrated Events, CSV Upload
 
 ### Casuals Event Type
-Added "Casuals" to `EVENT_TYPES` in `app.R`. Along with Regulation Battles, Release Events, and Other, casuals are excluded from all rating calculations via `UNRATED_EVENT_TYPES` constant. Filter applied in three places in `R/ratings.R`: `calculate_ratings_single_pass`, `calculate_competitive_ratings` (legacy), and `calculate_achievement_scores`.
+Added "Casuals" to `EVENT_TYPES` in `app.R`. Along with Regulation Battles, Release Events, and Other, casuals are excluded from **competitive rating only** via `UNRATED_EVENT_TYPES` constant. Filter applied in `calculate_ratings_single_pass` and `calculate_competitive_ratings` (legacy) in `R/ratings.R`. Achievement scores intentionally include all event types since they reward participation broadly.
 
 ### CSV Upload
-Upload Results tab now accepts Bandai TCG+ CSV exports alongside screenshots. CSV parsing in `parse_tcgplus_csv()` maps: Ranking → placement, User Name → username, Membership Number → member_number, Win Points → points (W-L-T derived from points / 3 per win, 1 per tie). CSV files skip OCR entirely and auto-update player count if CSV has more rows. File preview shows CSV icon with player count instead of image thumbnail.
+Upload Results tab now accepts Bandai TCG+ CSV exports alongside screenshots. CSV parsing in `parse_tcgplus_csv()` maps: Ranking → placement, User Name → username, Membership Number → member_number, Win Points → points (W-L-T derived from points / 3 per win, 1 per tie). CSV files skip OCR entirely and auto-update player count if CSV has more rows. File preview shows CSV icon with player count instead of image thumbnail. Validation: 500KB file size limit, 300 row cap, required column checks (Ranking + User Name), ranking range (1-256), points range (0-100).
 
-### Dropdown Text Color
-Title strip native `<select>` option elements had white text on white background in light mode. Fixed by making option styling theme-aware: light mode gets dark text on white background, dark mode keeps white on dark blue.
+### Upload Results UI
+Updated wizard step label from "Upload Screenshots" to "Upload Results". CSV promoted as recommended option above screenshots. Process button renamed to "Process Results".
+
+### Dropdown Text Color (Title Strips)
+Native `<select>` `<option>` elements cannot be reliably styled on Chrome — the browser ignores `background-color` and `color` on options. Tried `!important`, `color-scheme: dark`, selectize (worked but looked ugly). Final fix: target `select option` directly with `background-color: #0A3055; color: #FFFFFF` matching the scene selector's proven pattern. The scene selector in the header uses this same approach and works perfectly.
 
 ---
 
