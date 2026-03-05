@@ -93,9 +93,9 @@ submit_ui <- tagList(
               # Divider
               tags$hr(class = "my-3"),
 
-              # Screenshots Section
+              # Upload Section (Screenshots or CSV)
               div(
-                tags$label(class = "form-label fw-semibold text-muted small", "SCREENSHOTS"),
+                tags$label(class = "form-label fw-semibold text-muted small", "UPLOAD STANDINGS"),
                 div(
                   class = "d-flex align-items-start gap-3",
                   # Upload area - compact
@@ -103,7 +103,9 @@ submit_ui <- tagList(
                     class = "upload-dropzone flex-shrink-0",
                     fileInput("submit_screenshots", NULL,
                               multiple = TRUE,
-                              accept = c("image/png", "image/jpeg", "image/jpg", "image/webp", ".png", ".jpg", ".jpeg", ".webp"),
+                              accept = c("image/png", "image/jpeg", "image/jpg", "image/webp",
+                                         ".png", ".jpg", ".jpeg", ".webp",
+                                         "text/csv", ".csv"),
                               placeholder = "No files selected",
                               buttonLabel = tags$span(bsicons::bs_icon("cloud-upload"), " Browse"))
                   ),
@@ -111,6 +113,7 @@ submit_ui <- tagList(
                   div(
                     class = "upload-tips small text-muted",
                     div(class = "mb-1", bsicons::bs_icon("info-circle", class = "me-1"), "Bandai TCG+ standings screenshots"),
+                    div(class = "mb-1", bsicons::bs_icon("filetype-csv", class = "me-1"), "Or upload a Bandai TCG+ CSV export"),
                     div(bsicons::bs_icon("images", class = "me-1"), "Multiple screenshots OK if standings span screens")
                   )
                 ),

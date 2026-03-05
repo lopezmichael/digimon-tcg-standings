@@ -348,10 +348,14 @@ EVENT_TYPES <- c(
   "Evolution Cup" = "evo_cup",
   "Store Championship" = "store_championship",
   "Regionals" = "regionals",
+  "Casuals" = "casuals",
   "Regulation Battle" = "regulation_battle",
   "Release Event" = "release_event",
   "Other" = "other"
 )
+
+# Event types that do NOT affect competitive rating calculations
+UNRATED_EVENT_TYPES <- c("casuals", "regulation_battle", "release_event", "other")
 
 # External links (single source of truth)
 LINKS <- list(

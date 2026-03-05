@@ -1273,6 +1273,7 @@ format_event_type <- function(et) {
     "regional" = "Regional",
     "regionals" = "Regionals",
     "online" = "Online",
+    "casuals" = "Casuals",
     "regulation_battle" = "Regulation Battle",
     "release_event" = "Release Event",
     "other" = "Other",

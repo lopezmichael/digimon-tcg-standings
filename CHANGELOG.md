@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **All Scenes store directory**: "All Scenes" now shows scene summary cards (name, store count, events, avg players) instead of listing every store. Clicking navigates to that scene. Applied to desktop cards/schedule views and mobile.
 - **Mobile store card redesign**: Two-row layout with store name + events badge (top), schedule/location + star rating (bottom). Online organizer cards updated similarly.
 - **Map scene-aware bounding boxes**: Desktop, mobile, and admin scene maps now fit bounds around both stores and the scene's center coordinates, ensuring the full scene area is visible.
+- **Casuals event type**: New "Casuals" event type available for tournament entry.
+- **Unrated event types**: Casuals, Regulation Battles, Release Events, and Other events are excluded from competitive rating and achievement score calculations.
+- **CSV upload support**: Upload Results tab now accepts Bandai TCG+ CSV exports alongside screenshots. CSV files are parsed directly without OCR.
+
+### Fixed
+- **Dropdown text color**: Title strip format/event type dropdown options now show dark text on light backgrounds in light mode (was white on white).
 
 ### Changed
 - **Mobile tab bar**: Reduced from 6 tabs to 5 (removed Upload Results) for a cleaner mobile navigation.

@@ -83,7 +83,7 @@ output$submit_duplicate_warning <- renderUI({
   )
 })
 
-# Preview uploaded screenshots
+# Preview uploaded files (screenshots or CSV)
 output$submit_screenshot_preview <- renderUI({
   req(input$submit_screenshots)
 
@@ -94,36 +94,108 @@ output$submit_screenshot_preview <- renderUI({
   # Store file info for later
   rv$submit_uploaded_files <- files
 
-  # Create image thumbnails
+  # Create thumbnails/previews
   div(
     class = "screenshot-thumbnails",
     lapply(seq_len(nrow(files)), function(i) {
-      # Read file and encode as base64 for inline display
       file_path <- files$datapath[i]
       file_ext <- tolower(tools::file_ext(files$name[i]))
-      mime_type <- switch(file_ext,
-        "png" = "image/png",
-        "jpg" = "image/jpeg",
-        "jpeg" = "image/jpeg",
-        "webp" = "image/webp",
-        "image/png"
-      )
 
-      # Encode image as base64
-      img_data <- base64enc::base64encode(file_path)
-      img_src <- paste0("data:", mime_type, ";base64,", img_data)
+      if (file_ext == "csv") {
+        # CSV preview: show row count
+        csv_data <- tryCatch(read.csv(file_path, stringsAsFactors = FALSE), error = function(e) NULL)
+        row_count <- if (!is.null(csv_data)) nrow(csv_data) else "?"
 
-      div(
-        class = "screenshot-thumb",
-        tags$img(src = img_src, alt = files$name[i]),
         div(
-          class = "screenshot-thumb-label",
-          span(class = "filename", files$name[i])
+          class = "screenshot-thumb",
+          div(
+            style = "width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 200, 255, 0.06); border-radius: 4px;",
+            bsicons::bs_icon("filetype-csv", size = "2rem", class = "text-primary mb-1"),
+            span(class = "small text-muted", sprintf("%s players", row_count))
+          ),
+          div(
+            class = "screenshot-thumb-label",
+            span(class = "filename", files$name[i])
+          )
         )
-      )
+      } else {
+        # Image thumbnail
+        mime_type <- switch(file_ext,
+          "png" = "image/png",
+          "jpg" = "image/jpeg",
+          "jpeg" = "image/jpeg",
+          "webp" = "image/webp",
+          "image/png"
+        )
+
+        img_data <- base64enc::base64encode(file_path)
+        img_src <- paste0("data:", mime_type, ";base64,", img_data)
+
+        div(
+          class = "screenshot-thumb",
+          tags$img(src = img_src, alt = files$name[i]),
+          div(
+            class = "screenshot-thumb-label",
+            span(class = "filename", files$name[i])
+          )
+        )
+      }
     })
   )
 })
+
+# Helper: Parse Bandai TCG+ CSV export into standings data frame
+# CSV columns: Ranking, Membership Number, User Name, Win Points, OMW %, OOMW %, Memo, Deck URLs
+parse_tcgplus_csv <- function(file_path, total_rounds = 4) {
+  csv <- tryCatch(
+    read.csv(file_path, stringsAsFactors = FALSE, strip.white = TRUE),
+    error = function(e) {
+      message("[CSV] Parse error: ", e$message)
+      return(NULL)
+    }
+  )
+
+  if (is.null(csv) || nrow(csv) == 0) return(data.frame())
+
+  # Normalize column names (handle spaces, case variations)
+  names(csv) <- trimws(names(csv))
+
+  # Map columns — try common naming patterns
+  rank_col <- grep("^Ranking$|^Rank$|^Place$", names(csv), ignore.case = TRUE, value = TRUE)[1]
+  member_col <- grep("^Membership.Number$|^Member.*Number$|^MemberID$", names(csv), ignore.case = TRUE, value = TRUE)[1]
+  name_col <- grep("^User.Name$|^Username$|^Name$|^Player$", names(csv), ignore.case = TRUE, value = TRUE)[1]
+  points_col <- grep("^Win.Points$|^Points$|^WinPoints$", names(csv), ignore.case = TRUE, value = TRUE)[1]
+
+  if (is.na(rank_col) || is.na(name_col)) {
+    message("[CSV] Missing required columns (Ranking, User Name). Found: ", paste(names(csv), collapse = ", "))
+    return(data.frame())
+  }
+
+  # Build result data frame matching OCR output format
+  result <- data.frame(
+    placement = as.integer(csv[[rank_col]]),
+    username = trimws(as.character(csv[[name_col]])),
+    member_number = if (!is.na(member_col)) trimws(as.character(csv[[member_col]])) else NA_character_,
+    points = if (!is.na(points_col)) as.integer(csv[[points_col]]) else NA_integer_,
+    stringsAsFactors = FALSE
+  )
+
+  # Calculate W-L-T from points (3 per win, 1 per tie, 0 per loss)
+  result$wins <- ifelse(!is.na(result$points), result$points %/% 3L, NA_integer_)
+  remaining <- ifelse(!is.na(result$points), result$points %% 3L, NA_integer_)
+  result$ties <- ifelse(!is.na(remaining), remaining, NA_integer_)
+  result$losses <- ifelse(!is.na(result$wins) & !is.na(result$ties),
+    as.integer(total_rounds) - result$wins - result$ties, NA_integer_)
+
+  # Clean member numbers (remove leading zeros display issues)
+  if (!is.na(member_col)) {
+    result$member_number <- gsub("^0+", "", result$member_number)
+    result$member_number <- ifelse(result$member_number == "", NA_character_, result$member_number)
+  }
+
+  message(sprintf("[CSV] Parsed %d players from CSV", nrow(result)))
+  result
+}
 
 # Helper: Complete OCR processing after validation
 # Handles rank validation, padding, player matching, and step 2 transition
@@ -341,70 +413,104 @@ observeEvent(input$submit_process_ocr, {
     return()
   }
 
-  # Show processing modal with blue theme
-  showModal(modalDialog(
-    div(
-      class = "text-center py-4",
-      div(class = "processing-spinner mb-3"),
-      h5(class = "text-primary", "Processing Screenshots"),
-      p(class = "text-muted mb-0", id = "ocr_status_text", "Extracting player data..."),
-      tags$small(class = "text-muted", paste(nrow(files), "file(s) to process"))
-    ),
-    title = NULL,
-    footer = NULL,
-    easyClose = FALSE,
-    size = "s"
-  ))
+  # Separate CSV files from image files
+  file_exts <- tolower(tools::file_ext(files$name))
+  csv_indices <- which(file_exts == "csv")
+  img_indices <- which(file_exts != "csv")
 
   all_results <- list()
   ocr_errors <- c()
   ocr_texts <- c()
 
-  for (i in seq_len(nrow(files))) {
+  # Process CSV files first (no OCR needed)
+  for (i in csv_indices) {
     file_path <- files$datapath[i]
     file_name <- files$name[i]
 
-    # Call OCR
-    ocr_result <- tryCatch({
-      gcv_detect_text(file_path, verbose = TRUE)
+    parsed <- tryCatch({
+      parse_tcgplus_csv(file_path, total_rounds)
     }, error = function(e) {
       ocr_errors <<- c(ocr_errors, paste(file_name, ":", e$message))
-      message("[SUBMIT] OCR error for ", file_name, ": ", e$message)
-      NULL
+      message("[SUBMIT] CSV parse error for ", file_name, ": ", e$message)
+      data.frame()
     })
 
-    # Extract text from structured result (backward compatible with plain string)
-    ocr_text <- if (is.list(ocr_result)) ocr_result$text else ocr_result
+    if (nrow(parsed) > 0) {
+      all_results[[length(all_results) + 1]] <- parsed
+      message("[SUBMIT] Parsed ", nrow(parsed), " results from CSV: ", file_name)
 
-    if (!is.null(ocr_text) && !is.na(ocr_text) && ocr_text != "") {
-      ocr_texts <- c(ocr_texts, ocr_text)
-
-      # Parse results (layout-first with text fallback)
-      parsed <- tryCatch({
-        parse_standings(ocr_result, total_rounds, verbose = TRUE)
-      }, error = function(e) {
-        ocr_errors <<- c(ocr_errors, paste("Parse error:", e$message))
-        message("[SUBMIT] Parse error: ", e$message)
-        data.frame()
-      })
-
-      if (nrow(parsed) > 0) {
-        all_results[[length(all_results) + 1]] <- parsed
-        message("[SUBMIT] Parsed ", nrow(parsed), " results from ", file_name)
-      } else {
-        message("[SUBMIT] No results parsed from ", file_name)
+      # Auto-update player count from CSV if it has more players
+      if (nrow(parsed) > total_players) {
+        total_players <- nrow(parsed)
+        updateNumericInput(session, "submit_players", value = total_players)
       }
     } else {
-      message("[SUBMIT] No OCR text returned for ", file_name)
-      if (is.null(ocr_text)) {
-        ocr_errors <- c(ocr_errors, paste(file_name, ": OCR returned NULL (check API key)"))
-      } else {
-        ocr_errors <- c(ocr_errors, paste(file_name, ": OCR returned empty text"))
-      }
+      ocr_errors <- c(ocr_errors, paste(file_name, ": Could not parse CSV data"))
     }
   }
 
-  removeModal()
+  # Process image files with OCR
+  if (length(img_indices) > 0) {
+    showModal(modalDialog(
+      div(
+        class = "text-center py-4",
+        div(class = "processing-spinner mb-3"),
+        h5(class = "text-primary", "Processing Screenshots"),
+        p(class = "text-muted mb-0", id = "ocr_status_text", "Extracting player data..."),
+        tags$small(class = "text-muted", paste(length(img_indices), "file(s) to process"))
+      ),
+      title = NULL,
+      footer = NULL,
+      easyClose = FALSE,
+      size = "s"
+    ))
+
+    for (i in img_indices) {
+      file_path <- files$datapath[i]
+      file_name <- files$name[i]
+
+      # Call OCR
+      ocr_result <- tryCatch({
+        gcv_detect_text(file_path, verbose = TRUE)
+      }, error = function(e) {
+        ocr_errors <<- c(ocr_errors, paste(file_name, ":", e$message))
+        message("[SUBMIT] OCR error for ", file_name, ": ", e$message)
+        NULL
+      })
+
+      # Extract text from structured result (backward compatible with plain string)
+      ocr_text <- if (is.list(ocr_result)) ocr_result$text else ocr_result
+
+      if (!is.null(ocr_text) && !is.na(ocr_text) && ocr_text != "") {
+        ocr_texts <- c(ocr_texts, ocr_text)
+
+        # Parse results (layout-first with text fallback)
+        parsed <- tryCatch({
+          parse_standings(ocr_result, total_rounds, verbose = TRUE)
+        }, error = function(e) {
+          ocr_errors <<- c(ocr_errors, paste("Parse error:", e$message))
+          message("[SUBMIT] Parse error: ", e$message)
+          data.frame()
+        })
+
+        if (nrow(parsed) > 0) {
+          all_results[[length(all_results) + 1]] <- parsed
+          message("[SUBMIT] Parsed ", nrow(parsed), " results from ", file_name)
+        } else {
+          message("[SUBMIT] No results parsed from ", file_name)
+        }
+      } else {
+        message("[SUBMIT] No OCR text returned for ", file_name)
+        if (is.null(ocr_text)) {
+          ocr_errors <- c(ocr_errors, paste(file_name, ": OCR returned NULL (check API key)"))
+        } else {
+          ocr_errors <- c(ocr_errors, paste(file_name, ": OCR returned empty text"))
+        }
+      }
+    }
+
+    removeModal()
+  }
 
   if (length(all_results) == 0) {
     message("[SUBMIT] OCR failed - ocr_errors: ", paste(ocr_errors, collapse = "; "))
@@ -417,7 +523,7 @@ observeEvent(input$submit_process_ocr, {
       "\n\nCould not read the screenshots. Make sure the image is clear and shows the Bandai TCG+ standings screen. If this keeps happening, try a different screenshot or contact us."
     }
     notify(
-      paste0("Could not extract player data from screenshots.", error_detail),
+      paste0("Could not extract player data from uploaded files.", error_detail),
       type = "error",
       duration = 10
     )

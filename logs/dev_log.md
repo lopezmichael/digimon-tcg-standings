@@ -4,6 +4,19 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-03-04: Casuals Event Type, Unrated Events, CSV Upload
+
+### Casuals Event Type
+Added "Casuals" to `EVENT_TYPES` in `app.R`. Along with Regulation Battles, Release Events, and Other, casuals are excluded from all rating calculations via `UNRATED_EVENT_TYPES` constant. Filter applied in three places in `R/ratings.R`: `calculate_ratings_single_pass`, `calculate_competitive_ratings` (legacy), and `calculate_achievement_scores`.
+
+### CSV Upload
+Upload Results tab now accepts Bandai TCG+ CSV exports alongside screenshots. CSV parsing in `parse_tcgplus_csv()` maps: Ranking → placement, User Name → username, Membership Number → member_number, Win Points → points (W-L-T derived from points / 3 per win, 1 per tie). CSV files skip OCR entirely and auto-update player count if CSV has more rows. File preview shows CSV icon with player count instead of image thumbnail.
+
+### Dropdown Text Color
+Title strip native `<select>` option elements had white text on white background in light mode. Fixed by making option styling theme-aware: light mode gets dark text on white background, dark mode keeps white on dark blue.
+
+---
+
 ## 2026-03-04: Map Bounding Boxes Include Scene Center
 
 All three store maps (desktop, mobile, admin scene editor) now include the scene's own lat/lng coordinates in the bounding box calculation. Previously maps only fit bounds around store markers, so if stores were clustered in one area and the scene center was elsewhere, the map wouldn't show the full scene region. Fix: query scene coordinates by slug, create an sf point, `rbind` with store points, pass combined sf to `fit_bounds()`. Admin scene minimap switched from fixed `set_view(zoom=10)` to dynamic `fit_bounds` (falls back to `set_view` when no stores exist).

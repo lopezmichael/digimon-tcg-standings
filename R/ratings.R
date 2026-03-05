@@ -64,6 +64,12 @@ calculate_ratings_single_pass <- function(db_con, from_date = NULL, record_histo
     sprintf("AND t.event_date >= '%s'", from_date)
   } else ""
 
+  # Exclude unrated event types (casuals, regulation battles, release events, other)
+  unrated_types <- if (exists("UNRATED_EVENT_TYPES")) UNRATED_EVENT_TYPES
+                   else c("casuals", "regulation_battle", "release_event", "other")
+  unrated_sql <- paste0("'", unrated_types, "'", collapse = ", ")
+  event_type_filter <- sprintf("AND (t.event_type IS NULL OR t.event_type NOT IN (%s))", unrated_sql)
+
   # Get tournament results to process
   results <- DBI::dbGetQuery(db_con, sprintf("
     SELECT r.tournament_id, r.player_id, r.placement,
@@ -76,8 +82,9 @@ calculate_ratings_single_pass <- function(db_con, from_date = NULL, record_histo
       AND t.player_count IS NOT NULL
       AND t.player_count >= 4
       %s
+      %s
     ORDER BY t.event_date ASC, t.tournament_id ASC, r.placement ASC
-  ", date_condition))
+  ", event_type_filter, date_condition))
 
   if (nrow(results) == 0) {
     message("[ratings] No tournaments to process")
@@ -251,8 +258,13 @@ calculate_ratings_from_date <- function(db_con, from_date) {
 #' @return Data frame with player_id and competitive_rating
 calculate_competitive_ratings <- function(db_con, format_filter = NULL, date_cutoff = NULL) {
 
+  # Exclude unrated event types
+  unrated_types <- if (exists("UNRATED_EVENT_TYPES")) UNRATED_EVENT_TYPES
+                   else c("casuals", "regulation_battle", "release_event", "other")
+  unrated_sql <- paste0("'", unrated_types, "'", collapse = ", ")
+
   # Build conditions
-  conditions <- character(0)
+  conditions <- c(sprintf("AND (t.event_type IS NULL OR t.event_type NOT IN (%s))", unrated_sql))
   if (!is.null(format_filter) && format_filter != "") {
     conditions <- c(conditions, sprintf("AND t.format = '%s'", format_filter))
   }
@@ -379,16 +391,21 @@ calculate_competitive_ratings <- function(db_con, format_filter = NULL, date_cut
 #' @return Data frame with player_id and achievement_score
 calculate_achievement_scores <- function(db_con) {
 
-  # Get all results with tournament info
+  # Get all results with tournament info (exclude unrated event types)
   # Include archetype_name to filter out UNKNOWN for deck variety calculation
-  results <- DBI::dbGetQuery(db_con, "
+  unrated_types <- if (exists("UNRATED_EVENT_TYPES")) UNRATED_EVENT_TYPES
+                   else c("casuals", "regulation_battle", "release_event", "other")
+  unrated_sql <- paste0("'", unrated_types, "'", collapse = ", ")
+
+  results <- DBI::dbGetQuery(db_con, sprintf("
     SELECT r.player_id, r.tournament_id, r.placement, r.archetype_id,
            t.player_count, t.store_id, t.format, da.archetype_name
     FROM results r
     JOIN tournaments t ON r.tournament_id = t.tournament_id
     LEFT JOIN deck_archetypes da ON r.archetype_id = da.archetype_id
     WHERE r.placement IS NOT NULL
-  ")
+      AND (t.event_type IS NULL OR t.event_type NOT IN (%s))
+  ", unrated_sql))
 
   if (nrow(results) == 0) {
     return(data.frame(player_id = integer(), achievement_score = numeric()))
