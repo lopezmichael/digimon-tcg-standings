@@ -1004,13 +1004,37 @@ body.bslib-gap-spacing {
   color: #FFFFFF;
 }
 
-/* Force dark color scheme on title strip selects so browser renders
-   options with dark background + light text in the native dropdown */
-.title-strip-select .form-select,
-.title-strip-controls .form-select,
-.dashboard-title-strip .form-select,
-.page-title-strip .form-select {
-  color-scheme: dark;
+/* Selectize dropdown options in title strips */
+.title-strip-select .selectize-dropdown .option,
+.title-strip-controls .selectize-dropdown .option,
+.dashboard-title-strip .selectize-dropdown .option,
+.page-title-strip .selectize-dropdown .option {
+  color: #1a1a1a;
+  background-color: #FFFFFF;
+}
+
+[data-bs-theme="dark"] .title-strip-select .selectize-dropdown .option,
+[data-bs-theme="dark"] .title-strip-controls .selectize-dropdown .option,
+[data-bs-theme="dark"] .dashboard-title-strip .selectize-dropdown .option,
+[data-bs-theme="dark"] .page-title-strip .selectize-dropdown .option {
+  color: #FFFFFF;
+  background-color: #0A3055;
+}
+
+.title-strip-select .selectize-dropdown .option.active,
+.title-strip-controls .selectize-dropdown .option.active,
+.dashboard-title-strip .selectize-dropdown .option.active,
+.page-title-strip .selectize-dropdown .option.active {
+  background-color: rgba(15, 76, 129, 0.15);
+  color: #0F4C81;
+}
+
+[data-bs-theme="dark"] .title-strip-select .selectize-dropdown .option.active,
+[data-bs-theme="dark"] .title-strip-controls .selectize-dropdown .option.active,
+[data-bs-theme="dark"] .dashboard-title-strip .selectize-dropdown .option.active,
+[data-bs-theme="dark"] .page-title-strip .selectize-dropdown .option.active {
+  background-color: rgba(0, 200, 255, 0.15);
+  color: #00C8FF;
 }
 
 .btn-title-strip-reset {

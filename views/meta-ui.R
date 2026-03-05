@@ -25,8 +25,7 @@ tagList(
           selectInput("meta_format", NULL,
                       choices = format_choices_with_all,
                       selected = "",
-                      width = "140px",
-                      selectize = FALSE)
+                      width = "140px")
         ),
         span(class = "title-strip-pill-label",
           "Min Entries:",

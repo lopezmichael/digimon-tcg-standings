@@ -25,8 +25,7 @@ tagList(
           selectInput("tournaments_format", NULL,
                       choices = format_choices_with_all,
                       selected = "",
-                      width = "140px",
-                      selectize = FALSE)
+                      width = "140px")
         ),
         div(
           class = "title-strip-select",
@@ -36,8 +35,7 @@ tagList(
                         "Event Types" = EVENT_TYPES
                       ),
                       selected = "",
-                      width = "120px",
-                      selectize = FALSE)
+                      width = "120px")
         ),
         actionButton("reset_tournaments_filters", NULL,
                      icon = icon("rotate-right"),
