@@ -4,6 +4,18 @@ This log tracks development decisions, blockers, and technical notes for DigiLab
 
 ---
 
+## 2026-03-04: Map Bounding Boxes Include Scene Center
+
+All three store maps (desktop, mobile, admin scene editor) now include the scene's own lat/lng coordinates in the bounding box calculation. Previously maps only fit bounds around store markers, so if stores were clustered in one area and the scene center was elsewhere, the map wouldn't show the full scene region. Fix: query scene coordinates by slug, create an sf point, `rbind` with store points, pass combined sf to `fit_bounds()`. Admin scene minimap switched from fixed `set_view(zoom=10)` to dynamic `fit_bounds` (falls back to `set_view` when no stores exist).
+
+---
+
+## 2026-03-04: Mobile Store Card Redesign
+
+Upgraded mobile store cards from 3-4 row plain text to the same two-row pattern used by players/meta/tournaments. Row 1 = store name + events badge (pill). Row 2 = schedule or city/state (left) + star rating (right). Online organizer cards follow same pattern with globe icon. All Load More buttons updated to all-caps style.
+
+---
+
 ## 2026-03-04: All Scenes Store Directory → Scene Cards
 
 ### Problem

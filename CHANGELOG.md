@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile meta card redesign**: Deck color left borders replace color dots, meta % shown as deck-color-tinted pill badge, two-row layout with entries and win%/top 3s.
 - **Mobile tournament card redesign**: Two-row layout with store name + format pill badge (top), date/type + trophy icon winner (bottom).
 - **All Scenes store directory**: "All Scenes" now shows scene summary cards (name, store count, events, avg players) instead of listing every store. Clicking navigates to that scene. Applied to desktop cards/schedule views and mobile.
+- **Mobile store card redesign**: Two-row layout with store name + events badge (top), schedule/location + star rating (bottom). Online organizer cards updated similarly.
+- **Map scene-aware bounding boxes**: Desktop, mobile, and admin scene maps now fit bounds around both stores and the scene's center coordinates, ensuring the full scene area is visible.
 
 ### Changed
 - **Mobile tab bar**: Reduced from 6 tabs to 5 (removed Upload Results) for a cleaner mobile navigation.
