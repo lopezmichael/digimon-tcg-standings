@@ -238,6 +238,17 @@ output$player_standings <- renderReactable({
     sprintf("<span class='%s'>%s</span>", htmltools::htmlEscape(color_class), htmltools::htmlEscape(deck))
   })
 
+  # Rating tier badge HTML
+  result$rating_html <- sapply(result$competitive_rating, function(r) {
+    tier_class <- if (r >= 1800) "rating-tier-elite"
+                  else if (r >= 1700) "rating-tier-strong"
+                  else if (r >= 1600) "rating-tier-good"
+                  else if (r < 1500) "rating-tier-low"
+                  else ""
+    sprintf("<span class='desktop-rating-badge %s'>%s</span>",
+            tier_class, as.integer(r))
+  })
+
   # Sort by competitive rating
   result <- result[order(-result$competitive_rating), ]
 
@@ -247,7 +258,17 @@ output$player_standings <- renderReactable({
     striped = TRUE,
     pagination = TRUE,
     defaultPageSize = 32,
-    rowStyle = list(cursor = "pointer"),
+    rowStyle = JS("function(rowInfo) {
+      var style = { cursor: 'pointer' };
+      if (rowInfo.index === 0) {
+        style.borderLeft = '3px solid #FFD700';
+      } else if (rowInfo.index === 1) {
+        style.borderLeft = '3px solid #C0C0C0';
+      } else if (rowInfo.index === 2) {
+        style.borderLeft = '3px solid #CD7F32';
+      }
+      return style;
+    }"),
     onClick = JS("function(rowInfo, column) {
       if (rowInfo) {
         Shiny.setInputValue('player_clicked', rowInfo.row.player_id, {priority: 'event'})
@@ -257,10 +278,12 @@ output$player_standings <- renderReactable({
       player_id = colDef(show = FALSE),
       Player = colDef(minWidth = 140),
       Events = colDef(minWidth = 60, align = "center"),
-      competitive_rating = colDef(
+      competitive_rating = colDef(show = FALSE),
+      rating_html = colDef(
         name = "Rating",
-        minWidth = 75,
-        align = "center"
+        minWidth = 85,
+        align = "center",
+        html = TRUE
       ),
       achievement_score = colDef(
         name = "Score",
