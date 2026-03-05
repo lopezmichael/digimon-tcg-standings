@@ -95,9 +95,9 @@ The architecture doc contains:
 
 ## Current Work
 
-### Latest Release: v1.3.1 - Fixes & Upload Improvements
+### Latest Release: v1.3.2 - Sentry Error Fixes
 
-Dedicated mobile views for all 5 public pages with device detection, stacked card layouts, and PWA improvements. See `CHANGELOG.md` for full details.
+NULL guards for dynamic UI inputs, expanded query retry patterns, and duplicate key race condition fixes. See `CHANGELOG.md` for full details.
 
 See `ROADMAP.md` for the full version plan.
 
@@ -105,6 +105,7 @@ See `ROADMAP.md` for the full version plan.
 
 | Version | Focus |
 |---------|-------|
+| v1.3.2 | Sentry Error Fixes |
 | v1.3.1 | Fixes & Upload Improvements |
 | v1.3.0 | Mobile Views & PWA Fixes |
 | v1.2.0 | Rating System Redesign & DigiLab Website |
@@ -371,6 +372,6 @@ See `ARCHITECTURE.md` > CSS Architecture for full documentation.
 
 ## Current Version
 
-**v1.3.1** - Fixes & Upload Improvements
+**v1.3.2** - Sentry Error Fixes
 
 See `CHANGELOG.md` for full version history and `ROADMAP.md` for upcoming features.

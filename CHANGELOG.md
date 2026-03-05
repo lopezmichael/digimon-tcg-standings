@@ -5,6 +5,15 @@ All notable changes to DigiLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-03-05 - Sentry Error Fixes
+
+### Fixed
+- **NULL guard for pill toggle inputs**: Fixed `as.numeric(NULL)` crash when `players_min_events` and `meta_min_entries` inputs fire before dynamic UI renders, causing "argument is of length zero" errors (~171 events/day).
+- **Expanded safe_query retry patterns**: `safe_query` and `safe_execute` now retry on "Query requires N params" and "invalid input syntax" errors caused by connection pool prepared statement cache collisions.
+- **Duplicate key race condition**: `sync_limitless.py` deck request inserts now use DB auto-generated IDs (`RETURNING request_id`) instead of manual `MAX(id)+1` calculation.
+- **Match history setNames guard**: Added NULL guard for tournament/store query results in the match submission form to prevent "attempt to set an attribute on NULL" errors.
+- **mapgl issue URL**: Updated placeholder comment to reference actual GitHub issue #176.
+
 ## [1.3.1] - 2026-03-04 - Fixes & Upload Improvements
 
 ### Fixed
