@@ -26,8 +26,25 @@ Started v1.4 implementation on `feature/v1.4-infrastructure` branch.
 - `middleware.js`: Promotes client-set digilab_* cookies to server-set via Set-Cookie headers
 - Removed GA from `app.astro` — was triggering Safari ITP tracker classification
 
-**Safari ITP investigation (pinned, unresolved):**
-iOS Safari evicts ALL storage for `app.digilab.cards` on browser close because user interaction only happens in the cross-origin iframe, not the parent page. Tried localStorage, cookies, server-set cookies, removing GA — all evicted. Works on desktop and within mobile sessions. Potential fix: a cookie consent banner would force user interaction with the parent page, which may make Safari treat it as "interactive." Deferred to future session.
+**Safari ITP investigation (pinned, testing `navigator.storage.persist()`):**
+iOS Safari evicts ALL storage for `app.digilab.cards` on browser close because user interaction only happens in the cross-origin iframe, not the parent page.
+
+Attempts (all failed on iOS Safari close/reopen, all work on desktop + mobile within-session):
+1. postMessage bridge with localStorage on parent — evicted
+2. Cookies with `domain=.digilab.cards` — evicted
+3. Server-set cookies via Vercel middleware `Set-Cookie` header promotion — evicted
+4. Removed GA from `app.astro` (was triggering Safari ITP tracker classification) — still evicted
+
+Key finding: Safari privacy report showed `digilab.cards` classified as a tracker due to GA/GTM scripts in `app.astro`. Removed GA (Shiny app has its own GA in `app.R`). But eviction persisted even after removal — suggests the non-interactive classification is the root cause, not the tracker classification.
+
+Research findings (WebKit docs, MDN, developer forums):
+- Safari ITP evicts all script-writable storage for origins without "user interaction" (click/tap/text input on the top-level page)
+- `navigator.storage.persist()` (Safari 17.0+ / iOS 17+) opts an origin out of eviction — Safari auto-approves based on interaction history, no prompt shown
+- Storage Access API (`requestStorageAccess()`) is overkill — designed for federated login, requires iframe origin visited as first-party in last 30 days
+- Cookie consent banner would force a click on the parent page, making Safari classify it as "interactive"
+
+Current attempt: Added `navigator.storage.persist()` to `app.astro` — awaiting test results.
+Next fallback: Cookie consent banner with Accept button (forces user interaction on parent page).
 
 ---
 
