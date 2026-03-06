@@ -24,6 +24,18 @@ planned:
     tags: [admin, ux]
     targetVersion: "v1.4.0"
 
+  - id: admin-onboarding-rethink
+    title: "Admin Onboarding & Scene Creation Rethink"
+    description: "Review and streamline the scene/store/admin creation process. Rethink Discord webhook modals and scene-coordination thread setup to reduce manual steps."
+    tags: [admin, ux]
+    targetVersion: "v1.4.0"
+
+  - id: tournament-data-quality
+    title: "Tournament Data Quality Checks"
+    description: "Validation rules for tournament submissions: prevent future dates, require store selection, confirm OCR-parsed player count matches entered player count, and add confirmation dialogs for suspicious data."
+    tags: [data, admin]
+    targetVersion: "v1.4.0"
+
   # v1.5.0 — Tournament Data & Ingestion
   - id: decklist-entry
     title: "Decklist Entry & Backfill"
@@ -425,6 +437,8 @@ completed:
 | **Mobile Upload Tabs** | Mobile-optimized Upload Results and Enter Results with touch-friendly grids |
 | **Mobile Admin Tabs** | Mobile layouts for all scene admin and super admin tabs |
 | **Admin Search** | Search and filtering across all admin pages |
+| **Admin Onboarding Rethink** | Streamline scene/store/admin creation and Discord webhook modals to reduce manual steps |
+| **Tournament Data Quality Checks** | Validation rules: no future dates, required store, OCR player count confirmation, suspicious data dialogs |
 
 ### v1.5.0 — Tournament Data & Ingestion
 | Feature | Description |
@@ -560,6 +574,21 @@ This section is internal-only and not published to the website.
 |----|------|-------------|
 | AS-SEARCH1 | FEATURE | Search/filter on Edit Stores, Edit Tournaments, Edit Players |
 | AS-SEARCH2 | FEATURE | Search/filter on Edit Scenes, Edit Admins, Edit Decks |
+
+### Admin Onboarding & Scene Creation Rethink
+| ID | Type | Description |
+|----|------|-------------|
+| AO1 | UX | Review current scene/store/admin creation flow — identify manual steps that could be automated or combined |
+| AO2 | UX | Rethink Discord webhook modals — consolidate scene-request, scene-coordination, and admin DM workflows |
+| AO3 | FEATURE | Consider in-app scene creation wizard that handles scene + stores + admin account + Discord thread in one flow |
+
+### Tournament Data Quality Checks
+| ID | Type | Description |
+|----|------|-------------|
+| TDQ1 | VALIDATION | Prevent tournament dates in the future — block or warn on save |
+| TDQ2 | VALIDATION | Require store selection for tournament submissions |
+| TDQ3 | VALIDATION | OCR player count confirmation — compare parsed player count to entered player count, flag mismatches |
+| TDQ4 | UX | Confirmation dialog for suspicious data (large player count discrepancies, duplicate tournaments, etc.) |
 
 ---
 
