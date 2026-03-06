@@ -5,90 +5,123 @@
 # -----------------------------------------------------------------------------
 # Mapbox Geocoding Helper
 # -----------------------------------------------------------------------------
-#' Geocode an address using Mapbox Geocoding v6 API
+#' Geocode an address using Mapbox v6 with ArcGIS fallback
 #'
 #' @param address Full address string to geocode
 #' @return List with lat and lng, or list(lat = NA, lng = NA) if failed
 geocode_with_mapbox <- function(address) {
+  # Try Mapbox v6 first
   mapbox_token <- Sys.getenv("MAPBOX_ACCESS_TOKEN")
-  if (mapbox_token == "") {
-    warning("MAPBOX_ACCESS_TOKEN not set")
-    return(list(lat = NA_real_, lng = NA_real_))
+  if (mapbox_token != "") {
+    result <- tryCatch({
+      encoded_address <- utils::URLencode(address, reserved = TRUE)
+      url <- sprintf(
+        "https://api.mapbox.com/search/geocode/v6/forward?q=%s&access_token=%s&limit=1",
+        encoded_address, mapbox_token
+      )
+      resp <- httr2::request(url) |>
+        httr2::req_timeout(10) |>
+        httr2::req_perform()
+      data <- httr2::resp_body_json(resp)
+      if (length(data$features) > 0) {
+        coords <- data$features[[1]]$properties$coordinates
+        return(list(lat = coords$latitude, lng = coords$longitude))
+      }
+      NULL
+    }, error = function(e) {
+      warning(paste("Mapbox geocoding failed, trying ArcGIS:", e$message))
+      NULL
+    })
+    if (!is.null(result)) return(result)
   }
 
+  # Fallback: ArcGIS (free, no token, no IP restrictions)
   tryCatch({
     encoded_address <- utils::URLencode(address, reserved = TRUE)
-
     url <- sprintf(
-      "https://api.mapbox.com/search/geocode/v6/forward?q=%s&access_token=%s&limit=1",
-      encoded_address,
-      mapbox_token
+      "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=%s&f=json&maxLocations=1",
+      encoded_address
     )
-
     resp <- httr2::request(url) |>
       httr2::req_timeout(10) |>
       httr2::req_perform()
-
-    result <- httr2::resp_body_json(resp)
-
-    if (length(result$features) == 0) {
-      return(list(lat = NA_real_, lng = NA_real_))
+    data <- httr2::resp_body_json(resp)
+    if (length(data$candidates) > 0) {
+      loc <- data$candidates[[1]]$location
+      return(list(lat = loc$y, lng = loc$x))
     }
-
-    coords <- result$features[[1]]$properties$coordinates
-    list(lat = coords$latitude, lng = coords$longitude)
-
+    list(lat = NA_real_, lng = NA_real_)
   }, error = function(e) {
-    warning(paste("Mapbox geocoding error:", e$message))
+    warning(paste("ArcGIS geocoding error:", e$message))
     list(lat = NA_real_, lng = NA_real_)
   })
 }
 
 # -----------------------------------------------------------------------------
-# Mapbox Reverse Geocoding Helper (v6)
+# Reverse Geocoding: Mapbox v6 with ArcGIS fallback
 # -----------------------------------------------------------------------------
-#' Reverse geocode coordinates using Mapbox Geocoding v6 API
+#' Reverse geocode coordinates using Mapbox v6 with ArcGIS fallback
 #'
 #' @param lat Latitude
 #' @param lng Longitude
 #' @return List with country and state_region, or NAs if failed
 reverse_geocode_with_mapbox <- function(lat, lng) {
+  # Try Mapbox v6 first
   mapbox_token <- Sys.getenv("MAPBOX_ACCESS_TOKEN")
-  if (mapbox_token == "") {
-    warning("MAPBOX_ACCESS_TOKEN not set")
-    return(list(country = NA_character_, state_region = NA_character_))
+  if (mapbox_token != "") {
+    result <- tryCatch({
+      url <- sprintf(
+        "https://api.mapbox.com/search/geocode/v6/reverse?longitude=%s&latitude=%s&access_token=%s&types=region,country",
+        lng, lat, mapbox_token
+      )
+      resp <- httr2::request(url) |>
+        httr2::req_timeout(10) |>
+        httr2::req_perform()
+      data <- httr2::resp_body_json(resp)
+      country <- NA_character_
+      state_region <- NA_character_
+      if (length(data$features) > 0) {
+        for (feat in data$features) {
+          feat_type <- feat$properties$feature_type %||% ""
+          if (feat_type == "country") country <- feat$properties$name
+          else if (feat_type == "region") state_region <- feat$properties$name
+        }
+      }
+      if (!is.na(country) || !is.na(state_region)) {
+        return(list(country = country, state_region = state_region))
+      }
+      NULL
+    }, error = function(e) {
+      warning(paste("Mapbox reverse geocoding failed, trying ArcGIS:", e$message))
+      NULL
+    })
+    if (!is.null(result)) return(result)
   }
 
+  # Fallback: ArcGIS
   tryCatch({
     url <- sprintf(
-      "https://api.mapbox.com/search/geocode/v6/reverse?longitude=%s&latitude=%s&access_token=%s&types=region,country",
-      lng, lat, mapbox_token
+      "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?location=%s,%s&f=json",
+      lng, lat
     )
-
     resp <- httr2::request(url) |>
       httr2::req_timeout(10) |>
       httr2::req_perform()
-
-    result <- httr2::resp_body_json(resp)
-
-    country <- NA_character_
-    state_region <- NA_character_
-
-    if (length(result$features) > 0) {
-      for (feat in result$features) {
-        feat_type <- feat$properties$feature_type %||% ""
-        if (feat_type == "country") {
-          country <- feat$properties$name
-        } else if (feat_type == "region") {
-          state_region <- feat$properties$name
-        }
-      }
+    data <- httr2::resp_body_json(resp)
+    address <- data$address %||% list()
+    country_code <- address$CountryCode %||% NA_character_
+    # ArcGIS returns country codes (USA, GBR, etc.) — map common ones to full names
+    country_map <- c(USA = "United States", GBR = "United Kingdom", CAN = "Canada",
+                     AUS = "Australia", JPN = "Japan", DEU = "Germany", FRA = "France",
+                     BRA = "Brazil", MEX = "Mexico", KOR = "South Korea")
+    country <- if (!is.na(country_code) && country_code %in% names(country_map)) {
+      country_map[[country_code]]
+    } else {
+      country_code
     }
-
-    list(country = country, state_region = state_region)
-
+    list(country = country, state_region = address$Region %||% NA_character_)
   }, error = function(e) {
-    warning(paste("Mapbox reverse geocoding error:", e$message))
+    warning(paste("ArcGIS reverse geocoding error:", e$message))
     list(country = NA_character_, state_region = NA_character_)
   })
 }
