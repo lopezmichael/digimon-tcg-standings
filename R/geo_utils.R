@@ -29,8 +29,14 @@ get_region_coordinates <- function(country, region = NULL) {
     ),
     "Canada" = list(
       "default" = list(lat = 45.4, lng = -75.7)  # Ottawa
+    ),
+    "Italy" = list(
+      "default" = list(lat = 41.9, lng = 12.5)  # Rome
     )
   )
+  # TODO: This hardcoded lookup doesn't scale — new countries require a code change.
+  # Consider geocoding online stores by country name at creation time, or using
+  # a country→coordinates reference table in the DB.
 
   # Try to find region-specific coordinates
   if (!is.null(country) && country %in% names(region_coords)) {
